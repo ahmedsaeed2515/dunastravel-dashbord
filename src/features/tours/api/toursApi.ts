@@ -1,0 +1,47 @@
+import { apiClient } from "@/lib/axios";
+import { Tour, TourQueryFilters, CreateTourPayload, UpdateTourPayload, BulkUpdateToursPayload, TourStats } from "../types";
+import { PaginatedResponse } from "@/lib/api-types";
+
+export const toursApi = {
+  getTours: async (filters: TourQueryFilters): Promise<PaginatedResponse<Tour>> => {
+    const response = await apiClient.get<PaginatedResponse<Tour>>("/admin/tours", { params: filters });
+    return response as any;
+  },
+
+  getTourStats: async (): Promise<TourStats> => {
+    const response = await apiClient.get<TourStats>("/admin/tours/stats");
+    return response as any;
+  },
+
+  getTourBySlug: async (slug: string): Promise<Tour> => {
+    const response = await apiClient.get<Tour>(`/admin/tours/${slug}`);
+    return response as any;
+  },
+
+  createTour: async (data: CreateTourPayload): Promise<{ success: boolean; slug: string }> => {
+    const response = await apiClient.post<{ success: boolean; slug: string }>("/admin/tours", data);
+    return response as any;
+  },
+
+  updateTour: async (slug: string, data: UpdateTourPayload): Promise<{ success: boolean; slug: string }> => {
+    const response = await apiClient.patch<{ success: boolean; slug: string }>(`/admin/tours/${slug}`, data);
+    return response as any;
+  },
+
+  bulkUpdateTours: async (data: BulkUpdateToursPayload): Promise<{ count: number }> => {
+    const response = await apiClient.patch<{ count: number }>("/admin/tours/bulk/update", data);
+    return response as any;
+  },
+
+  softDeleteTour: async (slug: string): Promise<void> => {
+    await apiClient.delete(`/admin/tours/${slug}`);
+  },
+
+  exportToursCsv: async (filters: TourQueryFilters): Promise<Blob> => {
+    const response = await apiClient.get("/admin/tours/export/csv", { 
+      params: filters,
+      responseType: 'blob' 
+    });
+    return response as any;
+  }
+};
