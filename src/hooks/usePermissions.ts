@@ -3,6 +3,8 @@
 import { useQuery } from "@tanstack/react-query";
 import { authApi } from "@/features/auth/api/auth";
 
+export type Role = 'USER' | 'COMPANY' | 'AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+
 export function usePermissions() {
   const { data: user, isLoading } = useQuery({
     queryKey: ['me'],
@@ -10,25 +12,24 @@ export function usePermissions() {
     staleTime: 1000 * 60 * 5, // Cache for 5 mins
   });
 
-  const role = user?.role; // 'ADMIN' | 'USER' | 'GUEST'
-  // Future: Parse fine-grained permissions array if backend provides them
-  // const permissions = user?.permissions || [];
+  const role = user?.role as Role | undefined;
 
-  const hasPermission = (action: string, resource: string) => {
-    if (!role) return false;
-    
-    // SuperAdmin rule
-    if (role === 'ADMIN') return true;
-
-    // TODO: Implement actual resource-based matrix mapping here
-    return false;
-  };
+  const isSuperAdmin = role === 'SUPER_ADMIN';
+  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  const isB2B = role === 'COMPANY' || role === 'AGENT';
+  
+  // Ensure we can render UI dynamically
+  const canManageAdmins = isSuperAdmin;
+  const canAccessFullOperations = isAdmin;
 
   return {
     user,
     role,
     isLoading,
-    hasPermission,
-    isAdmin: role === 'ADMIN',
+    isSuperAdmin,
+    isAdmin,
+    isB2B,
+    canManageAdmins,
+    canAccessFullOperations
   };
 }

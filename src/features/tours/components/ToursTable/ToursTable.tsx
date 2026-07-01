@@ -24,11 +24,23 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, CheckSquare, RefreshCw, Loader2, Sparkles, Compass, Users, Percent, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 export function ToursTable() {
-  // Filters state
-  const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const { data, isLoading } = useTours(filters);
+  // Filters & Pagination state
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("ALL");
+  
+  const queryFilters = {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...(search ? { search } : {}),
+    ...(activeTab !== "ALL" ? { status: activeTab } : {})
+  };
+
+  const { data, isLoading } = useTours(queryFilters);
   const { data: stats } = useTourStats();
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
@@ -94,8 +106,19 @@ export function ToursTable() {
       table.toggleAllRowsSelected(false);
     };
 
+    const handleBulkFeatured = async (isFeatured: boolean) => {
+      await bulkUpdate.mutateAsync({ slugs, isFeatured });
+      table.toggleAllRowsSelected(false);
+    };
+
     return (
       <div className="flex items-center gap-2">
+        <Input 
+          placeholder="Search tours..." 
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)} 
+          className="h-8 w-[200px]"
+        />
         {slugs.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger render={
@@ -107,23 +130,23 @@ export function ToursTable() {
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuLabel>Set Status</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("PUBLISHED")}>
-                Publish Packages
+                Publish
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("DRAFT")}>
                 Revert to Draft
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("ARCHIVED")} className="text-red-600">
-                Archive Packages
+                Archive Tours
               </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               
-              <DropdownMenuLabel>Booking Portal State</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleBulkActive(true)}>
-                Enable Client Bookings
+              <DropdownMenuLabel>Marketing Flags</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleBulkFeatured(true)}>
+                Mark as Featured
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkActive(false)}>
-                Pause Client Bookings
+              <DropdownMenuItem onClick={() => handleBulkFeatured(false)}>
+                Remove Featured
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -214,12 +237,25 @@ export function ToursTable() {
         </div>
       </div>
 
+      <div className="flex items-center justify-between">
+        <Tabs defaultValue="ALL" value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+          <TabsList className="grid w-full grid-cols-3">
+            <TabsTrigger value="ALL">All Tours</TabsTrigger>
+            <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
+            <TabsTrigger value="DRAFT">Drafts</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <DataTable
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
-        searchKey="slug"
         renderToolbarActions={renderToolbarActions}
+        pageCount={data?.meta?.lastPage || -1}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        manualPagination={true}
       />
       
       {/* Modals & Drawers Layer */}

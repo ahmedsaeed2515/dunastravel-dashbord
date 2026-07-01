@@ -35,6 +35,10 @@ interface DataTableProps<TData, TValue> {
   onRowClick?: (row: TData) => void;
   isLoading?: boolean;
   renderToolbarActions?: (table: any) => React.ReactNode;
+  pageCount?: number;
+  pagination?: { pageIndex: number; pageSize: number };
+  onPaginationChange?: (updater: any) => void;
+  manualPagination?: boolean;
 }
 
 export function DataTable<TData, TValue>({
@@ -44,6 +48,10 @@ export function DataTable<TData, TValue>({
   onRowClick,
   isLoading = false,
   renderToolbarActions,
+  pageCount,
+  pagination,
+  onPaginationChange,
+  manualPagination = false,
 }: DataTableProps<TData, TValue>) {
   const [rowSelection, setRowSelection] = React.useState({});
   const [columnVisibility, setColumnVisibility] = React.useState<VisibilityState>({});
@@ -53,12 +61,16 @@ export function DataTable<TData, TValue>({
   const table = useReactTable({
     data,
     columns,
+    pageCount,
     state: {
       sorting,
       columnVisibility,
       rowSelection,
       columnFilters,
+      ...(pagination ? { pagination } : {}),
     },
+    manualPagination,
+    onPaginationChange,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,

@@ -13,6 +13,8 @@ import { Booking, BookingStatus } from "../../types";
 import { BookingDetailsDrawer } from "../Drawers/BookingDetailsDrawer";
 import { EditBookingDrawer } from "../Drawers/EditBookingDrawer";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
@@ -25,9 +27,19 @@ import { Download, CheckSquare, Trash, RefreshCw, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 
 export function BookingsTable() {
-  // Filters state
-  const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const { data, isLoading } = useBookings(filters);
+  // Filters & Pagination state
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState<string>("");
+  
+  const queryFilters: BookingQueryFilters = {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...(search ? { search } : {}),
+    ...(statusFilter ? { status: statusFilter } : {})
+  };
+  
+  const { data, isLoading } = useBookings(queryFilters);
   const deleteBooking = useSoftDeleteBooking();
   const bulkUpdate = useBulkUpdateBookings();
   const [isExporting, setIsExporting] = useState(false);
@@ -93,6 +105,26 @@ export function BookingsTable() {
 
     return (
       <div className="flex items-center gap-2">
+        <Input 
+          placeholder="Search bookings..." 
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)} 
+          className="h-8 w-[200px]"
+        />
+        
+        <Select value={statusFilter} onValueChange={setStatusFilter}>
+          <SelectTrigger className="h-8 w-[150px]">
+            <SelectValue placeholder="All Statuses" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ALL">All Statuses</SelectItem>
+            <SelectItem value="PENDING">Pending</SelectItem>
+            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
+            <SelectItem value="CANCELLED">Cancelled</SelectItem>
+            <SelectItem value="COMPLETED">Completed</SelectItem>
+          </SelectContent>
+        </Select>
+
         {referenceCodes.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger render={
@@ -155,8 +187,11 @@ export function BookingsTable() {
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
-        searchKey="referenceCode"
         renderToolbarActions={renderToolbarActions}
+        pageCount={data?.meta?.lastPage || -1}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        manualPagination={true}
       />
       
       {/* Modals & Drawers Layer */}

@@ -23,7 +23,7 @@ export default function LoginPage() {
       await authApi.login({ email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.response?.data?.message || "Invalid credentials");
+      setError(err.message || "Invalid credentials");
     } finally {
       setLoading(false);
     }

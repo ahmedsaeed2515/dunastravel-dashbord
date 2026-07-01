@@ -21,6 +21,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Star, FileText, Plus, ExternalLink, Calendar, Shield, MapPin, DollarSign, Activity, Bell, Loader2 } from "lucide-react";
 import { BookingDetailsDrawer } from "@/features/bookings/components/Drawers/BookingDetailsDrawer";
 import { Booking } from "@/features/bookings/types";
+import { AiCustomerInsightsTab } from "@/features/ai/components/AiCustomerInsightsTab";
 
 interface CustomerProfileDrawerProps {
   customer: Customer | null;
@@ -143,14 +144,15 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
             </SheetHeader>
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full grid grid-cols-7 h-11 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mb-4">
+              <TabsList className="w-full grid grid-cols-8 h-11 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mb-4">
                 <TabsTrigger value="overview" className="text-xs font-medium">Overview</TabsTrigger>
                 <TabsTrigger value="bookings" className="text-xs font-medium">Bookings</TabsTrigger>
                 <TabsTrigger value="payments" className="text-xs font-medium">Payments</TabsTrigger>
                 <TabsTrigger value="notes" className="text-xs font-medium">Notes ({detail.notes?.length || 0})</TabsTrigger>
                 <TabsTrigger value="documents" className="text-xs font-medium">Docs ({detail.documents?.length || 0})</TabsTrigger>
                 <TabsTrigger value="timeline" className="text-xs font-medium">Timeline</TabsTrigger>
-                <TabsTrigger value="future" className="text-xs font-medium">Marketing & Ext</TabsTrigger>
+                <TabsTrigger value="future" className="text-xs font-medium">Marketing</TabsTrigger>
+                <TabsTrigger value="ai-insights" className="text-xs font-medium text-indigo-600 dark:text-indigo-400">AI ✨</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="h-[calc(100vh-220px)] pr-6">
@@ -628,6 +630,11 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       </div>
                     </div>
                   </div>
+                </TabsContent>
+
+                {/* 8. AI INSIGHTS TAB */}
+                <TabsContent value="ai-insights" className="space-y-6">
+                  <AiCustomerInsightsTab customerId={detail.id} customerName={detail.name} />
                 </TabsContent>
               </ScrollArea>
             </Tabs>

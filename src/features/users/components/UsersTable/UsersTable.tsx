@@ -4,13 +4,25 @@ import { useState } from "react";
 import { useUsers } from "../../hooks/useUsers";
 import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
-import { User } from "../../types";
+import { User, UserRole } from "../../types";
 import { UserDetailsDrawer } from "../Drawers/UserDetailsDrawer";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Input } from "@/components/ui/input";
 
 export function UsersTable() {
-  // Filters state
-  const [filters, setFilters] = useState({ page: 1, limit: 10 });
-  const { data, isLoading } = useUsers(filters);
+  // Filters & Pagination state
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
+  const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<string>("ALL");
+
+  const queryFilters = {
+    page: pagination.pageIndex + 1,
+    limit: pagination.pageSize,
+    ...(search ? { search } : {}),
+    ...(activeTab !== "ALL" ? { role: activeTab as UserRole } : {})
+  };
+
+  const { data, isLoading } = useUsers(queryFilters);
 
   // Drawer states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -34,13 +46,42 @@ export function UsersTable() {
 
   const columns = getColumns(handleView, handleEdit, handleDelete);
 
+  const renderToolbarActions = () => {
+    return (
+      <div className="flex items-center gap-2">
+        <Input 
+          placeholder="Search users..." 
+          value={search} 
+          onChange={(e) => setSearch(e.target.value)} 
+          className="h-8 w-[250px]"
+        />
+      </div>
+    );
+  };
+
   return (
     <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <Tabs defaultValue="ALL" value={activeTab} onValueChange={setActiveTab} className="w-[500px]">
+          <TabsList className="grid w-full grid-cols-5">
+            <TabsTrigger value="ALL">All</TabsTrigger>
+            <TabsTrigger value="ADMIN">Admin</TabsTrigger>
+            <TabsTrigger value="COMPANY">B2B</TabsTrigger>
+            <TabsTrigger value="USER">Clients</TabsTrigger>
+            <TabsTrigger value="GUEST">Guests</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
+
       <DataTable
         columns={columns}
         data={data?.data || []}
         isLoading={isLoading}
-        searchKey="name"
+        renderToolbarActions={renderToolbarActions}
+        pageCount={data?.meta?.lastPage || -1}
+        pagination={pagination}
+        onPaginationChange={setPagination}
+        manualPagination={true}
       />
       
       {/* Modals & Drawers Layer */}
