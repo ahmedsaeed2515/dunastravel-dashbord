@@ -4,16 +4,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Activity, Search, Filter, ShieldAlert } from "lucide-react";
+import { useState } from "react";
+import { useAuditLogs } from "@/features/audit/hooks/useAuditLogs";
+import { format } from "date-fns";
+import { Button } from "@/components/ui/button";
+import { Activity, Search, ShieldAlert } from "lucide-react";
 
 export default function AuditLogsPage() {
-  const mockLogs = [
-    { id: "AL-1092", user: "Admin (admin@dunas.travel)", action: "UPDATE_TOUR", resource: "Tour: luxury-maldives", status: "SUCCESS", time: "2 minutes ago" },
-    { id: "AL-1091", user: "System", action: "SYNC_EXCHANGE_RATES", resource: "Finance Module", status: "SUCCESS", time: "1 hour ago" },
-    { id: "AL-1090", user: "B2B Partner (agency@travel.com)", action: "CREATE_BOOKING", resource: "Booking: REF-5092", status: "SUCCESS", time: "3 hours ago" },
-    { id: "AL-1089", user: "Unknown User (192.168.1.5)", action: "FAILED_LOGIN", resource: "Auth Module", status: "FAILURE", time: "5 hours ago" },
-    { id: "AL-1088", user: "Admin (admin@dunas.travel)", action: "DELETE_USER", resource: "User: ID-908", status: "SUCCESS", time: "1 day ago" },
-  ];
+  const [dateFrom, setDateFrom] = useState<string>("");
+  const [dateTo, setDateTo] = useState<string>("");
+  const [search, setSearch] = useState<string>("");
+  
+  const { data, isLoading } = useAuditLogs({
+    page: 1,
+    limit: 100,
+    dateFrom: dateFrom || undefined,
+    dateTo: dateTo || undefined,
+    search: search || undefined,
+  });
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
@@ -31,14 +39,31 @@ export default function AuditLogsPage() {
 
       <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
         <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-          <div className="flex gap-4 items-center w-full max-w-2xl">
-            <div className="relative w-full">
+          <div className="flex flex-wrap gap-4 items-center w-full">
+            <div className="relative w-full max-w-sm">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-              <Input placeholder="Search logs by user, action, or resource..." className="pl-9 bg-background/50" />
+              <Input 
+                placeholder="Search logs by action or resource..." 
+                className="pl-9 bg-background/50" 
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+              />
             </div>
-            <Button variant="outline" className="gap-2 shrink-0">
-              <Filter className="h-4 w-4" /> Filter Events
-            </Button>
+            <div className="flex items-center gap-2">
+              <Input 
+                type="date" 
+                className="w-auto bg-background/50"
+                value={dateFrom}
+                onChange={e => setDateFrom(e.target.value)}
+              />
+              <span className="text-muted-foreground">to</span>
+              <Input 
+                type="date" 
+                className="w-auto bg-background/50"
+                value={dateTo}
+                onChange={e => setDateTo(e.target.value)}
+              />
+            </div>
           </div>
         </CardHeader>
         <CardContent className="p-0">
@@ -54,30 +79,42 @@ export default function AuditLogsPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {mockLogs.map((log) => (
-                <TableRow key={log.id} className="hover:bg-muted/30 transition-colors cursor-pointer">
-                  <TableCell className="font-mono text-xs text-muted-foreground">{log.id}</TableCell>
-                  <TableCell className="font-medium text-sm">{log.user}</TableCell>
-                  <TableCell>
-                    <Badge variant="outline" className="font-mono text-[10px]">
-                      {log.action}
-                    </Badge>
-                  </TableCell>
-                  <TableCell className="text-sm text-muted-foreground">{log.resource}</TableCell>
-                  <TableCell>
-                    {log.status === "SUCCESS" ? (
-                      <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border-none">Success</Badge>
-                    ) : (
-                      <Badge variant="destructive" className="flex items-center gap-1 w-fit">
-                        <ShieldAlert className="h-3 w-3" /> Failed
-                      </Badge>
-                    )}
-                  </TableCell>
-                  <TableCell className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                    {log.time}
-                  </TableCell>
+              {isLoading ? (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">Loading audit logs...</TableCell>
                 </TableRow>
-              ))}
+              ) : data?.data?.length ? (
+                data.data.map((log) => (
+                  <TableRow key={log.id} className="hover:bg-muted/30 transition-colors cursor-pointer">
+                    <TableCell className="font-mono text-xs text-muted-foreground">{log.id.slice(0, 8)}</TableCell>
+                    <TableCell className="font-medium text-sm">
+                      {log.user ? `${log.user.name} (${log.user.email})` : (log.ipAddress || "System")}
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="font-mono text-[10px]">
+                        {log.action}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{log.resourceType} {log.resourceId}</TableCell>
+                    <TableCell>
+                      {!log.action.includes("FAILED") ? (
+                        <Badge variant="default" className="bg-emerald-500/10 text-emerald-600 border-none">Success</Badge>
+                      ) : (
+                        <Badge variant="destructive" className="flex items-center gap-1 w-fit">
+                          <ShieldAlert className="h-3 w-3" /> Failed
+                        </Badge>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right text-sm text-muted-foreground whitespace-nowrap">
+                      {format(new Date(log.createdAt), "PPp")}
+                    </TableCell>
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={6} className="h-24 text-center">No audit logs found.</TableCell>
+                </TableRow>
+              )}
             </TableBody>
           </Table>
         </CardContent>

@@ -61,6 +61,7 @@ export function getColumns(
           {row.getValue("category") || "Uncategorized"}
         </Badge>
       ),
+      meta: { className: "hidden lg:table-cell" }
     },
     {
       accessorKey: "status",
@@ -103,6 +104,7 @@ export function getColumns(
       accessorKey: "createdAt",
       header: "Created Date",
       cell: ({ row }) => <span className="text-muted-foreground text-sm">{format(new Date(row.getValue("createdAt")), "MMM do, yyyy")}</span>,
+      meta: { className: "hidden lg:table-cell" }
     },
     {
       id: "actions",

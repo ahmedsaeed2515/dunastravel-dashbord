@@ -145,12 +145,12 @@ export function CreateTourWizard() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
+      <DialogTrigger render={
         <Button size="sm" className="h-9 shadow-md bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5 font-medium px-4">
           <Plus className="h-4 w-4" />
           <span>Create New Tour</span>
         </Button>
-      </DialogTrigger>
+      } />
       
       <DialogContent className="sm:max-w-3xl p-0 bg-card border rounded-2xl shadow-xl overflow-hidden flex flex-col h-[85vh]">
         <DialogHeader className="px-6 py-4 border-b bg-muted/30">
@@ -194,7 +194,7 @@ export function CreateTourWizard() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">Category</Label>
-                    <Select value={category} onValueChange={setCategory}>
+                    <Select value={category} onValueChange={(val) => setCategory(val || "ADVENTURE")}>
                       <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ADVENTURE">Adventure & Safari</SelectItem>
@@ -361,7 +361,7 @@ export function CreateTourWizard() {
                     <h3 className="font-medium text-foreground">Draft Mode vs Published</h3>
                     <p className="text-sm text-muted-foreground mt-1">Drafts are hidden from public and B2B agents.</p>
                   </div>
-                  <Select value={status} onValueChange={(val: any) => setStatus(val)}>
+                  <Select value={status} onValueChange={(val: any) => setStatus(val || "DRAFT")}>
                     <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
                     <SelectContent>
                       <SelectItem value="DRAFT">Save as Draft</SelectItem>

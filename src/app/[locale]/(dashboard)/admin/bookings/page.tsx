@@ -1,8 +1,7 @@
 import { Suspense } from "react";
 import { BookingsTable } from "@/features/bookings/components/BookingsTable/BookingsTable";
 import { TableSkeleton } from "@/components/shared/ui/Skeletons";
-import { Button } from "@/components/ui/button";
-import { PlusCircle } from "lucide-react";
+import { CreateBookingDrawer } from "@/features/bookings/components/Drawers/CreateBookingDrawer";
 import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 
 export const metadata = {
@@ -21,10 +20,7 @@ export default function BookingsPage() {
         </div>
         
         <RequirePermission action="manage" resource="bookings">
-          <Button className="shadow-sm">
-            <PlusCircle className="mr-2 h-4 w-4" />
-            Create Booking
-          </Button>
+          <CreateBookingDrawer />
         </RequirePermission>
       </div>
 

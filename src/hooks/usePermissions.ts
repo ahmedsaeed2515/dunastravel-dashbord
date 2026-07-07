@@ -22,6 +22,19 @@ export function usePermissions() {
   const canManageAdmins = isSuperAdmin;
   const canAccessFullOperations = isAdmin;
 
+  const hasPermission = (action: string, resource: string) => {
+    if (isSuperAdmin) return true;
+    if (isAdmin) {
+      if (resource === 'roles' || resource === 'audit') return false;
+      return true;
+    }
+    if (isB2B) {
+      const allowedB2BResources = ['bookings', 'commissions', 'wallet'];
+      return allowedB2BResources.includes(resource);
+    }
+    return false;
+  };
+
   return {
     user,
     role,
@@ -30,6 +43,7 @@ export function usePermissions() {
     isAdmin,
     isB2B,
     canManageAdmins,
-    canAccessFullOperations
+    canAccessFullOperations,
+    hasPermission
   };
 }

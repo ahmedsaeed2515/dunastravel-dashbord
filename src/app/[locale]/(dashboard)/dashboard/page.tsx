@@ -33,7 +33,7 @@ export default function DashboardPage() {
   }
 
   // Format real data fallbacks
-  const general = metrics?.general || { totalBookings: 0, bookingsThisMonth: 0, totalInquiries: 0 };
+  const general = metrics?.general || { totalBookings: 0, bookingsThisMonth: 0, totalInquiries: 0, openInquiries: 0 };
   const wallets = metrics?.wallets || { totalLiabilitiesUsd: 0 };
   const crm = metrics?.crm || { totalCustomers: 0, newCustomersThisMonth: 0 };
   const tours = metrics?.tours || { totalActiveTours: 0 };

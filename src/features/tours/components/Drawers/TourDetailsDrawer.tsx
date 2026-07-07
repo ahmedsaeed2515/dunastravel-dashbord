@@ -8,6 +8,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Star, CheckCircle, Navigation, DollarSign, Calendar, MapPin, Layers } from "lucide-react";
+import { ItineraryManager } from "../ItineraryManager";
+import { MediaManager } from "../MediaManager";
 
 interface TourDetailsDrawerProps {
   tour: Tour | null;
@@ -151,67 +153,12 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
 
             {/* ITINERARY TAB */}
             <TabsContent value="itinerary" className="space-y-4">
-              {tour.itineraries && tour.itineraries.length > 0 ? (
-                <div className="space-y-4">
-                  {tour.itineraries.map((it, i) => (
-                    <div key={it.id || i} className="border rounded-xl p-5 bg-card shadow-sm space-y-3">
-                      <div className="flex justify-between items-center border-b pb-2">
-                        <span className="font-semibold text-base text-primary">
-                          {it.dayLabel || `Day ${it.sortOrder}`}
-                        </span>
-                        <Badge variant="outline">Step {it.sortOrder}</Badge>
-                      </div>
-                      <p className="text-sm text-foreground leading-relaxed">
-                        {it.descriptionJsonb?.["en"] || "No description for this day."}
-                      </p>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t text-xs">
-                        <div>
-                          <span className="text-muted-foreground block font-medium">Meals</span>
-                          <span className="truncate block font-mono">{JSON.stringify(it.mealsJsonb || {})}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block font-medium">Hotels</span>
-                          <span className="truncate block font-mono">{JSON.stringify(it.hotelsJsonb || {})}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block font-medium">Activities</span>
-                          <span className="truncate block font-mono">{JSON.stringify(it.activitiesJsonb || {})}</span>
-                        </div>
-                        <div>
-                          <span className="text-muted-foreground block font-medium">Transport</span>
-                          <span className="truncate block font-mono">{JSON.stringify(it.transportationJsonb || {})}</span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-12 border rounded-xl bg-card">
-                  No itinerary day plans recorded for this tour.
-                </div>
-              )}
+              <ItineraryManager tour={tour} />
             </TabsContent>
 
             {/* MEDIA TAB */}
             <TabsContent value="media" className="space-y-4">
-              {tour.images && tour.images.length > 0 ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
-                  {tour.images.map((img, i) => (
-                    <div key={img.id || i} className="group relative border rounded-xl overflow-hidden bg-muted shadow-sm aspect-video flex items-center justify-center">
-                      <img src={img.imageUrl} alt={img.altText || "Tour asset"} className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                      {img.isHero && (
-                        <div className="absolute top-2 left-2">
-                          <Badge className="bg-primary text-primary-foreground text-xs shadow">Hero Asset</Badge>
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-center text-muted-foreground py-12 border rounded-xl bg-card">
-                  No images or media assets attached.
-                </div>
-              )}
+              <MediaManager tour={tour} />
             </TabsContent>
 
             {/* PRICING TAB */}

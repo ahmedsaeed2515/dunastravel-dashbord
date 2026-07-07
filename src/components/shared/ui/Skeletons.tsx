@@ -6,7 +6,7 @@ export function CardSkeleton() {
 
 export function TableSkeleton() {
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-testid="table-skeleton-row">
       <Skeleton className="h-10 w-full" />
       <Skeleton className="h-10 w-full" />
       <Skeleton className="h-10 w-full" />

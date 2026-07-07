@@ -42,15 +42,15 @@ apiClient.interceptors.request.use(async (config) => {
           isFetchingCsrf = false;
           return Promise.reject(error);
         }
-      }
-      
-      // Wait for CSRF token to be fetched
-      await new Promise<void>((resolve) => {
-        addCsrfSubscriber((token) => {
-          csrfToken = token;
-          resolve();
+      } else {
+        // Wait for CSRF token to be fetched by another concurrent request
+        await new Promise<void>((resolve) => {
+          addCsrfSubscriber((token) => {
+            csrfToken = token;
+            resolve();
+          });
         });
-      });
+      }
     }
     
     // Attach the token

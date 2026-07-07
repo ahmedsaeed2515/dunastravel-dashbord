@@ -24,6 +24,7 @@ export function DataTableToolbar<TData>({
       <div className="flex flex-1 items-center space-x-2">
         {searchKey && (
           <Input
+            aria-label="Search table"
             placeholder="Search..."
             value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
             onChange={(event) =>

@@ -24,7 +24,15 @@ export function RequirePermission({
   }
 
   if (!hasPermission(action, resource)) {
-    return <>{fallback}</>;
+    if (fallback) return <>{fallback}</>;
+    
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
+        <h1 className="text-4xl font-display font-bold text-destructive">403 Forbidden</h1>
+        <p className="text-xl text-muted-foreground">You do not have permission to access this page.</p>
+        <a href="/dashboard" className="text-primary hover:underline">Return to Dashboard</a>
+      </div>
+    );
   }
 
   return <>{children}</>;

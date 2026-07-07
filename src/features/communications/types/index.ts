@@ -38,3 +38,26 @@ export interface PaginatedResponse<T> {
     totalPages: number;
   };
 }
+
+export interface Inquiry {
+  referenceCode: string;
+  name: string;
+  email: string;
+  phone?: string | null;
+  destinations: string[];
+  departureDate?: string | null;
+  returnDate?: string | null;
+  numberOfTravelers: number;
+  specialRequests?: string | null;
+  status: string;
+  assigneeId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface InquiryQueryFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  assigneeId?: string;
+}

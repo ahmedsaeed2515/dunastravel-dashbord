@@ -52,9 +52,9 @@ export function AppSidebar() {
     <Sidebar variant="inset" collapsible="icon" className="border-r border-white/5 shadow-sm dark:shadow-none bg-background/50 backdrop-blur-xl">
       <SidebarHeader className="flex items-center justify-center py-6 h-20 border-b border-white/5">
         <div className="font-display font-bold text-2xl text-primary flex items-center gap-2 group-data-[collapsible=icon]:hidden transition-all duration-500">
-          <span className="text-gold-500">D</span>unas
+          <span className="text-accent-foreground">D</span>unas
         </div>
-        <div className="font-display font-bold text-2xl text-gold-500 hidden group-data-[collapsible=icon]:block transition-all duration-500 scale-110">
+        <div className="font-display font-bold text-2xl text-accent-foreground hidden group-data-[collapsible=icon]:block transition-all duration-500 scale-110">
           D
         </div>
       </SidebarHeader>
@@ -259,12 +259,14 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton render={<Link href="/admin/settings" />} tooltip="Settings">
-              <Settings />
-              <span>Settings</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+          {isAdmin && (
+            <SidebarMenuItem>
+              <SidebarMenuButton render={<Link href="/admin/settings" />} tooltip="Settings">
+                <Settings />
+                <span>Settings</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          )}
           <SidebarMenuItem>
             <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
               <LogOut />

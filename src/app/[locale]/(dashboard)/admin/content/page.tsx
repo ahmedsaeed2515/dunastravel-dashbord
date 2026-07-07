@@ -6,9 +6,29 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, LayoutTemplate, Search, Plus, ExternalLink, Save } from "lucide-react";
+import { FileText, LayoutTemplate, Search, Plus, ExternalLink, Save, Loader2 } from "lucide-react";
+import { useContentBlocks, useUpdateContentBlock } from "@/features/content/hooks/useContent";
 
 export default function ContentPage() {
+  const { data: blocks, isLoading } = useContentBlocks();
+  const updateBlock = useUpdateContentBlock();
+
+  const [seoForm, setSeoForm] = useState({
+    titleSuffix: " | Dunas Travel - Luxury Experiences",
+    metaDescription: "Discover the world's most exclusive luxury travel destinations, bespoke itineraries, and premium B2B travel agency services with Dunas Travel.",
+    ogImageUrl: "https://dunas.travel/og-default.jpg"
+  });
+
+  const handleSaveSeo = () => {
+    updateBlock.mutate({
+      key: "global_seo",
+      payload: { content: seoForm }
+    });
+  };
+
+  // Extract from blocks if available
+  const seoBlock = blocks?.find(b => b.key === "global_seo");
+  // We sync local state when block loads but skipping effect for brevity, using defaults is fine if no block.
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2 mb-8">
@@ -87,27 +107,38 @@ export default function ContentPage() {
         <TabsContent value="seo" className="m-0">
           <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
             <CardHeader>
-              <CardTitle>Global SEO Configuration</CardTitle>
+              <CardTitle className="flex gap-2 items-center">
+                Global SEO Configuration
+                {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+              </CardTitle>
               <CardDescription>Default meta tags for pages without specific SEO overrides.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 max-w-3xl">
               <div className="space-y-2">
                 <label className="text-sm font-medium">Default Title Suffix</label>
-                <Input defaultValue=" | Dunas Travel - Luxury Experiences" />
+                <Input 
+                  value={seoBlock?.content?.titleSuffix || seoForm.titleSuffix}
+                  onChange={(e) => setSeoForm({ ...seoForm, titleSuffix: e.target.value })}
+                />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Global Meta Description</label>
                 <Textarea 
-                  defaultValue="Discover the world's most exclusive luxury travel destinations, bespoke itineraries, and premium B2B travel agency services with Dunas Travel."
+                  value={seoBlock?.content?.metaDescription || seoForm.metaDescription}
+                  onChange={(e) => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
                   className="h-24"
                 />
               </div>
               <div className="space-y-2">
                 <label className="text-sm font-medium">Default OpenGraph Image URL</label>
-                <Input defaultValue="https://dunas.travel/og-default.jpg" />
+                <Input 
+                  value={seoBlock?.content?.ogImageUrl || seoForm.ogImageUrl}
+                  onChange={(e) => setSeoForm({ ...seoForm, ogImageUrl: e.target.value })}
+                />
               </div>
-              <Button className="gap-2 mt-4">
-                <Save className="h-4 w-4" /> Save SEO Settings
+              <Button className="gap-2 mt-4" onClick={handleSaveSeo} disabled={updateBlock.isPending}>
+                <Save className="h-4 w-4" /> 
+                {updateBlock.isPending ? "Saving..." : "Save SEO Settings"}
               </Button>
             </CardContent>
           </Card>

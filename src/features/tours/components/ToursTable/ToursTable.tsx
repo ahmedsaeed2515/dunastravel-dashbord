@@ -72,7 +72,7 @@ export function ToursTable() {
   const handleExportCsv = async () => {
     try {
       setIsExporting(true);
-      const blob = await toursApi.exportToursCsv(filters);
+      const blob = await toursApi.exportToursCsv(queryFilters);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -114,6 +114,7 @@ export function ToursTable() {
     return (
       <div className="flex items-center gap-2">
         <Input 
+          aria-label="Search tours"
           placeholder="Search tours..." 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
@@ -238,7 +239,7 @@ export function ToursTable() {
       </div>
 
       <div className="flex items-center justify-between">
-        <Tabs defaultValue="ALL" value={activeTab} onValueChange={setActiveTab} className="w-[400px]">
+        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[400px]">
           <TabsList className="grid w-full grid-cols-3">
             <TabsTrigger value="ALL">All Tours</TabsTrigger>
             <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
@@ -252,7 +253,7 @@ export function ToursTable() {
         data={data?.data || []}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={data?.meta?.lastPage || -1}
+        pageCount={data?.meta?.totalPages || -1}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}

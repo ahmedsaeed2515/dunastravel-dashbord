@@ -27,28 +27,28 @@ export function KPIGrid() {
       />
       <StatisticCard
         title="Total Bookings"
-        value={data?.totalBookings || 0}
+        value={data?.general?.totalBookings || 0}
         icon={<Ticket />}
-        description={`${data?.bookingsThisMonth || 0} this month`}
+        description={`${data?.general?.bookingsThisMonth || 0} this month`}
       />
       <StatisticCard
         title="Open Inquiries"
-        value={data?.openInquiries || 0}
+        value={data?.general?.openInquiries || 0}
         icon={<Users />}
-        description={`Out of ${data?.totalInquiries || 0} total`}
+        description={`Out of ${data?.general?.totalInquiries || 0} total`}
       />
       <StatisticCard
         title="Contact Requests"
-        value={data?.unreadContactSubmissions || 0}
+        value={data?.general?.unreadContactSubmissions || 0}
         icon={<MessageSquareWarning />}
         description="Unread messages"
       />
       <StatisticCard
         title="Failed Logs"
-        value={data?.totalNotificationsFailed || 0}
+        value={data?.general?.totalNotificationsFailed || 0}
         icon={<AlertOctagon />}
         description="Notification errors"
-        trend={data?.totalNotificationsFailed ? { value: 100, isPositive: false } : undefined}
+        trend={data?.general?.totalNotificationsFailed ? { value: 100, isPositive: false } : undefined}
       />
     </div>
   );

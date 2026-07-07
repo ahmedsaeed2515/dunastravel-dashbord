@@ -7,6 +7,7 @@ export function useBookings(filters: BookingQueryFilters) {
   return useQuery({
     queryKey: ["bookings", filters],
     queryFn: () => bookingsApi.getBookings(filters),
+    refetchInterval: 30000,
   });
 }
 
@@ -28,7 +29,21 @@ export function useUpdateBooking() {
       queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update booking");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update booking");
+    },
+  });
+}
+
+export function useCreateManualBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: { tourId: string, userId: string, passengers: any[], manualAmountUsd?: number }) => bookingsApi.createManualBooking(data),
+    onSuccess: () => {
+      toast.success("Manual booking created successfully");
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to create manual booking");
     },
   });
 }
@@ -43,7 +58,7 @@ export function useUpdateBookingStatus() {
       queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update booking status");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update booking status");
     },
   });
 }
@@ -58,7 +73,7 @@ export function useUpsertPassengers() {
       queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update passengers");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update passengers");
     },
   });
 }
@@ -73,7 +88,7 @@ export function useAssignBooking() {
       queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to assign booking");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to assign booking");
     },
   });
 }
@@ -87,7 +102,7 @@ export function useBulkUpdateBookings() {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to bulk update bookings");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to bulk update bookings");
     },
   });
 }
@@ -101,7 +116,7 @@ export function useSoftDeleteBooking() {
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to delete booking");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete booking");
     },
   });
 }

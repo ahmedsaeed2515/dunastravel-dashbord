@@ -50,6 +50,7 @@ export function UsersTable() {
     return (
       <div className="flex items-center gap-2">
         <Input 
+          aria-label="Search users"
           placeholder="Search users..." 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
@@ -62,8 +63,8 @@ export function UsersTable() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Tabs defaultValue="ALL" value={activeTab} onValueChange={setActiveTab} className="w-[500px]">
-          <TabsList className="grid w-full grid-cols-5">
+        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[500px]">
+          <TabsList className="grid w-full grid-cols-5" aria-label="Filter users by role">
             <TabsTrigger value="ALL">All</TabsTrigger>
             <TabsTrigger value="ADMIN">Admin</TabsTrigger>
             <TabsTrigger value="COMPANY">B2B</TabsTrigger>
@@ -78,7 +79,7 @@ export function UsersTable() {
         data={data?.data || []}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={data?.meta?.lastPage || -1}
+        pageCount={data?.meta?.totalPages || -1}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}

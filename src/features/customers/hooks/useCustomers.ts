@@ -42,7 +42,7 @@ export function useUpdateCustomerCrm() {
       queryClient.invalidateQueries({ queryKey: ["customers", "metrics"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update customer profile");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update customer profile");
     },
   });
 }
@@ -57,7 +57,7 @@ export function useBulkUpdateCustomers() {
       queryClient.invalidateQueries({ queryKey: ["customers", "metrics"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to bulk update customers");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to bulk update customers");
     },
   });
 }
@@ -72,7 +72,7 @@ export function useAddCustomerNote() {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to add note");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to add note");
     },
   });
 }
@@ -87,7 +87,7 @@ export function useAddCustomerDocument() {
       queryClient.invalidateQueries({ queryKey: ["customers"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to attach document");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to attach document");
     },
   });
 }

@@ -32,9 +32,9 @@ export function OperationsSection() {
           <CardTitle>System Activity</CardTitle>
         </CardHeader>
         <CardContent>
-          {data?.recentFailedNotifications?.length ? (
+          {data?.general?.recentFailedNotifications?.length ? (
             <Timeline>
-              {data.recentFailedNotifications.map((log, idx) => (
+              {data.general.recentFailedNotifications.map((log, idx) => (
                 <TimelineItem
                   key={log.id}
                   icon={<AlertOctagon className="w-4 h-4 text-destructive" />}

@@ -43,5 +43,30 @@ export const toursApi = {
       responseType: 'blob' 
     });
     return response as any;
+  },
+
+  addTourItinerary: async (slug: string, data: any): Promise<any> => {
+    const response = await apiClient.post(`/admin/tours/${slug}/itinerary`, data);
+    return response as any;
+  },
+  
+  updateTourItinerary: async (slug: string, dayId: string, data: any): Promise<any> => {
+    const response = await apiClient.patch(`/admin/tours/${slug}/itinerary/${dayId}`, data);
+    return response as any;
+  },
+
+  removeTourItinerary: async (slug: string, dayId: string): Promise<any> => {
+    const response = await apiClient.delete(`/admin/tours/${slug}/itinerary/${dayId}`);
+    return response as any;
+  },
+
+  addTourImage: async (slug: string, data: any): Promise<any> => {
+    const response = await apiClient.post(`/admin/tours/${slug}/images`, data);
+    return response as any;
+  },
+
+  removeTourImage: async (slug: string, imageId: string): Promise<any> => {
+    const response = await apiClient.delete(`/admin/tours/${slug}/images/${imageId}`);
+    return response as any;
   }
 };

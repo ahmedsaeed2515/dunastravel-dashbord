@@ -6,11 +6,15 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Globe, DollarSign, Settings2, RefreshCw, Save } from "lucide-react";
+import { RequirePermission } from "@/components/shared/auth/RequirePermission";
+import { useExchangeRates } from "@/features/currency/hooks/useCurrency";
 
 export default function SettingsPage() {
+  const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2 mb-8">
+    <RequirePermission action="manage" resource="settings">
+      <div className="flex-1 space-y-6 p-8 pt-6">
+        <div className="flex items-center justify-between space-y-2 mb-8">
         <div>
           <h2 className="text-3xl font-playfair font-bold tracking-tight text-primary flex items-center gap-2">
             <Settings2 className="h-6 w-6" />
@@ -68,31 +72,32 @@ export default function SettingsPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">USD (Base)</label>
                   <Input value="1.0000" disabled />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">AED</label>
-                  <Input defaultValue="3.6725" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">EUR</label>
-                  <Input defaultValue="0.9145" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">GBP</label>
-                  <Input defaultValue="0.7834" />
-                </div>
+                {isLoadingRates ? (
+                  <div className="col-span-full py-8 text-center text-muted-foreground">Loading rates...</div>
+                ) : ratesData?.rates ? (
+                  Object.entries(ratesData.rates).map(([currency, rate]) => (
+                    <div key={currency} className="space-y-2">
+                      <label className="text-sm font-medium">{currency}</label>
+                      <Input value={rate as number} disabled />
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-full py-8 text-center text-muted-foreground">No rates found.</div>
+                )}
               </div>
-              <Button className="gap-2 mt-4">
-                <Save className="h-4 w-4" /> Save Rate Overrides
+              <Button className="gap-2 mt-4" disabled>
+                <Save className="h-4 w-4" /> Save Rate Overrides (Coming Soon)
               </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-    </div>
+      </div>
+    </RequirePermission>
   );
 }

@@ -6,6 +6,9 @@ export interface User {
   email: string;
   phone?: string | null;
   role: UserRole;
+  status?: string;
+  suspendedAt?: string | null;
+  suspendReason?: string | null;
   createdAt: string;
   updatedAt: string;
 }

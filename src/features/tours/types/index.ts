@@ -122,6 +122,7 @@ export interface BulkUpdateToursPayload {
   category?: string;
   country?: string;
   isActive?: boolean;
+  isFeatured?: boolean;
 }
 
 export interface TourStats {

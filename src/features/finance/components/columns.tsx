@@ -5,7 +5,8 @@ import { Commission } from "../types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { MoreHorizontal, CheckCircle, XCircle, HandCoins } from "lucide-react";
+import { MoreHorizontal, CheckCircle, XCircle, HandCoins, FileText, Download } from "lucide-react";
+import { toast } from "sonner";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,7 +22,14 @@ export const columns: ColumnDef<Commission>[] = [
     accessorKey: "booking.referenceCode",
     header: "Booking Ref",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.booking?.referenceCode || "Unknown"}</div>
+      <div className="flex flex-col">
+        <span className="font-medium">{row.original.booking?.referenceCode || "Unknown"}</span>
+        {row.original.booking?.invoiceNumber && (
+          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+            <FileText className="h-3 w-3" /> {row.original.booking.invoiceNumber}
+          </span>
+        )}
+      </div>
     ),
   },
   {
@@ -105,6 +113,7 @@ function ActionCell({ commission }: { commission: Commission }) {
             <DropdownMenuItem 
               onClick={() => updateStatus.mutate({ id: commission.id, status: 'APPROVED' })}
               className="text-emerald-600 focus:text-emerald-600"
+              disabled={updateStatus.isPending}
             >
               <CheckCircle className="mr-2 h-4 w-4" />
               Approve & Credit Wallet
@@ -112,6 +121,7 @@ function ActionCell({ commission }: { commission: Commission }) {
             <DropdownMenuItem 
               onClick={() => updateStatus.mutate({ id: commission.id, status: 'CANCELLED' })}
               className="text-destructive focus:text-destructive"
+              disabled={updateStatus.isPending}
             >
               <XCircle className="mr-2 h-4 w-4" />
               Cancel Commission
@@ -123,6 +133,7 @@ function ActionCell({ commission }: { commission: Commission }) {
           <DropdownMenuItem 
             onClick={() => updateStatus.mutate({ id: commission.id, status: 'PAID' })}
             className="text-blue-600 focus:text-blue-600"
+            disabled={updateStatus.isPending}
           >
             <HandCoins className="mr-2 h-4 w-4" />
             Mark as Paid (Bank Wire)
@@ -130,6 +141,17 @@ function ActionCell({ commission }: { commission: Commission }) {
         )}
 
         <DropdownMenuSeparator />
+        <DropdownMenuItem 
+          onClick={() => {
+            if (!commission.booking?.invoiceNumber) {
+              toast.error("No invoice available for this booking.");
+            } else {
+              toast.info("Invoice download is not yet supported by the backend.");
+            }
+          }}
+        >
+          <Download className="mr-2 h-4 w-4" /> Download Invoice PDF
+        </DropdownMenuItem>
         <DropdownMenuItem>View Booking</DropdownMenuItem>
         <DropdownMenuItem>View Company</DropdownMenuItem>
       </DropdownMenuContent>

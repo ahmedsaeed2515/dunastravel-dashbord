@@ -27,4 +27,14 @@ export const usersApi = {
   deleteUser: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/users/${id}`);
   },
+
+  suspendUser: async (id: string, reason: string): Promise<User> => {
+    const response = await apiClient.post<User>(`/admin/users/${id}/suspend`, { reason });
+    return response as any;
+  },
+
+  activateUser: async (id: string): Promise<User> => {
+    const response = await apiClient.post<User>(`/admin/users/${id}/activate`);
+    return response as any;
+  },
 };

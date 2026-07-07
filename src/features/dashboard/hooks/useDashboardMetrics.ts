@@ -27,12 +27,12 @@ export function useDashboardMetrics() {
 
       return {
         general,
-        tours,
-        commissions,
-        wallets,
-        crm,
-        companies,
-        communications
+        tours: tours?.data,
+        commissions: commissions?.data,
+        wallets: wallets?.data,
+        crm: crm?.data,
+        companies: companies?.data,
+        communications: communications?.data
       };
     },
     staleTime: 1000 * 60 * 2, // 2 minutes

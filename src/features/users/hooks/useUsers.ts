@@ -21,7 +21,7 @@ export function useCreateUser() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to create user");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to create user");
     },
   });
 }
@@ -36,7 +36,39 @@ export function useDeleteUser() {
       queryClient.invalidateQueries({ queryKey: ["users"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to delete user");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete user");
+    },
+  });
+}
+
+export function useSuspendUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, reason }: { id: string, reason: string }) => usersApi.suspendUser(id, reason),
+    onSuccess: (_, variables) => {
+      toast.success("User suspended successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["users", variables.id] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to suspend user");
+    },
+  });
+}
+
+export function useActivateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => usersApi.activateUser(id),
+    onSuccess: (_, variables) => {
+      toast.success("User activated successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["users", variables] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to activate user");
     },
   });
 }

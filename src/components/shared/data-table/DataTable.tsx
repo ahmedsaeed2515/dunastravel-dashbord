@@ -25,6 +25,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+import { TableSkeleton } from "@/components/shared/ui/Skeletons";
+
 import { DataTablePagination } from "./DataTablePagination";
 import { DataTableToolbar } from "./DataTableToolbar";
 
@@ -94,7 +96,7 @@ export function DataTable<TData, TValue>({
               <TableRow key={headerGroup.id}>
                 {headerGroup.headers.map((header) => {
                   return (
-                    <TableHead key={header.id} colSpan={header.colSpan}>
+                    <TableHead key={header.id} colSpan={header.colSpan} className={(header.column.columnDef.meta as any)?.className}>
                       {header.isPlaceholder
                         ? null
                         : flexRender(
@@ -110,8 +112,8 @@ export function DataTable<TData, TValue>({
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center text-muted-foreground">
-                  Loading data...
+                <TableCell colSpan={columns.length} className="h-64 align-top p-4">
+                  <TableSkeleton />
                 </TableCell>
               </TableRow>
             ) : table.getRowModel().rows?.length ? (
@@ -123,7 +125,7 @@ export function DataTable<TData, TValue>({
                   className={onRowClick ? "cursor-pointer hover:bg-muted/50" : ""}
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id}>
+                    <TableCell key={cell.id} className={(cell.column.columnDef.meta as any)?.className}>
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}

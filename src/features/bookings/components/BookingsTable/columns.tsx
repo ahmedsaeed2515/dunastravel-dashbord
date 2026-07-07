@@ -1,6 +1,7 @@
 "use client";
 
 import { ColumnDef } from "@tanstack/react-table";
+import { BookingRowActions } from './BookingRowActions';
 import { Booking } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -65,15 +66,15 @@ export function getColumns(
       accessorKey: "createdAt",
       header: "Created Date",
       cell: ({ row }) => format(new Date(row.getValue("createdAt")), "MMM do, yyyy"),
+      meta: { className: "hidden lg:table-cell" }
     },
     {
       id: "actions",
       cell: ({ row }) => {
-        // Dynamic import to avoid circular dependency in columns definition
-        const { BookingRowActions } = require("./BookingRowActions");
         return (
           <BookingRowActions
             booking={row.original}
+
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}

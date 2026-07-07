@@ -34,7 +34,7 @@ export function useCreateTour() {
       queryClient.invalidateQueries({ queryKey: ["tours"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to create tour");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to create tour");
     },
   });
 }
@@ -49,7 +49,7 @@ export function useUpdateTour() {
       queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to update tour");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update tour");
     },
   });
 }
@@ -63,7 +63,7 @@ export function useBulkUpdateTours() {
       queryClient.invalidateQueries({ queryKey: ["tours"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to bulk update tours");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to bulk update tours");
     },
   });
 }
@@ -77,7 +77,67 @@ export function useSoftDeleteTour() {
       queryClient.invalidateQueries({ queryKey: ["tours"] });
     },
     onError: (error: any) => {
-      toast.error(error.message || "Failed to delete tour");
+      toast.error(error?.response?.data?.message || error?.message || "Failed to delete tour");
     },
+  });
+}
+
+export function useAddTourItinerary() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) => toursApi.addTourItinerary(slug, data),
+    onSuccess: (_, variables) => {
+      toast.success("Itinerary day added successfully");
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to add itinerary day"),
+  });
+}
+
+export function useUpdateTourItinerary() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, dayId, data }: { slug: string; dayId: string; data: any }) => toursApi.updateTourItinerary(slug, dayId, data),
+    onSuccess: (_, variables) => {
+      toast.success("Itinerary day updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to update itinerary day"),
+  });
+}
+
+export function useRemoveTourItinerary() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, dayId }: { slug: string; dayId: string }) => toursApi.removeTourItinerary(slug, dayId),
+    onSuccess: (_, variables) => {
+      toast.success("Itinerary day removed successfully");
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to remove itinerary day"),
+  });
+}
+
+export function useAddTourImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, data }: { slug: string; data: any }) => toursApi.addTourImage(slug, data),
+    onSuccess: (_, variables) => {
+      toast.success("Image added successfully");
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to add image"),
+  });
+}
+
+export function useRemoveTourImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, imageId }: { slug: string; imageId: string }) => toursApi.removeTourImage(slug, imageId),
+    onSuccess: (_, variables) => {
+      toast.success("Image removed successfully");
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to remove image"),
   });
 }

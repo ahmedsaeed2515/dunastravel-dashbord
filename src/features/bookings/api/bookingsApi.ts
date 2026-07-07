@@ -13,6 +13,11 @@ export const bookingsApi = {
     return response as any;
   },
 
+  createManualBooking: async (data: { tourId: string, userId: string, passengers: any[], manualAmountUsd?: number }): Promise<Booking> => {
+    const response = await apiClient.post<Booking>(`/admin/bookings`, data);
+    return response as any;
+  },
+
   updateBooking: async (referenceCode: string, data: UpdateBookingPayload): Promise<Booking> => {
     const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}`, data);
     return response as any;

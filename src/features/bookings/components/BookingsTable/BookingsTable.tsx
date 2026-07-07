@@ -9,7 +9,7 @@ import {
 import { bookingsApi } from "../../api/bookingsApi";
 import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
-import { Booking, BookingStatus } from "../../types";
+import { Booking, BookingStatus, BookingQueryFilters } from "../../types";
 import { BookingDetailsDrawer } from "../Drawers/BookingDetailsDrawer";
 import { EditBookingDrawer } from "../Drawers/EditBookingDrawer";
 import { Button } from "@/components/ui/button";
@@ -69,7 +69,7 @@ export function BookingsTable() {
   const handleExportCsv = async () => {
     try {
       setIsExporting(true);
-      const blob = await bookingsApi.exportBookingsCsv(filters);
+      const blob = await bookingsApi.exportBookingsCsv(queryFilters);
       const url = window.URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
@@ -106,14 +106,15 @@ export function BookingsTable() {
     return (
       <div className="flex items-center gap-2">
         <Input 
+          aria-label="Search bookings"
           placeholder="Search bookings..." 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
           className="h-8 w-[200px]"
         />
         
-        <Select value={statusFilter} onValueChange={setStatusFilter}>
-          <SelectTrigger className="h-8 w-[150px]">
+        <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "")}>
+          <SelectTrigger className="h-8 w-[150px]" aria-label="Filter by status">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -188,7 +189,7 @@ export function BookingsTable() {
         data={data?.data || []}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={data?.meta?.lastPage || -1}
+        pageCount={data?.meta?.totalPages || -1}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}

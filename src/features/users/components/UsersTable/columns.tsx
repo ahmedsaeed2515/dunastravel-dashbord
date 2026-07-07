@@ -52,6 +52,7 @@ export function getColumns(
       accessorKey: "createdAt",
       header: "Joined",
       cell: ({ row }) => format(new Date(row.getValue("createdAt")), "MMM do, yyyy"),
+      meta: { className: "hidden lg:table-cell" }
     },
     {
       id: "actions",

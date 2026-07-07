@@ -36,7 +36,7 @@ export interface Commission {
   status: CommissionStatus;
   createdAt: string;
   company?: { name: string; referenceCode: string };
-  booking?: { referenceCode: string; totalAmountUsd: string };
+  booking?: { referenceCode: string; totalAmountUsd: string; invoiceNumber?: string };
 }
 
 export interface WalletMetrics {

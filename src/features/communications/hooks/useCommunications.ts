@@ -7,6 +7,8 @@ export const communicationsKeys = {
   all: ["communications"] as const,
   metrics: () => [...communicationsKeys.all, "metrics"] as const,
   logs: (filters: NotificationDeliveryLogQueryFilters) => [...communicationsKeys.all, "logs", filters] as const,
+  inquiries: (filters: any) => [...communicationsKeys.all, "inquiries", filters] as const,
+  templates: () => [...communicationsKeys.all, "templates"] as const,
 };
 
 export function useCommunicationMetrics() {
@@ -37,5 +39,35 @@ export function useRetryNotification() {
     onError: (error: any) => {
       toast.error(error?.response?.data?.message || "Failed to initiate retry.");
     },
+  });
+}
+
+export function useInquiries(filters: any) {
+  return useQuery({
+    queryKey: communicationsKeys.inquiries(filters),
+    queryFn: () => communicationsApi.getInquiries(filters),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useAssignInquiry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, assigneeId }: { referenceCode: string, assigneeId: string }) => 
+      communicationsApi.updateInquiry(referenceCode, { assigneeId }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
+      toast.success("Inquiry assigned successfully.");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to assign inquiry.");
+    },
+  });
+}
+
+export function useTemplates() {
+  return useQuery({
+    queryKey: communicationsKeys.templates(),
+    queryFn: () => communicationsApi.getTemplates(),
   });
 }

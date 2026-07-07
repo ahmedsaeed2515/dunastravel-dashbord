@@ -38,7 +38,7 @@ export function CommunicationsView() {
 
           <Select
             value={filters.status || "ALL"}
-            onValueChange={(val) => setFilters(f => ({ ...f, status: val === "ALL" ? undefined : val as NotificationDeliveryStatus, page: 1 }))}
+            onValueChange={(val) => setFilters(f => ({ ...f, status: val === "ALL" || !val ? undefined : val as NotificationDeliveryStatus, page: 1 }))}
           >
             <SelectTrigger className="w-[140px] bg-background/50">
               <SelectValue placeholder="Status" />
