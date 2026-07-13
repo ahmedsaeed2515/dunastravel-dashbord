@@ -5,13 +5,16 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, DollarSign, Settings2, RefreshCw, Save } from "lucide-react";
+import { Globe, DollarSign, Settings2, RefreshCw, Save, Lock } from "lucide-react";
 import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 import { useExchangeRates } from "@/features/currency/hooks/useCurrency";
+import { useSetting, useUpdateSetting } from "@/features/settings/hooks/useSettings";
+import { Switch } from "@/components/ui/switch";
 
 export default function SettingsPage() {
   const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
-  return (
+  const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
+  const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
     <RequirePermission action="manage" resource="settings">
       <div className="flex-1 space-y-6 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2 mb-8">
@@ -30,6 +33,7 @@ export default function SettingsPage() {
         <TabsList className="bg-background/60 backdrop-blur-md border border-border/50">
           <TabsTrigger value="localization" className="gap-2"><Globe className="h-4 w-4" /> Localization & Translations</TabsTrigger>
           <TabsTrigger value="currencies" className="gap-2"><DollarSign className="h-4 w-4" /> Currencies & Rates</TabsTrigger>
+          <TabsTrigger value="authentication" className="gap-2"><Lock className="h-4 w-4" /> Authentication</TabsTrigger>
         </TabsList>
 
         <TabsContent value="localization" className="m-0">
@@ -93,6 +97,28 @@ export default function SettingsPage() {
               <Button className="gap-2 mt-4" disabled>
                 <Save className="h-4 w-4" /> Save Rate Overrides (Coming Soon)
               </Button>
+            </CardContent>
+          </Card>
+        <TabsContent value="authentication" className="m-0">
+          <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
+            <CardHeader>
+              <CardTitle>Authentication Settings</CardTitle>
+              <CardDescription>Configure security and access requirements for users.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="flex items-center justify-between p-4 border rounded-lg bg-card/50">
+                <div className="space-y-0.5">
+                  <h4 className="font-semibold text-base">Require Email Verification</h4>
+                  <p className="text-sm text-muted-foreground">
+                    Users must verify their email address before they can log in to their accounts.
+                  </p>
+                </div>
+                <Switch 
+                  checked={requireAuthSetting}
+                  disabled={isLoadingAuthSetting || isUpdatingAuthSetting}
+                  onCheckedChange={(checked) => updateSetting({ key: 'AUTH_REQUIRE_EMAIL_VERIFICATION', value: checked })}
+                />
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
