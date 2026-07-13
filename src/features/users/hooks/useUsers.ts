@@ -73,3 +73,19 @@ export function useActivateUser() {
     },
   });
 }
+
+export function useUpdateUser() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: Partial<UserFormValues> }) => usersApi.updateUser(id, data),
+    onSuccess: (_, variables) => {
+      toast.success("User updated successfully");
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: ["users", variables.id] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to update user");
+    },
+  });
+}

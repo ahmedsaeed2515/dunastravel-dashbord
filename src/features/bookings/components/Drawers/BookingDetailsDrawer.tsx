@@ -7,6 +7,9 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
+import { Button } from "@/components/ui/button";
+import { useRestoreBooking, useAddPayment, useAddNote, useAddAttachment } from "../../hooks/useBookings";
+import { FileText, RefreshCcw, Paperclip, Plus, CreditCard } from "lucide-react";
 
 interface BookingDetailsDrawerProps {
   booking: Booking | null;
@@ -15,6 +18,8 @@ interface BookingDetailsDrawerProps {
 }
 
 export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDetailsDrawerProps) {
+  const { mutate: restoreBooking, isPending: isRestoring } = useRestoreBooking();
+
   if (!booking) return null;
 
   return (
@@ -33,22 +38,36 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                 {booking.tourNameEn}
               </SheetDescription>
             </div>
-            <div className="text-right">
+            <div className="text-right flex flex-col items-end gap-2">
               <div className="text-2xl font-bold">
                 {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(parseFloat(booking.totalAmount))}
               </div>
               <div className="text-sm text-muted-foreground">
                 Created {format(new Date(booking.createdAt), "MMM do, yyyy")}
               </div>
+              {booking.status === "CANCELLED" && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  className="gap-1 mt-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50"
+                  onClick={() => restoreBooking(booking.referenceCode)}
+                  disabled={isRestoring}
+                >
+                  <RefreshCcw className="h-3 w-3" />
+                  Restore Booking
+                </Button>
+              )}
             </div>
           </div>
         </SheetHeader>
 
         <Tabs defaultValue="summary" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-12">
+          <TabsList className="w-full flex h-12 overflow-x-auto">
             <TabsTrigger value="summary">Summary</TabsTrigger>
             <TabsTrigger value="passengers">Passengers</TabsTrigger>
             <TabsTrigger value="payments">Payments</TabsTrigger>
+            <TabsTrigger value="notes">Notes</TabsTrigger>
+            <TabsTrigger value="attachments">Files</TabsTrigger>
             <TabsTrigger value="timeline">Timeline</TabsTrigger>
           </TabsList>
 
@@ -154,6 +173,10 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-4">
+               <div className="flex justify-end mb-2">
+                 {/* In a real app this opens a modal; here just a disabled button as a placeholder for the wiring */}
+                 <Button variant="outline" size="sm" className="gap-2"><CreditCard className="w-4 h-4"/> Add Payment</Button>
+               </div>
                {booking.payments && booking.payments.length > 0 ? (
                 booking.payments.map((p: any, i: number) => (
                   <div key={p.id || i} className="border rounded-lg p-4 flex justify-between items-center">
@@ -174,6 +197,53 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                )}
             </TabsContent>
 
+            <TabsContent value="notes" className="space-y-4">
+              <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" className="gap-2"><Plus className="w-4 h-4"/> Add Note</Button>
+               </div>
+               {booking.notes && booking.notes.length > 0 ? (
+                booking.notes.map((n: any, i: number) => (
+                  <div key={n.id || i} className="border rounded-lg p-4 flex flex-col gap-2 bg-muted/20">
+                    <div className="flex justify-between items-start">
+                      <div className="flex items-center gap-2">
+                        <FileText className="w-4 h-4 text-muted-foreground" />
+                        <span className="font-semibold text-sm">Note by Admin</span>
+                      </div>
+                      <span className="text-xs text-muted-foreground">{format(new Date(n.createdAt), "MMM do, yyyy")}</span>
+                    </div>
+                    <p className="text-sm whitespace-pre-wrap">{n.content}</p>
+                  </div>
+                ))
+               ) : (
+                <div className="text-center text-muted-foreground py-8 border border-dashed rounded-lg">
+                  No notes recorded.
+                </div>
+               )}
+            </TabsContent>
+
+            <TabsContent value="attachments" className="space-y-4">
+              <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" className="gap-2"><Paperclip className="w-4 h-4"/> Upload File</Button>
+               </div>
+               {booking.attachments && booking.attachments.length > 0 ? (
+                <div className="grid grid-cols-2 gap-4">
+                  {booking.attachments.map((a: any, i: number) => (
+                    <div key={a.id || i} className="border rounded-lg p-3 flex flex-col justify-between items-start h-24 hover:bg-muted/50 cursor-pointer transition-colors">
+                      <div className="flex items-center gap-2 w-full">
+                        <Paperclip className="w-4 h-4 text-primary" />
+                        <span className="font-medium text-sm truncate w-full" title={a.fileName}>{a.fileName}</span>
+                      </div>
+                      <Badge variant="secondary" className="text-[10px]">{a.documentType || 'DOCUMENT'}</Badge>
+                    </div>
+                  ))}
+                </div>
+               ) : (
+                <div className="text-center text-muted-foreground py-8 border border-dashed rounded-lg">
+                  No attachments found.
+                </div>
+               )}
+            </TabsContent>
+
             <TabsContent value="timeline" className="space-y-4">
                {booking.activityLogs && booking.activityLogs.length > 0 ? (
                  <div className="relative border-l border-muted ml-3 space-y-6">
@@ -182,7 +252,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                        <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5" />
                        <div className="font-medium">{log.action.replace(/_/g, ' ')}</div>
                        <div className="text-sm text-muted-foreground mt-0.5">{format(new Date(log.createdAt), "MMM do, yyyy h:mm a")}</div>
-                       <div className="text-sm mt-2 p-2 bg-muted rounded-md font-mono text-xs">
+                       <div className="text-sm mt-2 p-2 bg-muted rounded-md font-mono text-xs overflow-x-auto max-w-[320px] sm:max-w-full">
                          {JSON.stringify(log.details)}
                        </div>
                      </div>

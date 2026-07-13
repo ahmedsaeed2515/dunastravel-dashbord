@@ -9,6 +9,7 @@ export const communicationsKeys = {
   logs: (filters: NotificationDeliveryLogQueryFilters) => [...communicationsKeys.all, "logs", filters] as const,
   inquiries: (filters: any) => [...communicationsKeys.all, "inquiries", filters] as const,
   templates: () => [...communicationsKeys.all, "templates"] as const,
+  contactSubmissions: (filters: any) => [...communicationsKeys.all, "contactSubmissions", filters] as const,
 };
 
 export function useCommunicationMetrics() {
@@ -69,5 +70,64 @@ export function useTemplates() {
   return useQuery({
     queryKey: communicationsKeys.templates(),
     queryFn: () => communicationsApi.getTemplates(),
+  });
+}
+
+export function useCreateTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: any) => communicationsApi.createTemplate(data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
+      toast.success("Template created successfully.");
+    },
+    onError: () => toast.error("Failed to create template."),
+  });
+}
+
+export function useUpdateTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: any }) => communicationsApi.updateTemplate(id, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
+      toast.success("Template updated successfully.");
+    },
+    onError: () => toast.error("Failed to update template."),
+  });
+}
+
+export function useDeleteTemplate() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => communicationsApi.deleteTemplate(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
+      toast.success("Template deleted successfully.");
+    },
+    onError: () => toast.error("Failed to delete template."),
+  });
+}
+
+export function useContactSubmissions(filters: any) {
+  return useQuery({
+    queryKey: communicationsKeys.contactSubmissions(filters),
+    queryFn: () => communicationsApi.getContactSubmissions(filters),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useUpdateContactSubmissionStatus() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, status }: { referenceCode: string, status: string }) => 
+      communicationsApi.updateContactSubmissionStatus(referenceCode, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["communications", "contactSubmissions"] });
+      toast.success("Submission status updated successfully.");
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || "Failed to update submission status.");
+    },
   });
 }

@@ -34,9 +34,9 @@ export function OperationsSection() {
         <CardContent>
           {data?.general?.recentFailedNotifications?.length ? (
             <Timeline>
-              {data.general.recentFailedNotifications.map((log, idx) => (
+              {data.general.recentFailedNotifications.map((log: any, idx: number) => (
                 <TimelineItem
-                  key={log.id}
+                  key={log.id || idx}
                   icon={<AlertOctagon className="w-4 h-4 text-destructive" />}
                   title={`Failed: ${log.subject}`}
                   description={`Recipient: ${log.recipient}`}

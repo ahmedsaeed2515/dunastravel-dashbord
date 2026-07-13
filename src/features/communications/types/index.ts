@@ -61,3 +61,22 @@ export interface InquiryQueryFilters {
   status?: string;
   assigneeId?: string;
 }
+
+export interface EmailTemplate {
+  id: string;
+  name: string;
+  subject: string;
+  bodyHtml: string;
+  variables: string[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateEmailTemplatePayload {
+  name: string;
+  subject: string;
+  bodyHtml: string;
+  variables?: string[];
+}
+
+export interface UpdateEmailTemplatePayload extends Partial<CreateEmailTemplatePayload> {}

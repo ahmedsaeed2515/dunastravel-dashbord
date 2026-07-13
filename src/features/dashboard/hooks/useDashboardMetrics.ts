@@ -14,7 +14,8 @@ export function useDashboardMetrics() {
         wallets,
         crm,
         companies,
-        communications
+        communications,
+        currencies
       ] = await Promise.all([
         dashboardApi.getMetrics().catch(() => null),
         apiClient.get('/admin/tours/stats').catch(() => null),
@@ -22,17 +23,19 @@ export function useDashboardMetrics() {
         apiClient.get('/admin/finance/wallets/metrics').catch(() => null),
         apiClient.get('/admin/users/crm/metrics').catch(() => null),
         apiClient.get('/admin/companies/metrics').catch(() => null),
-        apiClient.get('/admin/communications/logs/metrics').catch(() => null)
+        apiClient.get('/admin/communications/logs/metrics').catch(() => null),
+        apiClient.get('/admin/currency/rates').catch(() => null)
       ]);
 
       return {
-        general,
+        general: (general as any)?.data,
         tours: tours?.data,
         commissions: commissions?.data,
         wallets: wallets?.data,
         crm: crm?.data,
         companies: companies?.data,
-        communications: communications?.data
+        communications: communications?.data,
+        currencies: currencies?.data
       };
     },
     staleTime: 1000 * 60 * 2, // 2 minutes

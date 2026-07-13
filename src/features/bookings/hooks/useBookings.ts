@@ -120,3 +120,60 @@ export function useSoftDeleteBooking() {
     },
   });
 }
+
+export function useRestoreBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (referenceCode: string) => bookingsApi.restoreBooking(referenceCode),
+    onSuccess: (data, referenceCode) => {
+      toast.success("Booking restored successfully");
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings", referenceCode] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to restore booking");
+    },
+  });
+}
+
+export function useAddPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, data }: { referenceCode: string, data: any }) => bookingsApi.addPayment(referenceCode, data),
+    onSuccess: (_, variables) => {
+      toast.success("Payment added successfully");
+      queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to add payment");
+    },
+  });
+}
+
+export function useAddNote() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, data }: { referenceCode: string, data: any }) => bookingsApi.addNote(referenceCode, data),
+    onSuccess: (_, variables) => {
+      toast.success("Note added successfully");
+      queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to add note");
+    },
+  });
+}
+
+export function useAddAttachment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, data }: { referenceCode: string, data: any }) => bookingsApi.addAttachment(referenceCode, data),
+    onSuccess: (_, variables) => {
+      toast.success("Attachment uploaded successfully");
+      queryClient.invalidateQueries({ queryKey: ["bookings", variables.referenceCode] });
+    },
+    onError: (error: any) => {
+      toast.error(error?.response?.data?.message || error?.message || "Failed to upload attachment");
+    },
+  });
+}

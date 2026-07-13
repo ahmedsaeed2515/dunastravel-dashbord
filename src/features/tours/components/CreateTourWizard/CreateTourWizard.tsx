@@ -195,7 +195,7 @@ export function CreateTourWizard() {
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">Category</Label>
-                    <Select value={category} onValueChange={(val) => setCategory(val || "ADVENTURE")}>
+                    <Select value={category} onValueChange={(val) => val && setCategory(val)}>
                       <SelectTrigger><SelectValue placeholder="Select Category" /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="ADVENTURE">Adventure & Safari</SelectItem>

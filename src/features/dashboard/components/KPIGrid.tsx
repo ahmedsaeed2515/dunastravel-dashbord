@@ -18,18 +18,24 @@ export function KPIGrid() {
 
   // Calculate trends gracefully if data is missing, we use stub trends since backend doesn't provide it yet
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5 mb-8">
+    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
       <StatisticCard
-        title="Total Revenue"
-        value="$--"
-        icon={<DollarSign />}
-        description="Pending backend integration"
+        title="Total Tours"
+        value={data?.tours?.totalTours || 0}
+        icon={<Ticket />} // Alternatively use a different icon if available, Map or similar
+        description={`${data?.tours?.publishedTours || 0} published`}
       />
       <StatisticCard
         title="Total Bookings"
         value={data?.general?.totalBookings || 0}
         icon={<Ticket />}
         description={`${data?.general?.bookingsThisMonth || 0} this month`}
+      />
+      <StatisticCard
+        title="Occupancy Rate"
+        value={`${data?.tours?.occupancyRate || 0}%`}
+        icon={<Users />}
+        description={`${data?.tours?.totalCapacity || 0} total capacity`}
       />
       <StatisticCard
         title="Open Inquiries"

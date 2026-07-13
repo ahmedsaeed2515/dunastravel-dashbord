@@ -52,5 +52,33 @@ export const bookingsApi = {
       responseType: 'blob' 
     });
     return response as any;
+  },
+
+  restoreBooking: async (referenceCode: string): Promise<Booking> => {
+    const response = await apiClient.post<Booking>(`/admin/bookings/${referenceCode}/restore`);
+    return response as any;
+  },
+
+  addPayment: async (referenceCode: string, data: any): Promise<any> => {
+    const response = await apiClient.post(`/admin/bookings/${referenceCode}/payments`, data);
+    return response as any;
+  },
+
+  addNote: async (referenceCode: string, data: any): Promise<any> => {
+    const response = await apiClient.post(`/admin/bookings/${referenceCode}/notes`, data);
+    return response as any;
+  },
+
+  addAttachment: async (referenceCode: string, data: any): Promise<any> => {
+    const formData = new FormData();
+    formData.append("file", data.file);
+    if (data.documentType) formData.append("documentType", data.documentType);
+
+    const response = await apiClient.post(`/admin/bookings/${referenceCode}/attachments`, formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+    return response as any;
   }
 };

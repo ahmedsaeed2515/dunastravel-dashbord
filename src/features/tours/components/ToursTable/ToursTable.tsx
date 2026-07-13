@@ -13,6 +13,7 @@ import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
 import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
+import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import { Button } from "@/components/ui/button";
 import { 
@@ -60,8 +61,7 @@ export function ToursTable() {
   
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
-    // Open drawer or wizard in edit mode
-    setViewDrawerOpen(true); 
+    setEditDrawerOpen(true); 
   };
 
   const handleDelete = async (tour: Tour) => {
@@ -265,6 +265,12 @@ export function ToursTable() {
         tour={selectedTour}
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
+      />
+      
+      <EditTourDrawer
+        tour={selectedTour}
+        open={isEditDrawerOpen}
+        onOpenChange={setEditDrawerOpen}
       />
     </div>
   );

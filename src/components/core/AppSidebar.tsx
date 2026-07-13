@@ -30,7 +30,8 @@ import {
   ShieldCheck,
   Bot,
   BellRing,
-  ClipboardList
+  ClipboardList,
+  Tag
 } from "lucide-react";
 import { authApi } from "@/features/auth/api/auth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -95,6 +96,12 @@ export function AppSidebar() {
                   <SidebarMenuButton render={<Link href="/admin/tours" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/tours")} tooltip="Tours & Products">
                     <Map />
                     <span>Tours & Products</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton render={<Link href="/admin/promotions" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/promotions")} tooltip="Promotions">
+                    <Tag />
+                    <span>Promotions</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -176,6 +183,12 @@ export function AppSidebar() {
                   <SidebarMenuButton render={<Link href="/admin/companies" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/companies")} tooltip="Companies">
                     <Building2 />
                     <span>Companies</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton render={<Link href="/admin/agents" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/agents")} tooltip="Agents">
+                    <Users />
+                    <span>Agents</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

@@ -89,3 +89,21 @@ export interface BulkUpdateBookingsPayload {
   assigneeId?: string | null;
   priority?: string;
 }
+
+export interface AddPaymentPayload {
+  amount: number;
+  currency: string;
+  paymentMethod: string;
+  referenceNumber?: string;
+  notes?: string;
+}
+
+export interface AddNotePayload {
+  content: string;
+  isInternal: boolean;
+}
+
+export interface AddAttachmentPayload {
+  file: File;
+  documentType: string;
+}

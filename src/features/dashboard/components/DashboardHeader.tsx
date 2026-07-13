@@ -14,7 +14,7 @@ export function DashboardHeader() {
     <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
       <div>
         <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-3">
-          Welcome back, {user?.firstName || 'Executive'}
+          Welcome back, {user?.name?.split(' ')[0] || 'Executive'}
           {user?.role && (
             <Badge variant="secondary" className="text-xs tracking-wider border-primary/20 text-primary">
               {user.role}
