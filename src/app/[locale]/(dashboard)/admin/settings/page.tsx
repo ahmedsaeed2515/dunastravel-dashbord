@@ -15,6 +15,8 @@ export default function SettingsPage() {
   const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
   const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
   const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
+  
+  return (
     <RequirePermission action="manage" resource="settings">
       <div className="flex-1 space-y-6 p-8 pt-6">
         <div className="flex items-center justify-between space-y-2 mb-8">
@@ -99,6 +101,8 @@ export default function SettingsPage() {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
         <TabsContent value="authentication" className="m-0">
           <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
             <CardHeader>
