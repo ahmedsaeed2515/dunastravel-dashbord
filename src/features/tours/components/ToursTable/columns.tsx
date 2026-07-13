@@ -5,7 +5,8 @@ import { Tour } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
-import { Star, Eye, Globe } from "lucide-react";
+import { Star } from "lucide-react";
+import { TourRowActions } from "./TourRowActions";
 
 export function getColumns(
   onView: (tour: Tour) => void,
@@ -109,7 +110,6 @@ export function getColumns(
     {
       id: "actions",
       cell: ({ row }) => {
-        const { TourRowActions } = require("./TourRowActions");
         return (
           <TourRowActions
             tour={row.original}

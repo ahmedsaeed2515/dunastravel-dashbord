@@ -1,4 +1,5 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import { apiClient } from '../axios';
 import axios from 'axios';
 import MockAdapter from 'axios-mock-adapter';

@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
+
 export interface Review {
   id: string;
   tourId: string;

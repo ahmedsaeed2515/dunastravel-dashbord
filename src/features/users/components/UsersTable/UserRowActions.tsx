@@ -1,6 +1,5 @@
 "use client";
 
-import { useState } from "react";
 import { User } from "../../types";
 import { MoreHorizontal, Edit, Trash, Eye } from "lucide-react";
 import { Button } from "@/components/ui/button";

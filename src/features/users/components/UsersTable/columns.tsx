@@ -5,6 +5,7 @@ import { User } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
+import { UserRowActions } from "./UserRowActions";
 
 export function getColumns(
   onView: (user: User) => void,
@@ -57,8 +58,6 @@ export function getColumns(
     {
       id: "actions",
       cell: ({ row }) => {
-        // Dynamic import to avoid circular dependency in columns definition
-        const { UserRowActions } = require("./UserRowActions");
         return (
           <UserRowActions
             user={row.original}

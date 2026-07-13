@@ -20,9 +20,9 @@ export function useDashboardMetrics() {
         apiClient.get('/admin/tours/stats').catch(() => null),
         apiClient.get('/admin/finance/commissions/metrics').catch(() => null),
         apiClient.get('/admin/finance/wallets/metrics').catch(() => null),
-        apiClient.get('/admin/users/metrics').catch(() => null),
+        apiClient.get('/admin/users/crm/metrics').catch(() => null),
         apiClient.get('/admin/companies/metrics').catch(() => null),
-        apiClient.get('/admin/communications/metrics').catch(() => null)
+        apiClient.get('/admin/communications/logs/metrics').catch(() => null)
       ]);
 
       return {

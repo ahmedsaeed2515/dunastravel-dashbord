@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type TourStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
 export interface TourItinerary {

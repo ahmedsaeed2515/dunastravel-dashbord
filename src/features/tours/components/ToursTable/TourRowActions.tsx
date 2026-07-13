@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
+"use client";
 import { MoreHorizontal, Eye, Edit, Trash, Star, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {

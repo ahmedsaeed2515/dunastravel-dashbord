@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -30,7 +31,7 @@ export function RequirePermission({
       <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
         <h1 className="text-4xl font-display font-bold text-destructive">403 Forbidden</h1>
         <p className="text-xl text-muted-foreground">You do not have permission to access this page.</p>
-        <a href="/dashboard" className="text-primary hover:underline">Return to Dashboard</a>
+        <Link href="/dashboard" className="text-primary hover:underline">Return to Dashboard</Link>
       </div>
     );
   }

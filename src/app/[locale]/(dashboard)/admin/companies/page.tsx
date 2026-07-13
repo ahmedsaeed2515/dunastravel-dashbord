@@ -4,6 +4,9 @@ import { useState } from "react";
 import { CompanyMetricsBanner } from "@/features/companies/components/CompanyMetricsBanner";
 import { CompaniesTable } from "@/features/companies/components/CompaniesTable";
 import { CompanyProfileDrawer } from "@/features/companies/components/CompanyProfileDrawer";
+import { CreateCompanyDialog } from "@/features/companies/components/CreateCompanyDialog";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { useCompanies } from "@/features/companies/hooks/useCompanies";
 import { Company, CompanyQueryFilters } from "@/features/companies/types";
 
@@ -16,8 +19,9 @@ export default function CompaniesPage() {
   });
   
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
+  const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const { data, isLoading } = useCompanies(filters);
+  const { data, isLoading, refetch } = useCompanies(filters);
 
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
@@ -29,6 +33,10 @@ export default function CompaniesPage() {
             Manage corporate accounts, travel agencies, contracts, and commission ledgers.
           </p>
         </div>
+        <Button onClick={() => setIsCreateOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add Company
+        </Button>
       </div>
 
       {/* Live Statistics */}
@@ -49,6 +57,12 @@ export default function CompaniesPage() {
         company={selectedCompany}
         isOpen={!!selectedCompany}
         onClose={() => setSelectedCompany(null)}
+      />
+
+      <CreateCompanyDialog 
+        isOpen={isCreateOpen} 
+        onClose={() => setIsCreateOpen(false)} 
+        onSuccess={() => refetch()} 
       />
     </div>
   );
