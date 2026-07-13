@@ -21,9 +21,9 @@ export default function DashboardLayout({
         </div>
         
         {/* Floating Currency Widget */}
-        <div className="fixed bottom-6 right-6 z-50">
+        {/* <div className="fixed bottom-6 right-6 z-50">
           <CurrencyConverterWidget />
-        </div>
+        </div> */}
       </main>
     </SidebarProvider>
   );
