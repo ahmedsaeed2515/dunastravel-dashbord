@@ -21,6 +21,7 @@ export default function LoginPage() {
 
     try {
       await authApi.login({ email, password });
+      document.cookie = "is_authenticated=true; path=/; max-age=604800"; // 7 days
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || "Invalid credentials");

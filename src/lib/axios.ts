@@ -98,6 +98,7 @@ apiClient.interceptors.response.use(
       // Prevent infinite loops and don't try to refresh on the refresh or login endpoint itself
       if (originalRequest.url.includes('/auth/refresh') || originalRequest.url.includes('/auth/login')) {
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          document.cookie = "is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
           window.location.href = '/login';
         }
         return Promise.reject(customError);
@@ -132,6 +133,7 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           onRefreshed(false);
           if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+            document.cookie = "is_authenticated=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
             window.location.href = '/login';
           }
           return Promise.reject(customError);

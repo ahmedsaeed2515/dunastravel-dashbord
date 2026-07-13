@@ -9,9 +9,7 @@ export default function middleware(req: NextRequest) {
   // First run the intl middleware to handle locale routing
   const response = intlMiddleware(req);
 
-  const accessToken = req.cookies.get('access_token');
-  const refreshToken = req.cookies.get('refresh_token');
-  const hasAuth = !!(accessToken || refreshToken);
+  const hasAuth = !!req.cookies.get('is_authenticated');
   
   const pathname = req.nextUrl.pathname;
   
