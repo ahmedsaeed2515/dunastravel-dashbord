@@ -6,12 +6,13 @@ import { authApi } from "@/features/auth/api/auth";
 export type Role = 'USER' | 'COMPANY' | 'AGENT' | 'ADMIN' | 'SUPER_ADMIN';
 
 export function usePermissions() {
-  const { data: user, isLoading } = useQuery({
+  const { data: userRaw, isLoading } = useQuery({
     queryKey: ['me'],
     queryFn: authApi.getMe,
     staleTime: 1000 * 60 * 5, // Cache for 5 mins
   });
 
+  const user = userRaw?.data || userRaw;
   const role = user?.role as Role | undefined;
 
   const isSuperAdmin = role === 'SUPER_ADMIN';
