@@ -1,11 +1,11 @@
-import axios from '@/lib/axios';
+import { apiClient } from '@/lib/axios';
 
 export const getSetting = async (key: string) => {
-  const { data } = await axios.get(`/settings/${key}`);
+  const { data } = await apiClient.get(`/settings/${key}`);
   return data;
 };
 
 export const updateSetting = async (key: string, value: any) => {
-  const { data } = await axios.put(`/settings/${key}`, { value });
+  const { data } = await apiClient.put(`/settings/${key}`, { value });
   return data;
 };
