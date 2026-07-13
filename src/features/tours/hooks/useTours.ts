@@ -131,7 +131,7 @@ export function useAddTourImage() {
   });
 }
 
-export function useRemoveTourImage() {
+  export function useRemoveTourImage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: ({ slug, imageId }: { slug: string; imageId: string }) => toursApi.removeTourImage(slug, imageId),
@@ -140,5 +140,16 @@ export function useRemoveTourImage() {
       queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
     },
     onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to remove image"),
+  });
+}
+
+export function useReorderTourImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, imageId, data }: { slug: string; imageId: string; data: { newOrder: number } }) => toursApi.reorderTourImage(slug, imageId, data),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["tours", variables.slug] });
+    },
+    onError: (error: any) => toast.error(error?.response?.data?.message || error?.message || "Failed to reorder image"),
   });
 }

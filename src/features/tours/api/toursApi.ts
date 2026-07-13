@@ -69,5 +69,10 @@ export const toursApi = {
   removeTourImage: async (slug: string, imageId: string): Promise<any> => {
     const response = await apiClient.delete(`/admin/tours/${slug}/images/${imageId}`);
     return response as any;
+  },
+
+  reorderTourImage: async (slug: string, imageId: string, data: { newOrder: number }): Promise<any> => {
+    const response = await apiClient.patch(`/admin/tours/${slug}/images/${imageId}/reorder`, data);
+    return response as any;
   }
 };

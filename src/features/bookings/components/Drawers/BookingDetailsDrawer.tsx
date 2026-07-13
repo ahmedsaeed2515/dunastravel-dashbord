@@ -8,8 +8,13 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
-import { useRestoreBooking, useAddPayment, useAddNote, useAddAttachment } from "../../hooks/useBookings";
+import { useRestoreBooking } from "../../hooks/useBookings";
 import { FileText, RefreshCcw, Paperclip, Plus, CreditCard } from "lucide-react";
+import { useState } from "react";
+import { AddPaymentDialog } from "../Dialogs/AddPaymentDialog";
+import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
+import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
+import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
 
 interface BookingDetailsDrawerProps {
   booking: Booking | null;
@@ -19,6 +24,10 @@ interface BookingDetailsDrawerProps {
 
 export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDetailsDrawerProps) {
   const { mutate: restoreBooking, isPending: isRestoring } = useRestoreBooking();
+  const [paymentOpen, setPaymentOpen] = useState(false);
+  const [noteOpen, setNoteOpen] = useState(false);
+  const [attachmentOpen, setAttachmentOpen] = useState(false);
+  const [passengerOpen, setPassengerOpen] = useState(false);
 
   if (!booking) return null;
 
@@ -150,6 +159,9 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="passengers" className="space-y-4">
+               <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPassengerOpen(true)}>Edit Passengers</Button>
+               </div>
               {booking.passengers && booking.passengers.length > 0 ? (
                 booking.passengers.map((p, i) => (
                   <div key={p.id || i} className="border rounded-lg p-4 space-y-2">
@@ -174,8 +186,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
 
             <TabsContent value="payments" className="space-y-4">
                <div className="flex justify-end mb-2">
-                 {/* In a real app this opens a modal; here just a disabled button as a placeholder for the wiring */}
-                 <Button variant="outline" size="sm" className="gap-2"><CreditCard className="w-4 h-4"/> Add Payment</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPaymentOpen(true)}><CreditCard className="w-4 h-4"/> Add Payment</Button>
                </div>
                {booking.payments && booking.payments.length > 0 ? (
                 booking.payments.map((p: any, i: number) => (
@@ -198,8 +209,8 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="notes" className="space-y-4">
-              <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2"><Plus className="w-4 h-4"/> Add Note</Button>
+               <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setNoteOpen(true)}><Plus className="w-4 h-4"/> Add Note</Button>
                </div>
                {booking.notes && booking.notes.length > 0 ? (
                 booking.notes.map((n: any, i: number) => (
@@ -222,8 +233,8 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4">
-              <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2"><Paperclip className="w-4 h-4"/> Upload File</Button>
+               <div className="flex justify-end mb-2">
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setAttachmentOpen(true)}><Paperclip className="w-4 h-4"/> Upload File</Button>
                </div>
                {booking.attachments && booking.attachments.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -267,6 +278,28 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
           </ScrollArea>
         </Tabs>
       </SheetContent>
+
+      <AddPaymentDialog 
+        referenceCode={booking.referenceCode} 
+        open={paymentOpen} 
+        onOpenChange={setPaymentOpen} 
+      />
+      <AddNoteDialog 
+        referenceCode={booking.referenceCode} 
+        open={noteOpen} 
+        onOpenChange={setNoteOpen} 
+      />
+      <AddAttachmentDialog 
+        referenceCode={booking.referenceCode} 
+        open={attachmentOpen} 
+        onOpenChange={setAttachmentOpen} 
+      />
+      <EditPassengersDialog
+        referenceCode={booking.referenceCode}
+        initialPassengers={booking.passengers || []}
+        open={passengerOpen}
+        onOpenChange={setPassengerOpen}
+      />
     </Sheet>
   );
 }

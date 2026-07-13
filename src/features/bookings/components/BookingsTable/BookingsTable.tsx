@@ -128,12 +128,10 @@ export function BookingsTable() {
 
         {referenceCodes.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger render={
-              <Button variant="secondary" size="sm" className="h-8 shadow-sm flex items-center gap-1.5">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                <span>Bulk Actions ({referenceCodes.length})</span>
-              </Button>
-            } />
+            <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-8 px-3 gap-1.5">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span>Bulk Actions ({referenceCodes.length})</span>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuLabel>Set Status</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("CONFIRMED")}>

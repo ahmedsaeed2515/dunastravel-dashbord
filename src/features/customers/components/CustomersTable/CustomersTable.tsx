@@ -106,12 +106,10 @@ export function CustomersTable() {
       <div className="flex items-center gap-2">
         {userIds.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger render={
-              <Button variant="secondary" size="sm" className="h-8 shadow-sm flex items-center gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
-                <CheckSquare className="h-4 w-4" />
-                <span>Bulk Actions ({userIds.length})</span>
-              </Button>
-            } />
+            <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 px-3 shadow-sm flex items-center gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
+              <CheckSquare className="h-4 w-4" />
+              <span>Bulk Actions ({userIds.length})</span>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
               <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">Assign Segment</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkSegment("VIP Luxury")}>

@@ -1,11 +1,17 @@
 "use client";
 
-import { useWalletTransactions, useWallet } from "../hooks/useFinance";
+import { useState } from "react";
+import { useWalletTransactions, useWallet, useAddManualTransaction } from "../hooks/useFinance";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { format } from "date-fns";
-import { ArrowDownRight, ArrowUpRight, Landmark } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Landmark, Plus, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { toast } from "sonner";
 
 interface WalletLedgerProps {
   ownerType: 'USER' | 'COMPANY';
@@ -15,6 +21,32 @@ interface WalletLedgerProps {
 export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
   const { data: wallet, isLoading: walletLoading } = useWallet(ownerType, ownerId);
   const { data: transactions, isLoading: txLoading } = useWalletTransactions(wallet?.id || "", { enabled: !!wallet?.id });
+  const addTransaction = useAddManualTransaction();
+
+  // Dialog state
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [amount, setAmount] = useState("");
+  const [type, setType] = useState("CREDIT");
+  const [description, setDescription] = useState("");
+  
+  const handleAddTransaction = async () => {
+    if (!amount || isNaN(Number(amount))) return;
+    try {
+      await addTransaction.mutateAsync({
+        ownerType,
+        ownerId,
+        amount: Number(amount),
+        type,
+        description
+      });
+      setIsDialogOpen(false);
+      setAmount("");
+      setDescription("");
+      toast.success("Manual transaction added successfully");
+    } catch (e: any) {
+      toast.error("Failed to add transaction");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -37,8 +69,12 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
       </Card>
 
       <Card className="border-border/40 shadow-sm">
-        <CardHeader>
+        <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base">Transaction History</CardTitle>
+          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
+            <Plus className="h-3.5 w-3.5" />
+            Add Transaction
+          </Button>
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
@@ -91,6 +127,54 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
           </div>
         </CardContent>
       </Card>
+
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add Manual Transaction</DialogTitle>
+          </DialogHeader>
+          <div className="grid gap-4 py-4">
+            <div className="grid grid-cols-4 items-center gap-4">
+              <span className="text-right text-sm">Type</span>
+              <Select value={type} onValueChange={(val: any) => setType(val || "CREDIT")}>
+                <SelectTrigger className="col-span-3">
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="CREDIT">Credit (+)</SelectItem>
+                  <SelectItem value="DEBIT">Debit (-)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <span className="text-right text-sm">Amount</span>
+              <Input
+                type="number"
+                value={amount}
+                onChange={(e) => setAmount(e.target.value)}
+                placeholder="0.00"
+                className="col-span-3"
+              />
+            </div>
+            <div className="grid grid-cols-4 items-center gap-4">
+              <span className="text-right text-sm">Description</span>
+              <Input
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="e.g., Refund or manual adjustment"
+                className="col-span-3"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleAddTransaction} disabled={addTransaction.isPending || !amount}>
+              {addTransaction.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Save Transaction
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
