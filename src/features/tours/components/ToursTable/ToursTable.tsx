@@ -254,7 +254,7 @@ export function ToursTable() {
         data={data?.data || []}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={data?.meta?.totalPages || -1}
+        pageCount={data?.totalPages || -1}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}
