@@ -8,9 +8,16 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
 import { FileText, LayoutTemplate, Search, Plus, ExternalLink, Save, Loader2 } from "lucide-react";
 import { useContentBlocks, useUpdateContentBlock } from "@/features/content/hooks/useContent";
+import { ContentBlock } from "@/features/content/types";
 
 export default function ContentPage() {
-  const { data: blocks, isLoading } = useContentBlocks();
+  const { data: rawBlocks, isLoading } = useContentBlocks();
+  const blocks: ContentBlock[] = Array.isArray(rawBlocks) 
+    ? rawBlocks 
+    : (rawBlocks as any)?.data && Array.isArray((rawBlocks as any).data) 
+    ? (rawBlocks as any).data 
+    : [];
+
   const updateBlock = useUpdateContentBlock();
 
   const [seoForm, setSeoForm] = useState({
@@ -26,9 +33,9 @@ export default function ContentPage() {
     });
   };
 
-  // Extract from blocks if available
-  const seoBlock = blocks?.find(b => b.key === "global_seo");
-  // We sync local state when block loads but skipping effect for brevity, using defaults is fine if no block.
+  // Safely extract from blocks array
+  const seoBlock = blocks.find(b => b?.key === "global_seo");
+
   return (
     <div className="flex-1 space-y-6 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2 mb-8">
@@ -48,60 +55,74 @@ export default function ContentPage() {
 
       <Tabs defaultValue="pages" className="space-y-6">
         <TabsList className="bg-background/60 backdrop-blur-md border border-border/50">
-          <TabsTrigger value="pages" className="gap-2"><FileText className="h-4 w-4" /> Dynamic Pages</TabsTrigger>
+          <TabsTrigger value="pages" className="gap-2"><FileText className="h-4 w-4" /> Dynamic Pages & Blocks</TabsTrigger>
           <TabsTrigger value="seo" className="gap-2"><Search className="h-4 w-4" /> Global SEO</TabsTrigger>
         </TabsList>
 
         <TabsContent value="pages" className="m-0">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <Card className="hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                    <FileText className="h-5 w-5" />
-                  </div>
-                </div>
-                <CardTitle className="text-lg">Terms & Conditions</CardTitle>
-                <CardDescription>/legal/terms</CardDescription>
-              </CardHeader>
-              <CardContent className="flex gap-2">
-                <Button variant="outline" className="flex-1">Edit Content</Button>
-                <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
-              </CardContent>
-            </Card>
+          {isLoading ? (
+            <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
+              <Loader2 className="h-6 w-6 animate-spin text-primary" />
+              <span>Loading CMS content blocks...</span>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {blocks.map((block) => (
+                <Card key={block.id || block.key} className="hover:border-primary/50 transition-colors">
+                  <CardHeader>
+                    <div className="flex justify-between items-start mb-2">
+                      <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                        <FileText className="h-5 w-5" />
+                      </div>
+                    </div>
+                    <CardTitle className="text-lg font-mono">{block.key}</CardTitle>
+                    <CardDescription className="truncate font-sans">
+                      {typeof block.content === 'object' 
+                        ? (block.content?.en || JSON.stringify(block.content)) 
+                        : String(block.content || "")}
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex gap-2">
+                    <Button variant="outline" className="flex-1">Edit Content</Button>
+                    <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
+                  </CardContent>
+                </Card>
+              ))}
 
-            <Card className="hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                    <FileText className="h-5 w-5" />
+              {/* Standard Page Templates */}
+              <Card className="hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
                   </div>
-                </div>
-                <CardTitle className="text-lg">Privacy Policy</CardTitle>
-                <CardDescription>/legal/privacy</CardDescription>
-              </CardHeader>
-              <CardContent className="flex gap-2">
-                <Button variant="outline" className="flex-1">Edit Content</Button>
-                <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
-              </CardContent>
-            </Card>
+                  <CardTitle className="text-lg">Terms & Conditions</CardTitle>
+                  <CardDescription>/legal/terms</CardDescription>
+                </CardHeader>
+                <CardContent className="flex gap-2">
+                  <Button variant="outline" className="flex-1">Edit Content</Button>
+                  <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
+                </CardContent>
+              </Card>
 
-            <Card className="hover:border-primary/50 transition-colors">
-              <CardHeader>
-                <div className="flex justify-between items-start mb-2">
-                  <div className="p-2 bg-primary/10 rounded-xl text-primary">
-                    <FileText className="h-5 w-5" />
+              <Card className="hover:border-primary/50 transition-colors">
+                <CardHeader>
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="p-2 bg-primary/10 rounded-xl text-primary">
+                      <FileText className="h-5 w-5" />
+                    </div>
                   </div>
-                </div>
-                <CardTitle className="text-lg">About Us</CardTitle>
-                <CardDescription>/about</CardDescription>
-              </CardHeader>
-              <CardContent className="flex gap-2">
-                <Button variant="outline" className="flex-1">Edit Content</Button>
-                <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
-              </CardContent>
-            </Card>
-          </div>
+                  <CardTitle className="text-lg">Privacy Policy</CardTitle>
+                  <CardDescription>/legal/privacy</CardDescription>
+                </CardHeader>
+                <CardContent className="flex gap-2">
+                  <Button variant="outline" className="flex-1">Edit Content</Button>
+                  <Button variant="ghost" size="icon"><ExternalLink className="h-4 w-4 text-muted-foreground" /></Button>
+                </CardContent>
+              </Card>
+            </div>
+          )}
         </TabsContent>
 
         <TabsContent value="seo" className="m-0">

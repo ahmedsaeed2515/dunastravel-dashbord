@@ -3,16 +3,20 @@ import { ContentBlock, UpdateContentBlockDto } from "../types";
 
 export const contentApi = {
   getBlocks: async (): Promise<ContentBlock[]> => {
-    const response = await apiClient.get("/admin/cms");
-    return response as any;
+    const response: any = await apiClient.get("/admin/cms");
+    if (Array.isArray(response)) return response;
+    if (response && typeof response === "object" && "data" in response && Array.isArray(response.data)) {
+      return response.data;
+    }
+    return [];
   },
   getBlockByKey: async (key: string): Promise<ContentBlock> => {
-    const response = await apiClient.get(`/admin/cms/${key}`);
-    return response as any;
+    const response: any = await apiClient.get(`/admin/cms/${key}`);
+    return (response && typeof response === "object" && "data" in response) ? response.data : response;
   },
   
   updateBlock: async (key: string, payload: UpdateContentBlockDto): Promise<ContentBlock> => {
-    const response = await apiClient.patch(`/admin/cms/${key}`, payload);
-    return response as any;
+    const response: any = await apiClient.patch(`/admin/cms/${key}`, payload);
+    return (response && typeof response === "object" && "data" in response) ? response.data : response;
   }
 };

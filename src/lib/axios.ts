@@ -105,15 +105,20 @@ apiClient.interceptors.response.use(
       ? raw.data
       : null;
 
-    // Step 3: Extract pagination metadata from body or raw
-    const total = typeof body.total === 'number'
-      ? body.total
-      : typeof body.meta?.total === 'number'
-      ? body.meta.total
-      : typeof raw.meta?.total === 'number'
-      ? raw.meta.total
-      : typeof raw.total === 'number'
-      ? raw.total
+    // Step 3: Check for explicit pagination metadata from body or raw
+    const hasExplicitTotal = typeof body.total === 'number'
+      || typeof body.meta?.total === 'number'
+      || typeof raw.meta?.total === 'number'
+      || typeof raw.total === 'number';
+
+    const total = hasExplicitTotal
+      ? (typeof body.total === 'number'
+        ? body.total
+        : typeof body.meta?.total === 'number'
+        ? body.meta.total
+        : typeof raw.meta?.total === 'number'
+        ? raw.meta.total
+        : raw.total)
       : (items ? items.length : undefined);
 
     const page = typeof body.page === 'number'
@@ -140,8 +145,8 @@ apiClient.interceptors.response.use(
       ? raw.meta.totalPages
       : (total !== undefined && limit > 0 ? Math.ceil(total / limit) : 1);
 
-    // Step 4: If items is an array and total is defined, return standard paginated contract { data: items, meta: { total, page, limit, totalPages } }
-    if (items !== null && total !== undefined) {
+    // Step 4: If items is an array and endpoint has explicit pagination, return { data: items, meta: {...} }
+    if (items !== null && hasExplicitTotal) {
       return {
         data: items,
         meta: {
@@ -153,7 +158,12 @@ apiClient.interceptors.response.use(
       };
     }
 
-    // Step 5: If body has a single item / object payload in body.data, return body.data
+    // Step 5: If items is a non-paginated array, return items array directly
+    if (items !== null) {
+      return items;
+    }
+
+    // Step 6: If body has a single item / object payload in body.data, return body.data
     if ('data' in body && body.data !== undefined) {
       return body.data;
     }
