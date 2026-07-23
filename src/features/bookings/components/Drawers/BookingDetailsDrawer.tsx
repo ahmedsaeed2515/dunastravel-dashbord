@@ -22,7 +22,7 @@ interface BookingDetailsDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
-const formatDateSafe = (dateStr?: string, fmt = "MMM do, yyyy") => {
+const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
   if (!dateStr) return "N/A";
   try {
     const d = new Date(dateStr);
