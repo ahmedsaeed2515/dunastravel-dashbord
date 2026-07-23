@@ -36,7 +36,7 @@ export function BookingsTable() {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...(search ? { search } : {}),
-    ...(statusFilter ? { status: statusFilter } : {})
+    ...(statusFilter && statusFilter !== "ALL" ? { status: statusFilter } : {})
   };
   
   const { data, isLoading } = useBookings(queryFilters);

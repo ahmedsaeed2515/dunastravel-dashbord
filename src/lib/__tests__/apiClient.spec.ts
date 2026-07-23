@@ -27,6 +27,60 @@ describe('apiClient Interceptors', () => {
     }
   });
 
+  it('unwraps confirmed Bookings raw response structure into clean { data, meta } contract', () => {
+    const successInterceptor = (apiClient.interceptors.response as any).handlers[0].fulfilled;
+    const rawResponse = {
+      data: {
+        data: {
+          success: true,
+          statusCode: 200,
+          data: [
+            {
+              id: "2763530b-eb78-4287-9a8f-4c54449a3c08",
+              referenceCode: "BKG-COMP-NKA94T",
+              status: "CANCELLED",
+              totalAmount: "1780",
+              currency: "USD",
+              passengerCount: 2,
+              tourId: "98cb34f1-ec69-4ecf-9ebc-c98d72fd66c8",
+              tourSlug: "cairo-express-4d",
+              tourNameEn: "Cairo Express",
+              invoiceNumber: null,
+              createdAt: "2026-07-13T20:59:28.654Z"
+            }
+          ],
+          total: 60,
+          page: 1,
+          limit: 10,
+          totalPages: 6,
+          timestamp: "2026-07-23T18:56:31.593Z"
+        },
+        meta: {
+          timestamp: "2026-07-23T18:56:31.593Z"
+        }
+      }
+    };
+    const result = successInterceptor(rawResponse);
+    expect(result).toEqual({
+      data: [
+        {
+          id: "2763530b-eb78-4287-9a8f-4c54449a3c08",
+          referenceCode: "BKG-COMP-NKA94T",
+          status: "CANCELLED",
+          totalAmount: "1780",
+          currency: "USD",
+          passengerCount: 2,
+          tourId: "98cb34f1-ec69-4ecf-9ebc-c98d72fd66c8",
+          tourSlug: "cairo-express-4d",
+          tourNameEn: "Cairo Express",
+          invoiceNumber: null,
+          createdAt: "2026-07-13T20:59:28.654Z"
+        }
+      ],
+      meta: { total: 60, page: 1, limit: 10, totalPages: 6 }
+    });
+  });
+
   it('unwraps paginated NestJS response while preserving meta metadata', () => {
     const successInterceptor = (apiClient.interceptors.response as any).handlers[0].fulfilled;
     const rawResponse = {
@@ -60,16 +114,12 @@ describe('apiClient Interceptors', () => {
   it('attempts to refresh token on 401 response and retries original request', async () => {
     const postSpy = vi.spyOn(axios, 'post').mockResolvedValueOnce({ data: { accessToken: 'new-token' } });
 
-    // Simulate 401 error object
     const error401 = {
       config: { url: '/some-protected-route', _retry: false, baseURL: '/api' },
       response: { status: 401, data: { message: 'Unauthorized' } },
     };
 
-    // Fast-check response interceptor handler directly
     const errorInterceptor = (apiClient.interceptors.response as any).handlers[0].rejected;
-
-    // Retry request spy
     const retryPromise = errorInterceptor(error401).catch(() => {});
     expect(postSpy).toHaveBeenCalled();
     await retryPromise;

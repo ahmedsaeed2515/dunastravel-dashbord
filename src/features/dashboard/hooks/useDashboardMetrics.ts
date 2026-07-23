@@ -28,14 +28,14 @@ export function useDashboardMetrics() {
       ]);
 
       return {
-        general: (general as any)?.data,
-        tours: tours?.data,
-        commissions: commissions?.data,
-        wallets: wallets?.data,
-        crm: crm?.data,
-        companies: companies?.data,
-        communications: communications?.data,
-        currencies: currencies?.data
+        general: (general as any)?.data || general,
+        tours: (tours as any)?.data || tours,
+        commissions: (commissions as any)?.data || commissions,
+        wallets: (wallets as any)?.data || wallets,
+        crm: (crm as any)?.data || crm,
+        companies: (companies as any)?.data || companies,
+        communications: (communications as any)?.data || communications,
+        currencies: (currencies as any)?.data || currencies
       };
     },
     staleTime: 1000 * 60 * 2, // 2 minutes

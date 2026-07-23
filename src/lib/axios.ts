@@ -85,17 +85,80 @@ function addRefreshSubscriber(callback: (success: boolean) => void) {
 // Response interceptor for global error handling, normalization, and silent refresh
 apiClient.interceptors.response.use(
   (response) => {
-    // Globally unwrap the NestJS TransformInterceptor envelope while preserving pagination metadata
-    if (response.data && typeof response.data === 'object' && response.data.success === true && 'data' in response.data) {
-      if ('meta' in response.data && response.data.meta !== undefined) {
-        return {
-          data: response.data.data,
-          meta: response.data.meta,
-        };
-      }
-      return response.data.data;
+    const raw = response.data;
+    if (!raw || typeof raw !== 'object') {
+      return raw;
     }
-    return response.data;
+
+    // Step 1: Unwrap outer NestJS envelope if raw is { data: { ... }, meta: ... } or { data: { success: true, data: ... } }
+    let body = raw;
+    if (raw.data && typeof raw.data === 'object' && !Array.isArray(raw.data) && ('data' in raw.data || 'success' in raw.data)) {
+      body = raw.data;
+    }
+
+    // Step 2: Extract items array if present in body.data or body itself
+    const items = Array.isArray(body.data)
+      ? body.data
+      : Array.isArray(body)
+      ? body
+      : Array.isArray(raw.data)
+      ? raw.data
+      : null;
+
+    // Step 3: Extract pagination metadata from body or raw
+    const total = typeof body.total === 'number'
+      ? body.total
+      : typeof body.meta?.total === 'number'
+      ? body.meta.total
+      : typeof raw.meta?.total === 'number'
+      ? raw.meta.total
+      : typeof raw.total === 'number'
+      ? raw.total
+      : (items ? items.length : undefined);
+
+    const page = typeof body.page === 'number'
+      ? body.page
+      : typeof body.meta?.page === 'number'
+      ? body.meta.page
+      : typeof raw.meta?.page === 'number'
+      ? raw.meta.page
+      : 1;
+
+    const limit = typeof body.limit === 'number'
+      ? body.limit
+      : typeof body.meta?.limit === 'number'
+      ? body.meta.limit
+      : typeof raw.meta?.limit === 'number'
+      ? raw.meta.limit
+      : 10;
+
+    const totalPages = typeof body.totalPages === 'number'
+      ? body.totalPages
+      : typeof body.meta?.totalPages === 'number'
+      ? body.meta.totalPages
+      : typeof raw.meta?.totalPages === 'number'
+      ? raw.meta.totalPages
+      : (total !== undefined && limit > 0 ? Math.ceil(total / limit) : 1);
+
+    // Step 4: If items is an array and total is defined, return standard paginated contract { data: items, meta: { total, page, limit, totalPages } }
+    if (items !== null && total !== undefined) {
+      return {
+        data: items,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: totalPages > 0 ? totalPages : 1,
+        },
+      };
+    }
+
+    // Step 5: If body has a single item / object payload in body.data, return body.data
+    if ('data' in body && body.data !== undefined) {
+      return body.data;
+    }
+
+    return body;
   },
   async (error) => {
     const originalRequest = error.config;
