@@ -16,6 +16,17 @@ interface UserDetailsDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
+  if (!dateStr) return "N/A";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    return format(d, fmt);
+  } catch {
+    return "N/A";
+  }
+};
+
 export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawerProps) {
   const { mutate: suspendUser, isPending: isSuspending } = useSuspendUser();
   const { mutate: activateUser, isPending: isActivating } = useActivateUser();
