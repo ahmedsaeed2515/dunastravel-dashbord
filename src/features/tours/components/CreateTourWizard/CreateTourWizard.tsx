@@ -146,12 +146,12 @@ export function CreateTourWizard() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger render={
+      <DialogTrigger asChild>
         <Button size="sm" className="h-9 shadow-md bg-primary hover:bg-primary/90 text-primary-foreground flex items-center gap-1.5 font-medium px-4">
           <Plus className="h-4 w-4" />
           <span>Create New Tour</span>
         </Button>
-      } />
+      </DialogTrigger>
       
       <DialogContent className="sm:max-w-3xl p-0 bg-card border rounded-2xl shadow-xl overflow-hidden flex flex-col h-[85vh]">
         <DialogHeader className="px-6 py-4 border-b bg-muted/30">

@@ -40,12 +40,12 @@ export function CreateBookingDrawer() {
 
   return (
     <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger render={
+      <SheetTrigger asChild>
         <Button className="shadow-sm">
           <PlusCircle className="mr-2 h-4 w-4" />
           Create Booking
         </Button>
-      } />
+      </SheetTrigger>
       <SheetContent className="w-[400px] sm:w-[540px]">
         <SheetHeader className="mb-6">
           <SheetTitle className="text-2xl font-playfair text-primary">New Booking (Manual)</SheetTitle>

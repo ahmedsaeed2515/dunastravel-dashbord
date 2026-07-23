@@ -55,7 +55,7 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
 
         {/* Advanced Filters */}
         <Popover>
-          <PopoverTrigger render={
+          <PopoverTrigger asChild>
             <Button variant="outline" className="shadow-sm">
               <SlidersHorizontal className="mr-2 h-4 w-4" />
               Filters
@@ -65,7 +65,7 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
                 </Badge>
               )}
             </Button>
-          } />
+          </PopoverTrigger>
           <PopoverContent className="w-80" align="start">
             <div className="space-y-4">
               <h4 className="font-medium text-sm border-b pb-2">Filter Results</h4>
