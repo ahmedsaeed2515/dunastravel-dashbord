@@ -72,11 +72,9 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
         <div className="flex items-center gap-2 w-full sm:w-auto">
           {selectedIds.length > 0 ? (
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <Button variant="secondary" size="sm" className="h-9 font-medium text-primary" disabled={isUpdating}>
-                  {isUpdating ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
-                  Bulk Actions ({selectedIds.length})
-                </Button>
+              <DropdownMenuTrigger type="button" className="h-9 font-medium text-primary inline-flex items-center justify-center rounded-md text-sm px-3 shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50" disabled={isUpdating}>
+                {isUpdating ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
+                Bulk Actions ({selectedIds.length})
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
                 <DropdownMenuLabel>Set Status</DropdownMenuLabel>

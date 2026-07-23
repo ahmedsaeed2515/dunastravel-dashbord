@@ -2,9 +2,7 @@
 
 import { User } from "../../types";
 import { MoreHorizontal, Edit, Trash, Eye } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 
 interface UserRowActionsProps {
   user: User;
@@ -16,12 +14,10 @@ interface UserRowActionsProps {
 export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowActionsProps) {
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger render={
-        <Button variant="ghost" className="h-8 w-8 p-0">
-          <span className="sr-only">Open menu</span>
-          <MoreHorizontal className="h-4 w-4" />
-        </Button>
-      } />
+      <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
+        <span className="sr-only">Open menu</span>
+        <MoreHorizontal className="h-4 w-4" />
+      </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => onView(user)}>
@@ -29,17 +25,15 @@ export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowAction
           View Profile
         </DropdownMenuItem>
         
-        <RequirePermission action="manage" resource="users">
-          <DropdownMenuSeparator />
-          <DropdownMenuItem onClick={() => onEdit(user)}>
-            <Edit className="mr-2 h-4 w-4" />
-            Edit User
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive focus:text-destructive">
-            <Trash className="mr-2 h-4 w-4" />
-            Delete
-          </DropdownMenuItem>
-        </RequirePermission>
+        <DropdownMenuSeparator />
+        <DropdownMenuItem onClick={() => onEdit(user)}>
+          <Edit className="mr-2 h-4 w-4" />
+          Edit User
+        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive focus:text-destructive">
+          <Trash className="mr-2 h-4 w-4" />
+          Delete
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

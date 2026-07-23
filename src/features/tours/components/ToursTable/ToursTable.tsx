@@ -123,12 +123,10 @@ export function ToursTable() {
         />
         {slugs.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger render={
-              <Button variant="secondary" size="sm" className="h-8 shadow-sm flex items-center gap-1.5">
-                <CheckSquare className="h-4 w-4 text-primary" />
-                <span>Bulk Actions ({slugs.length})</span>
-              </Button>
-            } />
+            <DropdownMenuTrigger type="button" className="h-8 shadow-sm inline-flex items-center justify-center rounded-md text-sm font-medium px-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1.5">
+              <CheckSquare className="h-4 w-4 text-primary" />
+              <span>Bulk Actions ({slugs.length})</span>
+            </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
               <DropdownMenuLabel>Set Status</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("PUBLISHED")}>
