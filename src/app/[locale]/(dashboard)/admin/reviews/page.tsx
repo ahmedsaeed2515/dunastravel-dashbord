@@ -42,9 +42,9 @@ export default function ReviewsPage() {
 
           <div className="mt-4">
             {filterState === "pending" ? (
-              <ReviewsTable data={pendingData?.data || []} isLoading={pendingLoading} />
+              <ReviewsTable data={Array.isArray(pendingData) ? pendingData : (pendingData?.data || [])} isLoading={pendingLoading} />
             ) : (
-              <ReviewsTable data={publishedData?.data || []} isLoading={publishedLoading} />
+              <ReviewsTable data={Array.isArray(publishedData) ? publishedData : (publishedData?.data || [])} isLoading={publishedLoading} />
             )}
           </div>
         </Tabs>
