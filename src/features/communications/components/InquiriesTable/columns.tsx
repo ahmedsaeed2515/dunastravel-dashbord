@@ -40,19 +40,26 @@ export const columns: ColumnDef<Inquiry>[] = [
   {
     accessorKey: "destinations",
     header: "Destinations",
-    cell: ({ row }) => (
-      <div className="flex gap-1 flex-wrap max-w-[200px]">
-        {row.original.destinations.map(d => (
-          <Badge key={d} variant="secondary" className="text-[10px] px-1 py-0">{d}</Badge>
-        ))}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const dests = Array.isArray(row.original.destinations) ? row.original.destinations : [];
+      return (
+        <div className="flex gap-1 flex-wrap max-w-[200px]">
+          {dests.length > 0 ? (
+            dests.map(d => (
+              <Badge key={d} variant="secondary" className="text-[10px] px-1 py-0">{d}</Badge>
+            ))
+          ) : (
+            <span className="text-xs text-muted-foreground">—</span>
+          )}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.original.status;
+      const status = row.original.status || "NEW";
       const variants: Record<string, any> = {
         NEW: "default",
         IN_PROGRESS: "secondary",
@@ -82,11 +89,16 @@ export const columns: ColumnDef<Inquiry>[] = [
   {
     accessorKey: "createdAt",
     header: "Received",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground text-sm">
-        {format(new Date(row.original.createdAt), "MMM d, yyyy")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const val = row.original.createdAt;
+      if (!val) return <div className="text-muted-foreground text-sm">—</div>;
+      const d = new Date(val);
+      return (
+        <div className="text-muted-foreground text-sm">
+          {isNaN(d.getTime()) ? "—" : format(d, "MMM d, yyyy")}
+        </div>
+      );
+    },
   },
   {
     id: "actions",

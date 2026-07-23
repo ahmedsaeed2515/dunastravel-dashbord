@@ -14,7 +14,7 @@ export const columns: ColumnDef<Review>[] = [
     header: "Tour",
     cell: ({ row }) => (
       <div className="font-medium text-primary">
-        {row.original.tour?.titleJsonb?.["en"] || "Unknown Tour"}
+        {row.original.tour?.titleJsonb?.["en"] || (row.original as any).tourNameEn || row.original.tour?.title || "Unknown Tour"}
       </div>
     ),
   },
@@ -23,7 +23,7 @@ export const columns: ColumnDef<Review>[] = [
     header: "Reviewer",
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span className="font-medium">{row.original.reviewerName}</span>
+        <span className="font-medium">{row.original.reviewerName || "Anonymous"}</span>
         {row.original.user && (
           <span className="text-xs text-muted-foreground">{row.original.user.email}</span>
         )}
@@ -35,7 +35,7 @@ export const columns: ColumnDef<Review>[] = [
     header: "Rating",
     cell: ({ row }) => (
       <div className="flex items-center gap-1 text-amber-500">
-        <span className="font-semibold">{row.original.rating}</span>
+        <span className="font-semibold">{row.original.rating ?? 5}</span>
         <Star className="h-4 w-4 fill-amber-500" />
       </div>
     ),
@@ -52,11 +52,16 @@ export const columns: ColumnDef<Review>[] = [
   {
     accessorKey: "createdAt",
     header: "Submitted",
-    cell: ({ row }) => (
-      <div className="text-muted-foreground text-sm">
-        {format(new Date(row.original.createdAt), "MMM d, yyyy")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const val = row.original.createdAt;
+      if (!val) return <div className="text-muted-foreground text-sm">—</div>;
+      const d = new Date(val);
+      return (
+        <div className="text-muted-foreground text-sm">
+          {isNaN(d.getTime()) ? "—" : format(d, "MMM d, yyyy")}
+        </div>
+      );
+    },
   },
   {
     id: "actions",

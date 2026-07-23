@@ -139,7 +139,11 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
                       <div>
                         <span className="text-[10px] text-muted-foreground uppercase tracking-wider block mb-1">Contract Validity</span>
                         <div className="flex items-center gap-1.5 text-xs font-medium text-gray-900 dark:text-white mt-1.5">
-                          {detail.contractEndDate ? format(new Date(detail.contractEndDate), "MMM yyyy") : 'Open-Ended'}
+                          {(() => {
+                            if (!detail.contractEndDate) return 'Open-Ended';
+                            const d = new Date(detail.contractEndDate);
+                            return isNaN(d.getTime()) ? 'Open-Ended' : format(d, "MMM yyyy");
+                          })()}
                         </div>
                       </div>
                     </div>
@@ -160,7 +164,7 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
                         <div key={u.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900/60 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <div className="h-8 w-8 rounded-full bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center text-primary font-bold text-xs">
-                              {u.name.charAt(0)}
+                              {u.name?.charAt(0) || 'U'}
                             </div>
                             <div>
                               <p className="text-sm font-medium text-gray-900 dark:text-white flex items-center gap-2">
@@ -192,7 +196,11 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
                               <Badge variant="outline" className="text-[9px] uppercase">{b.status}</Badge>
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-2">
-                              <span><CalendarDays className="inline h-3 w-3 mr-1" />{format(new Date(b.createdAt), "MMM do, yyyy")}</span>
+                              <span><CalendarDays className="inline h-3 w-3 mr-1" />{(() => {
+                                if (!b.createdAt) return '—';
+                                const bd = new Date(b.createdAt);
+                                return isNaN(bd.getTime()) ? '—' : format(bd, "MMM do, yyyy");
+                              })()}</span>
                               {b.user && <span>• {b.user.name}</span>}
                             </div>
                           </div>

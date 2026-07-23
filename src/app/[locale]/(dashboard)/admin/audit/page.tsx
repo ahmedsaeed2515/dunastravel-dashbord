@@ -106,7 +106,11 @@ export default function AuditLogsPage() {
                       )}
                     </TableCell>
                     <TableCell className="text-right text-sm text-muted-foreground whitespace-nowrap">
-                      {format(new Date(log.createdAt), "PPp")}
+                      {(() => {
+                        if (!log.createdAt) return "—";
+                        const d = new Date(log.createdAt);
+                        return isNaN(d.getTime()) ? "—" : format(d, "PPp");
+                      })()}
                     </TableCell>
                   </TableRow>
                 ))
