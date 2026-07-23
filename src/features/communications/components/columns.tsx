@@ -73,7 +73,14 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     accessorKey: "createdAt",
     header: "Timestamp",
     cell: ({ row }) => {
-      return <div className="text-muted-foreground text-sm">{format(new Date(row.original.createdAt), "MMM d, yyyy HH:mm")}</div>;
+      let formatted = "-";
+      if (row.original.createdAt) {
+        const d = new Date(row.original.createdAt);
+        if (!isNaN(d.getTime())) {
+          try { formatted = format(d, "MMM d, yyyy HH:mm"); } catch {}
+        }
+      }
+      return <div className="text-muted-foreground text-sm">{formatted}</div>;
     },
   },
   {

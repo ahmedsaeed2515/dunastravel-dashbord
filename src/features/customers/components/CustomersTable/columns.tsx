@@ -120,7 +120,17 @@ export function getColumns(
     {
       accessorKey: "createdAt",
       header: "Registered Date",
-      cell: ({ row }) => <span className="text-xs text-gray-600 dark:text-gray-300">{format(new Date(row.getValue("createdAt")), "MMM do, yyyy")}</span>,
+      cell: ({ row }) => {
+        const val = row.getValue("createdAt") as string;
+        let formatted = "-";
+        if (val) {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) {
+            try { formatted = format(d, "MMM do, yyyy"); } catch {}
+          }
+        }
+        return <span className="text-xs text-gray-600 dark:text-gray-300">{formatted}</span>;
+      },
     },
     {
       id: "actions",

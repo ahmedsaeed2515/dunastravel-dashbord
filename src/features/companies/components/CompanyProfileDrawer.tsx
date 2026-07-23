@@ -59,7 +59,11 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
               <div className="flex items-center gap-3 text-blue-100 text-xs">
                 <span className="font-mono">{company.referenceCode}</span>
                 <span className="w-1 h-1 rounded-full bg-blue-300/50"></span>
-                <span>Partner since {format(new Date(company.createdAt), "yyyy")}</span>
+                <span>Partner since {(() => {
+                  if (!company.createdAt) return "N/A";
+                  const d = new Date(company.createdAt);
+                  return isNaN(d.getTime()) ? "N/A" : format(d, "yyyy");
+                })()}</span>
               </div>
             </div>
             {company.status === 'ACTIVE' ? (

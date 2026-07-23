@@ -50,11 +50,16 @@ export function getColumns(
     {
       accessorKey: "validUntil",
       header: "Valid Until",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {format(new Date(row.original.validUntil), "MMM d, yyyy")}
-        </span>
-      ),
+      cell: ({ row }) => {
+        let formatted = "No Expiry";
+        if (row.original.validUntil) {
+          const d = new Date(row.original.validUntil);
+          if (!isNaN(d.getTime())) {
+            try { formatted = format(d, "MMM d, yyyy"); } catch {}
+          }
+        }
+        return <span className="text-muted-foreground">{formatted}</span>;
+      },
     },
     {
       id: "actions",

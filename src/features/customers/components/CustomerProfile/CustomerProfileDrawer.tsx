@@ -29,6 +29,17 @@ interface CustomerProfileDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
+  if (!dateStr) return "N/A";
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return "N/A";
+    return format(d, fmt);
+  } catch {
+    return "N/A";
+  }
+};
+
 export function CustomerProfileDrawer({ customer, open, onOpenChange }: CustomerProfileDrawerProps) {
   const { data: detail, isLoading } = useCustomerDetail(customer?.id || "");
   const updateCrm = useUpdateCustomerCrm();
@@ -190,7 +201,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs mb-1">Date of Birth</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.dateOfBirth ? format(new Date(detail.dateOfBirth), "MMM do, yyyy") : "N/A"}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatDateSafe(detail.dateOfBirth)}</span>
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs mb-1">Gender</span>
@@ -202,7 +213,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       </div>
                       <div>
                         <span className="text-muted-foreground block text-xs mb-1">Registered</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{format(new Date(detail.createdAt), "MMM do, yyyy")}</span>
+                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatDateSafe(detail.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -306,7 +317,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-2">
                               <Calendar className="h-3 w-3" />
-                              <span>Created {format(new Date(b.createdAt), "MMM do, yyyy")}</span>
+                              <span>Created {formatDateSafe(b.createdAt)}</span>
                               <span>•</span>
                               <span>{b.passengerCount} Travelers</span>
                             </div>
@@ -317,8 +328,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                               {new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(parseFloat((b as any).totalAmountUsd || (b as any).totalAmount || "0"))}
                             </div>
                             <div className="text-xs text-muted-foreground flex items-center gap-1 justify-end mt-1">
-                              <span>View Details</span>
-                              <ExternalLink className="h-3 w-3" />
+                              <Badge variant="outline" className="text-[10px]">{b.status}</Badge>
                             </div>
                           </div>
                         </div>
@@ -326,30 +336,13 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                     </div>
                   ) : (
                     <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                      No bookings recorded for this customer yet.
+                      No bookings created yet for this customer.
                     </div>
                   )}
                 </TabsContent>
 
                 {/* 3. PAYMENTS TAB */}
                 <TabsContent value="payments" className="space-y-6">
-                  <div className="grid grid-cols-3 gap-4 bg-gray-50 dark:bg-gray-900/60 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
-                    <div>
-                      <span className="text-muted-foreground text-xs block mb-1">Total Billed</span>
-                      <span className="text-lg font-bold text-gray-900 dark:text-white">${detail.totalSpent}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block mb-1">Total Paid</span>
-                      <span className="text-lg font-bold text-green-600 dark:text-green-400">${detail.totalPaid}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block mb-1">Outstanding Balance</span>
-                      <span className={`text-lg font-bold ${detail.outstandingBalance > 0 ? 'text-rose-600 dark:text-rose-400' : 'text-gray-900 dark:text-white'}`}>
-                        ${detail.outstandingBalance}
-                      </span>
-                    </div>
-                  </div>
-
                   <div>
                     <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Detailed Payment Ledger</h3>
                     <div className="space-y-3">
@@ -362,7 +355,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                                 <Badge variant="outline" className="text-[10px] uppercase">{p.currency || 'USD'}</Badge>
                               </div>
                               <div className="text-xs font-mono text-muted-foreground">{p.transactionId || "No Transaction ID"}</div>
-                              <div className="text-xs text-muted-foreground">{format(new Date(p.createdAt), "MMM do, yyyy h:mm a")}</div>
+                              <div className="text-xs text-muted-foreground">{formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}</div>
                             </div>
                             <div className={`text-base font-bold ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
                               {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
@@ -419,7 +412,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                               <Badge variant="secondary" className="text-[10px] font-medium">{n.noteType}</Badge>
                               <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{n.authorName}</span>
                             </div>
-                            <span className="text-[11px] text-muted-foreground">{format(new Date(n.createdAt), "MMM do, yyyy h:mm a")}</span>
+                            <span className="text-[11px] text-muted-foreground">{formatDateSafe(n.createdAt, "MMM do, yyyy h:mm a")}</span>
                           </div>
                           <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
                             {n.content}
@@ -428,7 +421,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       ))
                     ) : (
                       <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                        No internal notes added for this customer yet.
+                        No internal notes saved for this customer profile yet.
                       </div>
                     )}
                   </div>
@@ -436,46 +429,34 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
 
                 {/* 5. DOCUMENTS TAB */}
                 <TabsContent value="documents" className="space-y-6">
-                  {/* Add Document Form */}
+                  {/* Upload Document Form */}
                   <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 space-y-3">
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Attach Document</h4>
+                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Attach Customer Document</h4>
                     <div className="grid grid-cols-2 gap-3">
-                      <div>
-                        <span className="text-xs text-muted-foreground block mb-1">Document Title</span>
-                        <Input 
-                          placeholder="e.g. Passport Scan 2026" 
-                          value={docTitle}
-                          onChange={(e) => setDocTitle(e.target.value)}
-                          className="h-8 text-xs bg-white dark:bg-gray-800"
-                        />
-                      </div>
-                      <div>
-                        <span className="text-xs text-muted-foreground block mb-1">Document Type</span>
-                        <Select defaultValue={docType} onValueChange={(val) => val && setDocType(val)}>
-                          <SelectTrigger className="h-8 text-xs bg-white dark:bg-gray-800">
-                            <SelectValue placeholder="Type" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="PASSPORT">Passport Scan</SelectItem>
-                            <SelectItem value="VISA">Visa Document</SelectItem>
-                            <SelectItem value="NATIONAL_ID">National ID</SelectItem>
-                            <SelectItem value="INSURANCE">Travel Insurance</SelectItem>
-                            <SelectItem value="TICKET">Flight Ticket</SelectItem>
-                            <SelectItem value="INVOICE">External Invoice</SelectItem>
-                            <SelectItem value="OTHER">Other Document</SelectItem>
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-xs text-muted-foreground block mb-1">Media Asset ID (From Media Module)</span>
-                        <Input 
-                          placeholder="e.g. uuid-media-file-1" 
-                          value={mediaAssetId}
-                          onChange={(e) => setMediaAssetId(e.target.value)}
-                          className="h-8 text-xs bg-white dark:bg-gray-800 font-mono"
-                        />
-                      </div>
+                      <Input 
+                        placeholder="Document Title (e.g. Passport Copy)" 
+                        value={docTitle}
+                        onChange={(e) => setDocTitle(e.target.value)}
+                        className="text-xs bg-white dark:bg-gray-800 h-9"
+                      />
+                      <Select defaultValue={docType} onValueChange={(val) => val && setDocType(val)}>
+                        <SelectTrigger className="h-9 text-xs bg-white dark:bg-gray-800">
+                          <SelectValue placeholder="Doc Type" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="PASSPORT">Passport</SelectItem>
+                          <SelectItem value="VISA">Visa Document</SelectItem>
+                          <SelectItem value="CONTRACT">B2B Contract</SelectItem>
+                          <SelectItem value="OTHER">Other Attachment</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
+                    <Input 
+                      placeholder="Media Asset ID or URL" 
+                      value={mediaAssetId}
+                      onChange={(e) => setMediaAssetId(e.target.value)}
+                      className="text-xs bg-white dark:bg-gray-800 h-9"
+                    />
                     <div className="flex justify-end">
                       <Button size="sm" onClick={handleAddDocument} disabled={isAddingDoc || !docTitle.trim() || !mediaAssetId.trim()} className="h-8 text-xs flex items-center gap-1.5">
                         {isAddingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
@@ -499,7 +480,7 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                                 <Badge variant="outline" className="text-[10px]">{d.documentType}</Badge>
                               </div>
                               <div className="text-xs text-muted-foreground">
-                                Attached {format(new Date(d.createdAt), "MMM do, yyyy")} • Asset ID: <span className="font-mono">{d.mediaAssetId}</span>
+                                Attached {formatDateSafe(d.createdAt)} • Asset ID: <span className="font-mono">{d.mediaAssetId}</span>
                               </div>
                             </div>
                           </div>
@@ -526,9 +507,9 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                         <div key={log.id} className="relative pl-6">
                           <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5 ring-4 ring-white dark:ring-gray-900" />
                           <div className="flex items-center justify-between">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">{log.action.replace(/_/g, ' ')}</div>
-                            <span className="text-[11px] text-muted-foreground">{format(new Date(log.createdAt), "MMM do, yyyy h:mm a")}</span>
-                          </div>
+                            <div className="font-medium text-sm text-gray-900 dark:text-white">{(log.action || "UPDATE").replace(/_/g, ' ')}</div>
+                            <span className="text-[11px] text-muted-foreground">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</span>
+                          </div>      
                           <div className="text-xs text-muted-foreground mt-0.5">Performed by {log.authorName}</div>
                           {log.details && Object.keys(log.details).length > 0 && (
                             <div className="text-xs mt-2 p-2 bg-gray-50 dark:bg-gray-900/60 rounded-lg font-mono text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 overflow-x-auto">

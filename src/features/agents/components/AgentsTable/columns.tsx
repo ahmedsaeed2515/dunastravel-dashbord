@@ -38,11 +38,16 @@ export function getColumns(
     {
       accessorKey: "createdAt",
       header: "Registered",
-      cell: ({ row }) => (
-        <span className="text-muted-foreground">
-          {format(new Date(row.original.createdAt), "MMM d, yyyy")}
-        </span>
-      ),
+      cell: ({ row }) => {
+        let formatted = "-";
+        if (row.original.createdAt) {
+          const d = new Date(row.original.createdAt);
+          if (!isNaN(d.getTime())) {
+            try { formatted = format(d, "MMM d, yyyy"); } catch {}
+          }
+        }
+        return <span className="text-muted-foreground">{formatted}</span>;
+      },
     },
     {
       id: "actions",

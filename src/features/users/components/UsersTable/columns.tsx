@@ -52,7 +52,17 @@ export function getColumns(
     {
       accessorKey: "createdAt",
       header: "Joined",
-      cell: ({ row }) => format(new Date(row.getValue("createdAt")), "MMM do, yyyy"),
+      cell: ({ row }) => {
+        const val = row.getValue("createdAt") as string;
+        let formatted = "-";
+        if (val) {
+          const d = new Date(val);
+          if (!isNaN(d.getTime())) {
+            try { formatted = format(d, "MMM do, yyyy"); } catch {}
+          }
+        }
+        return formatted;
+      },
       meta: { className: "hidden lg:table-cell" }
     },
     {

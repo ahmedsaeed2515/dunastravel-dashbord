@@ -139,10 +139,20 @@ export const getColumns = (onView: (company: Company) => void): ColumnDef<Compan
   {
     accessorKey: "createdAt",
     header: "Partner Since",
-    cell: ({ row }) => (
-      <div className="text-xs text-muted-foreground">
-        {format(new Date(row.getValue("createdAt")), "MMM do, yyyy")}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const val = row.getValue("createdAt") as string;
+      let formatted = "-";
+      if (val) {
+        const d = new Date(val);
+        if (!isNaN(d.getTime())) {
+          try { formatted = format(d, "MMM do, yyyy"); } catch {}
+        }
+      }
+      return (
+        <div className="text-xs text-muted-foreground">
+          {formatted}
+        </div>
+      );
+    },
   },
 ];

@@ -52,7 +52,7 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                 {new Intl.NumberFormat("en-US", { style: "currency", currency: tour.currency || "USD" }).format(parseFloat(tour.basePriceUsd))}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
-                Created {format(new Date(tour.createdAt), "MMM do, yyyy")}
+                Created {formatDateSafe(tour.createdAt)}
               </div>
             </div>
           </div>
@@ -191,7 +191,7 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                     <div key={log.id || i} className="relative pl-6">
                       <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5" />
                       <div className="font-medium text-sm">{log.action.replace(/_/g, ' ')}</div>
-                      <div className="text-xs text-muted-foreground mt-0.5">{format(new Date(log.createdAt), "MMM do, yyyy h:mm a")}</div>
+                      <div className="text-xs text-muted-foreground mt-0.5">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</div>
                       <div className="text-xs mt-2 p-2.5 bg-muted rounded-lg font-mono overflow-x-auto">
                         {JSON.stringify(log.details)}
                       </div>

@@ -83,7 +83,7 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
               <CalendarDays className="h-3 w-3" /> Joined
             </span>
             <span className="text-sm font-medium">
-              {format(new Date(user.createdAt), "MMM do, yyyy")}
+              {formatDateSafe(user.createdAt)}
             </span>
           </div>
         </div>
@@ -96,13 +96,13 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
               icon={<Shield className="h-4 w-4 text-primary" />}
               title="Account Created"
               description={`Role assigned: ${user.role}`}
-              time={format(new Date(user.createdAt), "PPp")}
+              time={formatDateSafe(user.createdAt, "PPp")}
             />
             {user.updatedAt !== user.createdAt && (
               <TimelineItem
                 icon={<Clock className="h-4 w-4 text-muted-foreground" />}
                 title="Profile Updated"
-                time={format(new Date(user.updatedAt), "PPp")}
+                time={formatDateSafe(user.updatedAt, "PPp")}
               />
             )}
           </Timeline>
@@ -118,7 +118,7 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
               <div>
                 <strong>Account Suspended</strong>
                 <p className="mt-1">{user.suspendReason || "No reason provided."}</p>
-                <p className="mt-1 text-xs opacity-80">Suspended on: {user.suspendedAt ? format(new Date(user.suspendedAt), "PPp") : "Unknown"}</p>
+                <p className="mt-1 text-xs opacity-80">Suspended on: {formatDateSafe(user.suspendedAt, "PPp")}</p>
               </div>
             </div>
             <Button 
