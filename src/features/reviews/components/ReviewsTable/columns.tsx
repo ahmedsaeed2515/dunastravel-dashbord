@@ -14,7 +14,7 @@ export const columns: ColumnDef<Review>[] = [
     header: "Tour",
     cell: ({ row }) => (
       <div className="font-medium text-primary">
-        {row.original.tour?.titleJsonb?.["en"] || (row.original as any).tourNameEn || row.original.tour?.title || "Unknown Tour"}
+        {(row.original.tour as any)?.titleJsonb?.["en"] || (row.original as any).tourNameEn || (row.original.tour as any)?.title || "Unknown Tour"}
       </div>
     ),
   },
