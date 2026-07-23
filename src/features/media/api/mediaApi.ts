@@ -17,8 +17,8 @@ export interface PaginatedResponse<T> {
 
 export const mediaApi = {
   getMediaAssets: async (filters: MediaQueryFilters = {}): Promise<PaginatedResponse<MediaAsset>> => {
-    const { data } = await apiClient.get("/admin/media", { params: filters });
-    return data;
+    const response = await apiClient.get("/admin/media", { params: filters });
+    return response as any;
   },
 
   uploadMedia: async (payload: UploadMediaPayload): Promise<MediaAsset> => {
@@ -29,12 +29,12 @@ export const mediaApi = {
     if (payload.entityId) formData.append("entityId", payload.entityId);
     if (payload.altText) formData.append("altText", payload.altText);
 
-    const { data } = await apiClient.post("/admin/media/upload", formData, {
+    const response = await apiClient.post("/admin/media/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    return data;
+    return response as any;
   },
 
   deleteMedia: async (id: string): Promise<void> => {

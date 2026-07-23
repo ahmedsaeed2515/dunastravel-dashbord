@@ -86,8 +86,8 @@ export default function AgentsPage() {
       </div>
 
       <AgentsTable 
-        data={data?.data || []}
-        total={data?.meta?.total || 0}
+        data={Array.isArray(data) ? data : (data?.data || [])}
+        total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
         isLoading={isLoading}
         filters={filters}
         onFilterChange={setFilters}

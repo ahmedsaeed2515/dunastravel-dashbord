@@ -79,4 +79,4 @@ export interface CreateEmailTemplatePayload {
   variables?: string[];
 }
 
-export interface UpdateEmailTemplatePayload extends Partial<CreateEmailTemplatePayload> {}
+export type UpdateEmailTemplatePayload = Partial<CreateEmailTemplatePayload>;

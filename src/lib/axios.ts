@@ -85,8 +85,14 @@ function addRefreshSubscriber(callback: (success: boolean) => void) {
 // Response interceptor for global error handling, normalization, and silent refresh
 apiClient.interceptors.response.use(
   (response) => {
-    // Globally unwrap the NestJS TransformInterceptor envelope
-    if (response.data && response.data.success === true && 'data' in response.data) {
+    // Globally unwrap the NestJS TransformInterceptor envelope while preserving pagination metadata
+    if (response.data && typeof response.data === 'object' && response.data.success === true && 'data' in response.data) {
+      if ('meta' in response.data && response.data.meta !== undefined) {
+        return {
+          data: response.data.data,
+          meta: response.data.meta,
+        };
+      }
       return response.data.data;
     }
     return response.data;

@@ -88,10 +88,10 @@ export function UsersTable() {
 
       <DataTable
         columns={columns}
-        data={data?.data || []}
+        data={Array.isArray(data) ? data : (data?.data || [])}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={data?.meta?.totalPages || -1}
+        pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}

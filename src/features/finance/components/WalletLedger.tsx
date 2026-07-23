@@ -92,6 +92,17 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
                   currency: wallet?.currency || "USD",
                 }).format(parseFloat(tx.amount));
 
+                const formatDate = (dateStr?: string) => {
+                  if (!dateStr) return "";
+                  try {
+                    const d = new Date(dateStr);
+                    if (isNaN(d.getTime())) return "";
+                    return format(d, "PPp");
+                  } catch {
+                    return "";
+                  }
+                };
+
                 return (
                   <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
                     <div className="flex items-center space-x-4">
@@ -105,7 +116,7 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
                       <div>
                         <p className="text-sm font-medium">{tx.referenceType}</p>
                         <p className="text-xs text-muted-foreground">{tx.description || tx.referenceId}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{format(new Date(tx.createdAt), "PPp")}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">{formatDate(tx.createdAt)}</p>
                       </div>
                     </div>
                     <div className="text-right">

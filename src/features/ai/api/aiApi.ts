@@ -3,12 +3,12 @@ import { GenerateItineraryPayload, AiItineraryResponse, AiCustomerInsights } fro
 
 export const aiApi = {
   generateItinerary: async (payload: GenerateItineraryPayload): Promise<AiItineraryResponse> => {
-    const { data } = await apiClient.post("/admin/ai/itinerary/generate", payload);
-    return data;
+    const response = await apiClient.post("/admin/ai/itinerary/generate", payload);
+    return response as any;
   },
 
   analyzeCustomer: async (customerId: string): Promise<AiCustomerInsights> => {
-    const { data } = await apiClient.post(`/admin/ai/customer/${customerId}/analyze`);
-    return data;
+    const response = await apiClient.post(`/admin/ai/customer/${customerId}/analyze`);
+    return response as any;
   }
 };

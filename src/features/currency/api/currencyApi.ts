@@ -3,12 +3,12 @@ import { CurrencyRatesResponse, ConvertCurrencyPayload, ConvertCurrencyResponse 
 
 export const currencyApi = {
   getRates: async (): Promise<CurrencyRatesResponse> => {
-    const { data } = await apiClient.get("/admin/currency/rates");
-    return data;
+    const response = await apiClient.get("/admin/currency/rates");
+    return response as any;
   },
 
   convert: async (params: ConvertCurrencyPayload): Promise<ConvertCurrencyResponse> => {
-    const { data } = await apiClient.get("/admin/currency/convert", { params });
-    return data;
+    const response = await apiClient.get("/admin/currency/convert", { params });
+    return response as any;
   }
 };

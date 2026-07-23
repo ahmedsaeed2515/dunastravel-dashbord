@@ -56,9 +56,9 @@ export function CommunicationsView() {
 
       <div className="rounded-md border bg-card/50 overflow-hidden">
         <DeliveryLogsTable 
-          data={data?.data || []} 
+          data={Array.isArray(data) ? data : (data?.data || [])} 
           isLoading={isLoading} 
-          pageCount={data?.meta?.totalPages || 1}
+          pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || 1)}
           onPageChange={(p) => setFilters(f => ({ ...f, page: p }))}
         />
       </div>

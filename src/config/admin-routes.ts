@@ -1,0 +1,24 @@
+export const adminRoutes = {
+  dashboard: "/dashboard",
+  bookings: "/admin/bookings",
+  tours: "/admin/tours",
+  promotions: "/admin/promotions",
+  media: "/admin/media",
+  finance: {
+    root: "/admin/finance",
+    commissions: "/admin/finance/commissions",
+    wallet: "/admin/finance/wallet",
+  },
+  customers: "/admin/users",
+  inquiries: "/admin/inquiries",
+  companies: "/admin/companies",
+  agents: "/admin/agents",
+  ai: "/admin/ai",
+  communications: "/admin/communications",
+  content: "/admin/content",
+  audit: "/admin/audit",
+  roles: "/admin/settings/roles",
+  settings: "/admin/settings",
+} as const;
+
+export type AdminRouteKey = keyof typeof adminRoutes;

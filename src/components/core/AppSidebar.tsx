@@ -3,6 +3,7 @@
 import { usePathname } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
+import { adminRoutes } from "@/config/admin-routes";
 import {
   Sidebar,
   SidebarContent,
@@ -69,7 +70,7 @@ export function AppSidebar() {
           <SidebarGroupContent>
             <SidebarMenu>
               <SidebarMenuItem>
-                <SidebarMenuButton render={<Link href="/dashboard" className="transition-all duration-300" />} isActive={pathname === "/dashboard"} tooltip="Dashboard">
+                <SidebarMenuButton render={<Link href={adminRoutes.dashboard} className="transition-all duration-300" />} isActive={pathname === adminRoutes.dashboard} tooltip="Dashboard">
                   <LayoutDashboard />
                   <span>Dashboard</span>
                 </SidebarMenuButton>
@@ -87,25 +88,25 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/bookings" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/bookings")} tooltip="Bookings">
+                  <SidebarMenuButton render={<Link href={adminRoutes.bookings} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.bookings)} tooltip="Bookings">
                     <CalendarCheck />
                     <span>Bookings</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/tours" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/tours")} tooltip="Tours & Products">
+                  <SidebarMenuButton render={<Link href={adminRoutes.tours} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.tours)} tooltip="Tours & Products">
                     <Map />
                     <span>Tours & Products</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/promotions" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/promotions")} tooltip="Promotions">
+                  <SidebarMenuButton render={<Link href={adminRoutes.promotions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.promotions)} tooltip="Promotions">
                     <Tag />
                     <span>Promotions</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/media" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/media")} tooltip="Media Library">
+                  <SidebarMenuButton render={<Link href={adminRoutes.media} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.media)} tooltip="Media Library">
                     <ImageIcon />
                     <span>Media Library</span>
                   </SidebarMenuButton>
@@ -124,19 +125,19 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/bookings" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/bookings")} tooltip="My Bookings">
+                  <SidebarMenuButton render={<Link href={adminRoutes.bookings} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.bookings)} tooltip="My Bookings">
                     <CalendarCheck />
                     <span>My Bookings</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/finance/commissions" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/finance/commissions")} tooltip="My Commissions">
+                  <SidebarMenuButton render={<Link href={adminRoutes.finance.commissions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.commissions)} tooltip="My Commissions">
                     <Briefcase />
                     <span>My Commissions</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/finance/wallet" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/finance/wallet")} tooltip="My Wallet">
+                  <SidebarMenuButton render={<Link href={adminRoutes.finance.wallet} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.wallet)} tooltip="My Wallet">
                     <Wallet />
                     <span>My Wallet</span>
                   </SidebarMenuButton>
@@ -155,13 +156,13 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/users" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/users")} tooltip="Customers">
+                  <SidebarMenuButton render={<Link href={adminRoutes.customers} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.customers)} tooltip="Customers">
                     <Users />
                     <span>Customers (CRM)</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/inquiries" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/inquiries")} tooltip="Inquiries & Leads">
+                  <SidebarMenuButton render={<Link href={adminRoutes.inquiries} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.inquiries)} tooltip="Inquiries & Leads">
                     <MessageSquare />
                     <span>Inquiries & Leads</span>
                   </SidebarMenuButton>
@@ -180,13 +181,13 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/companies" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/companies")} tooltip="Companies">
+                  <SidebarMenuButton render={<Link href={adminRoutes.companies} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.companies)} tooltip="Companies">
                     <Building2 />
                     <span>Companies</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/agents" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/agents")} tooltip="Agents">
+                  <SidebarMenuButton render={<Link href={adminRoutes.agents} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.agents)} tooltip="Agents">
                     <Users />
                     <span>Agents</span>
                   </SidebarMenuButton>
@@ -205,13 +206,13 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/finance/commissions" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/finance/commissions")} tooltip="Commissions">
+                  <SidebarMenuButton render={<Link href={adminRoutes.finance.commissions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.commissions)} tooltip="Commissions">
                     <Briefcase />
                     <span>Commissions</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/finance/wallet" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/finance/wallet")} tooltip="Wallets">
+                  <SidebarMenuButton render={<Link href={adminRoutes.finance.wallet} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.wallet)} tooltip="Wallets">
                     <Wallet />
                     <span>Wallets</span>
                   </SidebarMenuButton>
@@ -230,20 +231,20 @@ export function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/ai" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/ai")} tooltip="AI Concierge">
+                  <SidebarMenuButton render={<Link href={adminRoutes.ai} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.ai)} tooltip="AI Concierge">
                     <Bot />
                     <span>AI Concierge</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/communications" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/communications")} tooltip="Communications">
+                  <SidebarMenuButton render={<Link href={adminRoutes.communications} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.communications)} tooltip="Communications">
                     <BellRing />
                     <span>Communications</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
 
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/content" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/content")} tooltip="Content & CMS">
+                  <SidebarMenuButton render={<Link href={adminRoutes.content} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.content)} tooltip="Content & CMS">
                     <ClipboardList />
                     <span>Content & CMS</span>
                   </SidebarMenuButton>
@@ -251,7 +252,7 @@ export function AppSidebar() {
                 
                 {canManageAdmins && (
                   <SidebarMenuItem>
-                    <SidebarMenuButton render={<Link href="/admin/audit" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/audit")} tooltip="Audit Log">
+                    <SidebarMenuButton render={<Link href={adminRoutes.audit} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.audit)} tooltip="Audit Log">
                       <ClipboardList />
                       <span>Audit Log</span>
                     </SidebarMenuButton>
@@ -259,7 +260,7 @@ export function AppSidebar() {
                 )}
                 
                 <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href="/admin/settings/roles" className="transition-all duration-300" />} isActive={pathname.startsWith("/admin/settings/roles")} tooltip="Users & Roles">
+                  <SidebarMenuButton render={<Link href={adminRoutes.roles} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.roles)} tooltip="Users & Roles">
                     <ShieldCheck />
                     <span>Users & Roles</span>
                   </SidebarMenuButton>
@@ -274,7 +275,7 @@ export function AppSidebar() {
         <SidebarMenu>
           {isAdmin && (
             <SidebarMenuItem>
-              <SidebarMenuButton render={<Link href="/admin/settings" />} tooltip="Settings">
+              <SidebarMenuButton render={<Link href={adminRoutes.settings} />} tooltip="Settings">
                 <Settings />
                 <span>Settings</span>
               </SidebarMenuButton>

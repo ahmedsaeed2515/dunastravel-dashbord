@@ -22,6 +22,17 @@ export default function MediaPage() {
     });
   };
 
+  const formatDate = (dateStr?: string) => {
+    if (!dateStr) return "";
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return "";
+      return format(d, "MMM d, yyyy");
+    } catch {
+      return "";
+    }
+  };
+
   return (
     <div className="flex-1 space-y-4 p-8 pt-6">
       <div className="flex items-center justify-between space-y-2 mb-6">
@@ -44,7 +55,7 @@ export default function MediaPage() {
           <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
           <p>Loading media library...</p>
         </div>
-      ) : data?.data?.length === 0 ? (
+      ) : (Array.isArray(data) ? data : (data?.data || [])).length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-white dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
           <ImageIcon className="h-12 w-12 mb-4 opacity-20" />
           <h3 className="font-semibold text-foreground mb-1">No media found</h3>
@@ -52,7 +63,7 @@ export default function MediaPage() {
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {data?.data.map((asset) => (
+          {(Array.isArray(data) ? data : (data?.data || [])).map((asset) => (
             <div key={asset.id} className="group relative rounded-xl border border-gray-200 dark:border-gray-800 overflow-hidden bg-gray-50 dark:bg-gray-900 aspect-square">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img 
@@ -63,7 +74,7 @@ export default function MediaPage() {
               <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3">
                 <div className="flex justify-between items-start">
                   <span className="text-[10px] font-semibold bg-primary text-white px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    {asset.entityType}
+                    {asset.entityType || "GENERAL"}
                   </span>
                   <Button 
                     variant="ghost" 
@@ -81,7 +92,7 @@ export default function MediaPage() {
                 </div>
                 <div className="text-white">
                   <p className="text-xs font-medium truncate">{asset.altText || "No alt text"}</p>
-                  <p className="text-[10px] text-gray-300">{format(new Date(asset.createdAt), "MMM d, yyyy")}</p>
+                  <p className="text-[10px] text-gray-300">{formatDate(asset.createdAt)}</p>
                 </div>
               </div>
             </div>
@@ -90,7 +101,7 @@ export default function MediaPage() {
       )}
 
       {/* Basic Pagination for Gallery */}
-      {data && data.meta.totalPages > 1 && (
+      {data && (Array.isArray(data) ? 1 : (data.meta?.totalPages || 1)) > 1 && (
         <div className="flex justify-center gap-2 mt-8">
           <Button 
             variant="outline" 
@@ -101,7 +112,7 @@ export default function MediaPage() {
           </Button>
           <Button 
             variant="outline" 
-            disabled={filters.page === data.meta.totalPages}
+            disabled={filters.page === (Array.isArray(data) ? 1 : data.meta?.totalPages)}
             onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) + 1 }))}
           >
             Next

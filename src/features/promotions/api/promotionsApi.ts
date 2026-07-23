@@ -18,23 +18,23 @@ export interface PaginatedResponse<T> {
 
 export const promotionsApi = {
   getPromotions: async (filters: PromotionQueryFilters = {}): Promise<PaginatedResponse<Promotion>> => {
-    const { data } = await apiClient.get("/admin/promotions", { params: filters });
-    return data;
+    const response = await apiClient.get("/admin/promotions", { params: filters });
+    return response as any;
   },
 
   getPromotionById: async (id: string): Promise<Promotion> => {
-    const { data } = await apiClient.get(`/admin/promotions/${id}`);
-    return data;
+    const response = await apiClient.get(`/admin/promotions/${id}`);
+    return response as any;
   },
 
   createPromotion: async (payload: CreatePromotionPayload): Promise<Promotion> => {
-    const { data } = await apiClient.post("/admin/promotions", payload);
-    return data;
+    const response = await apiClient.post("/admin/promotions", payload);
+    return response as any;
   },
 
   updatePromotion: async (id: string, payload: UpdatePromotionPayload): Promise<Promotion> => {
-    const { data } = await apiClient.patch(`/admin/promotions/${id}`, payload);
-    return data;
+    const response = await apiClient.patch(`/admin/promotions/${id}`, payload);
+    return response as any;
   },
 
   deletePromotion: async (id: string): Promise<void> => {

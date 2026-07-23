@@ -20,33 +20,33 @@ export interface PaginatedResponse<T> {
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
-    const { data } = await apiClient.get("/admin/companies/metrics");
-    return data;
+    const response = await apiClient.get("/admin/companies/metrics");
+    return response as any;
   },
 
   getCompanies: async (filters: CompanyQueryFilters): Promise<PaginatedResponse<Company>> => {
-    const { data } = await apiClient.get("/admin/companies", { params: filters });
-    return data;
+    const response = await apiClient.get("/admin/companies", { params: filters });
+    return response as any;
   },
 
   getCompanyById: async (id: string): Promise<CompanyDetail> => {
-    const { data } = await apiClient.get(`/admin/companies/${id}`);
-    return data;
+    const response = await apiClient.get(`/admin/companies/${id}`);
+    return response as any;
   },
 
   createCompany: async (payload: CreateCompanyPayload): Promise<Company> => {
-    const { data } = await apiClient.post("/admin/companies", payload);
-    return data;
+    const response = await apiClient.post("/admin/companies", payload);
+    return response as any;
   },
 
   updateCompany: async (id: string, payload: UpdateCompanyPayload): Promise<Company> => {
-    const { data } = await apiClient.patch(`/admin/companies/${id}`, payload);
-    return data;
+    const response = await apiClient.patch(`/admin/companies/${id}`, payload);
+    return response as any;
   },
 
   bulkUpdate: async (payload: { companyIds: string[]; status?: string; tags?: string[]; segments?: string[] }): Promise<{ count: number }> => {
-    const { data } = await apiClient.patch("/admin/companies/bulk/update", payload);
-    return data;
+    const response = await apiClient.patch("/admin/companies/bulk/update", payload);
+    return response as any;
   },
 
   exportCsvUrl: (filters: CompanyQueryFilters): string => {

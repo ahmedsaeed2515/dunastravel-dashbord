@@ -6,6 +6,7 @@ import { useBookings } from '../../../hooks/useBookings';
 vi.mock('../../../hooks/useBookings', () => ({
   useBulkUpdateBookings: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useSoftDeleteBooking: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useRestoreBooking: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useUpdateBooking: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateBookingStatus: () => ({ mutate: vi.fn(), isPending: false }),
   useAssignBooking: () => ({ mutate: vi.fn(), isPending: false }),

@@ -13,7 +13,7 @@ export function FinanceMetricsBanner() {
   const metrics = [
     {
       title: "Platform Liabilities (Wallets)",
-      value: walletData ? `$${walletData.totalLiabilitiesUsd.toLocaleString()}` : "$0",
+      value: typeof walletData?.totalLiabilitiesUsd === "number" ? `$${walletData.totalLiabilitiesUsd.toLocaleString()}` : "$0",
       icon: Landmark,
       color: "text-blue-500",
       bg: "bg-blue-500/10",
@@ -21,7 +21,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Active B2B Wallets",
-      value: walletData?.totalCompanyWallets || 0,
+      value: walletData?.totalCompanyWallets ?? 0,
       icon: Wallet,
       color: "text-indigo-500",
       bg: "bg-indigo-500/10",
@@ -29,7 +29,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Pending Commissions",
-      value: commissionData ? `$${commissionData.totalPendingUsd.toLocaleString()}` : "$0",
+      value: typeof commissionData?.totalPendingUsd === "number" ? `$${commissionData.totalPendingUsd.toLocaleString()}` : "$0",
       icon: Clock,
       color: "text-amber-500",
       bg: "bg-amber-500/10",
@@ -37,7 +37,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Approved Payouts",
-      value: commissionData ? `$${commissionData.totalApprovedUsd.toLocaleString()}` : "$0",
+      value: typeof commissionData?.totalApprovedUsd === "number" ? `$${commissionData.totalApprovedUsd.toLocaleString()}` : "$0",
       icon: DollarSign,
       color: "text-emerald-500",
       bg: "bg-emerald-500/10",

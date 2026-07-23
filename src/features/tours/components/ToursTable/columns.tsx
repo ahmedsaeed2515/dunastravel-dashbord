@@ -43,7 +43,8 @@ export function getColumns(
       header: "Tour Title",
       cell: ({ row }) => {
         const titleObj: any = row.getValue("titleJsonb") || {};
-        const title = titleObj["en"] || row.original.slug;
+        const rawTitle = (row.original as any).title;
+        const title = titleObj["en"] || (typeof rawTitle === 'string' ? rawTitle : rawTitle?.en) || row.original.slug;
         return (
           <div className="flex items-center gap-2">
             <span className="font-medium">{title}</span>
@@ -104,7 +105,17 @@ export function getColumns(
     {
       accessorKey: "createdAt",
       header: "Created Date",
-      cell: ({ row }) => <span className="text-muted-foreground text-sm">{format(new Date(row.getValue("createdAt")), "MMM do, yyyy")}</span>,
+      cell: ({ row }) => {
+        const rawDate = row.getValue("createdAt") as string;
+        let formatted = "";
+        if (rawDate) {
+          try {
+            const d = new Date(rawDate);
+            if (!isNaN(d.getTime())) formatted = format(d, "MMM do, yyyy");
+          } catch {}
+        }
+        return <span className="text-muted-foreground text-sm">{formatted}</span>;
+      },
       meta: { className: "hidden lg:table-cell" }
     },
     {

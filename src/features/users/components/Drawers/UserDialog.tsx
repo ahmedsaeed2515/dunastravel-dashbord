@@ -33,13 +33,13 @@ export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>{isEdit ? "Edit User" : "Create User"}</DialogTitle>
           <DialogDescription>
             {isEdit 
               ? "Update the user's role and basic information."
-              : "Add a new user to the system. An email will be sent with login instructions."}
+              : "Create a new user account and set an initial password."}
           </DialogDescription>
         </DialogHeader>
 

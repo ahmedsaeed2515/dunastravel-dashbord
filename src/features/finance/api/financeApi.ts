@@ -12,39 +12,39 @@ import {
 export const financeApi = {
   // Wallets
   getWalletMetrics: async (): Promise<WalletMetrics> => {
-    const { data } = await apiClient.get("/admin/finance/wallets/metrics");
-    return data;
+    const response = await apiClient.get("/admin/finance/wallets/metrics");
+    return response as any;
   },
 
   getWallet: async (ownerType: 'USER' | 'COMPANY', ownerId: string): Promise<Wallet> => {
-    const { data } = await apiClient.get(`/admin/finance/wallets/${ownerType}/${ownerId}`);
-    return data;
+    const response = await apiClient.get(`/admin/finance/wallets/${ownerType}/${ownerId}`);
+    return response as any;
   },
 
   getWalletTransactions: async (walletId: string, referenceType?: string): Promise<WalletTransaction[]> => {
     const params = referenceType ? { referenceType } : {};
-    const { data } = await apiClient.get(`/admin/finance/wallets/${walletId}/transactions`, { params });
-    return data;
+    const response = await apiClient.get(`/admin/finance/wallets/${walletId}/transactions`, { params });
+    return response as any;
   },
 
   addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string }): Promise<WalletTransaction> => {
-    const { data } = await apiClient.post("/admin/finance/wallets/transactions/manual", payload);
-    return data;
+    const response = await apiClient.post("/admin/finance/wallets/transactions/manual", payload);
+    return response as any;
   },
 
   // Commissions
   getCommissionMetrics: async (): Promise<CommissionMetrics> => {
-    const { data } = await apiClient.get("/admin/finance/commissions/metrics");
-    return data;
+    const response = await apiClient.get("/admin/finance/commissions/metrics");
+    return response as any;
   },
 
   getCommissions: async (filters: CommissionQueryFilters): Promise<PaginatedResponse<Commission>> => {
-    const { data } = await apiClient.get("/admin/finance/commissions", { params: filters });
-    return data;
+    const response = await apiClient.get("/admin/finance/commissions", { params: filters });
+    return response as any;
   },
 
   updateCommissionStatus: async (id: string, status: string): Promise<Commission> => {
-    const { data } = await apiClient.patch(`/admin/finance/commissions/${id}/status`, { status });
-    return data;
+    const response = await apiClient.patch(`/admin/finance/commissions/${id}/status`, { status });
+    return response as any;
   }
 };

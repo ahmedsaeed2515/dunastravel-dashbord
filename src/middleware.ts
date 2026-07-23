@@ -16,7 +16,9 @@ export default function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  const token = request.cookies.get('access_token');
+  const accessToken = request.cookies.get('access_token');
+  const refreshToken = request.cookies.get('refresh_token');
+  const token = accessToken || refreshToken;
   const isLoginPage = pathname.includes('/login');
 
   // If no token and not on login page, redirect to login
@@ -39,5 +41,5 @@ export default function middleware(request: NextRequest) {
 
 export const config = {
   // Match only internationalized pathnames
-  matcher: ['/', '/(ar|en)/:path*']
+  matcher: ['/', '/(en|ar|es|pt|it)/:path*']
 };

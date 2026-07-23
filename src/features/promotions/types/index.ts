@@ -26,4 +26,4 @@ export interface CreatePromotionPayload {
   isActive?: boolean;
 }
 
-export interface UpdatePromotionPayload extends Partial<CreatePromotionPayload> {}
+export type UpdatePromotionPayload = Partial<CreatePromotionPayload>;

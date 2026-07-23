@@ -83,8 +83,8 @@ export default function AuditLogsPage() {
                 <TableRow>
                   <TableCell colSpan={6} className="h-24 text-center">Loading audit logs...</TableCell>
                 </TableRow>
-              ) : data?.data?.length ? (
-                data.data.map((log) => (
+              ) : (Array.isArray(data) ? data : (data?.data || [])).length > 0 ? (
+                (Array.isArray(data) ? data : (data?.data || [])).map((log) => (
                   <TableRow key={log.id} className="hover:bg-muted/30 transition-colors cursor-pointer">
                     <TableCell className="font-mono text-xs text-muted-foreground">{log.id.slice(0, 8)}</TableCell>
                     <TableCell className="font-medium text-sm">
