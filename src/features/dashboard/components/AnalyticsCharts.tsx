@@ -1,110 +1,92 @@
 "use client";
 
-import { useBookingsTrend, useRevenueReport, useDestinationsReport } from "../hooks/useReports";
+import { RevenueTrendItem, BookingsTrendItem } from "../types";
 import { BeautifulEmptyState } from "@/components/shared/ui/BeautifulEmptyState";
-import { BarChart3, Map } from "lucide-react";
+import { BarChart3, TrendingUp } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
+import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid, Legend } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useTranslations } from "next-intl";
 
-export function AnalyticsCharts() {
-  const { data: bookingsTrend, isLoading: isLoadingBookings } = useBookingsTrend('monthly');
-  const { data: revenueTrend, isLoading: isLoadingRevenue } = useRevenueReport('monthly');
-  const { data: destinationsTrend, isLoading: isLoadingDestinations } = useDestinationsReport();
-  const tDashboard = useTranslations("dashboard");
+interface AnalyticsChartsProps {
+  revenueTrend?: RevenueTrendItem[];
+  bookingsTrend?: BookingsTrendItem[];
+  isLoadingRevenue?: boolean;
+  isLoadingBookings?: boolean;
+}
 
+export function AnalyticsCharts({
+  revenueTrend,
+  bookingsTrend,
+  isLoadingRevenue,
+  isLoadingBookings,
+}: AnalyticsChartsProps) {
   return (
-    <div className="grid gap-4 md:grid-cols-3 mb-8">
+    <div className="grid gap-6 md:grid-cols-2">
+      {/* 1. Revenue Trend Chart */}
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>{tDashboard("revenueTrend")}</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-emerald-500" /> Gross & Collected Revenue Trend
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingRevenue ? (
-            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[280px] w-full" />
           ) : !revenueTrend || revenueTrend.length === 0 ? (
             <BeautifulEmptyState
               icon={BarChart3}
-              title={tDashboard("noAnalyticsData")}
-              description={tDashboard("noRevenueData")}
+              title="No Revenue Data"
+              description="No confirmed payments or bookings recorded in selected date range."
             />
           ) : (
-            <div className="h-[300px] w-full mt-4">
+            <div className="h-[280px] w-full mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={revenueTrend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                  <XAxis dataKey="period" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(30, 58, 138, 0.05)' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                  <XAxis dataKey="period" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} tickFormatter={(val) => `$${val}`} />
+                  <Tooltip
+                    formatter={(value: any) => [`$${Number(value).toLocaleString()} USD`, ""]}
+                    contentStyle={{ borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)" }}
                   />
-                  <Bar dataKey="revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                  <Bar dataKey="grossRevenue" name="Gross Revenue" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <Bar dataKey="collected" name="Collected Payments" fill="#10b981" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           )}
         </CardContent>
       </Card>
-      
+
+      {/* 2. Bookings Trend Chart */}
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>{tDashboard("bookingTrend")}</CardTitle>
+          <CardTitle className="text-base flex items-center gap-2">
+            <BarChart3 className="w-4 h-4 text-primary" /> Bookings Volume & Status Trend
+          </CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingBookings ? (
-            <Skeleton className="h-[300px] w-full" />
+            <Skeleton className="h-[280px] w-full" />
           ) : !bookingsTrend || bookingsTrend.length === 0 ? (
             <BeautifulEmptyState
               icon={BarChart3}
-              title={tDashboard("noAnalyticsData")}
-              description={tDashboard("noBookingData")}
+              title="No Bookings Data"
+              description="No bookings created in selected date range."
             />
           ) : (
-            <div className="h-[300px] w-full mt-4">
+            <div className="h-[280px] w-full mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={bookingsTrend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                  <XAxis dataKey="period" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(30, 58, 138, 0.05)' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="bookings" fill="var(--primary)" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-      
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle>{tDashboard("topDestinations")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {isLoadingDestinations ? (
-            <Skeleton className="h-[300px] w-full" />
-          ) : !destinationsTrend || destinationsTrend.length === 0 ? (
-            <BeautifulEmptyState
-              icon={Map}
-              title={tDashboard("noAnalyticsData")}
-              description={tDashboard("noDestinationsData")}
-            />
-          ) : (
-            <div className="h-[300px] w-full mt-4">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={destinationsTrend}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.3} />
-                  <XAxis dataKey="destination" fontSize={12} tickLine={false} axisLine={false} />
-                  <YAxis fontSize={12} tickLine={false} axisLine={false} />
-                  <Tooltip 
-                    cursor={{ fill: 'rgba(30, 58, 138, 0.05)' }}
-                    contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
-                  />
-                  <Bar dataKey="count" fill="var(--primary)" radius={[4, 4, 0, 0]} />
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} opacity={0.2} />
+                  <XAxis dataKey="period" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis fontSize={11} tickLine={false} axisLine={false} />
+                  <Tooltip contentStyle={{ borderRadius: "8px", border: "1px solid rgba(255,255,255,0.1)" }} />
+                  <Legend wrapperStyle={{ fontSize: "12px", paddingTop: "10px" }} />
+                  <Bar dataKey="confirmed" name="Confirmed / Paid" fill="#10b981" stackId="a" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="pending" name="Pending Review" fill="#f59e0b" stackId="a" radius={[0, 0, 0, 0]} />
+                  <Bar dataKey="cancelled" name="Cancelled" fill="#ef4444" stackId="a" radius={[4, 4, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>

@@ -25,6 +25,8 @@ export function useTour(slug: string) {
     enabled: !!slug,
   });
 }
+export const useTourBySlug = useTour;
+
 
 export function useCreateTour() {
   const queryClient = useQueryClient();

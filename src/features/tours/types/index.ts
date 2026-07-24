@@ -63,6 +63,7 @@ export interface Tour {
   reviews?: any[];
   activityLogs?: any[];
   bookings?: any[];
+  landingPages?: any[];
   bookingCount?: number;
   reviewCount?: number;
   heroImage?: string | null;

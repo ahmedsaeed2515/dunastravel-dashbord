@@ -6,7 +6,6 @@ export function useDashboardMetrics() {
   return useQuery({
     queryKey: ["dashboard-metrics"],
     queryFn: async () => {
-      // Parallelize fetching all metrics endpoints
       const [
         general,
         tours,
@@ -17,7 +16,7 @@ export function useDashboardMetrics() {
         communications,
         currencies
       ] = await Promise.all([
-        dashboardApi.getMetrics().catch(() => null),
+        dashboardApi.getSummary().catch(() => null),
         apiClient.get('/admin/tours/stats').catch(() => null),
         apiClient.get('/admin/finance/commissions/metrics').catch(() => null),
         apiClient.get('/admin/finance/wallets/metrics').catch(() => null),
