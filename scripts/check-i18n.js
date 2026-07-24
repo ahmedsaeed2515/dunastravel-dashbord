@@ -3,9 +3,11 @@ const path = require('path');
 
 const enPath = path.join(__dirname, '../src/messages/en.json');
 const arPath = path.join(__dirname, '../src/messages/ar.json');
+const ptPath = path.join(__dirname, '../src/messages/pt.json');
 
 const en = JSON.parse(fs.readFileSync(enPath, 'utf8'));
 const ar = JSON.parse(fs.readFileSync(arPath, 'utf8'));
+const pt = JSON.parse(fs.readFileSync(ptPath, 'utf8'));
 
 function getKeys(obj, prefix = '') {
   let keys = [];
@@ -22,9 +24,12 @@ function getKeys(obj, prefix = '') {
 
 const enKeys = getKeys(en);
 const arKeys = getKeys(ar);
+const ptKeys = getKeys(pt);
 
 const missingInAr = enKeys.filter(k => !arKeys.includes(k));
-const missingInEn = arKeys.filter(k => !enKeys.includes(k));
+const missingInEnFromAr = arKeys.filter(k => !enKeys.includes(k));
+const missingInPt = enKeys.filter(k => !ptKeys.includes(k));
+const missingInEnFromPt = ptKeys.filter(k => !enKeys.includes(k));
 
 let hasErrors = false;
 
@@ -34,9 +39,21 @@ if (missingInAr.length > 0) {
   hasErrors = true;
 }
 
-if (missingInEn.length > 0) {
-  console.error('❌ Keys missing in English (en.json):');
-  missingInEn.forEach(k => console.error(`  - ${k}`));
+if (missingInEnFromAr.length > 0) {
+  console.error('❌ Extra keys in Arabic not in English (en.json):');
+  missingInEnFromAr.forEach(k => console.error(`  - ${k}`));
+  hasErrors = true;
+}
+
+if (missingInPt.length > 0) {
+  console.error('❌ Keys missing in Portuguese (pt.json):');
+  missingInPt.forEach(k => console.error(`  - ${k}`));
+  hasErrors = true;
+}
+
+if (missingInEnFromPt.length > 0) {
+  console.error('❌ Extra keys in Portuguese not in English (en.json):');
+  missingInEnFromPt.forEach(k => console.error(`  - ${k}`));
   hasErrors = true;
 }
 
@@ -44,6 +61,6 @@ if (hasErrors) {
   console.error('\nFAIL: Translation key parity check failed!');
   process.exit(1);
 } else {
-  console.log(`✅ i18n Parity Check PASSED! Total keys: ${enKeys.length} matched perfectly in EN and AR.`);
+  console.log(`✅ i18n Parity Check PASSED! Total keys: ${enKeys.length} matched perfectly in EN, AR, and PT.`);
   process.exit(0);
 }

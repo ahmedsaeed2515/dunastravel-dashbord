@@ -19,6 +19,7 @@ describe("Direction and Localization Architecture Guards", () => {
     expect(getSidebarSide("ar")).toBe("right");
     expect(getSidebarSide("en")).toBe("left");
     expect(getSidebarSide("es")).toBe("left");
+    expect(getSidebarSide("pt")).toBe("left");
   });
 
   it("should calculate correct Sheet/Drawer side for RTL vs LTR", () => {
@@ -34,10 +35,12 @@ describe("Direction and Localization Architecture Guards", () => {
     // Default detail drawers (side="right")
     expect(getEffectiveSheetSide("en", "right")).toBe("right");
     expect(getEffectiveSheetSide("ar", "right")).toBe("left");
+    expect(getEffectiveSheetSide("pt", "right")).toBe("right");
 
     // Mobile sidebar sheet (side="left")
     expect(getEffectiveSheetSide("en", "left")).toBe("left");
     expect(getEffectiveSheetSide("ar", "left")).toBe("right");
+    expect(getEffectiveSheetSide("pt", "left")).toBe("left");
   });
 
   it("should format technical identifiers with LTR isolation class", () => {
