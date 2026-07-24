@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
+import enMessages from './src/messages/en.json';
 
 // Mock matchMedia for UI components
 Object.defineProperty(window, 'matchMedia', {
@@ -24,6 +25,11 @@ vi.mock('next-intl', () => ({
       if (options && options.name) return `Welcome back, ${options.name}`;
       if (options && options.selected !== undefined) return `${options.selected} of ${options.total} row(s) selected.`;
       if (options && options.current !== undefined) return `Page ${options.current} of ${options.total}`;
+      
+      const ns = namespace ? (enMessages as any)[namespace] : enMessages;
+      if (ns && ns[key]) {
+        return ns[key];
+      }
       return key;
     };
   },
