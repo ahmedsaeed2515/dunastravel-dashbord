@@ -43,8 +43,8 @@ export default function LoginPage() {
 
       <Card className="relative z-10 w-full max-w-md border-border/80 shadow-md bg-card/95 backdrop-blur-md p-2">
         <CardHeader className="text-center pb-2">
-          <div className="mx-auto w-12 h-12 rounded-xl bg-primary flex items-center justify-center text-primary-foreground font-bold text-xl mb-3 shadow-sm">
-            D
+          <div className="mx-auto mb-3 flex items-center justify-center">
+            <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-14 w-auto object-contain" />
           </div>
           <CardTitle className="text-2xl font-bold font-heading text-foreground">
             {tCommon("appName")}

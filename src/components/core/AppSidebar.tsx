@@ -55,10 +55,8 @@ export function AppSidebar() {
   return (
     <Sidebar variant="inset" collapsible="icon" className="border-e border-border/70 bg-sidebar shadow-xs">
       <SidebarHeader className="flex items-center justify-between px-4 py-4 h-16 border-b border-border/60">
-        <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:hidden transition-all duration-300">
-          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-base shadow-sm">
-            D
-          </div>
+        <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden transition-all duration-300">
+          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-9 w-auto object-contain shrink-0" />
           <div className="flex flex-col">
             <span className="font-bold tracking-tight text-sm text-foreground font-heading">
               {tCommon("appName")}
@@ -68,8 +66,8 @@ export function AppSidebar() {
             </span>
           </div>
         </div>
-        <div className="hidden group-data-[collapsible=icon]:flex w-8 h-8 rounded-lg bg-primary items-center justify-center text-primary-foreground font-bold text-base shadow-sm">
-          D
+        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
+          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-8 w-auto object-contain shrink-0" />
         </div>
       </SidebarHeader>
 
