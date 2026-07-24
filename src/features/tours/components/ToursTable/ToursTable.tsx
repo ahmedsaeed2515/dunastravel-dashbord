@@ -173,7 +173,7 @@ export function ToursTable() {
             onClick={() => setViewMode("grid")}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
-            Grid
+            {tCommon("grid")}
           </Button>
           <Button
             type="button"
@@ -183,7 +183,7 @@ export function ToursTable() {
             onClick={() => setViewMode("table")}
           >
             <TableIcon className="h-3.5 w-3.5" />
-            Table
+            {tCommon("table")}
           </Button>
         </div>
 

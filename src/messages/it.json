@@ -73,7 +73,9 @@
     "yes": "Sì",
     "no": "No",
     "or": "o",
-    "and": "e"
+    "and": "e",
+    "grid": "Griglia",
+    "table": "Tabella"
   },
   "navigation": {
     "overview": "Panoramica",

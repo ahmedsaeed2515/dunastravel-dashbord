@@ -36,12 +36,14 @@ describe("Direction and Localization Architecture Guards", () => {
     // Default detail drawers (side="right")
     expect(getEffectiveSheetSide("en", "right")).toBe("right");
     expect(getEffectiveSheetSide("ar", "right")).toBe("left");
+    expect(getEffectiveSheetSide("es", "right")).toBe("right");
     expect(getEffectiveSheetSide("pt", "right")).toBe("right");
     expect(getEffectiveSheetSide("it", "right")).toBe("right");
 
     // Mobile sidebar sheet (side="left")
     expect(getEffectiveSheetSide("en", "left")).toBe("left");
     expect(getEffectiveSheetSide("ar", "left")).toBe("right");
+    expect(getEffectiveSheetSide("es", "left")).toBe("left");
     expect(getEffectiveSheetSide("pt", "left")).toBe("left");
     expect(getEffectiveSheetSide("it", "left")).toBe("left");
   });

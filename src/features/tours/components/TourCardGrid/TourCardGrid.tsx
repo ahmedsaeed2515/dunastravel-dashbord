@@ -14,6 +14,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useBulkUpdateTours } from "../../hooks/useTours";
+import { useTranslations, useLocale } from "next-intl";
 
 interface TourCardGridProps {
   tours: Tour[];
@@ -24,6 +25,11 @@ interface TourCardGridProps {
 
 export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridProps) {
   const bulkUpdate = useBulkUpdateTours();
+  const tTours = useTranslations("tours");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tDashboard = useTranslations("dashboard");
+  const currentLocale = useLocale();
 
   const handleTogglePublish = async (tour: Tour) => {
     const nextStatus = tour.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
@@ -38,8 +44,8 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
     return (
       <div className="text-center py-16 bg-card border rounded-2xl p-8">
         <ImageIcon className="h-12 w-12 text-muted-foreground/50 mx-auto mb-3" />
-        <h3 className="text-lg font-bold text-foreground">No tours found</h3>
-        <p className="text-sm text-muted-foreground mt-1">Try adjusting your search query or filters.</p>
+        <h3 className="text-lg font-bold text-foreground">{tTours("noTours")}</h3>
+        <p className="text-sm text-muted-foreground mt-1">{tTours("noToursDesc")}</p>
       </div>
     );
   }
@@ -47,7 +53,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {tours.map((tour) => {
-        const title = getTourTitle(tour, "en");
+        const title = getTourTitle(tour, currentLocale);
         const heroImg = tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
         const amount = parseFloat(tour.basePriceUsd || "0");
         const formattedPrice = new Intl.NumberFormat("en-US", {
@@ -88,12 +94,12 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                   variant={tour.status === "PUBLISHED" ? "default" : tour.status === "DRAFT" ? "secondary" : "destructive"}
                   className="font-bold text-xs shadow-sm"
                 >
-                  {tour.status}
+                  {tStatus(tour.status)}
                 </Badge>
                 {tour.isFeatured && (
                   <Badge variant="secondary" className="bg-amber-500 text-white border-none font-bold text-xs flex items-center gap-1 shadow-sm">
                     <Sparkles className="h-3 w-3" />
-                    Featured
+                    {tTours("published")}
                   </Badge>
                 )}
               </div>
@@ -107,7 +113,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
 
               {/* Price Tag */}
               <div className="absolute bottom-3 right-3 text-right bg-background/90 backdrop-blur-md px-3 py-1 rounded-xl border shadow-sm">
-                <span className="text-xs text-muted-foreground block text-[10px]">From</span>
+                <span className="text-xs text-muted-foreground block text-[10px]">{tTours("priceFrom")}</span>
                 <span className="font-mono font-extrabold text-foreground text-sm">{formattedPrice}</span>
               </div>
             </div>
@@ -138,7 +144,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
               <div className="space-y-1.5 pt-2 border-t">
                 <div className="flex justify-between items-center text-xs">
                   <span className="text-muted-foreground font-medium flex items-center gap-1">
-                    <Users className="h-3.5 w-3.5" /> Occupancy
+                    <Users className="h-3.5 w-3.5" /> {tDashboard("occupancyRate")}
                   </span>
                   <span className="font-mono font-bold text-foreground">{sold} / {capacity} ({percent}%)</span>
                 </div>
@@ -159,7 +165,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                   onClick={() => onView(tour)}
                 >
                   <Eye className="h-3.5 w-3.5" />
-                  View
+                  {tCommon("view")}
                 </Button>
                 <Button
                   variant="secondary"
@@ -168,7 +174,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                   onClick={() => onEdit(tour)}
                 >
                   <Edit3 className="h-3.5 w-3.5" />
-                  Edit
+                  {tCommon("edit")}
                 </Button>
 
                 <DropdownMenu>
@@ -178,19 +184,19 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-48">
-                    <DropdownMenuLabel>Product Actions</DropdownMenuLabel>
+                    <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
                     <DropdownMenuItem onClick={() => handleTogglePublish(tour)}>
-                      {tour.status === "PUBLISHED" ? "Unpublish to Draft" : "Publish Product"}
+                      {tour.status === "PUBLISHED" ? tStatus("DRAFT") : tStatus("PUBLISHED")}
                     </DropdownMenuItem>
                     <DropdownMenuItem onClick={() => handleToggleFeatured(tour)}>
-                      {tour.isFeatured ? "Remove Featured Status" : "Mark as Featured"}
+                      {tTours("title")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onDelete(tour)}
                       className="text-red-600 focus:text-red-600"
                     >
-                      Archive Tour
+                      {tCommon("delete")}
                     </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>

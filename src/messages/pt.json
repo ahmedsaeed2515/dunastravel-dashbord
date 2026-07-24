@@ -73,7 +73,9 @@
     "yes": "Sim",
     "no": "Não",
     "or": "ou",
-    "and": "e"
+    "and": "e",
+    "grid": "Grade",
+    "table": "Tabela"
   },
   "navigation": {
     "overview": "Visão geral",

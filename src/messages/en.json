@@ -73,7 +73,9 @@
     "yes": "Yes",
     "no": "No",
     "or": "or",
-    "and": "and"
+    "and": "and",
+    "grid": "Grid",
+    "table": "Table"
   },
   "navigation": {
     "overview": "Overview",
