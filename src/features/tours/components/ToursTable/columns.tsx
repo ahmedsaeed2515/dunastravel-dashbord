@@ -10,6 +10,9 @@ import { TourRowActions } from "./TourRowActions";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 
 export function getTourTitle(tour: Tour, lang: string = "en"): string {
+  if ((tour as any).title && typeof (tour as any).title === "string" && (tour as any).title.trim() !== "") {
+    return (tour as any).title;
+  }
   const titleObj = tour.titleJsonb || {};
   if (titleObj[lang] && typeof titleObj[lang] === "string" && titleObj[lang].trim() !== "") {
     return titleObj[lang];

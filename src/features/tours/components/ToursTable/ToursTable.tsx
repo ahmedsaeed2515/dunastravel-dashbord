@@ -278,7 +278,7 @@ export function ToursTable() {
 
       {/* Body View Rendering */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-24">
+        <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : viewMode === "grid" ? (
