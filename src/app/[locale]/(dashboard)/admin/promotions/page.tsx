@@ -7,7 +7,7 @@ import { usePromotions, useCreatePromotion, useUpdatePromotion, useDeletePromoti
 import { Promotion, PromotionQueryFilters, CreatePromotionPayload, UpdatePromotionPayload } from "@/features/promotions/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
-import { toast } from "sonner";
+import { PageHeader } from "@/components/shared/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -70,31 +70,29 @@ export default function PromotionsPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight font-serif text-primary">Promotions</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage discount codes, vouchers, and promotional campaigns.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={handleCreateClick} className="gap-2 bg-primary">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <PageHeader
+        title="Promotions & Discounts"
+        description="Manage promotional codes, campaign vouchers, validity dates, maximum usage bounds, and discount rules."
+        actions={
+          <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
-            New Promotion
+            <span>New Promotion</span>
           </Button>
-        </div>
-      </div>
-
-      <PromotionsTable 
-        data={Array.isArray(data) ? data : (data?.data || [])}
-        total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
-        isLoading={isLoading}
-        filters={filters}
-        onFilterChange={setFilters}
-        onEdit={handleEdit}
-        onDelete={setPromotionToDelete}
+        }
       />
+
+      <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
+        <PromotionsTable 
+          data={Array.isArray(data) ? data : (data?.data || [])}
+          total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
+          isLoading={isLoading}
+          filters={filters}
+          onFilterChange={setFilters}
+          onEdit={handleEdit}
+          onDelete={setPromotionToDelete}
+        />
+      </div>
 
       <CreatePromotionDialog 
         open={isDialogOpen} 
@@ -112,9 +110,9 @@ export default function PromotionsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the promotion
+              This action cannot be undone. This will permanently delete promotion code
               <span className="font-semibold text-foreground"> {promotionToDelete?.code} </span> 
-              and it will no longer be valid for checkouts.
+              and deactivate it for future checkouts.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

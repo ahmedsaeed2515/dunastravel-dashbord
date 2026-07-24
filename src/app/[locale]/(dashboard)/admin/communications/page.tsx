@@ -19,6 +19,7 @@ import {
 } from "@/features/communications/hooks/useCommunications";
 import { CreateTemplateDialog } from "@/features/communications/components/CreateTemplateDialog";
 import { EmailTemplate, CreateEmailTemplatePayload, UpdateEmailTemplatePayload } from "@/features/communications/types";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function CommunicationsPage() {
   const [activeTab, setActiveTab] = useState("inquiries");
@@ -69,21 +70,17 @@ export default function CommunicationsPage() {
   };
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2 mb-8">
-        <div>
-          <h2 className="text-3xl font-playfair font-bold tracking-tight text-primary flex items-center gap-2">
-            <Mail className="h-6 w-6" />
-            Communications & Notifications
-          </h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage Custom Tour Inquiries, Message Templates, and Delivery Logs.
-          </p>
-        </div>
-        <Button className="gap-2" onClick={handleCreateClick}>
-          <Plus className="h-4 w-4" /> New Template
-        </Button>
-      </div>
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <PageHeader
+        title="Communications & Notifications"
+        description="Manage customer inquiries, contact submissions, transactional email templates, and delivery logs."
+        actions={
+          <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
+            <Plus className="h-4 w-4" />
+            <span>New Template</span>
+          </Button>
+        }
+      />
 
       <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="space-y-6">
         <TabsList className="bg-background/60 backdrop-blur-md border border-border/50">

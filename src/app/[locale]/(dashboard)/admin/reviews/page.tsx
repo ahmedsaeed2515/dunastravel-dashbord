@@ -6,6 +6,7 @@ import { ReviewsTable } from "@/features/reviews/components/ReviewsTable";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export default function ReviewsPage() {
   const [filterState, setFilterState] = useState<"pending" | "published">("pending");
@@ -17,22 +18,18 @@ export default function ReviewsPage() {
   const { data: publishedData, isLoading: publishedLoading } = useReviews({ isPublished: true, limit: 100 });
 
   return (
-    <div className="flex-1 space-y-6 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2 mb-8">
-        <div>
-          <h2 className="text-3xl font-playfair font-bold tracking-tight text-primary">Review Moderation</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Approve or reject customer reviews before they appear on the public site.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <PageHeader
+        title="Review Moderation"
+        description="Audit, approve, or reject customer tour reviews and ratings before publication on the public website."
+      />
 
-      <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 p-6">
+      <Card className="border-border/80 shadow-xs bg-card p-4 sm:p-6">
         <Tabs defaultValue="pending" className="w-full" onValueChange={(val) => setFilterState(val as any)}>
-          <div className="flex justify-between items-center mb-6">
-            <TabsList className="grid grid-cols-2 w-[300px]">
-              <TabsTrigger value="pending">Pending Moderation</TabsTrigger>
-              <TabsTrigger value="published">Published</TabsTrigger>
+          <div className="flex justify-between items-center mb-4">
+            <TabsList className="grid grid-cols-2 w-[280px] bg-muted/60 p-1 border border-border/60">
+              <TabsTrigger value="pending" className="text-xs font-semibold">Pending Moderation</TabsTrigger>
+              <TabsTrigger value="published" className="text-xs font-semibold">Published</TabsTrigger>
             </TabsList>
             
             {(pendingLoading || publishedLoading) && (
@@ -40,7 +37,7 @@ export default function ReviewsPage() {
             )}
           </div>
 
-          <div className="mt-4">
+          <div className="mt-2">
             {filterState === "pending" ? (
               <ReviewsTable data={Array.isArray(pendingData) ? pendingData : (pendingData?.data || [])} isLoading={pendingLoading} />
             ) : (

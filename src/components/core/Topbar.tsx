@@ -1,44 +1,103 @@
 "use client";
 
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, Bell } from "lucide-react";
+import { Search, Bell, Globe, Moon, Sun, Check } from "lucide-react";
 import { useTheme } from "next-themes";
-import { Moon, Sun } from "lucide-react";
+import { usePathname, useRouter } from "@/i18n/routing";
+import { useParams } from "next/navigation";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
+
+const LOCALES = [
+  { code: "en", label: "English", flag: "🇬🇧" },
+  { code: "ar", label: "العربية", flag: "🇪🇬", dir: "rtl" },
+  { code: "es", label: "Español", flag: "🇪🇸" },
+  { code: "pt", label: "Português", flag: "🇧🇷" },
+  { code: "it", label: "Italiano", flag: "🇮🇹" },
+];
 
 export function Topbar() {
   const { setTheme, theme } = useTheme();
+  const pathname = usePathname();
+  const router = useRouter();
+  const params = useParams();
+
+  const currentLocale = (params?.locale as string) || "en";
+  const activeLocaleObj = LOCALES.find((l) => l.code === currentLocale) || LOCALES[0];
+
+  const handleLanguageChange = (newLocale: string) => {
+    router.replace(pathname, { locale: newLocale });
+  };
 
   return (
-    <header className="h-16 border-b border-white/5 dark:border-white/5 bg-background/80 backdrop-blur-2xl supports-[backdrop-filter]:bg-background/60 z-20 sticky top-0 flex items-center justify-between px-6 transition-all duration-300 shadow-[0_4px_24px_rgba(0,0,0,0.02)] dark:shadow-[0_4px_24px_rgba(0,0,0,0.2)]">
-      <div className="flex items-center gap-4">
-        <SidebarTrigger className="hover:bg-accent/50 text-foreground transition-all duration-300" />
-        
+    <header className="h-16 border-b border-border/60 bg-background/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-2xs">
+      <div className="flex items-center gap-3">
+        <SidebarTrigger className="hover:bg-muted text-foreground transition-colors p-2 rounded-md" />
+
         {/* Global Search Trigger (Cmd+K) */}
-        <button className="hidden md:flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 hover:bg-muted border border-border px-4 py-2 rounded-full w-64 transition-all duration-300">
-          <Search className="w-4 h-4" />
-          <span>Search...</span>
-          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-1 rounded border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground opacity-100">
+        <button
+          type="button"
+          className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 hover:bg-muted border border-border/80 px-3.5 py-1.5 rounded-full w-56 md:w-64 transition-all duration-200"
+        >
+          <Search className="w-4 h-4 shrink-0 text-muted-foreground" />
+          <span className="truncate">Search dashboard...</span>
+          <kbd className="ml-auto pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-border bg-background px-1.5 font-mono text-[10px] font-medium text-muted-foreground">
             <span className="text-xs">⌘</span>K
           </kbd>
         </button>
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex items-center gap-2 sm:gap-3">
+        {/* 5-Language Switcher */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" size="sm" className="gap-1.5 font-medium px-2.5 h-9">
+              <Globe className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm font-semibold uppercase">{currentLocale}</span>
+              <span className="text-xs text-muted-foreground hidden sm:inline-block">({activeLocaleObj.flag})</span>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-44">
+            {LOCALES.map((loc) => (
+              <DropdownMenuItem
+                key={loc.code}
+                onClick={() => handleLanguageChange(loc.code)}
+                className="flex items-center justify-between cursor-pointer py-2 text-sm"
+              >
+                <div className="flex items-center gap-2">
+                  <span>{loc.flag}</span>
+                  <span className={loc.code === "ar" ? "font-semibold" : ""}>{loc.label}</span>
+                </div>
+                {currentLocale === loc.code && (
+                  <Check className="w-4 h-4 text-primary shrink-0" />
+                )}
+              </DropdownMenuItem>
+            ))}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
         {/* Theme Toggle */}
-        <button
+        <Button
+          variant="ghost"
+          size="icon-sm"
           onClick={() => setTheme(theme === "light" ? "dark" : "light")}
-          className="p-2 rounded-full hover:bg-muted/80 text-foreground transition-all duration-300"
+          title="Toggle theme"
         >
-          <Sun className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
-          <Moon className="absolute h-[1.2rem] w-[1.2rem] rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
+          <Sun className="h-4 w-4 rotate-0 scale-100 transition-all dark:-rotate-90 dark:scale-0" />
+          <Moon className="absolute h-4 w-4 rotate-90 scale-0 transition-all dark:rotate-0 dark:scale-100" />
           <span className="sr-only">Toggle theme</span>
-        </button>
+        </Button>
 
         {/* Notifications */}
-        <button className="p-2 rounded-full hover:bg-muted/80 text-foreground transition-all duration-300 relative">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-destructive rounded-full border border-background"></span>
-        </button>
+        <Button variant="ghost" size="icon-sm" className="relative" title="Notifications">
+          <Bell className="w-4 h-4" />
+          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background"></span>
+        </Button>
       </div>
     </header>
   );

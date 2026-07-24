@@ -51,12 +51,22 @@ export function AppSidebar() {
   }
 
   return (
-    <Sidebar variant="inset" collapsible="icon" className="border-r border-white/5 shadow-sm dark:shadow-none bg-background/50 backdrop-blur-xl">
-      <SidebarHeader className="flex items-center justify-center py-6 h-20 border-b border-white/5">
-        <div className="font-display font-bold text-2xl text-primary flex items-center gap-2 group-data-[collapsible=icon]:hidden transition-all duration-500">
-          <span className="text-accent-foreground">D</span>unas
+    <Sidebar variant="inset" collapsible="icon" className="border-r border-border/70 bg-sidebar shadow-xs">
+      <SidebarHeader className="flex items-center justify-between px-4 py-4 h-16 border-b border-border/60">
+        <div className="flex items-center gap-2.5 group-data-[collapsible=icon]:hidden transition-all duration-300">
+          <div className="w-8 h-8 rounded-lg bg-primary flex items-center justify-center text-primary-foreground font-bold text-base shadow-sm">
+            D
+          </div>
+          <div className="flex flex-col">
+            <span className="font-bold tracking-tight text-sm text-foreground font-heading">
+              Dunas Travel
+            </span>
+            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
+              Admin Suite
+            </span>
+          </div>
         </div>
-        <div className="font-display font-bold text-2xl text-accent-foreground hidden group-data-[collapsible=icon]:block transition-all duration-500 scale-110">
+        <div className="hidden group-data-[collapsible=icon]:flex w-8 h-8 rounded-lg bg-primary items-center justify-center text-primary-foreground font-bold text-base shadow-sm">
           D
         </div>
       </SidebarHeader>

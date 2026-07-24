@@ -6,12 +6,12 @@ import { OperationsSection } from "@/features/dashboard/components/OperationsSec
 import { PageLoader } from "@/components/shared/ui/PageLoader";
 
 export const metadata = {
-  title: "Dashboard Overview - Dunas Travel",
+  title: "Dashboard Overview - Dunas Travel Admin",
 };
 
 export default function DashboardPage() {
   return (
-    <div className="p-8 pb-16 max-w-7xl mx-auto animate-in fade-in zoom-in-95 duration-500">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <DashboardHeader />
       
       <Suspense fallback={<PageLoader />}>

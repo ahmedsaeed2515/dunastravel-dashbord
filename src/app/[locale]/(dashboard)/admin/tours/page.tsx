@@ -1,25 +1,21 @@
 import { Suspense } from "react";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
 import { TableSkeleton } from "@/components/shared/ui/Skeletons";
-import { RequirePermission } from "@/components/shared/auth/RequirePermission";
+import { PageHeader } from "@/components/shared/PageHeader";
 
 export const metadata = {
-  title: "Tours & Travel Products - Dunas Travel",
+  title: "Tours & Travel Products - Dunas Travel Admin",
 };
 
 export default function ToursPage() {
   return (
-    <div className="p-8 pb-16 max-w-[1600px] mx-auto animate-in fade-in zoom-in-95 duration-500">
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-display font-bold font-serif text-foreground">Tours & Travel Products</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage enterprise travel products, itineraries, surge pricing rules, and publishing channels.
-          </p>
-        </div>
-      </div>
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <PageHeader
+        title="Tours & Travel Products"
+        description="Manage enterprise tour products, itineraries, 5-language localized content, pricing structures, and availability capacity."
+      />
 
-      <div className="bg-background rounded-2xl shadow-sm border p-6">
+      <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
         <Suspense fallback={<TableSkeleton />}>
           <ToursTable />
         </Suspense>

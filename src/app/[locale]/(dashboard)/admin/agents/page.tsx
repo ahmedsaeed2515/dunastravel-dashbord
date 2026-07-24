@@ -7,6 +7,7 @@ import { useAgents, useCreateAgent, useUpdateAgent, useDeleteAgent } from "@/fea
 import { Agent, AgentQueryFilters, CreateAgentPayload, UpdateAgentPayload } from "@/features/agents/types";
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
+import { PageHeader } from "@/components/shared/PageHeader";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -69,31 +70,29 @@ export default function AgentsPage() {
   };
 
   return (
-    <div className="flex-1 space-y-4 p-8 pt-6">
-      <div className="flex items-center justify-between space-y-2 mb-6">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight font-serif text-primary">Agents</h2>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Manage travel agents, independent reps, and company affiliates.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button onClick={handleCreateClick} className="gap-2 bg-primary">
+    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+      <PageHeader
+        title="Travel Agents"
+        description="Manage independent travel representatives, B2B sales agents, company affiliate assignments, and performance credentials."
+        actions={
+          <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
-            New Agent
+            <span>New Agent</span>
           </Button>
-        </div>
-      </div>
-
-      <AgentsTable 
-        data={Array.isArray(data) ? data : (data?.data || [])}
-        total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
-        isLoading={isLoading}
-        filters={filters}
-        onFilterChange={setFilters}
-        onEdit={handleEdit}
-        onDelete={setAgentToDelete}
+        }
       />
+
+      <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
+        <AgentsTable 
+          data={Array.isArray(data) ? data : (data?.data || [])}
+          total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
+          isLoading={isLoading}
+          filters={filters}
+          onFilterChange={setFilters}
+          onEdit={handleEdit}
+          onDelete={setAgentToDelete}
+        />
+      </div>
 
       <CreateAgentDialog 
         open={isDialogOpen} 
@@ -111,9 +110,9 @@ export default function AgentsPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete the agent
+              This action cannot be undone. This will permanently delete agent
               <span className="font-semibold text-foreground"> {agentToDelete?.name} </span> 
-              and revoke their access to the system.
+              and revoke their system access.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
