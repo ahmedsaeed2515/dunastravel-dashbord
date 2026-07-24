@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { CreatePromotionPayload, Promotion, UpdatePromotionPayload } from "../types";
+import { useTranslations } from "next-intl";
 
 const formSchema = z.object({
   code: z.string().min(2, "Code must be at least 2 characters"),
@@ -29,6 +30,9 @@ interface CreatePromotionDialogProps {
 }
 
 export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitting, initialData }: CreatePromotionDialogProps) {
+  const tPromotions = useTranslations("promotions");
+  const tCommon = useTranslations("common");
+
   const isEditing = !!initialData;
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -66,7 +70,7 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Promotion" : "Create Promotion"}</DialogTitle>
+          <DialogTitle>{isEditing ? tCommon("edit") : tPromotions("createPromotion")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
@@ -75,9 +79,9 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
               name="code"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Promo Code</FormLabel>
+                  <FormLabel>{tPromotions("promoCode")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. SUMMER2026" {...field} />
+                    <Input placeholder="SUMMER2026" className="dir-ltr text-start font-mono" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -89,9 +93,9 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
               name="discountPercent"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Discount (%)</FormLabel>
+                  <FormLabel>{tPromotions("discountValue")}</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" className="dir-ltr text-start font-mono" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -104,7 +108,7 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
                 name="validFrom"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valid From</FormLabel>
+                    <FormLabel>{tPromotions("validFrom")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -118,7 +122,7 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
                 name="validUntil"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Valid Until</FormLabel>
+                    <FormLabel>{tPromotions("validUntil")}</FormLabel>
                     <FormControl>
                       <Input type="date" {...field} />
                     </FormControl>
@@ -133,9 +137,9 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
               name="maxUses"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Maximum Uses</FormLabel>
+                  <FormLabel>{tPromotions("usedCount")}</FormLabel>
                   <FormControl>
-                    <Input type="number" {...field} />
+                    <Input type="number" className="dir-ltr text-start font-mono" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -148,7 +152,7 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
               render={({ field }) => (
                 <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 shadow-sm">
                   <div className="space-y-0.5">
-                    <FormLabel>Active Status</FormLabel>
+                    <FormLabel>{tCommon("status")}</FormLabel>
                   </div>
                   <FormControl>
                     <Switch
@@ -162,10 +166,10 @@ export function CreatePromotionDialog({ open, onOpenChange, onSubmit, isSubmitti
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create"}
+                {isSubmitting ? tCommon("saving") : isEditing ? tCommon("saveChanges") : tCommon("create")}
               </Button>
             </div>
           </form>

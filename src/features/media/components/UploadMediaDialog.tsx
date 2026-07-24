@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { UploadMediaPayload } from "../types";
+import { useTranslations } from "next-intl";
 
 interface UploadMediaDialogProps {
   open: boolean;
@@ -16,6 +17,9 @@ interface UploadMediaDialogProps {
 }
 
 export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }: UploadMediaDialogProps) {
+  const tMedia = useTranslations("media");
+  const tCommon = useTranslations("common");
+
   const [file, setFile] = useState<File | null>(null);
   const [entityType, setEntityType] = useState<'TOUR' | 'GENERAL'>('GENERAL');
   const [altText, setAltText] = useState("");
@@ -45,11 +49,11 @@ export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }:
     }}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Upload Media</DialogTitle>
+          <DialogTitle>{tMedia("uploadAsset")}</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label>Image File</Label>
+            <Label>{tMedia("title")}</Label>
             <Input 
               type="file" 
               accept="image/jpeg, image/png, image/webp" 
@@ -59,10 +63,10 @@ export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }:
           </div>
 
           <div className="space-y-2">
-            <Label>Type</Label>
+            <Label>{tCommon("type")}</Label>
             <Select value={entityType} onValueChange={(val) => { if(val) setEntityType(val as 'TOUR' | 'GENERAL') }}>
               <SelectTrigger>
-                <SelectValue placeholder="Select type" />
+                <SelectValue placeholder={tCommon("selectOption")} />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="GENERAL">General Asset</SelectItem>
@@ -73,9 +77,10 @@ export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }:
 
           {entityType === 'TOUR' && (
             <div className="space-y-2">
-              <Label>Tour ID (Optional)</Label>
+              <Label>Tour ID</Label>
               <Input 
-                placeholder="UUID of the tour" 
+                placeholder="UUID" 
+                className="dir-ltr text-start"
                 value={entityId} 
                 onChange={(e) => setEntityId(e.target.value)} 
               />
@@ -83,9 +88,9 @@ export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }:
           )}
 
           <div className="space-y-2">
-            <Label>Alt Text (Optional)</Label>
+            <Label>{tCommon("description")}</Label>
             <Input 
-              placeholder="Describe the image" 
+              placeholder={tCommon("description")} 
               value={altText} 
               onChange={(e) => setAltText(e.target.value)} 
               maxLength={255}
@@ -94,10 +99,10 @@ export function UploadMediaDialog({ open, onOpenChange, onUpload, isUploading }:
 
           <div className="flex justify-end gap-3 pt-4">
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+              {tCommon("cancel")}
             </Button>
             <Button type="submit" disabled={!file || isUploading}>
-              {isUploading ? "Uploading..." : "Upload"}
+              {isUploading ? tMedia("uploading") : tMedia("uploadAsset")}
             </Button>
           </div>
         </form>

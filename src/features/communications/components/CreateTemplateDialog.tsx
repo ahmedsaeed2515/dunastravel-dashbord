@@ -9,6 +9,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDes
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useTranslations } from "next-intl";
 
 const formSchema = z.object({
   name: z.string().min(2, "Template name is required"),
@@ -25,6 +26,9 @@ interface CreateTemplateDialogProps {
 }
 
 export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmitting, initialData }: CreateTemplateDialogProps) {
+  const tComm = useTranslations("communications");
+  const tCommon = useTranslations("common");
+
   const isEditing = !!initialData;
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -56,7 +60,7 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Template" : "Create New Template"}</DialogTitle>
+          <DialogTitle>{isEditing ? tCommon("edit") : tCommon("create")}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
@@ -65,11 +69,10 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Template Name</FormLabel>
+                  <FormLabel>{tCommon("name")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Booking Confirmation" {...field} />
+                    <Input placeholder={tCommon("name")} {...field} />
                   </FormControl>
-                  <FormDescription>Internal identifier for this template.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -80,11 +83,10 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
               name="subject"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Subject</FormLabel>
+                  <FormLabel>{tComm("title")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="Your booking is confirmed!" {...field} />
+                    <Input placeholder={tComm("title")} {...field} />
                   </FormControl>
-                  <FormDescription>Supports variables like {'{{name}}'}.</FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
@@ -95,7 +97,7 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
               name="bodyHtml"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Template Body (HTML/Text)</FormLabel>
+                  <FormLabel>{tComm("description")}</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="<p>Dear {{name}}, ...</p>" 
@@ -110,10 +112,10 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
 
             <div className="flex justify-end gap-3 pt-4 border-t">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create Template"}
+                {isSubmitting ? tCommon("saving") : isEditing ? tCommon("saveChanges") : tCommon("create")}
               </Button>
             </div>
           </form>

@@ -9,37 +9,42 @@ import { format } from "date-fns";
 
 export function getColumns(
   onEdit: (agent: Agent) => void,
-  onDelete: (agent: Agent) => void
+  onDelete: (agent: Agent) => void,
+  tAgents: (key: string) => string,
+  tCommon: (key: string) => string
 ): ColumnDef<Agent>[] {
   return [
     {
       accessorKey: "name",
-      header: "Name",
+      header: tCommon("name"),
       cell: ({ row }) => (
         <span className="font-semibold text-primary">{row.original.name}</span>
       ),
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: tCommon("email"),
+      cell: ({ row }) => (
+        <span className="dir-ltr text-start">{row.original.email}</span>
+      ),
     },
     {
       accessorKey: "phone",
-      header: "Phone",
-      cell: ({ row }) => <span>{row.original.phone || "-"}</span>,
+      header: tCommon("phone"),
+      cell: ({ row }) => <span className="dir-ltr text-start">{row.original.phone || "—"}</span>,
     },
     {
       accessorKey: "company",
-      header: "Company",
+      header: tCommon("category"),
       cell: ({ row }) => (
         <span>{row.original.company?.name || <Badge variant="outline">Independent</Badge>}</span>
       ),
     },
     {
       accessorKey: "createdAt",
-      header: "Registered",
+      header: tCommon("createdAt"),
       cell: ({ row }) => {
-        let formatted = "-";
+        let formatted = "—";
         if (row.original.createdAt) {
           const d = new Date(row.original.createdAt);
           if (!isNaN(d.getTime())) {

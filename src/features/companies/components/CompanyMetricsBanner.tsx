@@ -2,8 +2,12 @@
 
 import { useCompanyMetrics } from "../hooks/useCompanies";
 import { Building2, Briefcase, DollarSign, Award, Loader2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function CompanyMetricsBanner() {
+  const tCompanies = useTranslations("companies");
+  const tFinance = useTranslations("finance");
+
   const { data: metrics, isLoading } = useCompanyMetrics();
 
   if (isLoading) {
@@ -20,28 +24,28 @@ export function CompanyMetricsBanner() {
 
   const statCards = [
     {
-      title: "Total Partners",
+      title: tCompanies("title"),
       value: metrics?.totalCompanies || 0,
       icon: Building2,
       color: "text-primary dark:text-blue-400",
       bg: "bg-blue-50 dark:bg-blue-900/20"
     },
     {
-      title: "Active Agencies",
+      title: tCompanies("travelAgencies"),
       value: metrics?.activeAgencies || 0,
       icon: Briefcase,
       color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-50 dark:bg-amber-900/20"
     },
     {
-      title: "Corporate Accounts",
+      title: tCompanies("corporateAccounts"),
       value: metrics?.activeCorporate || 0,
       icon: Award,
       color: "text-emerald-500 dark:text-emerald-400",
       bg: "bg-emerald-50 dark:bg-emerald-900/20"
     },
     {
-      title: "Outstanding Balance",
+      title: tFinance("outstandingBalance"),
       value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(metrics?.totalOutstandingBalance || 0),
       icon: DollarSign,
       color: "text-rose-500 dark:text-rose-400",
@@ -59,7 +63,7 @@ export function CompanyMetricsBanner() {
           <div className="flex items-start justify-between">
             <div>
               <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{stat.title}</p>
-              <h3 className="text-2xl font-bold font-playfair text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors">{stat.value}</h3>
+              <h3 className="text-2xl font-bold font-playfair text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors dir-ltr text-start">{stat.value}</h3>
             </div>
             <div className={`p-2.5 rounded-lg ${stat.bg}`}>
               <stat.icon className={`h-4 w-4 ${stat.color}`} />

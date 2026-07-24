@@ -9,12 +9,13 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { CreateAgentPayload, Agent, UpdateAgentPayload } from "../types";
+import { useTranslations } from "next-intl";
 
 const formSchema = z.object({
   name: z.string().min(2, "Name must be at least 2 characters"),
   email: z.string().email("Valid email is required"),
   phone: z.string().optional(),
-  password: z.string().optional(), // optional for updates
+  password: z.string().optional(),
   companyId: z.string().optional(),
 });
 
@@ -27,6 +28,10 @@ interface CreateAgentDialogProps {
 }
 
 export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, initialData }: CreateAgentDialogProps) {
+  const tAgents = useTranslations("agents");
+  const tCommon = useTranslations("common");
+  const tAuth = useTranslations("auth");
+
   const isEditing = !!initialData;
   
   const form = useForm<z.infer<typeof formSchema>>({
@@ -46,7 +51,7 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
         name: initialData.name,
         email: initialData.email,
         phone: initialData.phone || "",
-        password: "", // do not populate password on edit
+        password: "",
         companyId: initialData.companyId || "",
       });
     } else if (!open) {
@@ -55,14 +60,14 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
   }, [initialData, open, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values as any); // using any for quick payload matching, actual validation handles optional password
+    onSubmit(values as any);
   };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>{isEditing ? "Edit Agent" : "Create Agent"}</DialogTitle>
+          <DialogTitle>{isEditing ? `${tCommon("edit")}` : `${tCommon("create")}`}</DialogTitle>
         </DialogHeader>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-4 pt-4">
@@ -71,9 +76,9 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Full Name</FormLabel>
+                  <FormLabel>{tCommon("name")}</FormLabel>
                   <FormControl>
-                    <Input placeholder="e.g. Carlos Mendez" {...field} />
+                    <Input placeholder={tCommon("name")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -85,9 +90,9 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
               name="email"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Email Address</FormLabel>
+                  <FormLabel>{tAuth("emailLabel")}</FormLabel>
                   <FormControl>
-                    <Input type="email" placeholder="agent@example.com" disabled={isEditing} {...field} />
+                    <Input type="email" placeholder="agent@example.com" disabled={isEditing} className="dir-ltr text-start" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -99,9 +104,9 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone Number</FormLabel>
+                  <FormLabel>{tCommon("phone")}</FormLabel>
                   <FormControl>
-                    <Input type="tel" placeholder="+1234567890" {...field} />
+                    <Input type="tel" placeholder="+1234567890" className="dir-ltr text-start" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -114,9 +119,9 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
                 name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Password</FormLabel>
+                    <FormLabel>{tAuth("passwordLabel")}</FormLabel>
                     <FormControl>
-                      <Input type="password" placeholder="Secure password" {...field} required={!isEditing} />
+                      <Input type="password" placeholder="••••••••" className="dir-ltr text-start" {...field} required={!isEditing} />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -129,9 +134,9 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
               name="companyId"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Company ID (Optional)</FormLabel>
+                  <FormLabel>Company ID</FormLabel>
                   <FormControl>
-                    <Input placeholder="B2B Company UUID" {...field} />
+                    <Input placeholder="UUID" className="dir-ltr text-start" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -140,10 +145,10 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
 
             <div className="flex justify-end gap-3 pt-4">
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
+                {tCommon("cancel")}
               </Button>
               <Button type="submit" disabled={isSubmitting}>
-                {isSubmitting ? "Saving..." : isEditing ? "Save Changes" : "Create"}
+                {isSubmitting ? tCommon("saving") : isEditing ? tCommon("saveChanges") : tCommon("create")}
               </Button>
             </div>
           </form>

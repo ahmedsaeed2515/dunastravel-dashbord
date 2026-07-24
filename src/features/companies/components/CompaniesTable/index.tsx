@@ -11,10 +11,11 @@ import { getColumns } from "./columns";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Search, Download, Filter, FileText, ChevronLeft, ChevronRight, Loader2, MoreHorizontal, Building2 } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { Search, Download, ChevronLeft, ChevronRight, Loader2, Building2 } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { useBulkUpdateCompanies } from "../../hooks/useCompanies";
 import { companiesApi } from "../../api/companiesApi";
+import { useTranslations } from "next-intl";
 
 interface CompaniesTableProps {
   data: Company[];
@@ -26,8 +27,12 @@ interface CompaniesTableProps {
 }
 
 export function CompaniesTable({ data, total, isLoading, filters, onFilterChange, onViewCompany }: CompaniesTableProps) {
+  const tCompanies = useTranslations("companies");
+  const tCommon = useTranslations("common");
+  const tFinance = useTranslations("finance");
+
   const [rowSelection, setRowSelection] = useState({});
-  const columns = getColumns(onViewCompany);
+  const columns = getColumns(onViewCompany, tCompanies, tCommon, tFinance);
   const { mutate: bulkUpdate, isPending: isUpdating } = useBulkUpdateCompanies();
 
   const table = useReactTable({
@@ -60,12 +65,12 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
       {/* Table Toolbar */}
       <div className="p-4 border-b border-gray-100 dark:border-gray-800/50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div className="relative w-full sm:max-w-xs">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
-            placeholder="Search agencies, code..." 
+            placeholder={`${tCommon("search")}...`} 
             value={filters.search || ""}
             onChange={handleSearch}
-            className="pl-9 h-9 text-sm bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            className="ps-9 h-9 text-sm bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
           />
         </div>
 
@@ -73,11 +78,11 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
           {selectedIds.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger type="button" className="h-9 font-medium text-primary inline-flex items-center justify-center rounded-md text-sm px-3 shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50" disabled={isUpdating}>
-                {isUpdating ? <Loader2 className="h-3.5 w-3.5 mr-2 animate-spin" /> : null}
-                Bulk Actions ({selectedIds.length})
+                {isUpdating ? <Loader2 className="h-3.5 w-3.5 me-2 animate-spin" /> : null}
+                {tCommon("actions")} ({selectedIds.length})
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-48">
-                <DropdownMenuLabel>Set Status</DropdownMenuLabel>
+                <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
                 <DropdownMenuItem onClick={() => handleBulkStatus('ACTIVE')}>Set as Active</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleBulkStatus('INACTIVE')}>Set as Inactive</DropdownMenuItem>
                 <DropdownMenuItem onClick={() => handleBulkStatus('BLACKLISTED')} className="text-rose-600">Blacklist</DropdownMenuItem>
@@ -86,13 +91,9 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
           ) : (
             <Button variant="outline" size="sm" className="h-9 gap-1.5" onClick={handleExport}>
               <Download className="h-3.5 w-3.5" />
-              <span>Export CSV</span>
+              <span>{tCommon("exportCsv")}</span>
             </Button>
           )}
-          <Button className="h-9 gap-1.5 bg-primary text-white hover:bg-primary/90" size="sm">
-            <FileText className="h-3.5 w-3.5" />
-            <span>New Partner</span>
-          </Button>
         </div>
       </div>
 
@@ -116,7 +117,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
                 <TableCell colSpan={columns.length} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground gap-2">
                     <Loader2 className="h-6 w-6 animate-spin text-primary/50" />
-                    <span className="text-sm">Loading partners...</span>
+                    <span className="text-sm">{tCommon("loading")}</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -145,8 +146,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
                 <TableCell colSpan={columns.length} className="h-64 text-center">
                   <div className="flex flex-col items-center justify-center text-muted-foreground">
                     <Building2 className="h-10 w-10 mb-3 opacity-20" />
-                    <span className="text-sm font-medium">No partners found.</span>
-                    <span className="text-xs mt-1">Adjust filters or create a new B2B account.</span>
+                    <span className="text-sm font-medium">{tCompanies("noCompanies")}</span>
                   </div>
                 </TableCell>
               </TableRow>
@@ -158,7 +158,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
       {/* Pagination */}
       <div className="p-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between bg-gray-50/30 dark:bg-gray-900/30">
         <div className="text-xs text-muted-foreground">
-          Showing <span className="font-medium text-gray-900 dark:text-gray-100">{data.length > 0 ? (filters.page! - 1) * filters.limit! + 1 : 0}</span> to <span className="font-medium text-gray-900 dark:text-gray-100">{Math.min(filters.page! * filters.limit!, total)}</span> of <span className="font-medium text-gray-900 dark:text-gray-100">{total}</span> partners
+          {data.length} {tCommon("total")}
         </div>
         <div className="flex items-center gap-1.5">
           <Button 
@@ -168,7 +168,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
             disabled={filters.page === 1}
             onClick={() => onFilterChange({ ...filters, page: filters.page! - 1 })}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
           </Button>
           <Button 
             variant="outline" 
@@ -177,7 +177,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
             disabled={filters.page! * filters.limit! >= total}
             onClick={() => onFilterChange({ ...filters, page: filters.page! + 1 })}
           >
-            <ChevronRight className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
           </Button>
         </div>
       </div>

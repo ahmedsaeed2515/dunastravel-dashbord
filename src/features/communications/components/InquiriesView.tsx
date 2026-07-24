@@ -8,8 +8,13 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Loader2, Search } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function InquiriesView() {
+  const tInquiries = useTranslations("inquiries");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+
   const [filters, setFilters] = useState<InquiryQueryFilters>({
     page: 1,
     limit: 10,
@@ -22,16 +27,16 @@ export function InquiriesView() {
     <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 p-6">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Tailor-Made Inquiries</h2>
+          <h2 className="text-lg font-semibold tracking-tight">{tInquiries("title")}</h2>
           {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
 
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search reference code..." 
-              className="pl-9 bg-background/50"
+              placeholder={`${tCommon("search")}...`} 
+              className="ps-9 bg-background/50"
               onChange={(e) => setFilters(f => ({ ...f, referenceCode: e.target.value || undefined, page: 1 } as any))}
             />
           </div>
@@ -41,14 +46,14 @@ export function InquiriesView() {
             onValueChange={(val) => setFilters(f => ({ ...f, status: val === "ALL" || !val ? undefined : val, page: 1 }))}
           >
             <SelectTrigger className="w-[140px] bg-background/50">
-              <SelectValue placeholder="Status" />
+              <SelectValue placeholder={tCommon("status")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="ALL">All Status</SelectItem>
-              <SelectItem value="NEW">New</SelectItem>
-              <SelectItem value="IN_PROGRESS">In Progress</SelectItem>
-              <SelectItem value="PROPOSAL_SENT">Proposal Sent</SelectItem>
-              <SelectItem value="CLOSED">Closed</SelectItem>
+              <SelectItem value="ALL">{tCommon("all")}</SelectItem>
+              <SelectItem value="NEW">{tStatus("NEW")}</SelectItem>
+              <SelectItem value="IN_PROGRESS">{tStatus("IN_PROGRESS")}</SelectItem>
+              <SelectItem value="PROPOSAL_SENT">{tStatus("PROPOSAL_SENT")}</SelectItem>
+              <SelectItem value="CLOSED">{tStatus("CLOSED")}</SelectItem>
             </SelectContent>
           </Select>
         </div>

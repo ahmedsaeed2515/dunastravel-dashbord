@@ -3,7 +3,6 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { NotificationDeliveryLog } from "../types";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { MoreHorizontal, RotateCcw, AlertTriangle } from "lucide-react";
 import {
@@ -15,13 +14,15 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useRetryNotification } from "../hooks/useCommunications";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useTranslations } from "next-intl";
 
 export const columns: ColumnDef<NotificationDeliveryLog>[] = [
   {
     accessorKey: "recipientEmail",
     header: "Recipient",
     cell: ({ row }) => (
-      <div className="font-medium">{row.original.recipientEmail}</div>
+      <div className="font-medium dir-ltr text-start">{row.original.recipientEmail}</div>
     ),
   },
   {
@@ -36,7 +37,7 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     accessorKey: "originReferenceCode",
     header: "Reference",
     cell: ({ row }) => (
-      <Badge variant="outline" className="font-mono text-xs">
+      <Badge variant="outline" className="font-mono text-xs dir-ltr inline-block">
         {row.original.originReferenceCode}
       </Badge>
     ),
@@ -46,26 +47,15 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-        PENDING: "secondary",
-        SENT: "default",
-        FAILED: "destructive",
-        EXHAUSTED: "destructive",
-      };
-      
-      return (
-        <Badge variant={variants[status] || "outline"}>
-          {status}
-        </Badge>
-      );
+      return <StatusBadge status={status} />;
     },
   },
   {
     accessorKey: "attempts",
     header: "Attempts",
     cell: ({ row }) => (
-      <div className="text-sm">
-        {row.original.attempts} {row.original.attempts >= 3 && <AlertTriangle className="inline h-3 w-3 text-rose-500 ml-1" />}
+      <div className="text-sm dir-ltr inline-block">
+        {row.original.attempts} {row.original.attempts >= 3 && <AlertTriangle className="inline h-3 w-3 text-rose-500 ms-1" />}
       </div>
     ),
   },
@@ -73,7 +63,7 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     accessorKey: "createdAt",
     header: "Timestamp",
     cell: ({ row }) => {
-      let formatted = "-";
+      let formatted = "—";
       if (row.original.createdAt) {
         const d = new Date(row.original.createdAt);
         if (!isNaN(d.getTime())) {
@@ -94,30 +84,25 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
 
 function ActionCell({ log }: { log: NotificationDeliveryLog }) {
   const retryMutation = useRetryNotification();
+  const tCommon = useTranslations("common");
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
-        <span className="sr-only">Open menu</span>
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
         
-        {/* Only allow retry if it's not SENT or PENDING */}
         {(log.status === "FAILED" || log.status === "EXHAUSTED") && (
           <DropdownMenuItem 
             onClick={() => retryMutation.mutate(log.id)}
             className="text-amber-600 focus:text-amber-600 cursor-pointer"
           >
-            <RotateCcw className="mr-2 h-4 w-4" />
-            Retry Delivery
+            <RotateCcw className="me-2 h-4 w-4" />
+            {tCommon("confirm")}
           </DropdownMenuItem>
         )}
-        
-        <DropdownMenuSeparator />
-        <DropdownMenuItem>View Email Details</DropdownMenuItem>
-        <DropdownMenuItem>View Related Entity</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );
