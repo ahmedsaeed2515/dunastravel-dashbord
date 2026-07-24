@@ -1,22 +1,31 @@
 "use client";
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+import { useState } from "react";
 import { Tour } from "../../types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
-import { Separator } from "@/components/ui/separator";
-import { Star, CheckCircle, Navigation, DollarSign, Calendar, MapPin, Layers } from "lucide-react";
+import { Star, MapPin, Layers, Globe, DollarSign, Calendar } from "lucide-react";
 import { ItineraryManager } from "../ItineraryManager";
 import { MediaManager } from "../MediaManager";
+import { Button } from "@/components/ui/button";
 
 interface TourDetailsDrawerProps {
   tour: Tour | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }
+
+const SUPPORTED_LANGS = [
+  { code: "en", label: "English", dir: "ltr" },
+  { code: "ar", label: "العربية", dir: "rtl" },
+  { code: "es", label: "Español", dir: "ltr" },
+  { code: "pt", label: "Português", dir: "ltr" },
+  { code: "it", label: "Italiano", dir: "ltr" },
+];
 
 const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
   if (!dateStr) return "N/A";
@@ -30,15 +39,26 @@ const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
 };
 
 export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawerProps) {
+  const [selectedLang, setSelectedLang] = useState<string>("en");
+
   if (!tour) return null;
 
-  const titleEn = tour.titleJsonb?.["en"] || tour.slug;
-  const descriptionEn = tour.descriptionJsonb?.["en"] || "No description provided.";
+  const currentLangObj = SUPPORTED_LANGS.find(l => l.code === selectedLang) || SUPPORTED_LANGS[0];
+  
+  const getLocalizedText = (jsonb: any) => {
+    if (!jsonb) return "";
+    if (typeof jsonb === "string") return jsonb;
+    return jsonb[selectedLang] || jsonb["en"] || jsonb["es"] || Object.values(jsonb)[0] || "";
+  };
+
+  const title = getLocalizedText(tour.titleJsonb) || tour.slug;
+  const overview = getLocalizedText(tour.overviewJsonb || tour.descriptionJsonb) || "No description provided.";
+  const duration = getLocalizedText(tour.durationJsonb) || "8 Days / 7 Nights";
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-md md:w-[750px] md:max-w-3xl overflow-y-auto">
-        <SheetHeader className="mb-6">
+        <SheetHeader className="mb-6 space-y-4">
           <div className="flex justify-between items-start">
             <div>
               <div className="flex items-center gap-2 mb-1">
@@ -50,9 +70,12 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                     <Star className="h-3 w-3 fill-amber-400" /> Featured
                   </Badge>
                 )}
+                <Badge variant="outline" className="font-mono text-[10px] uppercase">
+                  {tour.category || "General"}
+                </Badge>
               </div>
-              <SheetTitle className="text-2xl font-bold font-serif tracking-tight">
-                {titleEn}
+              <SheetTitle className="text-2xl font-bold font-serif tracking-tight" dir={currentLangObj.dir}>
+                {title}
               </SheetTitle>
               <SheetDescription className="mt-1 font-mono text-xs text-muted-foreground">
                 SLUG: {tour.slug}
@@ -60,11 +83,32 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
             </div>
             <div className="text-right">
               <div className="text-2xl font-bold text-primary font-mono">
-                {new Intl.NumberFormat("en-US", { style: "currency", currency: tour.currency || "USD" }).format(parseFloat(tour.basePriceUsd))}
+                {new Intl.NumberFormat("en-US", { style: "currency", currency: tour.currency || "USD" }).format(parseFloat(tour.basePriceUsd || "0"))}
               </div>
               <div className="text-xs text-muted-foreground mt-0.5">
                 Created {formatDateSafe(tour.createdAt)}
               </div>
+            </div>
+          </div>
+
+          {/* 5-Language Switcher Toolbar */}
+          <div className="flex items-center justify-between border-t border-b py-2 px-1 bg-muted/30 rounded-lg">
+            <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
+              <Globe className="h-3.5 w-3.5 text-primary" /> Preview Language:
+            </span>
+            <div className="flex items-center gap-1">
+              {SUPPORTED_LANGS.map((l) => (
+                <Button
+                  key={l.code}
+                  type="button"
+                  variant={selectedLang === l.code ? "default" : "ghost"}
+                  size="sm"
+                  className="h-7 px-2.5 text-xs font-bold"
+                  onClick={() => setSelectedLang(l.code)}
+                >
+                  {l.code.toUpperCase()}
+                </Button>
+              ))}
             </div>
           </div>
         </SheetHeader>
@@ -78,18 +122,21 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
             <TabsTrigger value="audit">Audit Logs</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[calc(100vh-220px)] pr-4">
+          <ScrollArea className="h-[calc(100vh-250px)] pr-4">
             {/* OVERVIEW TAB */}
             <TabsContent value="overview" className="space-y-6">
-              <div className="bg-card p-4 rounded-xl border shadow-sm">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider mb-2">Description</h3>
-                <p className="text-sm leading-relaxed text-foreground">{descriptionEn}</p>
+              <div className="bg-card p-5 rounded-xl border shadow-sm space-y-3" dir={currentLangObj.dir}>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Overview & Summary ({selectedLang.toUpperCase()})</h3>
+                  <Badge variant="outline" className="text-[10px]">{duration}</Badge>
+                </div>
+                <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{overview}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="bg-card p-4 rounded-xl border shadow-sm space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-primary" /> Geography
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                    <MapPin className="h-4 w-4 text-primary" /> Geography & Destination
                   </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
@@ -100,63 +147,21 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                       <span className="text-muted-foreground text-xs block">City</span>
                       <span className="font-medium">{tour.city || "N/A"}</span>
                     </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block">Latitude</span>
-                      <span className="font-mono text-xs">{tour.latitude || "N/A"}</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block">Longitude</span>
-                      <span className="font-mono text-xs">{tour.longitude || "N/A"}</span>
-                    </div>
                   </div>
                 </div>
 
                 <div className="bg-card p-4 rounded-xl border shadow-sm space-y-3">
-                  <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                     <Layers className="h-4 w-4 text-primary" /> Logistics & Capacity
                   </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground text-xs block">Total Capacity</span>
-                      <span className="font-medium">{tour.capacity} Seats</span>
+                      <span className="font-medium">{tour.capacity || 30} Seats</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground text-xs block">Remaining Seats</span>
-                      <span className="font-medium text-emerald-600 font-semibold">{tour.remainingSeats} Seats</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block">Min Participants</span>
-                      <span className="font-medium">{tour.minParticipants} Pax</span>
-                    </div>
-                    <div>
-                      <span className="text-muted-foreground text-xs block">Max Participants</span>
-                      <span className="font-medium">{tour.maxParticipants || "Unlimited"}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-card p-4 rounded-xl border shadow-sm space-y-3">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">SEO & Taxonomy</h3>
-                <div className="space-y-3 text-sm">
-                  <div>
-                    <span className="text-muted-foreground text-xs block">SEO Title</span>
-                    <span className="font-medium">{tour.seoTitle || titleEn}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground text-xs block">SEO Description</span>
-                    <span className="text-muted-foreground text-xs block mt-1 bg-muted p-2 rounded">
-                      {tour.seoDescription || "No custom meta description provided."}
-                    </span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground text-xs block mb-1.5">Tags</span>
-                    <div className="flex flex-wrap gap-1.5">
-                      {tour.tags?.length ? (
-                        tour.tags.map(t => <Badge key={t} variant="secondary" className="text-xs">{t}</Badge>)
-                      ) : (
-                        <span className="text-muted-foreground text-xs">No tags assigned</span>
-                      )}
+                      <span className="font-medium text-emerald-600 font-semibold">{tour.remainingSeats || 30} Seats</span>
                     </div>
                   </div>
                 </div>
@@ -176,20 +181,11 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
             {/* PRICING TAB */}
             <TabsContent value="pricing" className="space-y-6">
               <div className="bg-card p-5 rounded-xl border shadow-sm space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 text-primary" /> Seasonal Pricing Rules
                 </h3>
                 <div className="bg-muted p-4 rounded-lg font-mono text-xs overflow-x-auto">
                   {JSON.stringify(tour.seasonPricingJsonb || { defaultMargin: "25%", dynamicSurge: false }, null, 2)}
-                </div>
-              </div>
-
-              <div className="bg-card p-5 rounded-xl border shadow-sm space-y-4">
-                <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                  <Calendar className="h-4 w-4 text-primary" /> Operating Days Schedule
-                </h3>
-                <div className="bg-muted p-4 rounded-lg font-mono text-xs overflow-x-auto">
-                  {JSON.stringify(tour.operatingDaysJsonb || { monday: true, tuesday: true, wednesday: true, thursday: true, friday: true, saturday: true, sunday: true }, null, 2)}
                 </div>
               </div>
             </TabsContent>
@@ -203,9 +199,6 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                       <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5" />
                       <div className="font-medium text-sm">{log.action.replace(/_/g, ' ')}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</div>
-                      <div className="text-xs mt-2 p-2.5 bg-muted rounded-lg font-mono overflow-x-auto">
-                        {JSON.stringify(log.details)}
-                      </div>
                     </div>
                   ))}
                 </div>

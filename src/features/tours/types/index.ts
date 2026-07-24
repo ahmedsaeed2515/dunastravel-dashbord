@@ -28,6 +28,8 @@ export interface Tour {
   slug: string;
   titleJsonb: Record<string, any>;
   subtitleJsonb?: Record<string, any> | null;
+  overviewJsonb?: Record<string, any> | null;
+  durationJsonb?: Record<string, any> | null;
   descriptionJsonb: Record<string, any>;
   highlightJsonb?: Record<string, any> | null;
   inclusionJsonb?: Record<string, any> | null;
@@ -86,7 +88,9 @@ export interface CreateTourPayload {
   slug: string;
   titleJsonb: Record<string, any>;
   subtitleJsonb?: Record<string, any> | null;
-  descriptionJsonb: Record<string, any>;
+  overviewJsonb?: Record<string, any> | null;
+  durationJsonb?: Record<string, any> | null;
+  descriptionJsonb?: Record<string, any>;
   highlightJsonb?: Record<string, any> | null;
   inclusionJsonb?: Record<string, any> | null;
   exclusionJsonb?: Record<string, any> | null;
