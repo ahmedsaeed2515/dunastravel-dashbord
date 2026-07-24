@@ -2,11 +2,12 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Review } from "../../types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { CheckCircle, XCircle, Star } from "lucide-react";
 import { usePublishReview, useDeleteReview } from "../../hooks/useReviews";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useTranslations } from "next-intl";
 
 export const columns: ColumnDef<Review>[] = [
   {
@@ -14,7 +15,7 @@ export const columns: ColumnDef<Review>[] = [
     header: "Tour",
     cell: ({ row }) => (
       <div className="font-medium text-primary">
-        {(row.original.tour as any)?.titleJsonb?.["en"] || (row.original as any).tourNameEn || (row.original.tour as any)?.title || "Unknown Tour"}
+        {(row.original.tour as any)?.titleJsonb?.["en"] || (row.original as any).tourNameEn || (row.original.tour as any)?.title || "—"}
       </div>
     ),
   },
@@ -25,7 +26,7 @@ export const columns: ColumnDef<Review>[] = [
       <div className="flex flex-col">
         <span className="font-medium">{row.original.reviewerName || "Anonymous"}</span>
         {row.original.user && (
-          <span className="text-xs text-muted-foreground">{row.original.user.email}</span>
+          <span className="text-xs text-muted-foreground dir-ltr text-start">{row.original.user.email}</span>
         )}
       </div>
     ),
@@ -34,7 +35,7 @@ export const columns: ColumnDef<Review>[] = [
     accessorKey: "rating",
     header: "Rating",
     cell: ({ row }) => (
-      <div className="flex items-center gap-1 text-amber-500">
+      <div className="flex items-center gap-1 text-amber-500 dir-ltr inline-flex">
         <span className="font-semibold">{row.original.rating ?? 5}</span>
         <Star className="h-4 w-4 fill-amber-500" />
       </div>
@@ -45,13 +46,13 @@ export const columns: ColumnDef<Review>[] = [
     header: "Comment",
     cell: ({ row }) => (
       <div className="max-w-[300px] truncate text-sm">
-        {row.original.comment || "No comment provided."}
+        {row.original.comment || "—"}
       </div>
     ),
   },
   {
     accessorKey: "createdAt",
-    header: "Submitted",
+    header: "Date",
     cell: ({ row }) => {
       const val = row.original.createdAt;
       if (!val) return <div className="text-muted-foreground text-sm">—</div>;
@@ -65,7 +66,6 @@ export const columns: ColumnDef<Review>[] = [
   },
   {
     id: "actions",
-    header: "Actions",
     cell: ({ row }) => <ActionCell review={row.original} />,
   },
 ];
@@ -73,9 +73,10 @@ export const columns: ColumnDef<Review>[] = [
 function ActionCell({ review }: { review: Review }) {
   const { mutate: publishReview, isPending: isPublishing } = usePublishReview();
   const { mutate: deleteReview, isPending: isDeleting } = useDeleteReview();
+  const tCommon = useTranslations("common");
 
   if (review.isPublished) {
-    return <Badge variant="outline" className="border-green-500 text-green-600">Published</Badge>;
+    return <StatusBadge status="PUBLISHED" />;
   }
 
   return (
@@ -87,7 +88,7 @@ function ActionCell({ review }: { review: Review }) {
         onClick={() => publishReview(review.id)}
         disabled={isPublishing || isDeleting}
       >
-        <CheckCircle className="h-3.5 w-3.5 mr-1" /> Approve
+        <CheckCircle className="h-3.5 w-3.5 me-1" /> {tCommon("confirm")}
       </Button>
       <Button 
         variant="destructive" 
@@ -96,7 +97,7 @@ function ActionCell({ review }: { review: Review }) {
         onClick={() => deleteReview(review.id)}
         disabled={isPublishing || isDeleting}
       >
-        <XCircle className="h-3.5 w-3.5 mr-1" /> Reject
+        <XCircle className="h-3.5 w-3.5 me-1" /> {tCommon("delete")}
       </Button>
     </div>
   );

@@ -8,8 +8,13 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
 import { format } from "date-fns";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 
 export default function MediaPage() {
+  const tMedia = useTranslations("media");
+  const tCommon = useTranslations("common");
+
   const [filters, setFilters] = useState<MediaQueryFilters>({ page: 1, limit: 20 });
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   
@@ -37,12 +42,12 @@ export default function MediaPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Media Library"
-        description="Central asset repository for tour hero photos, gallery collections, promotional banners, and destination images."
+        title={tMedia("title")}
+        description={tMedia("description")}
         actions={
           <Button onClick={() => setIsUploadOpen(true)} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
-            <span>Upload Asset</span>
+            <span>{tMedia("uploadAsset")}</span>
           </Button>
         }
       />
@@ -50,13 +55,13 @@ export default function MediaPage() {
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-          <p>Loading media assets...</p>
+          <p>{tCommon("loading")}</p>
         </div>
       ) : (Array.isArray(data) ? data : (data?.data || [])).length === 0 ? (
         <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-card rounded-xl border border-dashed border-border">
           <ImageIcon className="h-12 w-12 mb-3 opacity-20" />
-          <h3 className="font-semibold text-foreground mb-1">No media assets found</h3>
-          <p className="text-sm">Upload image assets to populate your media library.</p>
+          <h3 className="font-semibold text-foreground mb-1">{tMedia("noMedia")}</h3>
+          <p className="text-sm">{tMedia("noMediaDesc")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
@@ -73,15 +78,13 @@ export default function MediaPage() {
               />
               <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3">
                 <div className="flex justify-between items-start">
-                  <span className="text-[10px] font-semibold bg-primary text-primary-foreground px-2 py-0.5 rounded-full uppercase tracking-wider">
-                    {asset.entityType || "GENERAL"}
-                  </span>
+                  <StatusBadge status={asset.entityType || "GENERAL"} />
                   <Button 
                     variant="ghost" 
                     size="icon-xs" 
                     className="text-white hover:bg-destructive hover:text-white"
                     onClick={() => {
-                      if (confirm("Are you sure you want to delete this image?")) {
+                      if (confirm(`${tCommon("confirm")} ${tCommon("delete")}?`)) {
                         deleteMedia(asset.id);
                       }
                     }}
@@ -109,7 +112,7 @@ export default function MediaPage() {
             disabled={filters.page === 1}
             onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) - 1 }))}
           >
-            Previous
+            {tCommon("previous")}
           </Button>
           <Button 
             variant="outline" 
@@ -117,7 +120,7 @@ export default function MediaPage() {
             disabled={filters.page === (Array.isArray(data) ? 1 : data.meta?.totalPages)}
             onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) + 1 }))}
           >
-            Next
+            {tCommon("next")}
           </Button>
         </div>
       )}

@@ -3,14 +3,16 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { BookingRowActions } from './BookingRowActions';
 import { Booking } from "../../types";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 
 export function getColumns(
   onView: (booking: Booking) => void,
   onEdit: (booking: Booking) => void,
-  onDelete: (booking: Booking) => void
+  onDelete: (booking: Booking) => void,
+  tBookings: (key: string) => string,
+  tCommon: (key: string) => string
 ): ColumnDef<Booking>[] {
   return [
     {
@@ -34,12 +36,12 @@ export function getColumns(
     },
     {
       accessorKey: "referenceCode",
-      header: "Ref Code",
-      cell: ({ row }) => <div className="font-medium">{row.getValue("referenceCode")}</div>,
+      header: tBookings("bookingId"),
+      cell: ({ row }) => <div className="font-medium dir-ltr inline-block">{row.getValue("referenceCode")}</div>,
     },
     {
       accessorKey: "tourSlug",
-      header: "Tour",
+      header: tBookings("tour"),
       cell: ({ row }) => (
         <div className="font-medium">
           {row.original.tourNameEn || row.original.tourSlug || "—"}
@@ -48,16 +50,15 @@ export function getColumns(
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: tCommon("status"),
       cell: ({ row }) => {
         const status = (row.getValue("status") as string) || "PENDING";
-        const variant = status === "CONFIRMED" || status === "COMPLETED" ? "default" : status === "PENDING" ? "secondary" : "destructive";
-        return <Badge variant={variant}>{status}</Badge>;
+        return <StatusBadge status={status} />;
       },
     },
     {
       accessorKey: "totalAmount",
-      header: "Amount",
+      header: tCommon("amount"),
       cell: ({ row }) => {
         const rawAmount = row.getValue("totalAmount");
         const amount = typeof rawAmount === "number" ? rawAmount : parseFloat(String(rawAmount || "0"));
@@ -65,12 +66,12 @@ export function getColumns(
           style: "currency",
           currency: row.original.currency || "USD",
         }).format(isNaN(amount) ? 0 : amount);
-        return <div className="font-medium">{formatted}</div>;
+        return <div className="font-medium dir-ltr inline-block">{formatted}</div>;
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Created Date",
+      header: tCommon("createdAt"),
       cell: ({ row }) => {
         const val = row.getValue("createdAt");
         if (!val) return "—";
@@ -85,7 +86,6 @@ export function getColumns(
         return (
           <BookingRowActions
             booking={row.original}
-
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}

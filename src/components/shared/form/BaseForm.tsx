@@ -3,6 +3,7 @@
 import { FieldValues, UseFormReturn, SubmitHandler } from "react-hook-form";
 import { Form } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 interface BaseFormProps<T extends FieldValues> {
   form: UseFormReturn<T>;
@@ -17,10 +18,13 @@ export function BaseForm<T extends FieldValues>({
   form,
   onSubmit,
   children,
-  submitLabel = "Submit",
+  submitLabel,
   isSubmitting = false,
   globalError,
 }: BaseFormProps<T>) {
+  const tCommon = useTranslations("common");
+  const defaultLabel = submitLabel || tCommon("saveChanges");
+
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 w-full">
@@ -34,7 +38,7 @@ export function BaseForm<T extends FieldValues>({
 
         <div className="flex justify-end">
           <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
-            {isSubmitting ? "Processing..." : submitLabel}
+            {isSubmitting ? tCommon("saving") : defaultLabel}
           </Button>
         </div>
       </form>

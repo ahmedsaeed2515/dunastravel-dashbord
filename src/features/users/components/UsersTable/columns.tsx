@@ -2,15 +2,17 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { User } from "../../types";
-import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { format } from "date-fns";
 import { UserRowActions } from "./UserRowActions";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 
 export function getColumns(
   onView: (user: User) => void,
   onEdit: (user: User) => void,
-  onDelete: (user: User) => void
+  onDelete: (user: User) => void,
+  tUsers: (key: string) => string,
+  tCommon: (key: string) => string
 ): ColumnDef<User>[] {
   return [
     {
@@ -34,24 +36,25 @@ export function getColumns(
     },
     {
       accessorKey: "name",
-      header: "Full Name",
+      header: tUsers("userName"),
       cell: ({ row }) => <div className="font-medium">{row.getValue("name")}</div>,
     },
     {
       accessorKey: "email",
-      header: "Email",
+      header: tCommon("email"),
+      cell: ({ row }) => <div className="dir-ltr text-start font-mono text-xs">{row.getValue("email")}</div>,
     },
     {
       accessorKey: "role",
-      header: "Role",
+      header: tCommon("role"),
       cell: ({ row }) => {
         const role = row.getValue("role") as string;
-        return <Badge variant={role === "ADMIN" ? "default" : "secondary"}>{role}</Badge>;
+        return <StatusBadge status={role} />;
       },
     },
     {
       accessorKey: "createdAt",
-      header: "Joined",
+      header: tCommon("createdAt"),
       cell: ({ row }) => {
         const val = row.getValue("createdAt") as string;
         let formatted = "-";

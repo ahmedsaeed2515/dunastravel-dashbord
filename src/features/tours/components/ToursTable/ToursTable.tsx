@@ -25,12 +25,19 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Download, CheckSquare, RefreshCw, Loader2, Sparkles, Compass, Users, Percent, LayoutGrid, Table as TableIcon } from "lucide-react";
+import { Download, CheckSquare, Loader2, Sparkles, Compass, Users, Percent, LayoutGrid, Table as TableIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { useTranslations, useLocale } from "next-intl";
 
 export function ToursTable() {
+  const tTours = useTranslations("tours");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+  const tDashboard = useTranslations("dashboard");
+  const currentLocale = useLocale();
+
   // View mode state (cards/grid vs table)
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
@@ -69,9 +76,9 @@ export function ToursTable() {
   };
 
   const handleDelete = async (tour: Tour) => {
-    if (window.confirm(`Are you sure you want to archive tour package ${tour.slug}?`)) {
+    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) {
       await deleteTour.mutateAsync(tour.slug);
-      toast.success(`Tour ${tour.slug} archived successfully`);
+      toast.success(tCommon("success"));
     }
   };
 
@@ -87,15 +94,15 @@ export function ToursTable() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success("Tours exported successfully");
+      toast.success(tCommon("success"));
     } catch (error: any) {
-      toast.error("Failed to export tours CSV");
+      toast.error(tCommon("error"));
     } finally {
       setIsExporting(false);
     }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete);
+  const columns = getColumns(handleView, handleEdit, handleDelete, tTours, tCommon, currentLocale);
   const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
 
   // Custom Toolbar Actions for Bulk Management & Export
@@ -106,20 +113,20 @@ export function ToursTable() {
     const handleBulkStatus = async (status: TourStatus) => {
       await bulkUpdate.mutateAsync({ slugs, status });
       if (table) table.toggleAllRowsSelected(false);
-      toast.success(`Updated ${slugs.length} tours status to ${status}`);
+      toast.success(tCommon("success"));
     };
 
     const handleBulkFeatured = async (isFeatured: boolean) => {
       await bulkUpdate.mutateAsync({ slugs, isFeatured });
       if (table) table.toggleAllRowsSelected(false);
-      toast.success(`Updated ${slugs.length} tours featured status`);
+      toast.success(tCommon("success"));
     };
 
     return (
       <div className="flex flex-wrap items-center gap-2">
         <Input 
-          aria-label="Search tours"
-          placeholder="Search tours..." 
+          aria-label={tCommon("search")}
+          placeholder={`${tCommon("search")}...`} 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
           className="h-8 w-[200px]"
@@ -129,28 +136,28 @@ export function ToursTable() {
           <DropdownMenu>
             <DropdownMenuTrigger type="button" className="h-8 shadow-sm inline-flex items-center justify-center rounded-md text-sm font-medium px-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1.5">
               <CheckSquare className="h-4 w-4 text-primary" />
-              <span>Bulk Actions ({slugs.length})</span>
+              <span>{tCommon("actions")} ({slugs.length})</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel>Set Status</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("PUBLISHED")}>
-                Publish
+                {tStatus("PUBLISHED")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("DRAFT")}>
-                Revert to Draft
+                {tStatus("DRAFT")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("ARCHIVED")} className="text-red-600">
-                Archive Tours
+                {tStatus("ARCHIVED")}
               </DropdownMenuItem>
               
               <DropdownMenuSeparator />
               
-              <DropdownMenuLabel>Marketing Flags</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("options")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkFeatured(true)}>
-                Mark as Featured
+                {tCommon("yes")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkFeatured(false)}>
-                Remove Featured
+                {tCommon("no")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -166,7 +173,7 @@ export function ToursTable() {
             onClick={() => setViewMode("grid")}
           >
             <LayoutGrid className="h-3.5 w-3.5" />
-            Cards
+            Grid
           </Button>
           <Button
             type="button"
@@ -188,7 +195,7 @@ export function ToursTable() {
           disabled={isExporting}
         >
           {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          <span>Export CSV</span>
+          <span>{tCommon("exportCsv")}</span>
         </Button>
 
         <CreateTourWizard />
@@ -202,7 +209,7 @@ export function ToursTable() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Total Travel Products</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tDashboard("totalTours")}</span>
             <div className="p-2 bg-primary/10 rounded-xl text-primary">
               <Compass className="h-4 w-4" />
             </div>
@@ -211,14 +218,14 @@ export function ToursTable() {
             {stats?.totalTours ?? "23"}
           </div>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <span className="font-semibold text-foreground">{stats?.publishedTours ?? 20} active</span> across client portals
+            <span className="font-semibold text-foreground">{stats?.publishedTours ?? 20} {tDashboard("publishedTours")}</span>
           </p>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-amber-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Featured Products</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tTours("title")}</span>
             <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
               <Sparkles className="h-4 w-4 animate-pulse" />
             </div>
@@ -226,15 +233,12 @@ export function ToursTable() {
           <div className="text-3xl font-extrabold font-mono text-foreground">
             {stats?.featuredTours ?? "8"}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Top priority placement on executive dashboard
-          </p>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Current Occupancy Rate</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tDashboard("occupancyRate")}</span>
             <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600">
               <Percent className="h-4 w-4" />
             </div>
@@ -242,15 +246,12 @@ export function ToursTable() {
           <div className="text-3xl font-extrabold font-mono text-emerald-600">
             {stats?.occupancyRate ? `${stats.occupancyRate}%` : "68%"}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            {stats?.seatsSold ?? 408} seats booked of {stats?.totalCapacity ?? 600} capacity
-          </p>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-blue-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Draft & Curating</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tTours("draft")}</span>
             <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
               <Users className="h-4 w-4" />
             </div>
@@ -258,9 +259,6 @@ export function ToursTable() {
           <div className="text-3xl font-extrabold font-mono text-foreground">
             {stats?.draftTours ?? "3"}
           </div>
-          <p className="text-xs text-muted-foreground mt-2">
-            Pending editorial review & pricing surge rules
-          </p>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
       </div>
@@ -269,9 +267,9 @@ export function ToursTable() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card border rounded-2xl p-4 shadow-sm">
         <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[340px]">
           <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="ALL">All Tours</TabsTrigger>
-            <TabsTrigger value="PUBLISHED">Published</TabsTrigger>
-            <TabsTrigger value="DRAFT">Drafts</TabsTrigger>
+            <TabsTrigger value="ALL">{tCommon("all")}</TabsTrigger>
+            <TabsTrigger value="PUBLISHED">{tStatus("PUBLISHED")}</TabsTrigger>
+            <TabsTrigger value="DRAFT">{tStatus("DRAFT")}</TabsTrigger>
           </TabsList>
         </Tabs>
 

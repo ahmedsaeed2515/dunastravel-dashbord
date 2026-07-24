@@ -3,7 +3,6 @@
 import { Booking } from "../../types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +14,8 @@ import { AddPaymentDialog } from "../Dialogs/AddPaymentDialog";
 import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
 import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
 import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useTranslations } from "next-intl";
 
 interface BookingDetailsDrawerProps {
   booking: Booking | null;
@@ -41,7 +42,11 @@ const formatAmountSafe = (val?: string | number) => {
 };
 
 export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDetailsDrawerProps) {
+  const tBookings = useTranslations("bookings");
+  const tCommon = useTranslations("common");
+  const tNav = useTranslations("navigation");
   const { mutate: restoreBooking, isPending: isRestoring } = useRestoreBooking();
+
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
@@ -56,21 +61,19 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
           <div className="flex justify-between items-start">
             <div>
               <SheetTitle className="text-2xl font-bold flex items-center gap-2">
-                {booking.referenceCode}
-                <Badge variant={booking.status === "CONFIRMED" ? "default" : booking.status === "PENDING" ? "secondary" : "destructive"}>
-                  {booking.status}
-                </Badge>
+                <span className="dir-ltr inline-block">{booking.referenceCode}</span>
+                <StatusBadge status={booking.status} />
               </SheetTitle>
               <SheetDescription className="mt-1 text-base">
                 {booking.tourNameEn || booking.tourSlug || "Tour"}
               </SheetDescription>
             </div>
-            <div className="text-right flex flex-col items-end gap-2">
-              <div className="text-2xl font-bold">
+            <div className="text-end flex flex-col items-end gap-2">
+              <div className="text-2xl font-bold dir-ltr">
                 {formatAmountSafe(booking.totalAmount)}
               </div>
               <div className="text-sm text-muted-foreground">
-                Created {formatDateSafe(booking.createdAt)}
+                {tCommon("createdAt")}: {formatDateSafe(booking.createdAt)}
               </div>
               {booking.status === "CANCELLED" && (
                 <Button 
@@ -81,7 +84,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                   disabled={isRestoring}
                 >
                   <RefreshCcw className="h-3 w-3" />
-                  Restore Booking
+                  {tCommon("retry")}
                 </Button>
               )}
             </div>
@@ -90,33 +93,33 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
 
         <Tabs defaultValue="summary" className="w-full">
           <TabsList className="w-full flex h-12 overflow-x-auto">
-            <TabsTrigger value="summary">Summary</TabsTrigger>
-            <TabsTrigger value="passengers">Passengers</TabsTrigger>
-            <TabsTrigger value="payments">Payments</TabsTrigger>
-            <TabsTrigger value="notes">Notes</TabsTrigger>
-            <TabsTrigger value="attachments">Files</TabsTrigger>
-            <TabsTrigger value="timeline">Timeline</TabsTrigger>
+            <TabsTrigger value="summary">{tCommon("details")}</TabsTrigger>
+            <TabsTrigger value="passengers">{tBookings("passengerCount")}</TabsTrigger>
+            <TabsTrigger value="payments">{tBookings("paymentDetails")}</TabsTrigger>
+            <TabsTrigger value="notes">{tCommon("description")}</TabsTrigger>
+            <TabsTrigger value="attachments">{tNav("media")}</TabsTrigger>
+            <TabsTrigger value="timeline">{tCommon("date")}</TabsTrigger>
           </TabsList>
 
-          <ScrollArea className="h-[calc(100vh-200px)] mt-4 pr-4">
+          <ScrollArea className="h-[calc(100vh-200px)] mt-4 pe-4">
             <TabsContent value="summary" className="space-y-6">
               <div>
-                <h3 className="font-semibold mb-3">Customer Details</h3>
+                <h3 className="font-semibold mb-3">{tBookings("customerInformation")}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground block mb-1">Full Name</span>
+                    <span className="text-muted-foreground block mb-1">{tCommon("name")}</span>
                     <span className="font-medium">{booking.billingInfo?.fullName || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">Email</span>
-                    <span className="font-medium">{booking.billingInfo?.email || "N/A"}</span>
+                    <span className="text-muted-foreground block mb-1">{tCommon("email")}</span>
+                    <span className="font-medium dir-ltr inline-block">{booking.billingInfo?.email || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">Phone</span>
-                    <span className="font-medium">{booking.billingInfo?.phone || "N/A"}</span>
+                    <span className="text-muted-foreground block mb-1">{tCommon("phone")}</span>
+                    <span className="font-medium dir-ltr inline-block">{booking.billingInfo?.phone || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">Location</span>
+                    <span className="text-muted-foreground block mb-1">{tBookings("customer")}</span>
                     <span className="font-medium">{[booking.billingInfo?.city, booking.billingInfo?.country].filter(Boolean).join(", ") || "N/A"}</span>
                   </div>
                 </div>
@@ -125,52 +128,22 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
               <Separator />
 
               <div>
-                <h3 className="font-semibold mb-3">Trip Information</h3>
+                <h3 className="font-semibold mb-3">{tBookings("bookingDetails")}</h3>
                 <div className="grid grid-cols-2 gap-4 text-sm">
                   <div>
-                    <span className="text-muted-foreground block mb-1">Tour ID</span>
-                    <span className="font-medium">{booking.tourId || "N/A"}</span>
+                    <span className="text-muted-foreground block mb-1">{tBookings("bookingId")}</span>
+                    <span className="font-medium dir-ltr inline-block">{booking.tourId || "N/A"}</span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">Dates</span>
+                    <span className="text-muted-foreground block mb-1">{tBookings("travelDate")}</span>
                     <span className="font-medium">
                       {formatDateSafe(booking.arrivalDate)} 
                       {booking.departureDate ? ` - ${formatDateSafe(booking.departureDate)}` : ""}
                     </span>
                   </div>
                   <div>
-                    <span className="text-muted-foreground block mb-1">Travelers</span>
-                    <span className="font-medium">{booking.passengerCount || 1} Total ({booking.passengers?.length || 0} Listed)</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block mb-1">Invoice</span>
-                    <span className="font-medium">{booking.invoiceNumber || "Uninvoiced"}</span>
-                  </div>
-                </div>
-              </div>
-
-              <Separator />
-
-              <div>
-                <h3 className="font-semibold mb-3">Enterprise Metadata</h3>
-                <div className="grid grid-cols-2 gap-4 text-sm">
-                  <div>
-                    <span className="text-muted-foreground block mb-1">Assignee ID</span>
-                    <span className="font-medium">{booking.assigneeId || "Unassigned"}</span>
-                  </div>
-                  <div>
-                    <span className="text-muted-foreground block mb-1">Priority</span>
-                    <Badge variant="outline">{booking.priority || "NORMAL"}</Badge>
-                  </div>
-                  <div className="col-span-2">
-                    <span className="text-muted-foreground block mb-1">Tags</span>
-                    <div className="flex gap-2 flex-wrap">
-                      {booking.tags?.length ? (
-                        booking.tags.map(tag => <Badge key={tag} variant="secondary">{tag}</Badge>)
-                      ) : (
-                        <span className="text-muted-foreground">No tags</span>
-                      )}
-                    </div>
+                    <span className="text-muted-foreground block mb-1">{tBookings("guests")}</span>
+                    <span className="font-medium">{booking.passengerCount || 1} ({booking.passengers?.length || 0})</span>
                   </div>
                 </div>
               </div>
@@ -178,17 +151,17 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
 
             <TabsContent value="passengers" className="space-y-4">
                <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPassengerOpen(true)}>Edit Passengers</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPassengerOpen(true)}>{tCommon("edit")}</Button>
                </div>
               {booking.passengers && booking.passengers.length > 0 ? (
                 booking.passengers.map((p, i) => (
                   <div key={p.id || i} className="border rounded-lg p-4 space-y-2">
                     <div className="flex justify-between items-center mb-2">
                       <span className="font-semibold">{p.fullName}</span>
-                      <Badge variant="outline">{(p.passengerType || "ADULT").toUpperCase()}</Badge>
+                      <StatusBadge status={p.passengerType || "ADULT"} />
                     </div>
                     <div className="grid grid-cols-2 gap-2 text-sm text-muted-foreground">
-                      <div>Passport: {p.passportNumber || "N/A"}</div>
+                      <div className="dir-ltr text-start">Passport: {p.passportNumber || "N/A"}</div>
                       <div>Expiry: {formatDateSafe(p.passportExpiry)}</div>
                       <div>Nationality: {p.nationality || "N/A"}</div>
                       <div>DOB: {formatDateSafe(p.dateOfBirth)}</div>
@@ -197,38 +170,38 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                 ))
               ) : (
                 <div className="text-center text-muted-foreground py-8">
-                  No passenger details recorded yet.
+                  {tCommon("noResults")}
                 </div>
               )}
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-4">
                <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPaymentOpen(true)}><CreditCard className="w-4 h-4"/> Add Payment</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPaymentOpen(true)}><CreditCard className="w-4 h-4"/> {tBookings("paymentDetails")}</Button>
                </div>
                {booking.payments && booking.payments.length > 0 ? (
                 booking.payments.map((p: any, i: number) => (
                   <div key={p.id || i} className="border rounded-lg p-4 flex justify-between items-center">
                     <div>
                       <div className="font-medium">{p.isRefund ? 'Refund' : 'Payment'} via {p.method || 'Card'}</div>
-                      <div className="text-sm text-muted-foreground">{p.transactionId || "No TX ID"}</div>
+                      <div className="text-sm text-muted-foreground dir-ltr text-start">{p.transactionId || "No TX ID"}</div>
                       <div className="text-xs text-muted-foreground mt-1">{formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}</div>
                     </div>
-                    <div className={`font-bold ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
+                    <div className={`font-bold dir-ltr ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
                       {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
                     </div>
                   </div>
                 ))
                ) : (
                 <div className="text-center text-muted-foreground py-8">
-                  No payments recorded.
+                  {tCommon("noResults")}
                 </div>
                )}
             </TabsContent>
 
             <TabsContent value="notes" className="space-y-4">
                <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setNoteOpen(true)}><Plus className="w-4 h-4"/> Add Note</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setNoteOpen(true)}><Plus className="w-4 h-4"/> {tCommon("create")}</Button>
                </div>
                {booking.notes && booking.notes.length > 0 ? (
                 booking.notes.map((n: any, i: number) => (
@@ -236,7 +209,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold text-sm">Note by Admin</span>
+                        <span className="font-semibold text-sm">Note</span>
                       </div>
                       <span className="text-xs text-muted-foreground">{formatDateSafe(n.createdAt)}</span>
                     </div>
@@ -245,14 +218,14 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                 ))
                ) : (
                 <div className="text-center text-muted-foreground py-8 border border-dashed rounded-lg">
-                  No notes recorded.
+                  {tCommon("noResults")}
                 </div>
                )}
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4">
                <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setAttachmentOpen(true)}><Paperclip className="w-4 h-4"/> Upload File</Button>
+                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setAttachmentOpen(true)}><Paperclip className="w-4 h-4"/> {tCommon("upload")}</Button>
                </div>
                {booking.attachments && booking.attachments.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
@@ -262,34 +235,31 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                         <Paperclip className="w-4 h-4 text-primary" />
                         <span className="font-medium text-sm truncate w-full" title={a.fileName}>{a.fileName}</span>
                       </div>
-                      <Badge variant="secondary" className="text-[10px]">{a.documentType || 'DOCUMENT'}</Badge>
+                      <StatusBadge status={a.documentType || 'DOCUMENT'} />
                     </div>
                   ))}
                 </div>
                ) : (
                 <div className="text-center text-muted-foreground py-8 border border-dashed rounded-lg">
-                  No attachments found.
+                  {tCommon("noResults")}
                 </div>
                )}
             </TabsContent>
 
             <TabsContent value="timeline" className="space-y-4">
                {booking.activityLogs && booking.activityLogs.length > 0 ? (
-                 <div className="relative border-l border-muted ml-3 space-y-6">
+                 <div className="relative border-s border-muted ms-3 space-y-6">
                    {booking.activityLogs.map((log: any, i: number) => (
-                     <div key={log.id || i} className="relative pl-6">
-                       <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5" />
+                     <div key={log.id || i} className="relative ps-6">
+                       <div className="absolute w-3 h-3 bg-primary rounded-full -start-[6.5px] top-1.5" />
                        <div className="font-medium">{(log.action || "UPDATE").replace(/_/g, ' ')}</div>
                        <div className="text-sm text-muted-foreground mt-0.5">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</div>
-                       <div className="text-sm mt-2 p-2 bg-muted rounded-md font-mono text-xs overflow-x-auto max-w-[320px] sm:max-w-full">
-                         {JSON.stringify(log.details || {})}
-                       </div>
                      </div>
                    ))}
                  </div>
                ) : (
                 <div className="text-center text-muted-foreground py-8">
-                  No activity logs recorded.
+                  {tCommon("noResults")}
                 </div>
                )}
             </TabsContent>

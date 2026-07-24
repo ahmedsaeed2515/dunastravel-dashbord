@@ -4,9 +4,11 @@ import { useDashboardMetrics } from "../hooks/useDashboardMetrics";
 import { StatisticCard } from "@/components/shared/widgets/StatisticCard";
 import { Compass, CalendarCheck, Percent, MessageSquare, Mail, AlertOctagon } from "lucide-react";
 import { CardSkeleton } from "@/components/shared/ui/Skeletons";
+import { useTranslations } from "next-intl";
 
 export function KPIGrid() {
   const { data, isLoading } = useDashboardMetrics();
+  const tDashboard = useTranslations("dashboard");
 
   if (isLoading) {
     return (
@@ -21,42 +23,42 @@ export function KPIGrid() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 mb-8">
       <StatisticCard
-        title="Total Tours"
+        title={tDashboard("totalTours")}
         value={data?.tours?.totalTours || 0}
         icon={<Compass className="w-4 h-4" />}
-        description={`${data?.tours?.publishedTours || 0} published`}
+        description={`${data?.tours?.publishedTours || 0} ${tDashboard("publishedTours")}`}
       />
       <StatisticCard
-        title="Total Bookings"
+        title={tDashboard("totalBookings")}
         value={data?.general?.totalBookings || 0}
         icon={<CalendarCheck className="w-4 h-4" />}
-        description={`${data?.general?.bookingsThisMonth || 0} this month`}
+        description={`${data?.general?.bookingsThisMonth || 0} ${tDashboard("thisMonth")}`}
         variant="gold"
       />
       <StatisticCard
-        title="Occupancy Rate"
+        title={tDashboard("occupancyRate")}
         value={`${data?.tours?.occupancyRate || 0}%`}
         icon={<Percent className="w-4 h-4" />}
-        description={`${data?.tours?.totalCapacity || 0} capacity`}
+        description={`${data?.tours?.totalCapacity || 0} ${tDashboard("capacity")}`}
         variant="success"
       />
       <StatisticCard
-        title="Open Inquiries"
+        title={tDashboard("openInquiries")}
         value={data?.general?.openInquiries || 0}
         icon={<MessageSquare className="w-4 h-4" />}
-        description={`Out of ${data?.general?.totalInquiries || 0} total`}
+        description={tDashboard("outOfTotal", { total: data?.general?.totalInquiries || 0 })}
       />
       <StatisticCard
-        title="Contact Inbox"
+        title={tDashboard("contactInbox")}
         value={data?.general?.unreadContactSubmissions || 0}
         icon={<Mail className="w-4 h-4" />}
-        description="Unread messages"
+        description={tDashboard("unreadMessages", { defaultValue: "Unread messages" })}
       />
       <StatisticCard
-        title="Failed Logs"
+        title={tDashboard("failedLogs")}
         value={data?.general?.totalNotificationsFailed || 0}
         icon={<AlertOctagon className="w-4 h-4" />}
-        description="Delivery failures"
+        description={tDashboard("deliveryFailures", { defaultValue: "Delivery failures" })}
         variant={data?.general?.totalNotificationsFailed ? "danger" : "default"}
       />
     </div>

@@ -6,12 +6,16 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, LayoutTemplate, Search, Plus, ExternalLink, Save, Loader2 } from "lucide-react";
+import { FileText, Search, Plus, ExternalLink, Save, Loader2 } from "lucide-react";
 import { useContentBlocks, useUpdateContentBlock } from "@/features/content/hooks/useContent";
 import { ContentBlock } from "@/features/content/types";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 
 export default function ContentPage() {
+  const tContent = useTranslations("content");
+  const tCommon = useTranslations("common");
+
   const { data: rawBlocks, isLoading } = useContentBlocks();
   const blocks: ContentBlock[] = Array.isArray(rawBlocks) 
     ? rawBlocks 
@@ -39,12 +43,12 @@ export default function ContentPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Content & CMS"
-        description="Manage dynamic pages, CMS text blocks, legal policies, and global search engine optimization (SEO) meta tags."
+        title={tContent("title")}
+        description={tContent("description")}
         actions={
           <Button size="sm" variant="gold" className="gap-1.5">
             <Plus className="h-4 w-4" />
-            <span>New Page</span>
+            <span>{tCommon("create")}</span>
           </Button>
         }
       />
@@ -52,7 +56,7 @@ export default function ContentPage() {
       <Tabs defaultValue="pages" className="space-y-6">
         <TabsList className="bg-muted/60 p-1 border border-border/60">
           <TabsTrigger value="pages" className="gap-2 text-xs font-semibold">
-            <FileText className="h-3.5 w-3.5" /> Dynamic Pages & Blocks
+            <FileText className="h-3.5 w-3.5" /> Pages & Blocks
           </TabsTrigger>
           <TabsTrigger value="seo" className="gap-2 text-xs font-semibold">
             <Search className="h-3.5 w-3.5" /> Global SEO
@@ -63,7 +67,7 @@ export default function ContentPage() {
           {isLoading ? (
             <div className="flex items-center justify-center py-16 text-muted-foreground gap-2">
               <Loader2 className="h-5 w-5 animate-spin text-primary" />
-              <span>Loading CMS content blocks...</span>
+              <span>{tCommon("loading")}</span>
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
@@ -75,7 +79,7 @@ export default function ContentPage() {
                         <FileText className="h-4 w-4" />
                       </div>
                     </div>
-                    <CardTitle className="text-base font-mono">{block.key}</CardTitle>
+                    <CardTitle className="text-base font-mono dir-ltr text-start">{block.key}</CardTitle>
                     <CardDescription className="truncate font-sans text-xs">
                       {typeof block.content === 'object' 
                         ? (block.content?.en || JSON.stringify(block.content)) 
@@ -83,44 +87,11 @@ export default function ContentPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">Edit Content</Button>
+                    <Button variant="outline" size="sm" className="flex-1">{tCommon("edit")}</Button>
                     <Button variant="ghost" size="icon-sm"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></Button>
                   </CardContent>
                 </Card>
               ))}
-
-              {/* Standard Page Templates */}
-              <Card className="hover:border-amber-500/40 transition-colors shadow-xs">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <CardTitle className="text-base font-semibold">Terms & Conditions</CardTitle>
-                  <CardDescription className="text-xs">/legal/terms</CardDescription>
-                </CardHeader>
-                <CardContent className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">Edit Content</Button>
-                  <Button variant="ghost" size="icon-sm"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                </CardContent>
-              </Card>
-
-              <Card className="hover:border-amber-500/40 transition-colors shadow-xs">
-                <CardHeader>
-                  <div className="flex justify-between items-start mb-1">
-                    <div className="p-2 bg-primary/10 rounded-lg text-primary">
-                      <FileText className="h-4 w-4" />
-                    </div>
-                  </div>
-                  <CardTitle className="text-base font-semibold">Privacy Policy</CardTitle>
-                  <CardDescription className="text-xs">/legal/privacy</CardDescription>
-                </CardHeader>
-                <CardContent className="flex gap-2">
-                  <Button variant="outline" size="sm" className="flex-1">Edit Content</Button>
-                  <Button variant="ghost" size="icon-sm"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></Button>
-                </CardContent>
-              </Card>
             </div>
           )}
         </TabsContent>
@@ -129,10 +100,9 @@ export default function ContentPage() {
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader>
               <CardTitle className="flex gap-2 items-center text-lg">
-                Global SEO Configuration
+                Global SEO
                 {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
               </CardTitle>
-              <CardDescription>Default meta tags for pages without specific SEO overrides.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 max-w-2xl">
               <div className="space-y-1.5">
@@ -140,6 +110,7 @@ export default function ContentPage() {
                 <Input 
                   value={seoBlock?.content?.titleSuffix || seoForm.titleSuffix}
                   onChange={(e) => setSeoForm({ ...seoForm, titleSuffix: e.target.value })}
+                  className="dir-ltr text-start"
                 />
               </div>
               <div className="space-y-1.5">
@@ -150,16 +121,9 @@ export default function ContentPage() {
                   className="h-24"
                 />
               </div>
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Default OpenGraph Image URL</label>
-                <Input 
-                  value={seoBlock?.content?.ogImageUrl || seoForm.ogImageUrl}
-                  onChange={(e) => setSeoForm({ ...seoForm, ogImageUrl: e.target.value })}
-                />
-              </div>
               <Button size="sm" variant="gold" className="gap-2 mt-4" onClick={handleSaveSeo} disabled={updateBlock.isPending}>
                 <Save className="h-4 w-4" /> 
-                {updateBlock.isPending ? "Saving..." : "Save SEO Settings"}
+                {updateBlock.isPending ? tCommon("saving") : tCommon("saveChanges")}
               </Button>
             </CardContent>
           </Card>

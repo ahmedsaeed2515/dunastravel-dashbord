@@ -1,20 +1,21 @@
+"use client";
+
 import { Suspense } from "react";
 import { BookingsTable } from "@/features/bookings/components/BookingsTable/BookingsTable";
 import { TableSkeleton } from "@/components/shared/ui/Skeletons";
 import { CreateBookingDrawer } from "@/features/bookings/components/Drawers/CreateBookingDrawer";
 import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 import { PageHeader } from "@/components/shared/PageHeader";
-
-export const metadata = {
-  title: "Bookings Management - Dunas Travel Admin",
-};
+import { useTranslations } from "next-intl";
 
 export default function BookingsPage() {
+  const tBookings = useTranslations("bookings");
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Bookings Management"
-        description="Monitor, update, and manage traveler reservations, payment statuses, passenger details, and itinerary schedules."
+        title={tBookings("title")}
+        description={tBookings("description")}
         actions={
           <RequirePermission action="manage" resource="bookings">
             <CreateBookingDrawer />

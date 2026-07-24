@@ -2,13 +2,16 @@
 
 import { InquiriesView } from "@/features/communications/components/InquiriesView";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 
 export default function InquiriesPage() {
+  const tInquiries = useTranslations("inquiries");
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Inquiries & Leads"
-        description="Manage tailor-made tour requests, client trip inquiries, sales leads, and conversion pipelines."
+        title={tInquiries("title")}
+        description={tInquiries("description")}
       />
 
       <InquiriesView />

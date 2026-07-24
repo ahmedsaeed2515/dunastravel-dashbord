@@ -2,56 +2,60 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Promotion } from "../../types";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Edit, Trash2 } from "lucide-react";
 import { format } from "date-fns";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 
 export function getColumns(
   onEdit: (promotion: Promotion) => void,
-  onDelete: (promotion: Promotion) => void
+  onDelete: (promotion: Promotion) => void,
+  tPromotions: (key: string) => string,
+  tCommon: (key: string) => string
 ): ColumnDef<Promotion>[] {
   return [
     {
       accessorKey: "code",
-      header: "Promo Code",
+      header: tPromotions("promoCode"),
       cell: ({ row }) => (
-        <span className="font-semibold text-primary">{row.original.code}</span>
+        <span className="font-semibold text-primary dir-ltr inline-block font-mono">{row.original.code}</span>
       ),
     },
     {
       accessorKey: "discountPercent",
-      header: "Discount (%)",
-      cell: ({ row }) => <span>{row.original.discountPercent}%</span>,
+      header: tPromotions("discountValue"),
+      cell: ({ row }) => <span className="dir-ltr inline-block">{row.original.discountPercent}%</span>,
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: tCommon("status"),
       cell: ({ row }) => {
         const isActive = row.original.isActive;
         const isExpired = new Date(row.original.validUntil) < new Date();
         const maxReached = row.original.currentUses >= row.original.maxUses;
         
-        if (!isActive) return <Badge variant="secondary">Inactive</Badge>;
-        if (isExpired) return <Badge variant="destructive">Expired</Badge>;
-        if (maxReached) return <Badge variant="outline">Max Uses Reached</Badge>;
-        return <Badge variant="default" className="bg-emerald-500 hover:bg-emerald-600">Active</Badge>;
+        let status = "ACTIVE";
+        if (!isActive) status = "INACTIVE";
+        else if (isExpired) status = "EXPIRED";
+        else if (maxReached) status = "COMPLETED";
+
+        return <StatusBadge status={status} />;
       },
     },
     {
       accessorKey: "usage",
-      header: "Usage",
+      header: tPromotions("usedCount"),
       cell: ({ row }) => (
-        <span className="text-muted-foreground">
+        <span className="text-muted-foreground dir-ltr inline-block font-mono">
           {row.original.currentUses} / {row.original.maxUses}
         </span>
       ),
     },
     {
       accessorKey: "validUntil",
-      header: "Valid Until",
+      header: tPromotions("validUntil"),
       cell: ({ row }) => {
-        let formatted = "No Expiry";
+        let formatted = "—";
         if (row.original.validUntil) {
           const d = new Date(row.original.validUntil);
           if (!isNaN(d.getTime())) {

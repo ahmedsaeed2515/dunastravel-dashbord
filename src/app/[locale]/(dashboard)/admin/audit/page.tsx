@@ -2,15 +2,19 @@
 
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useAuditLogs } from "@/features/audit/hooks/useAuditLogs";
 import { format } from "date-fns";
-import { Search, ShieldAlert } from "lucide-react";
+import { Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useTranslations } from "next-intl";
 
 export default function AuditLogsPage() {
+  const tAudit = useTranslations("audit");
+  const tCommon = useTranslations("common");
+
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [search, setSearch] = useState<string>("");
@@ -26,18 +30,18 @@ export default function AuditLogsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="System Audit Logs"
-        description="Immutable audit trail of administrator actions, data modifications, user logins, and system events."
+        title={tAudit("title")}
+        description={tAudit("description")}
       />
 
       <Card className="border-border/80 shadow-xs bg-card overflow-hidden">
         <CardHeader className="flex flex-row items-center justify-between border-b border-border/70 p-4 sm:p-6">
           <div className="flex flex-wrap gap-4 items-center w-full">
             <div className="relative flex-1 min-w-[240px]">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
               <Input 
-                placeholder="Search audit logs by action or resource..." 
-                className="pl-9" 
+                placeholder={`${tCommon("searchPlaceholder")}...`} 
+                className="ps-9" 
                 value={search}
                 onChange={e => setSearch(e.target.value)}
               />
@@ -49,7 +53,7 @@ export default function AuditLogsPage() {
                 value={dateFrom}
                 onChange={e => setDateFrom(e.target.value)}
               />
-              <span className="text-xs text-muted-foreground">to</span>
+              <span className="text-xs text-muted-foreground">—</span>
               <Input 
                 type="date" 
                 className="w-auto"
@@ -64,42 +68,30 @@ export default function AuditLogsPage() {
             <Table>
               <TableHeader className="bg-muted/40">
                 <TableRow>
-                  <TableHead className="w-[100px]">Log ID</TableHead>
-                  <TableHead>Actor</TableHead>
-                  <TableHead>Action</TableHead>
-                  <TableHead>Resource Target</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Timestamp</TableHead>
+                  <TableHead className="w-[100px]">ID</TableHead>
+                  <TableHead>{tAudit("action")}</TableHead>
+                  <TableHead>{tAudit("resource")}</TableHead>
+                  <TableHead>{tCommon("status")}</TableHead>
+                  <TableHead className="text-end">{tAudit("timestamp")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {isLoading ? (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">Loading audit logs...</TableCell>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">{tCommon("loading")}</TableCell>
                   </TableRow>
                 ) : (Array.isArray(data) ? data : (data?.data || [])).length > 0 ? (
                   (Array.isArray(data) ? data : (data?.data || [])).map((log) => (
                     <TableRow key={log.id} className="hover:bg-muted/30 transition-colors">
-                      <TableCell className="font-mono text-xs text-muted-foreground">{log.id.slice(0, 8)}</TableCell>
-                      <TableCell className="font-medium text-sm">
-                        {log.user ? `${log.user.name} (${log.user.email})` : (log.ipAddress || "System")}
-                      </TableCell>
+                      <TableCell className="font-mono text-xs text-muted-foreground dir-ltr text-start">{log.id.slice(0, 8)}</TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="font-mono text-[10px]">
-                          {log.action}
-                        </Badge>
+                        <span className="font-mono text-xs">{log.action}</span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{log.resourceType} {log.resourceId}</TableCell>
                       <TableCell>
-                        {!log.action.includes("FAILED") ? (
-                          <Badge variant="success">Success</Badge>
-                        ) : (
-                          <Badge variant="destructive" className="gap-1">
-                            <ShieldAlert className="h-3 w-3" /> Failed
-                          </Badge>
-                        )}
+                        <StatusBadge status={log.action.includes("FAILED") ? "FAILED" : "ACTIVE"} />
                       </TableCell>
-                      <TableCell className="text-right text-xs text-muted-foreground whitespace-nowrap">
+                      <TableCell className="text-end text-xs text-muted-foreground whitespace-nowrap">
                         {(() => {
                           if (!log.createdAt) return "—";
                           const d = new Date(log.createdAt);
@@ -110,7 +102,7 @@ export default function AuditLogsPage() {
                   ))
                 ) : (
                   <TableRow>
-                    <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">No audit logs found.</TableCell>
+                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">{tAudit("noLogs")}</TableCell>
                   </TableRow>
                 )}
               </TableBody>

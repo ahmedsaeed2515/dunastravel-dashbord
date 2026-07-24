@@ -8,6 +8,7 @@ import { Agent, AgentQueryFilters, CreateAgentPayload, UpdateAgentPayload } from
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function AgentsPage() {
+  const tAgents = useTranslations("agents");
+  const tCommon = useTranslations("common");
+
   const [filters, setFilters] = useState<AgentQueryFilters>({ page: 1, limit: 10 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<Agent | null>(null);
@@ -72,12 +76,12 @@ export default function AgentsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Travel Agents"
-        description="Manage independent travel representatives, B2B sales agents, company affiliate assignments, and performance credentials."
+        title={tAgents("title")}
+        description={tAgents("description")}
         actions={
           <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
-            <span>New Agent</span>
+            <span>{tCommon("create")}</span>
           </Button>
         }
       />
@@ -108,21 +112,19 @@ export default function AgentsPage() {
       <AlertDialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon("confirm")} {tCommon("delete")}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete agent
-              <span className="font-semibold text-foreground"> {agentToDelete?.name} </span> 
-              and revoke their system access.
+              {agentToDelete?.name}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete Agent"}
+              {isDeleting ? tCommon("deleting") : tCommon("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

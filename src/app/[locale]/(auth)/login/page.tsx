@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Lock, Mail, ShieldCheck } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export default function LoginPage() {
   const router = useRouter();
+  const tAuth = useTranslations("auth");
+  const tCommon = useTranslations("common");
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -25,7 +29,7 @@ export default function LoginPage() {
       await authApi.login({ email, password });
       router.push("/dashboard");
     } catch (err: any) {
-      setError(err.message || "Invalid email or password");
+      setError(err.message || tAuth("loginError"));
     } finally {
       setLoading(false);
     }
@@ -34,8 +38,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4 relative overflow-hidden">
       {/* Background ambient accents */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] pointer-events-none"></div>
-      <div className="absolute bottom-10 right-10 w-72 h-72 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
+      <div className="absolute top-1/4 start-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-primary/10 rounded-full blur-[140px] pointer-events-none"></div>
+      <div className="absolute bottom-10 end-10 w-72 h-72 bg-amber-500/10 rounded-full blur-[100px] pointer-events-none"></div>
 
       <Card className="relative z-10 w-full max-w-md border-border/80 shadow-md bg-card/95 backdrop-blur-md p-2">
         <CardHeader className="text-center pb-2">
@@ -43,10 +47,10 @@ export default function LoginPage() {
             D
           </div>
           <CardTitle className="text-2xl font-bold font-heading text-foreground">
-            Dunas Travel
+            {tCommon("appName")}
           </CardTitle>
           <CardDescription className="text-xs uppercase tracking-widest font-semibold text-muted-foreground">
-            Executive Admin Suite
+            {tCommon("adminSuite")}
           </CardDescription>
         </CardHeader>
 
@@ -59,30 +63,30 @@ export default function LoginPage() {
 
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Email Address</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{tAuth("emailLabel")}</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="pl-9"
-                  placeholder="admin@dunastravel.com"
+                  className="ps-9 dir-ltr text-start"
+                  placeholder={tAuth("emailPlaceholder")}
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Password</label>
+              <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{tAuth("passwordLabel")}</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="pl-9"
-                  placeholder="••••••••"
+                  className="ps-9 dir-ltr text-start"
+                  placeholder={tAuth("passwordPlaceholder")}
                   required
                 />
               </div>
@@ -95,7 +99,7 @@ export default function LoginPage() {
               className="w-full h-10 mt-2 gap-2 text-sm"
             >
               <ShieldCheck className="h-4 w-4" />
-              <span>{loading ? "Authenticating..." : "Sign In to Dashboard"}</span>
+              <span>{loading ? tAuth("signingIn") : tAuth("signInButton")}</span>
             </Button>
           </form>
         </CardContent>

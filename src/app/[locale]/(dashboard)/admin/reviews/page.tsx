@@ -7,8 +7,12 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 
 export default function ReviewsPage() {
+  const tReviews = useTranslations("reviews");
+  const tCommon = useTranslations("common");
+
   const [filterState, setFilterState] = useState<"pending" | "published">("pending");
   
   // Pending reviews
@@ -20,16 +24,16 @@ export default function ReviewsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Review Moderation"
-        description="Audit, approve, or reject customer tour reviews and ratings before publication on the public website."
+        title={tReviews("title")}
+        description={tReviews("description")}
       />
 
       <Card className="border-border/80 shadow-xs bg-card p-4 sm:p-6">
         <Tabs defaultValue="pending" className="w-full" onValueChange={(val) => setFilterState(val as any)}>
           <div className="flex justify-between items-center mb-4">
             <TabsList className="grid grid-cols-2 w-[280px] bg-muted/60 p-1 border border-border/60">
-              <TabsTrigger value="pending" className="text-xs font-semibold">Pending Moderation</TabsTrigger>
-              <TabsTrigger value="published" className="text-xs font-semibold">Published</TabsTrigger>
+              <TabsTrigger value="pending" className="text-xs font-semibold">{tReviews("pending")}</TabsTrigger>
+              <TabsTrigger value="published" className="text-xs font-semibold">{tReviews("approved")}</TabsTrigger>
             </TabsList>
             
             {(pendingLoading || publishedLoading) && (

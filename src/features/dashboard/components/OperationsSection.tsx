@@ -6,22 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { formatDistanceToNow } from "date-fns";
 import { AlertOctagon, MailWarning } from "lucide-react";
 import { BeautifulEmptyState } from "@/components/shared/ui/BeautifulEmptyState";
+import { useTranslations } from "next-intl";
 
 export function OperationsSection() {
   const { data } = useDashboardMetrics();
+  const tDashboard = useTranslations("dashboard");
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
       {/* Left Column - Recent Bookings Placeholder (Span 2) */}
       <Card className="lg:col-span-2 shadow-sm">
         <CardHeader>
-          <CardTitle>Recent Bookings</CardTitle>
+          <CardTitle>{tDashboard("recentBookings")}</CardTitle>
         </CardHeader>
         <CardContent>
           <BeautifulEmptyState
             icon={MailWarning}
-            title="Pending Integration"
-            description="Recent Bookings will be loaded here once the Bookings module is fully attached."
+            title={tDashboard("recentBookings")}
+            description={tDashboard("recentBookingsDescription")}
           />
         </CardContent>
       </Card>
@@ -29,7 +31,7 @@ export function OperationsSection() {
       {/* Right Column - System Activity Timeline */}
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>System Activity</CardTitle>
+          <CardTitle>{tDashboard("systemActivity")}</CardTitle>
         </CardHeader>
         <CardContent>
           {data?.general?.recentFailedNotifications?.length ? (
@@ -47,8 +49,8 @@ export function OperationsSection() {
           ) : (
             <BeautifulEmptyState
               icon={MailWarning}
-              title="No Recent Activity"
-              description="System logs and notifications will appear here."
+              title={tDashboard("noRecentActivity")}
+              description={tDashboard("activityLogsPlaceholder")}
             />
           )}
         </CardContent>

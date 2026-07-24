@@ -7,6 +7,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { useTranslations } from "next-intl";
 import { Booking } from "../../types";
 
 interface BookingRowActionsProps {
@@ -22,23 +23,26 @@ export function BookingRowActions({
   onEdit,
   onDelete,
 }: BookingRowActionsProps) {
+  const tCommon = useTranslations("common");
+  const tAccess = useTranslations("accessibility");
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
-        <span className="sr-only">Open menu</span>
+        <span className="sr-only">{tAccess("openMenu")}</span>
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
         <DropdownMenuItem onClick={() => onView(booking)}>
-          <Eye className="mr-2 h-4 w-4" /> View Details
+          <Eye className="me-2 h-4 w-4" /> {tCommon("viewDetails")}
         </DropdownMenuItem>
         <DropdownMenuItem onClick={() => onEdit(booking)}>
-          <Edit className="mr-2 h-4 w-4" /> Edit Booking
+          <Edit className="me-2 h-4 w-4" /> {tCommon("edit")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onDelete(booking)} className="text-red-600">
-          <Trash className="mr-2 h-4 w-4" /> Delete Booking
+          <Trash className="me-2 h-4 w-4" /> {tCommon("delete")}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

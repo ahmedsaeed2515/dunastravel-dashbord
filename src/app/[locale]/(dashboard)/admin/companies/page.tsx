@@ -10,8 +10,12 @@ import { Button } from "@/components/ui/button";
 import { useCompanies } from "@/features/companies/hooks/useCompanies";
 import { Company, CompanyQueryFilters } from "@/features/companies/types";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 
 export default function CompaniesPage() {
+  const tCompanies = useTranslations("companies");
+  const tCommon = useTranslations("common");
+
   const [filters, setFilters] = useState<CompanyQueryFilters>({
     page: 1,
     limit: 10,
@@ -27,12 +31,12 @@ export default function CompaniesPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="B2B Partners & Agencies"
-        description="Corporate account directory, wholesale agencies, commission ledgers, contracts, and credit limits."
+        title={tCompanies("title")}
+        description={tCompanies("description")}
         actions={
           <Button onClick={() => setIsCreateOpen(true)} size="sm" variant="gold" className="gap-1.5">
             <Plus className="h-4 w-4" />
-            <span>Add Company</span>
+            <span>{tCommon("create")}</span>
           </Button>
         }
       />

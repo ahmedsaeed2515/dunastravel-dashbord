@@ -2,8 +2,6 @@
 
 import { ColumnDef } from "@tanstack/react-table";
 import { Commission } from "../types";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
 import { MoreHorizontal, CheckCircle, XCircle, HandCoins, FileText, Download } from "lucide-react";
 import { toast } from "sonner";
@@ -16,16 +14,18 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUpdateCommissionStatus } from "../hooks/useFinance";
+import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useTranslations } from "next-intl";
 
 export const columns: ColumnDef<Commission>[] = [
   {
     accessorKey: "booking.referenceCode",
-    header: "Booking Ref",
+    header: "Ref Code",
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span className="font-medium">{row.original.booking?.referenceCode || "Unknown"}</span>
+        <span className="font-medium dir-ltr inline-block">{row.original.booking?.referenceCode || "—"}</span>
         {row.original.booking?.invoiceNumber && (
-          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5">
+          <span className="text-xs text-muted-foreground flex items-center gap-1 mt-0.5 dir-ltr inline-flex">
             <FileText className="h-3 w-3" /> {row.original.booking.invoiceNumber}
           </span>
         )}
@@ -34,18 +34,18 @@ export const columns: ColumnDef<Commission>[] = [
   },
   {
     accessorKey: "company.name",
-    header: "B2B Partner",
+    header: "Partner",
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span className="font-medium text-foreground">{row.original.company?.name || "Unknown"}</span>
-        <span className="text-xs text-muted-foreground">{row.original.company?.referenceCode || ""}</span>
+        <span className="font-medium text-foreground">{row.original.company?.name || "—"}</span>
+        <span className="text-xs text-muted-foreground dir-ltr inline-block">{row.original.company?.referenceCode || ""}</span>
       </div>
     ),
   },
   {
     accessorKey: "rate",
     header: "Rate",
-    cell: ({ row }) => <div>{row.original.rate}%</div>,
+    cell: ({ row }) => <div className="dir-ltr inline-block">{row.original.rate}%</div>,
   },
   {
     accessorKey: "amount",
@@ -56,7 +56,7 @@ export const columns: ColumnDef<Commission>[] = [
         style: "currency",
         currency: row.original.currency,
       }).format(amount);
-      return <div className="font-semibold text-emerald-600 dark:text-emerald-400">{formatted}</div>;
+      return <div className="font-semibold text-emerald-600 dark:text-emerald-400 dir-ltr inline-block">{formatted}</div>;
     },
   },
   {
@@ -64,23 +64,12 @@ export const columns: ColumnDef<Commission>[] = [
     header: "Status",
     cell: ({ row }) => {
       const status = row.original.status;
-      const variants: Record<string, "default" | "secondary" | "destructive" | "outline"> = {
-        PENDING: "secondary",
-        APPROVED: "default",
-        PAID: "outline",
-        CANCELLED: "destructive",
-      };
-      
-      return (
-        <Badge variant={variants[status] || "outline"}>
-          {status}
-        </Badge>
-      );
+      return <StatusBadge status={status} />;
     },
   },
   {
     accessorKey: "createdAt",
-    header: "Created At",
+    header: "Date",
     cell: ({ row }) => {
       let formatted = "-";
       if (row.original.createdAt) {
@@ -103,15 +92,17 @@ export const columns: ColumnDef<Commission>[] = [
 
 function ActionCell({ commission }: { commission: Commission }) {
   const updateStatus = useUpdateCommissionStatus();
+  const tCommon = useTranslations("common");
+  const tAccess = useTranslations("accessibility");
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
-        <span className="sr-only">Open menu</span>
+        <span className="sr-only">{tAccess("openMenu")}</span>
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+        <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
         
         {commission.status === "PENDING" && (
           <>
@@ -120,16 +111,16 @@ function ActionCell({ commission }: { commission: Commission }) {
               className="text-emerald-600 focus:text-emerald-600"
               disabled={updateStatus.isPending}
             >
-              <CheckCircle className="mr-2 h-4 w-4" />
-              Approve & Credit Wallet
+              <CheckCircle className="me-2 h-4 w-4" />
+              {tCommon("confirm")}
             </DropdownMenuItem>
             <DropdownMenuItem 
               onClick={() => updateStatus.mutate({ id: commission.id, status: 'CANCELLED' })}
               className="text-destructive focus:text-destructive"
               disabled={updateStatus.isPending}
             >
-              <XCircle className="mr-2 h-4 w-4" />
-              Cancel Commission
+              <XCircle className="me-2 h-4 w-4" />
+              {tCommon("cancel")}
             </DropdownMenuItem>
           </>
         )}
@@ -140,8 +131,8 @@ function ActionCell({ commission }: { commission: Commission }) {
             className="text-blue-600 focus:text-blue-600"
             disabled={updateStatus.isPending}
           >
-            <HandCoins className="mr-2 h-4 w-4" />
-            Mark as Paid (Bank Wire)
+            <HandCoins className="me-2 h-4 w-4" />
+            {tCommon("confirm")}
           </DropdownMenuItem>
         )}
 
@@ -149,16 +140,14 @@ function ActionCell({ commission }: { commission: Commission }) {
         <DropdownMenuItem 
           onClick={() => {
             if (!commission.booking?.invoiceNumber) {
-              toast.error("No invoice available for this booking.");
+              toast.error(tCommon("error"));
             } else {
-              toast.info("Invoice download is not yet supported by the backend.");
+              toast.info(tCommon("info"));
             }
           }}
         >
-          <Download className="mr-2 h-4 w-4" /> Download Invoice PDF
+          <Download className="me-2 h-4 w-4" /> {tCommon("download")}
         </DropdownMenuItem>
-        <DropdownMenuItem>View Booking</DropdownMenuItem>
-        <DropdownMenuItem>View Company</DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

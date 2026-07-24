@@ -3,6 +3,7 @@
 import { Table } from "@tanstack/react-table";
 import { Settings2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useTranslations } from "next-intl";
 
 import {
   DropdownMenu,
@@ -20,14 +21,16 @@ interface DataTableViewOptionsProps<TData> {
 export function DataTableViewOptions<TData>({
   table,
 }: DataTableViewOptionsProps<TData>) {
+  const tCommon = useTranslations("common");
+
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger type="button" className="ml-auto hidden h-8 lg:flex items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground">
-        <Settings2 className="mr-2 h-4 w-4" />
-        View
+      <DropdownMenuTrigger type="button" className="ms-auto hidden h-8 lg:flex items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground">
+        <Settings2 className="me-2 h-4 w-4" />
+        {tCommon("view")}
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
-        <DropdownMenuLabel>Toggle columns</DropdownMenuLabel>
+        <DropdownMenuLabel>{tCommon("toggleColumns")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {table
           .getAllColumns()

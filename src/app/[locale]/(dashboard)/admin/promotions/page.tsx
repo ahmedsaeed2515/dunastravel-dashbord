@@ -8,6 +8,7 @@ import { Promotion, PromotionQueryFilters, CreatePromotionPayload, UpdatePromoti
 import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
+import { useTranslations } from "next-intl";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -20,6 +21,9 @@ import {
 } from "@/components/ui/alert-dialog";
 
 export default function PromotionsPage() {
+  const tPromotions = useTranslations("promotions");
+  const tCommon = useTranslations("common");
+
   const [filters, setFilters] = useState<PromotionQueryFilters>({ page: 1, limit: 10 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingPromotion, setEditingPromotion] = useState<Promotion | null>(null);
@@ -72,12 +76,12 @@ export default function PromotionsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Promotions & Discounts"
-        description="Manage promotional codes, campaign vouchers, validity dates, maximum usage bounds, and discount rules."
+        title={tPromotions("title")}
+        description={tPromotions("description")}
         actions={
           <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
-            <span>New Promotion</span>
+            <span>{tPromotions("createPromotion")}</span>
           </Button>
         }
       />
@@ -108,21 +112,19 @@ export default function PromotionsPage() {
       <AlertDialog open={!!promotionToDelete} onOpenChange={(open) => !open && setPromotionToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogTitle>{tCommon("confirm")} {tCommon("delete")}?</AlertDialogTitle>
             <AlertDialogDescription>
-              This action cannot be undone. This will permanently delete promotion code
-              <span className="font-semibold text-foreground"> {promotionToDelete?.code} </span> 
-              and deactivate it for future checkouts.
+              {promotionToDelete?.code}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isDeleting}>{tCommon("cancel")}</AlertDialogCancel>
             <AlertDialogAction 
               onClick={confirmDelete} 
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
               disabled={isDeleting}
             >
-              {isDeleting ? "Deleting..." : "Delete Promotion"}
+              {isDeleting ? tCommon("deleting") : tCommon("delete")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

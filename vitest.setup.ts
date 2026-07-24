@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
+import React from 'react';
 
 // Mock matchMedia for UI components
 Object.defineProperty(window, 'matchMedia', {
@@ -8,10 +9,30 @@ Object.defineProperty(window, 'matchMedia', {
     matches: false,
     media: query,
     onchange: null,
-    addListener: vi.fn(), // deprecated
-    removeListener: vi.fn(), // deprecated
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
     addEventListener: vi.fn(),
     removeEventListener: vi.fn(),
     dispatchEvent: vi.fn(),
   })),
 });
+
+// Mock next-intl hooks globally for unit tests
+vi.mock('next-intl', () => ({
+  useTranslations: (namespace?: string) => {
+    return (key: string, options?: any) => {
+      if (options && options.name) return `Welcome back, ${options.name}`;
+      if (options && options.selected !== undefined) return `${options.selected} of ${options.total} row(s) selected.`;
+      if (options && options.current !== undefined) return `Page ${options.current} of ${options.total}`;
+      return key;
+    };
+  },
+  useLocale: () => 'en',
+  NextIntlClientProvider: ({ children }: { children: any }) => children,
+}));
+
+vi.mock('@/i18n/routing', () => ({
+  Link: ({ children, href, ...props }: any) => React.createElement('a', { href, ...props }, children),
+  usePathname: () => '/admin',
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
+}));

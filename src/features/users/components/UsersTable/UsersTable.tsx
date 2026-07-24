@@ -12,8 +12,13 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
+import { useTranslations } from "next-intl";
 
 export function UsersTable() {
+  const tUsers = useTranslations("users");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [search, setSearch] = useState("");
@@ -45,18 +50,17 @@ export function UsersTable() {
   };
 
   const handleDelete = (user: User) => {
-    // Scaffolded delete trigger
     console.log("Delete:", user);
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete);
+  const columns = getColumns(handleView, handleEdit, handleDelete, tUsers, tCommon);
 
   const renderToolbarActions = () => {
     return (
       <div className="flex items-center gap-2">
         <Input 
-          aria-label="Search users"
-          placeholder="Search users..." 
+          aria-label={tCommon("search")}
+          placeholder={`${tCommon("search")}...`} 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
           className="h-8 w-[250px]"
@@ -66,7 +70,7 @@ export function UsersTable() {
           setIsDialogOpen(true);
         }}>
           <Plus className="h-4 w-4" />
-          Add User
+          {tUsers("addUser")}
         </Button>
       </div>
     );
@@ -76,12 +80,12 @@ export function UsersTable() {
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[500px]">
-          <TabsList className="grid w-full grid-cols-5" aria-label="Filter users by role">
-            <TabsTrigger value="ALL">All</TabsTrigger>
-            <TabsTrigger value="ADMIN">Admin</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-5" aria-label={tCommon("role")}>
+            <TabsTrigger value="ALL">{tCommon("all")}</TabsTrigger>
+            <TabsTrigger value="ADMIN">{tStatus("ADMIN", { defaultValue: "Admin" })}</TabsTrigger>
             <TabsTrigger value="COMPANY">B2B</TabsTrigger>
-            <TabsTrigger value="USER">Clients</TabsTrigger>
-            <TabsTrigger value="GUEST">Guests</TabsTrigger>
+            <TabsTrigger value="USER">{tUsers("title")}</TabsTrigger>
+            <TabsTrigger value="GUEST">Guest</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

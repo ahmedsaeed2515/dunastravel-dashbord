@@ -22,8 +22,12 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Download, CheckSquare, Star, Tag, Layers, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export function CustomersTable() {
+  const tCustomers = useTranslations("customers");
+  const tCommon = useTranslations("common");
+
   // Filters state
   const [filters, setFilters] = useState({ page: 1, limit: 10, isVip: undefined, status: undefined });
   const { data, isLoading } = useCustomers(filters);
@@ -67,15 +71,15 @@ export function CustomersTable() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success("Customers exported successfully");
+      toast.success(tCommon("success"));
     } catch (error: any) {
-      toast.error("Failed to export customers CSV");
+      toast.error(tCommon("error"));
     } finally {
       setIsExporting(false);
     }
   };
 
-  const columns = getColumns(handleView, handleToggleVip, handleToggleStatus);
+  const columns = getColumns(handleView, handleToggleVip, handleToggleStatus, tCustomers, tCommon);
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -108,47 +112,34 @@ export function CustomersTable() {
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 px-3 shadow-sm flex items-center gap-1.5 bg-primary/10 text-primary hover:bg-primary/20 border border-primary/20">
               <CheckSquare className="h-4 w-4" />
-              <span>Bulk Actions ({userIds.length})</span>
+              <span>{tCommon("actions")} ({userIds.length})</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-56">
-              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">Assign Segment</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">{tCommon("category")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkSegment("VIP Luxury")}>
-                <Layers className="mr-2 h-3.5 w-3.5" /> Segment: VIP Luxury
+                <Layers className="me-2 h-3.5 w-3.5" /> VIP Luxury
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkSegment("Corporate Partner")}>
-                <Layers className="mr-2 h-3.5 w-3.5" /> Segment: Corporate Partner
+                <Layers className="me-2 h-3.5 w-3.5" /> Corporate Partner
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkSegment("Repeat Traveler")}>
-                <Layers className="mr-2 h-3.5 w-3.5" /> Segment: Repeat Traveler
+                <Layers className="me-2 h-3.5 w-3.5" /> Repeat Traveler
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
 
-              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">Assign Tag</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleBulkTag("Summer2026")}>
-                <Tag className="mr-2 h-3.5 w-3.5" /> Tag: Summer2026
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkTag("HighValue")}>
-                <Tag className="mr-2 h-3.5 w-3.5" /> Tag: HighValue
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkTag("NileCruise")}>
-                <Tag className="mr-2 h-3.5 w-3.5" /> Tag: NileCruise
-              </DropdownMenuItem>
-
-              <DropdownMenuSeparator />
-
-              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">VIP Status</DropdownMenuLabel>
+              <DropdownMenuLabel className="text-xs text-muted-foreground uppercase font-bold">{tCommon("options")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkVip(true)}>
-                <Star className="mr-2 h-3.5 w-3.5 text-amber-500 fill-amber-500" /> Mark as VIP
+                <Star className="me-2 h-3.5 w-3.5 text-amber-500 fill-amber-500" /> VIP
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkVip(false)}>
-                <Star className="mr-2 h-3.5 w-3.5" /> Remove VIP Status
+                <Star className="me-2 h-3.5 w-3.5" /> Standard
               </DropdownMenuItem>
 
               <DropdownMenuSeparator />
 
               <DropdownMenuItem onClick={() => handleBulkStatus("INACTIVE")} className="text-red-600">
-                Deactivate Accounts
+                {tCommon("deleting")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -162,7 +153,7 @@ export function CustomersTable() {
           disabled={isExporting}
         >
           {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          <span>Export CSV</span>
+          <span>{tCommon("exportCsv")}</span>
         </Button>
       </div>
     );

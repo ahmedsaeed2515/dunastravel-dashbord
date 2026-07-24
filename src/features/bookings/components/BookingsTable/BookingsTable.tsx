@@ -23,10 +23,15 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Download, CheckSquare, Trash, RefreshCw, Loader2 } from "lucide-react";
+import { Download, CheckSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useTranslations } from "next-intl";
 
 export function BookingsTable() {
+  const tBookings = useTranslations("bookings");
+  const tCommon = useTranslations("common");
+  const tStatus = useTranslations("status");
+
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [search, setSearch] = useState("");
@@ -61,7 +66,7 @@ export function BookingsTable() {
   };
 
   const handleDelete = async (booking: Booking) => {
-    if (window.confirm(`Are you sure you want to delete booking ${booking.referenceCode}?`)) {
+    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${booking.referenceCode}?`)) {
       await deleteBooking.mutateAsync(booking.referenceCode);
     }
   };
@@ -78,15 +83,15 @@ export function BookingsTable() {
       a.click();
       window.URL.revokeObjectURL(url);
       document.body.removeChild(a);
-      toast.success("Bookings exported successfully");
+      toast.success(tCommon("success"));
     } catch (error: any) {
-      toast.error("Failed to export bookings CSV");
+      toast.error(tCommon("error"));
     } finally {
       setIsExporting(false);
     }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete);
+  const columns = getColumns(handleView, handleEdit, handleDelete, tBookings, tCommon);
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -104,25 +109,25 @@ export function BookingsTable() {
     };
 
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2 flex-wrap">
         <Input 
-          aria-label="Search bookings"
-          placeholder="Search bookings..." 
+          aria-label={tCommon("search")}
+          placeholder={`${tCommon("search")}...`} 
           value={search} 
           onChange={(e) => setSearch(e.target.value)} 
           className="h-8 w-[200px]"
         />
         
         <Select value={statusFilter} onValueChange={(val) => setStatusFilter(val || "")}>
-          <SelectTrigger className="h-8 w-[150px]" aria-label="Filter by status">
-            <SelectValue placeholder="All Statuses" />
+          <SelectTrigger className="h-8 w-[150px]" aria-label={tCommon("status")}>
+            <SelectValue placeholder={tCommon("all")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="ALL">All Statuses</SelectItem>
-            <SelectItem value="PENDING">Pending</SelectItem>
-            <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-            <SelectItem value="CANCELLED">Cancelled</SelectItem>
-            <SelectItem value="COMPLETED">Completed</SelectItem>
+            <SelectItem value="ALL">{tCommon("all")}</SelectItem>
+            <SelectItem value="PENDING">{tStatus("PENDING")}</SelectItem>
+            <SelectItem value="CONFIRMED">{tStatus("CONFIRMED")}</SelectItem>
+            <SelectItem value="CANCELLED">{tStatus("CANCELLED")}</SelectItem>
+            <SelectItem value="COMPLETED">{tStatus("COMPLETED")}</SelectItem>
           </SelectContent>
         </Select>
 
@@ -130,37 +135,21 @@ export function BookingsTable() {
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-8 px-3 gap-1.5">
               <CheckSquare className="h-4 w-4 text-primary" />
-              <span>Bulk Actions ({referenceCodes.length})</span>
+              <span>{tCommon("actions")} ({referenceCodes.length})</span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel>Set Status</DropdownMenuLabel>
+              <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("CONFIRMED")}>
-                Mark as Confirmed
+                {tStatus("CONFIRMED")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("PENDING")}>
-                Mark as Pending
+                {tStatus("PENDING")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("COMPLETED")}>
-                Mark as Completed
+                {tStatus("COMPLETED")}
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => handleBulkStatus("CANCELLED")} className="text-red-600">
-                Mark as Cancelled
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              <DropdownMenuLabel>Set Priority</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleBulkPriority("LOW")}>
-                Priority: Low
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkPriority("NORMAL")}>
-                Priority: Normal
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkPriority("HIGH")}>
-                Priority: High
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkPriority("URGENT")}>
-                Priority: Urgent
+                {tStatus("CANCELLED")}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -174,7 +163,7 @@ export function BookingsTable() {
           disabled={isExporting}
         >
           {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          <span>Export CSV</span>
+          <span>{tCommon("exportCsv")}</span>
         </Button>
       </div>
     );

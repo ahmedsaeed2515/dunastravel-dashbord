@@ -6,17 +6,19 @@ import { BarChart3, Map } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Bar, BarChart, ResponsiveContainer, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useTranslations } from "next-intl";
 
 export function AnalyticsCharts() {
   const { data: bookingsTrend, isLoading: isLoadingBookings } = useBookingsTrend('monthly');
   const { data: revenueTrend, isLoading: isLoadingRevenue } = useRevenueReport('monthly');
   const { data: destinationsTrend, isLoading: isLoadingDestinations } = useDestinationsReport();
+  const tDashboard = useTranslations("dashboard");
 
   return (
     <div className="grid gap-4 md:grid-cols-3 mb-8">
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Revenue Trend</CardTitle>
+          <CardTitle>{tDashboard("revenueTrend")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingRevenue ? (
@@ -24,8 +26,8 @@ export function AnalyticsCharts() {
           ) : !revenueTrend || revenueTrend.length === 0 ? (
             <BeautifulEmptyState
               icon={BarChart3}
-              title="No Analytics Data"
-              description="No revenue data available for this period."
+              title={tDashboard("noAnalyticsData")}
+              description={tDashboard("noRevenueData")}
             />
           ) : (
             <div className="h-[300px] w-full mt-4">
@@ -48,7 +50,7 @@ export function AnalyticsCharts() {
       
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Booking Trend</CardTitle>
+          <CardTitle>{tDashboard("bookingTrend")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingBookings ? (
@@ -56,8 +58,8 @@ export function AnalyticsCharts() {
           ) : !bookingsTrend || bookingsTrend.length === 0 ? (
             <BeautifulEmptyState
               icon={BarChart3}
-              title="No Analytics Data"
-              description="No booking data available for this period."
+              title={tDashboard("noAnalyticsData")}
+              description={tDashboard("noBookingData")}
             />
           ) : (
             <div className="h-[300px] w-full mt-4">
@@ -80,7 +82,7 @@ export function AnalyticsCharts() {
       
       <Card className="shadow-sm">
         <CardHeader>
-          <CardTitle>Top Destinations</CardTitle>
+          <CardTitle>{tDashboard("topDestinations")}</CardTitle>
         </CardHeader>
         <CardContent>
           {isLoadingDestinations ? (
@@ -88,8 +90,8 @@ export function AnalyticsCharts() {
           ) : !destinationsTrend || destinationsTrend.length === 0 ? (
             <BeautifulEmptyState
               icon={Map}
-              title="No Analytics Data"
-              description="No destinations data available."
+              title={tDashboard("noAnalyticsData")}
+              description={tDashboard("noDestinationsData")}
             />
           ) : (
             <div className="h-[300px] w-full mt-4">

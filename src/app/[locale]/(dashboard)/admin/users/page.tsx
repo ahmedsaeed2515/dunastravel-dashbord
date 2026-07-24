@@ -1,3 +1,5 @@
+"use client";
+
 import { Suspense } from "react";
 import { CustomersTable } from "@/features/customers/components/CustomersTable/CustomersTable";
 import { CustomerMetricsBanner } from "@/features/customers/components/CustomerMetricsBanner";
@@ -6,22 +8,21 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 import { PageHeader } from "@/components/shared/PageHeader";
-
-export const metadata = {
-  title: "Customer CRM Management - Dunas Travel Admin",
-};
+import { useTranslations } from "next-intl";
 
 export default function CustomersCrmPage() {
+  const tCustomers = useTranslations("customers");
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title="Customer CRM Management"
-        description="Central traveler directory for Dunas Travel. Track customer relationships, booking history, lifetime spend, VIP tags, and passenger documentation."
+        title={tCustomers("title")}
+        description={tCustomers("description")}
         actions={
           <RequirePermission action="manage" resource="users">
             <Button size="sm" variant="gold" className="gap-1.5">
               <PlusCircle className="h-4 w-4" />
-              <span>Register Customer</span>
+              <span>{tCustomers("addCustomer")}</span>
             </Button>
           </RequirePermission>
         }

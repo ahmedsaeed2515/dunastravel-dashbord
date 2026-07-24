@@ -1,0 +1,33 @@
+"use client";
+
+import { Badge } from "@/components/ui/badge";
+import { useLocalizedStatus } from "@/lib/status-localization";
+
+interface StatusBadgeProps {
+  status?: string | null;
+  className?: string;
+}
+
+export function StatusBadge({ status, className }: StatusBadgeProps) {
+  const getStatusLabel = useLocalizedStatus();
+  if (!status) return null;
+
+  const upper = status.toUpperCase().trim();
+  let variant: "default" | "secondary" | "success" | "warning" | "destructive" | "info" | "outline" = "secondary";
+
+  if (["CONFIRMED", "COMPLETED", "PUBLISHED", "PAID", "ACTIVE", "APPROVED", "RESOLVED"].includes(upper)) {
+    variant = "success";
+  } else if (["PENDING", "DRAFT", "NEW", "OPEN", "IN_PROGRESS"].includes(upper)) {
+    variant = "warning";
+  } else if (["CANCELLED", "FAILED", "SUSPENDED", "REJECTED", "EXPIRED"].includes(upper)) {
+    variant = "destructive";
+  } else if (["VIP"].includes(upper)) {
+    variant = "default";
+  }
+
+  return (
+    <Badge variant={variant} className={className}>
+      {getStatusLabel(status)}
+    </Badge>
+  );
+}
