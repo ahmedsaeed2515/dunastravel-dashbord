@@ -38,6 +38,7 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
   const tCommon = useTranslations("common");
   const tFinance = useTranslations("finance");
   const tNav = useTranslations("navigation");
+  const tAgents = useTranslations("agents");
 
   const { data: detail, isLoading } = useCompany(company?.id as string, { enabled: !!company?.id && isOpen });
   const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
