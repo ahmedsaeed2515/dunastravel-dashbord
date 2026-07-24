@@ -4,7 +4,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Search, Bell, Globe, Moon, Sun, Check } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "@/i18n/routing";
-import { useParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import {
   DropdownMenu,
@@ -27,6 +27,7 @@ export function Topbar() {
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
+  const searchParams = useSearchParams();
   const tCommon = useTranslations("common");
   const tAccess = useTranslations("accessibility");
 
@@ -34,7 +35,9 @@ export function Topbar() {
   const activeLocaleObj = LOCALES.find((l) => l.code === currentLocale) || LOCALES[0];
 
   const handleLanguageChange = (newLocale: string) => {
-    router.replace(pathname, { locale: newLocale });
+    const searchString = searchParams ? searchParams.toString() : "";
+    const target = searchString ? `${pathname}?${searchString}` : pathname;
+    router.replace(target, { locale: newLocale });
   };
 
   return (

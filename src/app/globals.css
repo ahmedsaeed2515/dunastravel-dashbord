@@ -138,3 +138,13 @@
     @apply font-heading tracking-tight;
   }
 }
+
+.dir-ltr {
+  direction: ltr !important;
+  unicode-bidi: isolate;
+}
+
+.dir-rtl {
+  direction: rtl !important;
+  unicode-bidi: isolate;
+}

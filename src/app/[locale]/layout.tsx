@@ -16,6 +16,7 @@ const montserrat = Montserrat({
   variable: '--font-montserrat',
 });
 
+import { DirectionProvider } from "@radix-ui/react-direction";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
@@ -44,19 +45,21 @@ export default async function LocaleLayout({
     <html lang={locale} dir={dir} suppressHydrationWarning>
       <body className={`${montserrat.variable} ${playfair.variable} font-sans min-h-screen bg-background text-foreground antialiased`}>
         <NextIntlClientProvider messages={messages}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange
-          >
-            <QueryProvider>
-              <TooltipProvider>
-                {children}
-              </TooltipProvider>
-            </QueryProvider>
-            <Toaster position="top-right" richColors />
-          </ThemeProvider>
+          <DirectionProvider dir={dir}>
+            <ThemeProvider
+              attribute="class"
+              defaultTheme="system"
+              enableSystem
+              disableTransitionOnChange
+            >
+              <QueryProvider>
+                <TooltipProvider>
+                  {children}
+                </TooltipProvider>
+              </QueryProvider>
+              <Toaster position={dir === 'rtl' ? 'top-left' : 'top-right'} richColors />
+            </ThemeProvider>
+          </DirectionProvider>
         </NextIntlClientProvider>
       </body>
     </html>

@@ -41,7 +41,7 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
       <div className="flex flex-wrap items-center gap-3">
         {/* Search */}
         <div className="relative flex-1 min-w-[250px] max-w-sm">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             placeholder="Search..."
             value={searchQuery}
@@ -49,7 +49,7 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
               setSearchQuery(e.target.value);
               updateFilter("search", e.target.value);
             }}
-            className="pl-9 bg-background shadow-sm"
+            className="ps-9 bg-background shadow-sm"
           />
         </div>
 
@@ -57,10 +57,10 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
         <Popover>
           <PopoverTrigger asChild>
             <Button variant="outline" className="shadow-sm">
-              <SlidersHorizontal className="mr-2 h-4 w-4" />
+              <SlidersHorizontal className="me-2 h-4 w-4" />
               Filters
               {Object.keys(activeFilters).length > 0 && (
-                <Badge variant="secondary" className="ml-2 px-1 rounded-sm">
+                <Badge variant="secondary" className="ms-2 px-1 rounded-sm">
                   {Object.keys(activeFilters).length}
                 </Badge>
               )}
@@ -78,7 +78,7 @@ export function FilterEngine({ filters, onFilterChange }: FilterEngineProps) {
         {Object.keys(activeFilters).length > 0 && (
           <Button variant="ghost" onClick={clearFilters} className="text-muted-foreground">
             Clear all
-            <X className="ml-2 h-4 w-4" />
+            <X className="ms-2 h-4 w-4" />
           </Button>
         )}
       </div>
