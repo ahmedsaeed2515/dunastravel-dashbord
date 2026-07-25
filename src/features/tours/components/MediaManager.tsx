@@ -37,7 +37,7 @@ export function MediaManager({ tour }: MediaManagerProps) {
       slug: tour.slug,
       data: {
         url,
-        publicId: publicId || `mock_id_${Math.random().toString(36).substring(7)}`,
+        publicId: publicId || undefined,
         isHero,
         sortOrder
       }

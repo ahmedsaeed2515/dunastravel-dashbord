@@ -1,4 +1,5 @@
 import { apiClient } from "@/lib/axios";
+import { env } from "@/config/env";
 import { 
   Company, 
   CompanyDetail, 
@@ -7,16 +8,7 @@ import {
   CreateCompanyPayload, 
   UpdateCompanyPayload 
 } from "../types";
-
-export interface PaginatedResponse<T> {
-  data: T[];
-  meta: {
-    total: number;
-    page: number;
-    limit: number;
-    totalPages: number;
-  };
-}
+import { PaginatedResponse } from "@/lib/api-types";
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
@@ -50,7 +42,7 @@ export const companiesApi = {
   },
 
   exportCsvUrl: (filters: CompanyQueryFilters): string => {
-    const params = new URLSearchParams(filters as any).toString();
-    return `${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001/api'}/admin/companies/export/csv?${params}`;
+    const params = new URLSearchParams(filters as Record<string, string>).toString();
+    return `${env.NEXT_PUBLIC_API_URL}/admin/companies/export/csv?${params}`;
   }
 };

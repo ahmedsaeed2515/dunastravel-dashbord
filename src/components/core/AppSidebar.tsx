@@ -34,18 +34,22 @@ import {
   ClipboardList,
   Tag
 } from "lucide-react";
-import { authApi } from "@/features/auth/api/auth";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
 export function AppSidebar() {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
   const tCommon = useTranslations("common");
-  const { isB2B, isAdmin, canAccessFullOperations, canManageAdmins, isLoading } = usePermissions();
+  const { logout } = useAuth();
+  const { isB2B, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
 
   const handleLogout = async () => {
-    await authApi.logout();
-    window.location.href = "/login";
+    try {
+      await logout();
+    } finally {
+      window.location.href = "/login";
+    }
   };
 
   if (isLoading) {
@@ -269,12 +273,14 @@ export function AppSidebar() {
                   </SidebarMenuItem>
                 )}
                 
-                <SidebarMenuItem>
-                  <SidebarMenuButton render={<Link href={adminRoutes.roles} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.roles)} tooltip={tNav("usersRoles")}>
-                    <ShieldCheck />
-                    <span>{tNav("usersRoles")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {canManageRoles && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton render={<Link href={adminRoutes.roles} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.roles)} tooltip={tNav("usersRoles")}>
+                      <ShieldCheck />
+                      <span>{tNav("usersRoles")}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

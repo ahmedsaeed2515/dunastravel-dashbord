@@ -75,7 +75,12 @@
     "or": "o",
     "and": "e",
     "grid": "Griglia",
-    "table": "Tabella"
+    "table": "Tabella",
+    "permissionDenied": "Accesso Negato",
+    "permissionDeniedDescription": "Non disponi dei permessi per eseguire questa azione o visualizzare questa risorsa.",
+    "returnToDashboard": "Torna alla Dashboard",
+    "somethingWentWrong": "Qualcosa è andato storto",
+    "unexpectedErrorOccurred": "Si è verificato un errore imprevisto durante il caricamento dei dati."
   },
   "navigation": {
     "overview": "Panoramica",

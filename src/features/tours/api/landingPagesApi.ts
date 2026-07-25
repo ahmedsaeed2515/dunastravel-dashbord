@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { apiClient } from "@/lib/axios";
 import { PaginatedResponse } from "@/lib/api-types";
 

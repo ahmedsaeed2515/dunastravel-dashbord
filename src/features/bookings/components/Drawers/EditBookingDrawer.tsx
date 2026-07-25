@@ -41,7 +41,7 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
   const [passengers, setPassengers] = useState<Passenger[]>([]);
 
   useEffect(() => {
-    // eslint-disable-next-line react-hooks/set-state-in-effect
+     
     if (booking) {
       setPriority(booking.priority || "NORMAL");
       setTagsString(booking.tags?.join(", ") || "");

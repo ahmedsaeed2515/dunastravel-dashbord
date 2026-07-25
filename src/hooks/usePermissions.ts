@@ -1,50 +1,92 @@
 "use client";
 
-import { useQuery } from "@tanstack/react-query";
-import { authApi } from "@/features/auth/api/auth";
-
-export type Role = 'USER' | 'COMPANY' | 'AGENT' | 'ADMIN' | 'SUPER_ADMIN';
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Role } from "@/lib/api-types";
 
 export function usePermissions() {
-  const { data: userRaw, isLoading } = useQuery({
-    queryKey: ['me'],
-    queryFn: authApi.getMe,
-    staleTime: 1000 * 60 * 5, // Cache for 5 mins
-  });
-
-  const user = userRaw?.data || userRaw;
-  const role = user?.role as Role | undefined;
+  const { user, role, isLoading } = useAuth();
 
   const isSuperAdmin = role === 'SUPER_ADMIN';
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
+  const isAgent = role === 'AGENT';
   const isB2B = role === 'COMPANY' || role === 'AGENT';
-  
-  // Ensure we can render UI dynamically
+
+  const canManageRoles = isSuperAdmin;
+  const canAccessAuditLogs = isSuperAdmin;
   const canManageAdmins = isSuperAdmin;
   const canAccessFullOperations = isAdmin;
+  const canManageTours = isAdmin;
+  const canManageUsers = isAdmin;
+  const canManagePromotions = isAdmin;
+  const canManageMedia = isAdmin;
+  const canAccessFinance = isAdmin || isB2B;
 
-  const hasPermission = (action: string, resource: string) => {
+  const hasPermission = (action: string, resource: string): boolean => {
+    if (!role) return false;
     if (isSuperAdmin) return true;
+
     if (isAdmin) {
+      // Admin cannot manage roles or access system audit logs
       if (resource === 'roles' || resource === 'audit') return false;
       return true;
     }
+
     if (isB2B) {
-      const allowedB2BResources = ['bookings', 'commissions', 'wallet'];
-      return allowedB2BResources.includes(resource);
+      const allowedB2BResources = ['bookings', 'commissions', 'wallet', 'profile'];
+      if (!allowedB2BResources.includes(resource)) return false;
+      // AGENT/B2B can only read or create bookings
+      if (resource === 'bookings') {
+        return action === 'read' || action === 'create';
+      }
+      return action === 'read';
     }
+
+    return false;
+  };
+
+  const canAccessRoute = (pathname: string): boolean => {
+    if (!role) return false;
+    if (isSuperAdmin) return true;
+
+    if (pathname.includes('/admin/settings/roles') || pathname.includes('/admin/audit')) {
+      return isSuperAdmin;
+    }
+
+    if (isB2B) {
+      const allowedPaths = [
+        '/dashboard',
+        '/admin/finance/commissions',
+        '/admin/finance/wallet',
+        '/admin/bookings',
+      ];
+      return allowedPaths.some((p) => pathname.includes(p));
+    }
+
+    if (isAdmin) {
+      return true;
+    }
+
     return false;
   };
 
   return {
     user,
-    role,
+    role: role as Role | undefined,
     isLoading,
     isSuperAdmin,
     isAdmin,
+    isAgent,
     isB2B,
+    canManageRoles,
+    canAccessAuditLogs,
     canManageAdmins,
     canAccessFullOperations,
-    hasPermission
+    canManageTours,
+    canManageUsers,
+    canManagePromotions,
+    canManageMedia,
+    canAccessFinance,
+    hasPermission,
+    canAccessRoute,
   };
 }

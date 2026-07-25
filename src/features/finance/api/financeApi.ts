@@ -46,5 +46,11 @@ export const financeApi = {
   updateCommissionStatus: async (id: string, status: string): Promise<Commission> => {
     const response = await apiClient.patch(`/admin/finance/commissions/${id}/status`, { status });
     return response as any;
+  },
+
+  // Refunds
+  refundPayment: async (payload: { idempotencyKey: string; paymentId: string; amount: number; currency: string; reason?: string }): Promise<any> => {
+    const response = await apiClient.post("/admin/finance/refunds", payload);
+    return response as any;
   }
 };

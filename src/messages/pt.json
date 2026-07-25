@@ -75,7 +75,12 @@
     "or": "ou",
     "and": "e",
     "grid": "Grade",
-    "table": "Tabela"
+    "table": "Tabela",
+    "permissionDenied": "Acesso Negado",
+    "permissionDeniedDescription": "Você não tem permissão para realizar esta ação ou ver este recurso.",
+    "returnToDashboard": "Voltar ao Painel",
+    "somethingWentWrong": "Algo deu errado",
+    "unexpectedErrorOccurred": "Ocorreu um erro inesperado ao carregar os dados."
   },
   "navigation": {
     "overview": "Visão geral",

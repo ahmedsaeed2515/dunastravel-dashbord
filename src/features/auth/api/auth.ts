@@ -1,16 +1,25 @@
 import { apiClient } from '@/lib/axios';
+import { UserSession } from '@/lib/api-types';
+
+export interface LoginPayload {
+  email: string;
+  password: string;
+}
 
 export const authApi = {
-  login: async (credentials: any) => {
-    const res = await apiClient.post('/auth/login', credentials);
-    return res.data ?? res;
+  login: async (credentials: LoginPayload): Promise<{ user: UserSession }> => {
+    return apiClient.post('/auth/login', credentials);
   },
-  logout: async () => {
-    const res = await apiClient.post('/auth/logout');
-    return res.data ?? res;
+  logout: async (): Promise<{ message: string }> => {
+    return apiClient.post('/auth/logout', {});
   },
-  getMe: async () => {
-    const res = await apiClient.get('/auth/me');
-    return res.data ?? res;
-  }
+  getMe: async (): Promise<UserSession> => {
+    return apiClient.get('/auth/me');
+  },
+  getCsrfToken: async (): Promise<{ token: string }> => {
+    return apiClient.get('/auth/csrf');
+  },
+  refreshToken: async (): Promise<{ accessToken?: string }> => {
+    return apiClient.post('/auth/refresh', {});
+  },
 };

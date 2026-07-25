@@ -75,7 +75,12 @@
     "or": "o",
     "and": "y",
     "grid": "Cuadrícula",
-    "table": "Tabla"
+    "table": "Tabla",
+    "permissionDenied": "Acceso Denegado",
+    "permissionDeniedDescription": "No tienes permiso para realizar esta acción o ver este recurso.",
+    "returnToDashboard": "Volver al Panel",
+    "somethingWentWrong": "Algo salió mal",
+    "unexpectedErrorOccurred": "Ocurrió un error inesperado al cargar los datos."
   },
   "navigation": {
     "overview": "Visión General",

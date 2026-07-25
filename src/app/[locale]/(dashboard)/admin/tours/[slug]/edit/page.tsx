@@ -40,6 +40,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
   useEffect(() => {
     if (tour) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         slug: tour.slug,
         category: tour.category || "",

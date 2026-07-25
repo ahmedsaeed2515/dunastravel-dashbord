@@ -75,7 +75,12 @@
     "or": "or",
     "and": "and",
     "grid": "Grid",
-    "table": "Table"
+    "table": "Table",
+    "permissionDenied": "Access Denied",
+    "permissionDeniedDescription": "You do not have permission to perform this action or view this resource.",
+    "returnToDashboard": "Return to Dashboard",
+    "somethingWentWrong": "Something went wrong",
+    "unexpectedErrorOccurred": "An unexpected error occurred while loading data."
   },
   "navigation": {
     "overview": "Overview",

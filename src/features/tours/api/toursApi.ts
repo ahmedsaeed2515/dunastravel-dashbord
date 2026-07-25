@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
+ 
 import { apiClient } from "@/lib/axios";
 import { Tour, TourQueryFilters, CreateTourPayload, UpdateTourPayload, BulkUpdateToursPayload, TourStats } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";

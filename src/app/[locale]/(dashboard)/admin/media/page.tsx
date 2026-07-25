@@ -70,7 +70,7 @@ export default function MediaPage() {
               key={asset.id}
               className="group relative rounded-xl border border-border overflow-hidden bg-muted/40 aspect-square shadow-xs hover:border-amber-500/40 transition-all duration-200"
             >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
+              { }
               <img 
                 src={asset.url} 
                 alt={asset.altText || "Media asset"} 
