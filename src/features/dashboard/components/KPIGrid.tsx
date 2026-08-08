@@ -22,11 +22,15 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     );
   }
 
-  const revenue = data?.revenue;
-  const bookings = data?.bookings;
-  const conversion = data?.conversion;
-  const capacity = data?.capacity;
-  const operational = data?.operational;
+  const summaryData = (data as any)?.revenue ? data : (data as any)?.data || data;
+  const revenue = summaryData?.revenue;
+  const bookings = summaryData?.bookings;
+  const conversion = summaryData?.conversion;
+  const capacity = summaryData?.capacity;
+  const operational = summaryData?.operational;
+
+  const revChange = revenue?.revenueChangePercent ?? 0;
+  const bookingChange = bookings?.changePercent ?? 0;
 
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
@@ -40,13 +44,13 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
           ${revenue?.grossRevenue?.toLocaleString() || "0"} <span className="text-xs font-normal text-muted-foreground">USD</span>
         </div>
         <div className="flex items-center gap-1 mt-2 text-xs">
-          {(revenue?.revenueChangePercent ?? 0) >= 0 ? (
+          {revChange >= 0 ? (
             <span className="text-emerald-500 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +{revenue?.revenueChangePercent}%
+              <TrendingUp className="w-3 h-3" /> +{revChange}%
             </span>
           ) : (
             <span className="text-rose-500 font-semibold flex items-center gap-0.5">
-              <TrendingDown className="w-3 h-3" /> {revenue?.revenueChangePercent}%
+              <TrendingDown className="w-3 h-3" /> {revChange}%
             </span>
           )}
           <span className="text-muted-foreground">vs prev period</span>
@@ -60,16 +64,16 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
           <CalendarCheck className="w-4 h-4 text-primary" />
         </div>
         <div className="text-2xl font-bold mt-2 text-foreground">
-          {bookings?.total || 0}
+          {bookings?.total ?? 0}
         </div>
         <div className="flex items-center gap-1 mt-2 text-xs">
-          {(bookings?.changePercent ?? 0) >= 0 ? (
+          {bookingChange >= 0 ? (
             <span className="text-emerald-500 font-semibold flex items-center gap-0.5">
-              <TrendingUp className="w-3 h-3" /> +{bookings?.changePercent}%
+              <TrendingUp className="w-3 h-3" /> +{bookingChange}%
             </span>
           ) : (
             <span className="text-rose-500 font-semibold flex items-center gap-0.5">
-              <TrendingDown className="w-3 h-3" /> {bookings?.changePercent}%
+              <TrendingDown className="w-3 h-3" /> {bookingChange}%
             </span>
           )}
           <span className="text-muted-foreground">vs prev period</span>

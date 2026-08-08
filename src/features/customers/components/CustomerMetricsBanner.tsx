@@ -4,7 +4,8 @@ import { useCustomerMetrics } from "../hooks/useCustomers";
 import { Users, UserPlus, Star, AlertCircle, TrendingUp, HeartHandshake, Loader2 } from "lucide-react";
 
 export function CustomerMetricsBanner() {
-  const { data: metrics, isLoading } = useCustomerMetrics();
+  const { data: rawMetrics, isLoading } = useCustomerMetrics();
+  const metrics = (rawMetrics as any)?.totalCustomers !== undefined ? rawMetrics : (rawMetrics as any)?.data || rawMetrics;
 
   if (isLoading || !metrics) {
     return (
@@ -27,7 +28,7 @@ export function CustomerMetricsBanner() {
         </div>
         <div className="text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-1 font-medium">
           <TrendingUp className="h-3.5 w-3.5" />
-          <span>+{metrics.newCustomers} new clients registered this month</span>
+          <span>{metrics.newCustomers ? `+${metrics.newCustomers}` : "0"} new clients registered this month</span>
         </div>
       </div>
 

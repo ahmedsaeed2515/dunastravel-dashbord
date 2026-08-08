@@ -8,8 +8,8 @@ import {
 
 export const communicationsApi = {
   getMetrics: async (): Promise<CommunicationMetrics> => {
-    const response = await apiClient.get("/admin/communications/logs/metrics");
-    return response as any;
+    const res: any = await apiClient.get("/admin/communications/logs/metrics");
+    return res?.totalSent !== undefined ? res : res?.data || res;
   },
 
   getLogs: async (filters: NotificationDeliveryLogQueryFilters): Promise<PaginatedResponse<NotificationDeliveryLog>> => {

@@ -21,6 +21,7 @@ import {
   CalendarCheck, 
   Map, 
   Users, 
+  User,
   MessageSquare, 
   Image as ImageIcon,
   Settings,
@@ -30,6 +31,7 @@ import {
   Wallet,
   ShieldCheck,
   Bot,
+  Bell,
   BellRing,
   ClipboardList,
   Tag
@@ -48,7 +50,9 @@ export function AppSidebar() {
     try {
       await logout();
     } finally {
-      window.location.href = "/login";
+      const first = pathname.split('/').filter(Boolean)[0];
+      const validLocale = ['en', 'ar', 'es', 'pt', 'it'].includes(first) ? first : 'ar';
+      window.location.href = `/${validLocale}/login`;
     }
   };
 
@@ -251,6 +255,12 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
+                  <SidebarMenuButton render={<Link href={adminRoutes.notifications} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.notifications)} tooltip="Notifications">
+                    <Bell />
+                    <span>{pathname.includes("/ar") ? "مركز الإشعارات" : "Notifications"}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <SidebarMenuButton render={<Link href={adminRoutes.communications} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.communications)} tooltip={tNav("communications")}>
                     <BellRing />
                     <span>{tNav("communications")}</span>
@@ -289,9 +299,15 @@ export function AppSidebar() {
 
       <SidebarFooter>
         <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton render={<Link href={adminRoutes.profile} />} isActive={pathname.startsWith(adminRoutes.profile)} tooltip={tNav("profile")}>
+              <User />
+              <span>{tNav("profile")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
           {isAdmin && (
             <SidebarMenuItem>
-              <SidebarMenuButton render={<Link href={adminRoutes.settings} />} tooltip={tNav("settings")}>
+              <SidebarMenuButton render={<Link href={adminRoutes.settings} />} isActive={pathname.startsWith(adminRoutes.settings)} tooltip={tNav("settings")}>
                 <Settings />
                 <span>{tNav("settings")}</span>
               </SidebarMenuButton>

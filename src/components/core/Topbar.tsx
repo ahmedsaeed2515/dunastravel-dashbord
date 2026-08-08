@@ -13,6 +13,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
+import { NotificationBellDropdown } from "./NotificationBellDropdown";
 
 const LOCALES = [
   { code: "en", label: "English", flag: "🇬🇧" },
@@ -22,14 +23,22 @@ const LOCALES = [
   { code: "it", label: "Italiano", flag: "🇮🇹" },
 ];
 
+import { useAuth } from "@/features/auth/hooks/useAuth";
+import { Link } from "@/i18n/routing";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
+import { User, Settings, LogOut } from "lucide-react";
+
 export function Topbar() {
   const { setTheme, theme } = useTheme();
+  const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
   const tCommon = useTranslations("common");
   const tAccess = useTranslations("accessibility");
+  const tNav = useTranslations("navigation");
 
   const currentLocale = (params?.locale as string) || "en";
   const activeLocaleObj = LOCALES.find((l) => l.code === currentLocale) || LOCALES[0];
@@ -39,6 +48,19 @@ export function Topbar() {
     const target = searchString ? `${pathname}?${searchString}` : pathname;
     router.replace(target, { locale: newLocale });
   };
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+    } finally {
+      const validLocale = ['en', 'ar', 'es', 'pt', 'it'].includes(currentLocale) ? currentLocale : 'ar';
+      window.location.href = `/${validLocale}/login`;
+    }
+  };
+
+  const userInitials = user?.name
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    : "AD";
 
   return (
     <header className="h-16 border-b border-border/60 bg-background/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-2xs">
@@ -102,16 +124,47 @@ export function Topbar() {
         </Button>
 
         {/* Notifications */}
-        <Button 
-          variant="ghost" 
-          size="icon-sm" 
-          className="relative" 
-          title={tCommon("notifications")}
-          aria-label={tAccess("notifications")}
-        >
-          <Bell className="w-4 h-4" />
-          <span className="absolute top-1.5 end-1.5 w-2 h-2 bg-amber-500 rounded-full ring-2 ring-background"></span>
-        </Button>
+        <NotificationBellDropdown />
+
+        {/* User Profile Dropdown */}
+        <DropdownMenu>
+          <DropdownMenuTrigger asChild>
+            <Button variant="ghost" className="p-0.5 rounded-full ring-2 ring-primary/20 hover:ring-primary/40 transition-all">
+              <Avatar className="w-8 h-8">
+                <AvatarImage src="" alt={user?.name || "Admin"} />
+                <AvatarFallback className="bg-primary text-primary-foreground font-semibold text-xs">
+                  {userInitials}
+                </AvatarFallback>
+              </Avatar>
+            </Button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" className="w-56">
+            <DropdownMenuLabel className="font-normal">
+              <div className="flex flex-col space-y-1">
+                <p className="text-sm font-semibold leading-none">{user?.name || "Super Admin"}</p>
+                <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@dunastravel.com"}</p>
+              </div>
+            </DropdownMenuLabel>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/admin/profile" className="flex items-center gap-2">
+                <User className="w-4 h-4 text-muted-foreground" />
+                <span>My Profile</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuItem asChild className="cursor-pointer">
+              <Link href="/admin/settings" className="flex items-center gap-2">
+                <Settings className="w-4 h-4 text-muted-foreground" />
+                <span>{tNav("settings")}</span>
+              </Link>
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={handleLogout} className="cursor-pointer text-destructive focus:text-destructive">
+              <LogOut className="w-4 h-4 mr-2" />
+              <span>{tNav("logOut")}</span>
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </header>
   );

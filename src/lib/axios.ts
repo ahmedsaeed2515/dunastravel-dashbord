@@ -203,10 +203,17 @@ apiClient.interceptors.response.use(
     // If 401 Unauthorized, attempt a silent refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       const requestUrl = originalRequest.url || '';
-      if (requestUrl.includes('/auth/refresh') || requestUrl.includes('/auth/login')) {
+      const redirectToLogin = () => {
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
+          const segments = window.location.pathname.split('/').filter(Boolean);
+          const first = segments[0];
+          const validLocale = ['en', 'ar', 'es', 'pt', 'it'].includes(first) ? first : 'ar';
+          window.location.href = `/${validLocale}/login`;
         }
+      };
+
+      if (requestUrl.includes('/auth/refresh') || requestUrl.includes('/auth/login')) {
+        redirectToLogin();
         return Promise.reject(customError);
       }
 
@@ -236,9 +243,7 @@ apiClient.interceptors.response.use(
         } catch {
           isRefreshing = false;
           onRefreshed(false);
-          if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
-          }
+          redirectToLogin();
           return Promise.reject(customError);
         }
       }

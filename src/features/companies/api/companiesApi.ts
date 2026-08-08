@@ -12,8 +12,8 @@ import { PaginatedResponse } from "@/lib/api-types";
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
-    const response = await apiClient.get("/admin/companies/metrics");
-    return response as any;
+    const res: any = await apiClient.get("/admin/companies/metrics");
+    return res?.totalCompanies !== undefined ? res : res?.data || res;
   },
 
   getCompanies: async (filters: CompanyQueryFilters): Promise<PaginatedResponse<Company>> => {

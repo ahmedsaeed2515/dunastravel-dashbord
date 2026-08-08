@@ -7,7 +7,8 @@ import { Send, AlertTriangle, Clock, Activity } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function CommunicationsMetricsBanner() {
-  const { data, isLoading } = useCommunicationMetrics();
+  const { data: rawData, isLoading } = useCommunicationMetrics();
+  const data = (rawData as any)?.totalSent !== undefined ? rawData : (rawData as any)?.data || rawData;
 
   const metrics = [
     {
