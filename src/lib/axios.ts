@@ -203,12 +203,20 @@ apiClient.interceptors.response.use(
     // If 401 Unauthorized, attempt a silent refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       const requestUrl = originalRequest.url || '';
-      const redirectToLogin = () => {
+      const redirectToLogin = async () => {
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          const baseUrl = originalRequest.baseURL || '/api';
+          try {
+            await axios.post(`${baseUrl}/auth/logout`, {}, { withCredentials: true });
+          } catch {
+            // Ignore error during cleanup
+          }
+          document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;';
+          document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;';
           const segments = window.location.pathname.split('/').filter(Boolean);
           const first = segments[0];
           const validLocale = ['en', 'ar', 'es', 'pt', 'it'].includes(first) ? first : 'ar';
-          window.location.href = `/${validLocale}/login`;
+          window.location.href = `/${validLocale}/login?expired=1`;
         }
       };
 

@@ -30,9 +30,12 @@ export default function middleware(request: NextRequest) {
     ? firstSegment 
     : (savedLocale && (routing.locales as readonly string[]).includes(savedLocale) ? savedLocale : routing.defaultLocale);
 
+  const isLoginPage = pathname.includes('/login');
+  const isExplicitLogin = request.nextUrl.searchParams.has('expired') || request.nextUrl.searchParams.has('logout');
+
   // Handle direct unlocalized /login or /login/
   if (pathname === '/login' || pathname === '/login/') {
-    if (token) {
+    if (token && !isExplicitLogin) {
       return NextResponse.redirect(new URL(`/${validLocale}/dashboard`, request.url));
     }
     return NextResponse.redirect(new URL(`/${validLocale}/login`, request.url));
@@ -46,16 +49,14 @@ export default function middleware(request: NextRequest) {
     return NextResponse.redirect(new URL(`/${validLocale}/login`, request.url));
   }
 
-  const isLoginPage = pathname.includes('/login');
-
   // If no token and trying to access protected route (not on login page)
   if (!token && !isLoginPage) {
     const loginUrl = new URL(`/${validLocale}/login`, request.url);
     return NextResponse.redirect(loginUrl);
   }
 
-  // If token exists and on login page, redirect to dashboard
-  if (token && isLoginPage) {
+  // If token exists and on login page, redirect to dashboard unless explicitly logging in/expired
+  if (token && isLoginPage && !isExplicitLogin) {
     const dashboardUrl = new URL(`/${validLocale}/dashboard`, request.url);
     return NextResponse.redirect(dashboardUrl);
   }
