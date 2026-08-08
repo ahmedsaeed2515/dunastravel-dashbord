@@ -7,6 +7,23 @@ export interface UserSession {
   role: Role;
   phone?: string | null;
   status?: string;
+  isVerified?: boolean;
+  customerNumber?: string | null;
+  isVip?: boolean;
+  tags?: string[];
+  segments?: string[];
+  passportNumber?: string | null;
+  nationality?: string | null;
+  gender?: string | null;
+  dateOfBirth?: string | null;
+  emergencyContact?: string | null;
+  address?: string | null;
+  preferredLanguage?: string | null;
+  preferredCurrency?: string | null;
+  preferredDestination?: string | null;
+  preferredTravelType?: string | null;
+  marketingConsent?: boolean;
+  companyId?: string | null;
   createdAt?: string;
   updatedAt?: string;
 }

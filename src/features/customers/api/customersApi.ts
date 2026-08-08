@@ -15,8 +15,8 @@ import { PaginatedResponse } from "@/lib/api-types";
 
 export const customersApi = {
   getMetrics: async (): Promise<CustomerCrmMetrics> => {
-    const response = await apiClient.get<CustomerCrmMetrics>("/admin/users/crm/metrics");
-    return response as any;
+    const res: any = await apiClient.get<CustomerCrmMetrics>("/admin/users/crm/metrics");
+    return res?.totalCustomers !== undefined ? res : res?.data || res;
   },
 
   getCustomers: async (params: ListCustomersParams): Promise<PaginatedResponse<Customer>> => {

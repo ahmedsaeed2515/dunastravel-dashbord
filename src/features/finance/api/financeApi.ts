@@ -12,8 +12,8 @@ import {
 export const financeApi = {
   // Wallets
   getWalletMetrics: async (): Promise<WalletMetrics> => {
-    const response = await apiClient.get("/admin/finance/wallets/metrics");
-    return response as any;
+    const res: any = await apiClient.get("/admin/finance/wallets/metrics");
+    return res?.totalLiabilitiesUsd !== undefined ? res : res?.data || res;
   },
 
   getWallet: async (ownerType: 'USER' | 'COMPANY', ownerId: string): Promise<Wallet> => {
@@ -34,8 +34,8 @@ export const financeApi = {
 
   // Commissions
   getCommissionMetrics: async (): Promise<CommissionMetrics> => {
-    const response = await apiClient.get("/admin/finance/commissions/metrics");
-    return response as any;
+    const res: any = await apiClient.get("/admin/finance/commissions/metrics");
+    return res?.totalPendingUsd !== undefined ? res : res?.data || res;
   },
 
   getCommissions: async (filters: CommissionQueryFilters): Promise<PaginatedResponse<Commission>> => {

@@ -7,8 +7,11 @@ import { Wallet, Landmark, DollarSign, Clock } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export function FinanceMetricsBanner() {
-  const { data: walletData, isLoading: walletLoading } = useWalletMetrics();
-  const { data: commissionData, isLoading: commissionLoading } = useCommissionMetrics();
+  const { data: rawWallet, isLoading: walletLoading } = useWalletMetrics();
+  const { data: rawCommission, isLoading: commissionLoading } = useCommissionMetrics();
+
+  const walletData = (rawWallet as any)?.totalLiabilitiesUsd !== undefined ? rawWallet : (rawWallet as any)?.data || rawWallet;
+  const commissionData = (rawCommission as any)?.totalPendingUsd !== undefined ? rawCommission : (rawCommission as any)?.data || rawCommission;
 
   const metrics = [
     {

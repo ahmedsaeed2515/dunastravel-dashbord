@@ -19,6 +19,8 @@ export const adminRoutes = {
   audit: "/admin/audit",
   roles: "/admin/settings/roles",
   settings: "/admin/settings",
+  profile: "/admin/profile",
+  notifications: "/admin/notifications",
 } as const;
 
 export type AdminRouteKey = keyof typeof adminRoutes;

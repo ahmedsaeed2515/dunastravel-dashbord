@@ -8,7 +8,8 @@ export function CompanyMetricsBanner() {
   const tCompanies = useTranslations("companies");
   const tFinance = useTranslations("finance");
 
-  const { data: metrics, isLoading } = useCompanyMetrics();
+  const { data: rawMetrics, isLoading } = useCompanyMetrics();
+  const metrics = (rawMetrics as any)?.totalCompanies !== undefined ? rawMetrics : (rawMetrics as any)?.data || rawMetrics;
 
   if (isLoading) {
     return (

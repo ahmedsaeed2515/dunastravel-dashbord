@@ -17,15 +17,18 @@ export function CurrencyConverterWidget() {
   
   // Calculate locally using the cached rates
   const calculateConversion = () => {
-    if (!ratesData || !ratesData.rates) return "0.00";
+    const ratesMap = ratesData?.rates || (ratesData as any)?.data?.rates?.rates;
+    if (!ratesMap) return "0.00";
     
     const parsedAmount = parseFloat(amount);
     if (isNaN(parsedAmount)) return "0.00";
     
-    const rateFrom = ratesData.rates[fromCurrency];
-    const rateTo = ratesData.rates[toCurrency];
+    const rawFrom = ratesMap[fromCurrency];
+    const rawTo = ratesMap[toCurrency];
+    const rateFrom = typeof rawFrom === "string" ? parseFloat(rawFrom) : Number(rawFrom);
+    const rateTo = typeof rawTo === "string" ? parseFloat(rawTo) : Number(rawTo);
     
-    if (!rateFrom || !rateTo) return "0.00";
+    if (!rateFrom || !rateTo || isNaN(rateFrom) || isNaN(rateTo)) return "0.00";
     
     const baseUsd = parsedAmount / rateFrom;
     const converted = baseUsd * rateTo;
@@ -39,7 +42,8 @@ export function CurrencyConverterWidget() {
     setToCurrency(temp);
   };
 
-  const availableCurrencies = ratesData?.rates ? Object.keys(ratesData.rates) : ["USD", "EUR", "GBP", "AED", "SAR", "EGP"];
+  const ratesMap = ratesData?.rates || (ratesData as any)?.data?.rates?.rates;
+  const availableCurrencies = ratesMap && typeof ratesMap === "object" ? Object.keys(ratesMap) : ["USD", "EUR", "GBP", "AED", "SAR", "EGP"];
 
   return (
     <Card className="shadow-lg border-primary/10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md w-full max-w-sm">

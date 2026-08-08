@@ -146,6 +146,6 @@ describe('apiClient Interceptors', () => {
       // Expected
     }
 
-    expect(window.location.href).toBe('/login');
+    expect(window.location.href).toBe('/ar/login');
   });
 });

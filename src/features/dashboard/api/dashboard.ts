@@ -7,52 +7,52 @@ import {
 
 export const dashboardApi = {
   getSummary: async (filters?: DashboardFilters): Promise<ExecutiveSummary> => {
-    const response = await apiClient.get<ExecutiveSummary>("/admin/dashboard/summary", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/summary", { params: filters });
+    return res?.revenue ? res : res?.data || res;
   },
 
   getRevenueTrend: async (filters?: DashboardFilters): Promise<RevenueTrendItem[]> => {
-    const response = await apiClient.get<RevenueTrendItem[]>("/admin/dashboard/revenue-trend", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/revenue-trend", { params: filters });
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   getBookingsTrend: async (filters?: DashboardFilters): Promise<BookingsTrendItem[]> => {
-    const response = await apiClient.get<BookingsTrendItem[]>("/admin/dashboard/bookings-trend", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/bookings-trend", { params: filters });
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   getTourPerformance: async (filters?: DashboardFilters): Promise<{ all: TourPerformanceItem[]; rankings: TourRankings }> => {
-    const response = await apiClient.get<{ all: TourPerformanceItem[]; rankings: TourRankings }>("/admin/dashboard/tour-performance", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/tour-performance", { params: filters });
+    return res?.rankings ? res : res?.data || res;
   },
 
   getInterfacePerformance: async (filters?: DashboardFilters): Promise<InterfacePerformanceItem[]> => {
-    const response = await apiClient.get<InterfacePerformanceItem[]>("/admin/dashboard/interface-performance", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/interface-performance", { params: filters });
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   getConversionFunnel: async (filters?: DashboardFilters): Promise<ConversionFunnelData> => {
-    const response = await apiClient.get<ConversionFunnelData>("/admin/dashboard/conversion-funnel", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/conversion-funnel", { params: filters });
+    return res?.stages ? res : res?.data || res;
   },
 
   getTrafficAnalytics: async (filters?: DashboardFilters): Promise<any> => {
-    const response = await apiClient.get<any>("/admin/dashboard/traffic", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/traffic", { params: filters });
+    return res?.devices ? res : res?.data || res;
   },
 
   getActionCenter: async (filters?: DashboardFilters): Promise<ActionAlert[]> => {
-    const response = await apiClient.get<ActionAlert[]>("/admin/dashboard/action-center", { params: filters });
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/action-center", { params: filters });
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   getRecentBookings: async (): Promise<RecentBookingItem[]> => {
-    const response = await apiClient.get<RecentBookingItem[]>("/admin/dashboard/recent-bookings");
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/recent-bookings");
+    return Array.isArray(res) ? res : res?.data || [];
   },
 
   getRecentActivity: async (): Promise<RecentActivityItem[]> => {
-    const response = await apiClient.get<RecentActivityItem[]>("/admin/dashboard/recent-activity");
-    return response as any;
+    const res: any = await apiClient.get("/admin/dashboard/recent-activity");
+    return Array.isArray(res) ? res : res?.data || [];
   },
 };
