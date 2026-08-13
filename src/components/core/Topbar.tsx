@@ -64,12 +64,20 @@ export function Topbar() {
 
   return (
     <header className="h-16 border-b border-border/60 bg-background/95 backdrop-blur-md sticky top-0 z-30 flex items-center justify-between px-4 sm:px-6 transition-all duration-300 shadow-2xs">
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2 sm:gap-3">
         <SidebarTrigger className="hover:bg-muted text-foreground transition-colors p-2 rounded-md" />
 
-        {/* Global Search Trigger (Cmd+K) */}
+        {/* Mobile Brand Logo */}
+        <Link href={pathname} className="sm:hidden flex items-center gap-2 font-bold text-xs">
+          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-7 w-auto object-contain shrink-0" />
+        </Link>
+
+        {/* Desktop Global Search Trigger (Cmd+K) */}
         <button
           type="button"
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+          }}
           aria-label={tAccess("searchDashboard")}
           className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground bg-muted/50 hover:bg-muted border border-border/80 px-3.5 py-1.5 rounded-full w-56 md:w-64 transition-all duration-200"
         >
@@ -81,7 +89,20 @@ export function Topbar() {
         </button>
       </div>
 
-      <div className="flex items-center gap-2 sm:gap-3">
+      <div className="flex items-center gap-1.5 sm:gap-3">
+        {/* Mobile Quick Search Button */}
+        <Button
+          variant="ghost"
+          size="icon-sm"
+          className="sm:hidden text-muted-foreground hover:text-foreground"
+          onClick={() => {
+            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+          }}
+          title="Search"
+          aria-label="Search"
+        >
+          <Search className="h-4 w-4" />
+        </Button>
         {/* 5-Language Switcher */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>

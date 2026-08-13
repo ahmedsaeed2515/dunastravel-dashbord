@@ -142,4 +142,9 @@ export const aiApi = {
     const response = await apiClient.post("/admin/ai/knowledge/sync-catalog");
     return response as any;
   },
+
+  uploadKnowledgeDocument: async (payload: { title: string; content: string; category?: string; locale?: string; tags?: string[] }): Promise<{ success: boolean; item: KnowledgeItemData }> => {
+    const response = await apiClient.post("/admin/ai/knowledge/upload", payload);
+    return response as any;
+  },
 };

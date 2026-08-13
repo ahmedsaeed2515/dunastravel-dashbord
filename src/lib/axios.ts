@@ -27,6 +27,27 @@ function addCsrfSubscriber(callback: (token: string) => void) {
   csrfSubscribers.push(callback);
 }
 
+export async function initCsrfToken(): Promise<string | null> {
+  if (csrfToken) return csrfToken;
+  if (!isFetchingCsrf) {
+    isFetchingCsrf = true;
+    try {
+      const baseUrl = isServer ? env.NEXT_PUBLIC_API_URL : '/api';
+      const response = await axios.get(`${baseUrl}/auth/csrf`, {
+        withCredentials: true,
+      });
+      csrfToken = response.data?.token || response.data?.csrfToken || response.data;
+      isFetchingCsrf = false;
+      if (csrfToken) {
+        onCsrfFetched(csrfToken);
+      }
+    } catch {
+      isFetchingCsrf = false;
+    }
+  }
+  return csrfToken;
+}
+
 // Request Interceptor: Attach CSRF token to mutative requests
 apiClient.interceptors.request.use(
   async (config) => {
@@ -35,30 +56,7 @@ apiClient.interceptors.request.use(
 
     if (isMutative) {
       if (!csrfToken) {
-        if (!isFetchingCsrf) {
-          isFetchingCsrf = true;
-          try {
-            const baseUrl = config.baseURL || '/api';
-            const response = await axios.get(`${baseUrl}/auth/csrf`, {
-              withCredentials: true,
-            });
-            csrfToken = response.data?.token || response.data?.csrfToken || response.data;
-            isFetchingCsrf = false;
-            if (csrfToken) {
-              onCsrfFetched(csrfToken);
-            }
-          } catch (error) {
-            isFetchingCsrf = false;
-            return Promise.reject(error);
-          }
-        } else {
-          await new Promise<void>((resolve) => {
-            addCsrfSubscriber((token) => {
-              csrfToken = token;
-              resolve();
-            });
-          });
-        }
+        await initCsrfToken();
       }
 
       if (csrfToken) {
