@@ -76,8 +76,10 @@ export interface TourQueryFilters {
   limit?: number;
   search?: string;
   country?: string;
+  destination?: string;
   city?: string;
   category?: string;
+  market?: string;
   status?: string;
   isFeatured?: string;
   tag?: string;

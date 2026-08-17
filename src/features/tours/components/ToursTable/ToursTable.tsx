@@ -25,10 +25,33 @@ import {
   DropdownMenuSeparator, 
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
-import { Download, CheckSquare, Loader2, Sparkles, Compass, Users, Percent, LayoutGrid, Table as TableIcon } from "lucide-react";
+import { 
+  Download, 
+  CheckSquare, 
+  Loader2, 
+  Sparkles, 
+  Compass, 
+  Users, 
+  Percent, 
+  LayoutGrid, 
+  Table as TableIcon,
+  MapPin,
+  Filter,
+  X,
+  RotateCcw,
+  Globe
+} from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { 
+  Select, 
+  SelectContent, 
+  SelectItem, 
+  SelectTrigger, 
+  SelectValue 
+} from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 
 export function ToursTable() {
@@ -45,12 +68,31 @@ export function ToursTable() {
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 12 });
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<string>("ALL");
+  const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
+  const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
   
   const queryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...(search ? { search } : {}),
-    ...(activeTab !== "ALL" ? { status: activeTab } : {})
+    ...(activeTab !== "ALL" ? { status: activeTab } : {}),
+    ...(selectedDestination !== "ALL" ? { destination: selectedDestination } : {}),
+    ...(selectedMarket !== "ALL" ? { market: selectedMarket } : {}),
+  };
+
+  const hasActiveFilters = Boolean(
+    search || 
+    activeTab !== "ALL" || 
+    selectedDestination !== "ALL" || 
+    selectedMarket !== "ALL"
+  );
+
+  const resetFilters = () => {
+    setSearch("");
+    setActiveTab("ALL");
+    setSelectedDestination("ALL");
+    setSelectedMarket("ALL");
+    setPagination({ pageIndex: 0, pageSize: 12 });
   };
 
   const { data, isLoading } = useTours(queryFilters);
@@ -124,14 +166,6 @@ export function ToursTable() {
 
     return (
       <div className="flex flex-wrap items-center gap-2">
-        <Input 
-          aria-label={tCommon("search")}
-          placeholder={`${tCommon("search")}...`} 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)} 
-          className="h-8 w-[200px]"
-        />
-        
         {slugs.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger type="button" className="h-8 shadow-sm inline-flex items-center justify-center rounded-md text-sm font-medium px-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1.5">
@@ -263,17 +297,131 @@ export function ToursTable() {
         </div>
       </div>
 
-      {/* Toolbar Controls Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card border rounded-2xl p-4 shadow-sm">
-        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[340px]">
-          <TabsList className="grid w-full grid-cols-3">
-            <TabsTrigger value="ALL">{tCommon("all")}</TabsTrigger>
-            <TabsTrigger value="PUBLISHED">{tStatus("PUBLISHED")}</TabsTrigger>
-            <TabsTrigger value="DRAFT">{tStatus("DRAFT")}</TabsTrigger>
-          </TabsList>
-        </Tabs>
+      {/* Advanced Filter & Toolbar Controls */}
+      <div className="bg-card border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+        <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
+          {/* Left Controls: Search & Dropdowns */}
+          <div className="flex flex-wrap items-center gap-2.5 flex-1">
+            {/* Search Input */}
+            <div className="relative min-w-[220px] sm:w-[260px]">
+              <Input 
+                aria-label={tCommon("search")}
+                placeholder={`${tCommon("search")} ${tTours("title")}...`} 
+                value={search} 
+                onChange={(e) => setSearch(e.target.value)} 
+                className="h-9 pr-8 text-sm"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+              )}
+            </div>
 
-        {renderToolbarActions(null)}
+            {/* Destination / Country Filter */}
+            <Select value={selectedDestination} onValueChange={(val: any) => setSelectedDestination(val || "ALL")}>
+              <SelectTrigger className="h-9 w-[170px] text-xs font-medium">
+                <div className="flex items-center gap-1.5 truncate">
+                  <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <SelectValue placeholder="Destination" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{tCommon("all")} Destinations</SelectItem>
+                <SelectItem value="Egypt">Egypt (مصر)</SelectItem>
+                <SelectItem value="Turkey">Turkey (تركيا)</SelectItem>
+                <SelectItem value="Jordan">Jordan (الأردن)</SelectItem>
+                <SelectItem value="Morocco">Morocco (المغرب)</SelectItem>
+                <SelectItem value="Dubai">Dubai & UAE (دبي)</SelectItem>
+                <SelectItem value="Tunisia">Tunisia (تونس)</SelectItem>
+                <SelectItem value="Greece">Greece (اليونان)</SelectItem>
+                <SelectItem value="Middle East">Multi-Country (مشترك)</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Market / Category Filter */}
+            <Select value={selectedMarket} onValueChange={(val: any) => setSelectedMarket(val || "ALL")}>
+              <SelectTrigger className="h-9 w-[150px] text-xs font-medium">
+                <div className="flex items-center gap-1.5 truncate">
+                  <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
+                  <SelectValue placeholder="Market" />
+                </div>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="ALL">{tCommon("all")} Markets</SelectItem>
+                <SelectItem value="Brasil">Brasil (PT)</SelectItem>
+                <SelectItem value="España">España (ES)</SelectItem>
+                <SelectItem value="Global">Global</SelectItem>
+                <SelectItem value="Multi-Country">Multi-Country</SelectItem>
+              </SelectContent>
+            </Select>
+
+            {/* Status Tabs */}
+            <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-auto">
+              <TabsList className="h-9">
+                <TabsTrigger value="ALL" className="text-xs h-7">{tCommon("all")}</TabsTrigger>
+                <TabsTrigger value="PUBLISHED" className="text-xs h-7">{tStatus("PUBLISHED")}</TabsTrigger>
+                <TabsTrigger value="DRAFT" className="text-xs h-7">{tStatus("DRAFT")}</TabsTrigger>
+              </TabsList>
+            </Tabs>
+
+            {/* Reset Filters Button */}
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetFilters}
+                className="h-9 text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2.5"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                <span>Reset</span>
+              </Button>
+            )}
+          </div>
+
+          {/* Right Controls: View Switcher, Bulk, Export & Create */}
+          <div className="flex items-center gap-2 justify-end shrink-0">
+            {renderToolbarActions(null)}
+          </div>
+        </div>
+
+        {/* Active Filter Badges */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/60 text-xs text-muted-foreground">
+            <span className="font-semibold text-foreground/80 mr-1 flex items-center gap-1">
+              <Filter className="h-3 w-3" /> Active:
+            </span>
+            {search && (
+              <Badge variant="secondary" className="gap-1 text-xs font-normal">
+                Search: &quot;{search}&quot;
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSearch("")} />
+              </Badge>
+            )}
+            {selectedDestination !== "ALL" && (
+              <Badge variant="secondary" className="gap-1 text-xs font-normal">
+                Destination: {selectedDestination}
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedDestination("ALL")} />
+              </Badge>
+            )}
+            {selectedMarket !== "ALL" && (
+              <Badge variant="secondary" className="gap-1 text-xs font-normal">
+                Market: {selectedMarket}
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedMarket("ALL")} />
+              </Badge>
+            )}
+            {activeTab !== "ALL" && (
+              <Badge variant="secondary" className="gap-1 text-xs font-normal">
+                Status: {tStatus(activeTab)}
+                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setActiveTab("ALL")} />
+              </Badge>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Body View Rendering */}
