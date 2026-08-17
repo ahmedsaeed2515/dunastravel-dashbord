@@ -11,34 +11,67 @@ import {
   UploadCloud, 
   MessageSquare, 
   Send, 
-  FileText, 
   Database, 
   Settings, 
   Activity, 
   Users, 
   RefreshCw, 
   Plus, 
-  CheckCircle, 
-  AlertCircle, 
   Eye, 
   Search, 
-  Layers, 
-  Clock, 
   Zap, 
-  DollarSign,
   ShieldCheck,
-  X
+  ShieldAlert,
+  Key,
+  Globe,
+  Trash2,
+  CheckCircle2,
+  AlertTriangle,
+  XCircle,
+  Play,
+  Languages,
+  X,
+  UserCheck,
+  RotateCcw,
+  Check,
+  TrendingUp,
+  FileCode,
+  ThumbsUp,
+  ThumbsDown,
+  Clock,
+  DollarSign,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
-import { aiApi, AiOverviewMetrics, AiConfigData, KnowledgeItemData, ConversationItemData } from "@/features/ai/api/aiApi";
+import { 
+  aiApi, 
+  AiOverviewMetrics, 
+  AiConfigData, 
+  ApiKeyPoolEntry,
+  KnowledgeItemData, 
+  ConversationItemData,
+  MultiLangTranslations,
+  AiSafetyEventItem,
+  PromptVersionItem,
+  FeedbackItem,
+  AiAnalyticsData,
+} from "@/features/ai/api/aiApi";
 
 interface SimMessage {
   role: 'user' | 'agent';
   text: string;
   tours?: any[];
 }
+
+const SUPPORTED_PROVIDERS = [
+  { id: 'anthropic', name: 'Anthropic Claude', defaultModel: 'claude-3-5-sonnet-20241022', models: ['claude-3-5-sonnet-20241022', 'claude-3-7-sonnet-20250219', 'claude-3-5-haiku-20241022', 'claude-3-opus-20240229'] },
+  { id: 'openai', name: 'OpenAI (ChatGPT)', defaultModel: 'gpt-4o', models: ['gpt-4o', 'gpt-4o-mini', 'o3-mini', 'gpt-4-turbo'] },
+  { id: 'google', name: 'Google Gemini', defaultModel: 'gemini-2.0-flash', models: ['gemini-2.0-flash', 'gemini-2.5-flash', 'gemini-2.5-pro', 'gemini-1.5-pro'] },
+  { id: 'openrouter', name: 'OpenRouter (Chinese & Open Models)', defaultModel: 'deepseek/deepseek-chat', models: ['deepseek/deepseek-chat', 'deepseek/deepseek-r1', 'qwen/qwen-2.5-72b-instruct', 'meta-llama/llama-3.3-70b-instruct', 'moonshotai/moonshot-v1-32k'] },
+  { id: 'deepseek', name: 'DeepSeek Direct', defaultModel: 'deepseek-chat', models: ['deepseek-chat', 'deepseek-reasoner'] },
+  { id: 'custom', name: 'Custom OpenAI-Compatible Endpoint', defaultModel: 'gpt-4o-mini', models: ['custom-model'] },
+];
 
 export default function AiAgentsPage() {
   const tAi = useTranslations("ai");
@@ -58,47 +91,198 @@ export default function AiAgentsPage() {
     isEnabled: true,
     isPublicEnabled: true,
     temperature: 0.7,
-    systemInstructions: 'You are Jaider, a world-class luxury travel concierge for Dunas Travel.',
-    salesPersonality: 'Luxury Concierge',
-    toneOfVoice: 'Warm, Executive, Helpful',
-    fallbackMessage: "I'm sorry, I couldn't find exact details for your request right now.",
-    escalationMessage: 'I have notified our senior travel team. A travel specialist will contact you shortly!',
+    systemInstructions: 'You are GuideR (جايدر), the elite luxury AI Travel Concierge for Dunas Travel.',
+    salesPersonality: 'Elite Luxury Concierge',
+    toneOfVoice: 'Warm, Executive, Knowledgeable',
+    fallbackMessage: "I'd be delighted to assist you with that! Would you like me to connect you with our senior travel specialists or help you customize a private itinerary?",
+    escalationMessage: 'I have notified our senior travel team. A dedicated travel specialist will contact you shortly!',
   });
   const [apiKeyInput, setApiKeyInput] = useState('');
-  const [loadingConfig, setLoadingConfig] = useState(false);
   const [savingConfig, setSavingConfig] = useState(false);
   const [testingConnection, setTestingConnection] = useState(false);
+
+  // API Key Pool State
+  const [keyPool, setKeyPool] = useState<ApiKeyPoolEntry[]>([]);
+  const [loadingKeyPool, setLoadingKeyPool] = useState(false);
+  const [showAddKeyModal, setShowAddKeyModal] = useState(false);
+  const [newKeyProvider, setNewKeyProvider] = useState('anthropic');
+  const [newKeyModel, setNewKeyModel] = useState('claude-3-5-sonnet-20241022');
+  const [newKeyBaseUrl, setNewKeyBaseUrl] = useState('');
+  const [newKeySecret, setNewKeySecret] = useState('');
+  const [newKeyLabel, setNewKeyLabel] = useState('');
+  const [newKeyPriority, setNewKeyPriority] = useState(1);
+  const [addingKey, setAddingKey] = useState(false);
+  const [testingKeyId, setTestingKeyId] = useState<string | null>(null);
 
   // Simulator State
   const [simulatorSessionId] = useState(() => `admin-sim-${Date.now()}`);
   const [simPrompt, setSimPrompt] = useState("");
+  const [simLocale, setSimLocale] = useState("ar");
   const [simLog, setSimLog] = useState<SimMessage[]>([
-    { role: 'agent' as const, text: "Hi! 👋 I'm Guider (جايدر), your AI Travel Concierge. How can I assist you with your luxury trip today?" }
+    { role: 'agent' as const, text: "أهلاً بك! 👋 أنا جايدر (GuideR)، مستشارك السياحي الذكي في دوناس ترافيل. كيف يمكنني مساعدتك في التخطيط لرحلتك الفاخرة اليوم؟" }
   ]);
   const [simTyping, setSimTyping] = useState(false);
 
   // Knowledge Base State
   const [knowledgeItems, setKnowledgeItems] = useState<KnowledgeItemData[]>([]);
-  const [knowledgeTotal, setKnowledgeTotal] = useState(0);
   const [knowledgeSearch, setKnowledgeSearch] = useState("");
   const [knowledgeCategory, setKnowledgeCategory] = useState("");
+  const [knowledgeLocale, setKnowledgeLocale] = useState("");
   const [loadingKnowledge, setLoadingKnowledge] = useState(false);
   const [syncingCatalog, setSyncingCatalog] = useState(false);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [uploadTitle, setUploadTitle] = useState("");
-  const [uploadContent, setUploadContent] = useState("");
-  const [uploadCategory, setUploadCategory] = useState("GENERAL");
-  const [uploadingDoc, setUploadingDoc] = useState(false);
+
+  // 5-Language Ingestion & Auto-Translation Modal
+  const [showMultiLangModal, setShowMultiLangModal] = useState(false);
+  const [sourceTitle, setSourceTitle] = useState("");
+  const [sourceContent, setSourceContent] = useState("");
+  const [sourceLocale, setSourceLocale] = useState("ar");
+  const [sourceCategory, setSourceCategory] = useState("GENERAL");
+  const [translatingFiveLang, setTranslatingFiveLang] = useState(false);
+  const [savingMultiLang, setSavingMultiLang] = useState(false);
+  const [multiLangActiveTab, setMultiLangActiveTab] = useState("ar");
+  const [translations, setTranslations] = useState<MultiLangTranslations>({
+    ar: { title: "", content: "" },
+    en: { title: "", content: "" },
+    es: { title: "", content: "" },
+    pt: { title: "", content: "" },
+    it: { title: "", content: "" },
+  });
 
   // Conversations & Leads State
   const [conversations, setConversations] = useState<ConversationItemData[]>([]);
-  const [conversationsTotal, setConversationsTotal] = useState(0);
   const [conversationsSearch, setConversationsSearch] = useState("");
   const [conversationsStatus, setConversationsStatus] = useState("");
   const [loadingConversations, setLoadingConversations] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<ConversationItemData | null>(null);
+  const [staffReplyText, setStaffReplyText] = useState("");
+  const [sendingStaffReply, setSendingStaffReply] = useState(false);
 
-  // Fetch Overview Metrics
+  // Safety Events State
+  const [safetyEvents, setSafetyEvents] = useState<AiSafetyEventItem[]>([]);
+  const [loadingSafetyEvents, setLoadingSafetyEvents] = useState(false);
+  const [showSafetyModal, setShowSafetyModal] = useState(false);
+
+  // Analytics & FinOps State
+  const [analyticsData, setAnalyticsData] = useState<AiAnalyticsData | null>(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
+
+  // Prompt Versions State
+  const [promptVersions, setPromptVersions] = useState<PromptVersionItem[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [newPromptName, setNewPromptName] = useState("");
+  const [newPromptText, setNewPromptText] = useState("");
+  const [newPromptNote, setNewPromptNote] = useState("");
+  const [showNewPromptModal, setShowNewPromptModal] = useState(false);
+  const [creatingPromptDraft, setCreatingPromptDraft] = useState(false);
+
+  // Feedback State
+  const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
+  const [feedbackSummary, setFeedbackSummary] = useState({ total: 0, positive: 0, negative: 0, satisfactionRate: 100 });
+  const [loadingFeedback, setLoadingFeedback] = useState(false);
+
+  // Load Initial Data
+  useEffect(() => {
+    fetchOverview();
+    fetchConfig();
+    fetchKeyPool();
+    fetchKnowledge();
+    fetchConversations();
+    fetchAnalytics();
+    fetchPrompts();
+    fetchFeedback();
+  }, []);
+
+  const fetchAnalytics = async () => {
+    setLoadingAnalytics(true);
+    try {
+      const data = await aiApi.getDetailedAnalytics();
+      setAnalyticsData(data);
+    } catch (err: any) {
+      console.warn("Failed to fetch AI analytics:", err);
+    } finally {
+      setLoadingAnalytics(false);
+    }
+  };
+
+  const fetchPrompts = async () => {
+    setLoadingPrompts(true);
+    try {
+      const list = await aiApi.getPromptVersions();
+      setPromptVersions(list || []);
+    } catch (err: any) {
+      console.warn("Failed to fetch prompt versions:", err);
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
+  const fetchFeedback = async () => {
+    setLoadingFeedback(true);
+    try {
+      const res = await aiApi.getFeedback();
+      if (res && res.items) {
+        setFeedbackList(res.items);
+        setFeedbackSummary({
+          total: res.total,
+          positive: res.positiveCount,
+          negative: res.negativeCount,
+          satisfactionRate: res.satisfactionRate,
+        });
+      }
+    } catch (err: any) {
+      console.warn("Failed to fetch feedback:", err);
+    } finally {
+      setLoadingFeedback(false);
+    }
+  };
+
+  const handleCreatePromptDraft = async () => {
+    if (!newPromptName.trim() || !newPromptText.trim()) {
+      toast.error("Please provide prompt name and content.");
+      return;
+    }
+    setCreatingPromptDraft(true);
+    try {
+      await aiApi.createPromptDraft({
+        name: newPromptName.trim(),
+        systemPrompt: newPromptText.trim(),
+        changeNote: newPromptNote.trim() || undefined,
+      });
+      toast.success("New prompt draft created successfully!");
+      setShowNewPromptModal(false);
+      setNewPromptName("");
+      setNewPromptText("");
+      setNewPromptNote("");
+      fetchPrompts();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create prompt draft.");
+    } finally {
+      setCreatingPromptDraft(false);
+    }
+  };
+
+  const handlePublishPrompt = async (id: string) => {
+    try {
+      await aiApi.publishPromptVersion(id);
+      toast.success("Prompt version published! Live system prompt is now active.");
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to publish prompt version.");
+    }
+  };
+
+  const handleRollbackPrompt = async (id: string) => {
+    try {
+      await aiApi.rollbackPromptVersion(id);
+      toast.success("Rolled back to selected prompt version successfully!");
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to rollback prompt version.");
+    }
+  };
+
   const fetchOverview = async () => {
     setLoadingOverview(true);
     try {
@@ -107,111 +291,184 @@ export default function AiAgentsPage() {
         setMetrics(res.metrics);
       }
     } catch (err: any) {
-      console.warn("Could not fetch AI overview metrics:", err.message);
+      console.warn("Failed to fetch AI overview metrics:", err);
     } finally {
       setLoadingOverview(false);
     }
   };
 
-  // Fetch Config
   const fetchConfig = async () => {
-    setLoadingConfig(true);
     try {
-      const data = await aiApi.getConfig();
-      if (data) {
-        setConfig(data);
+      const res = await aiApi.getConfig();
+      if (res) {
+        setConfig(res);
       }
     } catch (err: any) {
-      console.warn("Could not fetch AI config:", err.message);
-    } finally {
-      setLoadingConfig(false);
+      console.warn("Failed to fetch AI config:", err);
     }
   };
 
-  // Fetch Knowledge Base Items
+  const fetchKeyPool = async () => {
+    setLoadingKeyPool(true);
+    try {
+      const res = await aiApi.getKeyPool();
+      if (Array.isArray(res)) {
+        setKeyPool(res);
+      }
+    } catch (err: any) {
+      console.warn("Failed to fetch API key pool:", err);
+    } finally {
+      setLoadingKeyPool(false);
+    }
+  };
+
   const fetchKnowledge = async () => {
     setLoadingKnowledge(true);
     try {
       const res = await aiApi.getKnowledge({
         search: knowledgeSearch || undefined,
         category: knowledgeCategory || undefined,
-        limit: 20,
+        locale: knowledgeLocale || undefined,
       });
       if (res && res.items) {
         setKnowledgeItems(res.items);
-        setKnowledgeTotal(res.total || res.items.length);
       }
     } catch (err: any) {
-      console.warn("Could not fetch knowledge items:", err.message);
+      console.warn("Failed to fetch knowledge items:", err);
     } finally {
       setLoadingKnowledge(false);
     }
   };
 
-  // Fetch Conversations
   const fetchConversations = async () => {
     setLoadingConversations(true);
     try {
       const res = await aiApi.getConversations({
         search: conversationsSearch || undefined,
         status: conversationsStatus || undefined,
-        limit: 20,
       });
       if (res && res.items) {
         setConversations(res.items);
-        setConversationsTotal(res.total || res.items.length);
       }
     } catch (err: any) {
-      console.warn("Could not fetch conversations:", err.message);
+      console.warn("Failed to fetch conversations:", err);
     } finally {
       setLoadingConversations(false);
     }
   };
 
-  useEffect(() => {
-    fetchOverview();
-    fetchConfig();
-    fetchKnowledge();
-    fetchConversations();
-  }, []);
+  const fetchSafetyEvents = async () => {
+    setLoadingSafetyEvents(true);
+    try {
+      const res = await aiApi.getSafetyEvents();
+      if (res && res.events) {
+        setSafetyEvents(res.events);
+      }
+    } catch (err: any) {
+      console.warn("Failed to fetch safety events:", err);
+    } finally {
+      setLoadingSafetyEvents(false);
+    }
+  };
 
-  // Save AI Config
+  // Save General Configuration
   const handleSaveConfig = async () => {
     setSavingConfig(true);
     try {
-      const payload: Partial<AiConfigData> = {
-        ...config,
-        apiKey: apiKeyInput ? apiKeyInput : undefined,
-      };
+      const payload: any = { ...config };
+      if (apiKeyInput.trim()) {
+        payload.apiKey = apiKeyInput.trim();
+      }
       const updated = await aiApi.updateConfig(payload);
       setConfig(updated);
       setApiKeyInput('');
-      toast.success(tCommon("success") || "AI Configuration updated successfully!");
+      toast.success("AI concierge settings saved successfully!");
+      fetchOverview();
     } catch (err: any) {
-      toast.error(err.message || "Failed to update configuration");
+      toast.error(err.message || "Failed to save AI configuration.");
     } finally {
       setSavingConfig(false);
     }
   };
 
-  // Test Provider Connection
+  // Test Connection
   const handleTestConnection = async () => {
     setTestingConnection(true);
     try {
       const res = await aiApi.testConnection({
         provider: config.provider,
         model: config.model,
-        apiKey: apiKeyInput ? apiKeyInput : undefined,
+        apiKey: apiKeyInput.trim() || undefined,
       });
       if (res && res.success) {
-        toast.success(`Connection Verified! (${res.latencyMs || 0}ms): ${res.message}`);
+        toast.success(`Connected successfully! Latency: ${res.latencyMs || 0}ms. Output: ${res.message || "Verified"}`);
       } else {
-        toast.error(res.error || res.message || "Provider test failed.");
+        toast.error(res.error || "Connection test failed.");
       }
     } catch (err: any) {
-      toast.error(err.message || "Connection test failed");
+      toast.error(err.message || "Connection test failed.");
     } finally {
       setTestingConnection(false);
+    }
+  };
+
+  // Add Key to Pool
+  const handleAddKeyToPool = async () => {
+    if (!newKeySecret.trim()) {
+      toast.error("Please enter a valid API secret key.");
+      return;
+    }
+    setAddingKey(true);
+    try {
+      await aiApi.addKeyToPool({
+        provider: newKeyProvider,
+        model: newKeyModel,
+        apiKey: newKeySecret.trim(),
+        baseUrl: newKeyBaseUrl.trim() || undefined,
+        label: newKeyLabel.trim() || undefined,
+        priority: Number(newKeyPriority) || 1,
+        isActive: true,
+      });
+      toast.success("API key added to failover pool successfully!");
+      setShowAddKeyModal(false);
+      setNewKeySecret("");
+      setNewKeyLabel("");
+      fetchKeyPool();
+      fetchOverview();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to add API key to pool.");
+    } finally {
+      setAddingKey(false);
+    }
+  };
+
+  // Delete Key from Pool
+  const handleDeleteKey = async (id: string) => {
+    try {
+      await aiApi.deleteKeyFromPool(id);
+      toast.success("API key removed from pool.");
+      fetchKeyPool();
+      fetchOverview();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete API key.");
+    }
+  };
+
+  // Test Specific Key in Pool
+  const handleTestKey = async (id: string) => {
+    setTestingKeyId(id);
+    try {
+      const res = await aiApi.testKeyInPool(id);
+      if (res && res.success) {
+        toast.success(`Key Verified! (${res.latencyMs || 0}ms): ${res.message}`);
+      } else {
+        toast.error(res.error || "Key test failed.");
+      }
+      fetchKeyPool();
+    } catch (err: any) {
+      toast.error(err.message || "Key test failed.");
+    } finally {
+      setTestingKeyId(null);
     }
   };
 
@@ -227,7 +484,7 @@ export default function AiAgentsPage() {
       const res = await aiApi.runSimulator({
         message: userMsg,
         sessionId: simulatorSessionId,
-        locale: 'en',
+        locale: simLocale,
       });
 
       const replyText = res?.message?.content || res?.text || "Response generated.";
@@ -237,6 +494,66 @@ export default function AiAgentsPage() {
       setSimLog((prev) => [...prev, { role: 'agent', text: `Error: ${err.message || "Simulator call failed."}` }]);
     } finally {
       setSimTyping(false);
+    }
+  };
+
+  // Auto-translate to 5 Languages
+  const handleAutoTranslateFiveLanguages = async () => {
+    if (!sourceTitle.trim() || !sourceContent.trim()) {
+      toast.error("Please provide both title and content in your source language.");
+      return;
+    }
+    setTranslatingFiveLang(true);
+    try {
+      const res = await aiApi.autoTranslateKnowledge({
+        title: sourceTitle,
+        content: sourceContent,
+        sourceLocale,
+        category: sourceCategory,
+      });
+
+      if (res && res.translations) {
+        setTranslations(res.translations);
+        toast.success("AI generated all 5 language versions! Review tabs below before saving.");
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to auto-translate.");
+    } finally {
+      setTranslatingFiveLang(false);
+    }
+  };
+
+  // Save Batch Multi-Language Articles
+  const handleSaveBatchMultiLang = async () => {
+    const articlesToSave = Object.entries(translations).map(([loc, data]) => ({
+      title: data.title || sourceTitle,
+      content: data.content || sourceContent,
+      locale: loc,
+      category: sourceCategory,
+      priority: 15,
+      tags: ['multilang', loc, sourceCategory.toLowerCase()],
+    }));
+
+    if (articlesToSave.some((a) => !a.title || !a.content)) {
+      toast.error("Please ensure all 5 language tabs have valid titles and contents.");
+      return;
+    }
+
+    setSavingMultiLang(true);
+    try {
+      const res = await aiApi.saveBatchMultiLangKnowledge({ articles: articlesToSave });
+      if (res && res.success) {
+        toast.success(`Successfully saved all 5 localized language articles to RAG store!`);
+        setShowMultiLangModal(false);
+        setSourceTitle("");
+        setSourceContent("");
+        fetchKnowledge();
+        fetchOverview();
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to save multi-language articles.");
+    } finally {
+      setSavingMultiLang(false);
     }
   };
 
@@ -257,34 +574,6 @@ export default function AiAgentsPage() {
     }
   };
 
-  // Upload Custom Document
-  const handleUploadDocument = async () => {
-    if (!uploadTitle.trim() || !uploadContent.trim()) {
-      toast.error("Please provide both title and content.");
-      return;
-    }
-    setUploadingDoc(true);
-    try {
-      const res = await aiApi.uploadKnowledgeDocument({
-        title: uploadTitle,
-        content: uploadContent,
-        category: uploadCategory,
-      });
-      if (res && res.success) {
-        toast.success("Knowledge document ingested successfully!");
-        setShowUploadModal(false);
-        setUploadTitle("");
-        setUploadContent("");
-        fetchKnowledge();
-        fetchOverview();
-      }
-    } catch (err: any) {
-      toast.error(err.message || "Failed to upload knowledge document.");
-    } finally {
-      setUploadingDoc(false);
-    }
-  };
-
   // View Conversation Detail
   const handleViewConversation = async (conv: ConversationItemData) => {
     try {
@@ -295,11 +584,74 @@ export default function AiAgentsPage() {
     }
   };
 
+  // Take Over Conversation
+  const handleTakeover = async (id: string) => {
+    try {
+      await aiApi.takeoverConversation(id);
+      toast.success("Live human takeover activated! Autonomous AI replies paused.");
+      fetchConversations();
+      if (selectedConversation && selectedConversation.id === id) {
+        const detail = await aiApi.getConversationDetail(id);
+        setSelectedConversation(detail);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to take over conversation.");
+    }
+  };
+
+  // Send Staff Reply
+  const handleSendStaffReply = async () => {
+    if (!selectedConversation || !staffReplyText.trim()) return;
+    setSendingStaffReply(true);
+    try {
+      await aiApi.staffReply(selectedConversation.id, staffReplyText.trim());
+      toast.success("Staff reply sent to visitor!");
+      setStaffReplyText("");
+      const detail = await aiApi.getConversationDetail(selectedConversation.id);
+      setSelectedConversation(detail);
+      fetchConversations();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to send staff reply.");
+    } finally {
+      setSendingStaffReply(false);
+    }
+  };
+
+  // Return to AI
+  const handleReturnToAi = async (id: string) => {
+    try {
+      await aiApi.returnToAi(id);
+      toast.success("Conversation returned to AI concierge.");
+      fetchConversations();
+      if (selectedConversation && selectedConversation.id === id) {
+        const detail = await aiApi.getConversationDetail(id);
+        setSelectedConversation(detail);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to return conversation to AI.");
+    }
+  };
+
+  // Resolve Conversation
+  const handleResolve = async (id: string) => {
+    try {
+      await aiApi.resolveConversation(id);
+      toast.success("Conversation closed and marked resolved.");
+      fetchConversations();
+      if (selectedConversation && selectedConversation.id === id) {
+        const detail = await aiApi.getConversationDetail(id);
+        setSelectedConversation(detail);
+      }
+    } catch (err: any) {
+      toast.error(err.message || "Failed to resolve conversation.");
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
-        title={tAi("title") || "Guider (جايدر) AI Command Center"}
-        description={tAi("description") || "Manage Guider AI sales agent, RAG Knowledge Base, system prompts, live simulator, and customer conversations."}
+        title={tAi("title") || "GuideR (جايدر) AI Command Center"}
+        description={tAi("description") || "Enterprise multi-provider AI engine, multi-key failover pool, 5-language RAG knowledge generator, and live sales telemetry."}
       />
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
@@ -307,21 +659,33 @@ export default function AiAgentsPage() {
           <TabsTrigger value="overview" className="gap-2 text-xs font-semibold">
             <Activity className="h-3.5 w-3.5" /> Overview & Metrics
           </TabsTrigger>
-          <TabsTrigger value="simulator" className="gap-2 text-xs font-semibold">
-            <Bot className="h-3.5 w-3.5" /> Live Guider Simulator
+          <TabsTrigger value="keys" className="gap-2 text-xs font-semibold">
+            <Key className="h-3.5 w-3.5" /> Multi-Key Pool ({keyPool.length})
           </TabsTrigger>
           <TabsTrigger value="config" className="gap-2 text-xs font-semibold">
-            <Settings className="h-3.5 w-3.5" /> AI Prompts & Config
+            <Settings className="h-3.5 w-3.5" /> Core Prompts & Personality
           </TabsTrigger>
           <TabsTrigger value="knowledge" className="gap-2 text-xs font-semibold">
-            <Database className="h-3.5 w-3.5" /> RAG Knowledge Base & Sync
+            <Database className="h-3.5 w-3.5" /> 5-Lang RAG Store ({metrics?.publishedKnowledgeArticles || 0})
           </TabsTrigger>
           <TabsTrigger value="conversations" className="gap-2 text-xs font-semibold">
-            <Users className="h-3.5 w-3.5" /> Visitor Chats & Leads
+            <Users className="h-3.5 w-3.5" /> Live Visitor Chats ({metrics?.totalConversations || 0})
+          </TabsTrigger>
+          <TabsTrigger value="analytics" className="gap-2 text-xs font-semibold">
+            <TrendingUp className="h-3.5 w-3.5" /> Analytics & FinOps
+          </TabsTrigger>
+          <TabsTrigger value="prompts" className="gap-2 text-xs font-semibold">
+            <FileCode className="h-3.5 w-3.5" /> Prompt Versions ({promptVersions.length})
+          </TabsTrigger>
+          <TabsTrigger value="feedback" className="gap-2 text-xs font-semibold">
+            <ThumbsUp className="h-3.5 w-3.5" /> Feedback ({feedbackSummary.total})
+          </TabsTrigger>
+          <TabsTrigger value="simulator" className="gap-2 text-xs font-semibold">
+            <Bot className="h-3.5 w-3.5" /> Testing Playground
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Overview & Metrics */}
+        {/* Tab 1: Overview & Performance Metrics */}
         <TabsContent value="overview" className="m-0 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-border/80 shadow-xs bg-card">
@@ -353,12 +717,12 @@ export default function AiAgentsPage() {
             <Card className="border-border/80 shadow-xs bg-card">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">RAG Indexed Articles</p>
-                  <p className="text-2xl font-bold mt-1">{metrics?.publishedKnowledgeArticles ?? 0}</p>
-                  <span className="text-[11px] text-blue-600 font-medium">Tours & Guides Ingested</span>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">API Failover Pool</p>
+                  <p className="text-2xl font-bold mt-1">{keyPool.length} Keys</p>
+                  <span className="text-[11px] text-emerald-600 font-medium">{keyPool.filter((k) => k.isActive).length} Active & Failover Ready</span>
                 </div>
-                <div className="h-10 w-10 rounded-full bg-blue-500/10 flex items-center justify-center">
-                  <Database className="h-5 w-5 text-blue-600" />
+                <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                  <Key className="h-5 w-5 text-emerald-600" />
                 </div>
               </CardContent>
             </Card>
@@ -368,7 +732,7 @@ export default function AiAgentsPage() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Latency / Cost</p>
                   <p className="text-2xl font-bold mt-1">{metrics?.avgLatencyMs ?? 0} ms</p>
-                  <span className="text-[11px] text-purple-600 font-medium">Cost: ${metrics?.estimatedCostUsd ?? '0.0000'}</span>
+                  <span className="text-[11px] text-purple-600 font-medium">Est. Cost: ${metrics?.estimatedCostUsd ?? '0.0000'}</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
                   <Zap className="h-5 w-5 text-purple-600" />
@@ -382,26 +746,26 @@ export default function AiAgentsPage() {
               <CardHeader>
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                  Guider System Status
+                  GuideR Engine Status
                 </CardTitle>
-                <CardDescription>Live health & configuration summary of Guider AI Concierge</CardDescription>
+                <CardDescription>Live multi-provider resilience and system health status</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-3">
                 <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Public Chat Status</span>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">ONLINE & ACTIVE</span>
+                  <span className="font-semibold text-muted-foreground">Public GuideR Status</span>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">ONLINE & PROTECTED</span>
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Model Provider</span>
-                  <span className="font-mono font-bold">{config.provider?.toUpperCase()} ({config.model})</span>
+                  <span className="font-semibold text-muted-foreground">Active Primary Provider</span>
+                  <span className="font-mono font-bold uppercase text-primary">{config.provider} ({config.model})</span>
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Sales Personality</span>
-                  <span className="font-bold text-primary">{config.salesPersonality}</span>
+                  <span className="font-semibold text-muted-foreground">Failover Circuit Breaker</span>
+                  <span className="font-bold text-emerald-600">Zero-Latency Instant Fallback Enabled</span>
                 </div>
                 <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Catalog Grounding</span>
-                  <span className="font-bold text-blue-600">Hybrid DB + RAG Engine</span>
+                  <span className="font-semibold text-muted-foreground">RAG Catalog Grounding</span>
+                  <span className="font-bold text-blue-600">5-Language Synchronized DB Store</span>
                 </div>
               </CardContent>
             </Card>
@@ -410,9 +774,9 @@ export default function AiAgentsPage() {
               <CardHeader>
                 <CardTitle className="text-base font-semibold flex items-center gap-2">
                   <RefreshCw className="h-5 w-5 text-amber-600" />
-                  Quick Actions & Operations
+                  Instant Operations
                 </CardTitle>
-                <CardDescription>Instant controls for RAG sync and telemetry refresh</CardDescription>
+                <CardDescription>Direct control actions for RAG sync and telemetry refresh</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
@@ -425,7 +789,24 @@ export default function AiAgentsPage() {
                   {syncingCatalog ? "Syncing Database Tours to RAG..." : "Sync Database Tours & Guides into RAG Store"}
                 </Button>
                 <Button 
-                  onClick={() => { fetchOverview(); fetchConfig(); fetchKnowledge(); fetchConversations(); toast.success("Telemetry refreshed!"); }} 
+                  onClick={() => setShowMultiLangModal(true)} 
+                  className="w-full justify-start gap-2 text-xs"
+                  variant="outline"
+                >
+                  <Languages className="h-4 w-4 text-blue-500" /> Open 5-Language AI Ingestion Generator
+                </Button>
+                <Button 
+                  onClick={() => {
+                    fetchSafetyEvents();
+                    setShowSafetyModal(true);
+                  }} 
+                  className="w-full justify-start gap-2 text-xs"
+                  variant="outline"
+                >
+                  <ShieldAlert className="h-4 w-4 text-red-500" /> Security & Prompt Injection Audit Logs
+                </Button>
+                <Button 
+                  onClick={() => { fetchOverview(); fetchConfig(); fetchKeyPool(); fetchKnowledge(); fetchConversations(); toast.success("Telemetry refreshed!"); }} 
                   className="w-full justify-start gap-2 text-xs"
                   variant="outline"
                 >
@@ -436,210 +817,246 @@ export default function AiAgentsPage() {
           </div>
         </TabsContent>
 
-        {/* Tab 2: Guider Simulator */}
-        <TabsContent value="simulator" className="m-0">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            <Card className="lg:col-span-2 border-border/80 shadow-xs bg-card flex flex-col h-[600px]">
-              <CardHeader className="border-b border-border/60 pb-3 flex flex-row items-center justify-between">
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                  <Bot className="h-4 w-4 text-primary" />
-                  Guider Interactive Playground
-                </CardTitle>
-                <span className="text-xs bg-emerald-500/10 text-emerald-600 px-2.5 py-0.5 rounded-full font-semibold">
-                  Live Grounding Mode
-                </span>
-              </CardHeader>
-              <CardContent className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4">
-                {simLog.map((msg, i) => (
-                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl p-4 text-sm ${msg.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-xs' : 'bg-muted border border-border/60 text-foreground rounded-tl-xs space-y-2'}`}>
-                      <p className="leading-relaxed whitespace-pre-wrap">{msg.text}</p>
-                      {msg.tours && msg.tours.length > 0 && (
-                        <div className="pt-2 border-t border-border/40 space-y-2">
-                          <p className="text-xs font-bold uppercase text-amber-600">Grounded Tour Recommendations:</p>
-                          {msg.tours.map((t: any) => (
-                            <div key={t.id} className="p-2 bg-background rounded-lg border border-border/60 text-xs flex justify-between items-center">
-                              <div>
-                                <p className="font-bold">{t.title}</p>
-                                <p className="text-[11px] text-muted-foreground">{t.destination} - ${t.price} {t.currency}</p>
-                              </div>
-                              <a href={t.publicUrl} target="_blank" rel="noreferrer" className="text-primary font-bold hover:underline">View →</a>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {simTyping && (
-                  <div className="flex justify-start">
-                    <div className="bg-muted rounded-xl rounded-tl-xs p-3.5 text-sm flex gap-1.5 items-center">
-                      <span className="text-xs font-medium text-muted-foreground">Guider is thinking...</span>
-                      <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce" />
-                      <div className="w-1.5 h-1.5 bg-primary/60 rounded-full animate-bounce [animation-delay:-.3s]" />
-                    </div>
-                  </div>
-                )}
-              </CardContent>
-              <div className="p-4 border-t border-border/60 bg-muted/20">
-                <div className="flex gap-2">
-                  <Input 
-                    placeholder="Ask Guider anything (e.g., Recommend top Nile Cruise tours or cancellation policy)..." 
-                    value={simPrompt}
-                    onChange={(e) => setSimPrompt(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && handleSendSimulator()}
-                    className="flex-1"
-                  />
-                  <Button onClick={handleSendSimulator} disabled={simTyping || !simPrompt.trim()} size="sm" variant="gold" className="px-5">
-                    <Send className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </Card>
-
-            <div className="space-y-6">
-              <Card className="border-border/80 shadow-xs bg-card">
-                <CardHeader>
-                  <CardTitle className="text-base font-semibold">Simulator Grounding Info</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3 text-xs">
-                  <p className="text-muted-foreground">
-                    This simulator sends queries to the NestJS `ChatOrchestratorService` using your configured system prompt and live RAG retrieval.
-                  </p>
-                  <div className="p-3 bg-muted/40 rounded-lg space-y-1">
-                    <p className="font-bold text-foreground">Session ID:</p>
-                    <p className="font-mono text-[11px] text-muted-foreground truncate">{simulatorSessionId}</p>
-                  </div>
-                  <div className="p-3 bg-muted/40 rounded-lg space-y-1">
-                    <p className="font-bold text-foreground">Active RAG Grounding:</p>
-                    <p className="text-emerald-600 font-semibold">{metrics?.publishedKnowledgeArticles ?? 0} Catalog & Knowledge Items Active</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </div>
-        </TabsContent>
-
-        {/* Tab 3: AI Prompts & Config */}
-        <TabsContent value="config" className="m-0">
+        {/* Tab 2: Multi-API Key Failover Pool */}
+        <TabsContent value="keys" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Guider AI Prompt & Model Configuration</CardTitle>
-                <CardDescription>Customize Guider's identity, system prompt instructions, model provider, and escalation messages.</CardDescription>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Key className="h-5 w-5 text-amber-500" /> Multi-API Key Failover Pool & Provider Routing
+                </CardTitle>
+                <CardDescription>
+                  Configure multiple API keys across Anthropic, OpenAI, Google Gemini, OpenRouter (Chinese models), and DeepSeek. The system rotates and fails over instantly with zero latency if any key is exhausted.
+                </CardDescription>
               </div>
-              <div className="flex gap-2">
-                <Button onClick={handleTestConnection} disabled={testingConnection} variant="outline" size="sm">
-                  {testingConnection ? "Testing..." : "Test Connection"}
-                </Button>
-                <Button onClick={handleSaveConfig} disabled={savingConfig} variant="gold" size="sm">
-                  {savingConfig ? "Saving..." : "Save Config"}
-                </Button>
-              </div>
+              <Button onClick={() => setShowAddKeyModal(true)} variant="gold" size="sm" className="gap-1.5">
+                <Plus className="h-4 w-4" /> Add API Key to Pool
+              </Button>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Provider</label>
-                  <Input 
-                    value={config.provider || 'anthropic'} 
-                    onChange={(e) => setConfig({ ...config, provider: e.target.value })} 
-                  />
+            <CardContent className="space-y-4">
+              {loadingKeyPool ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">Loading API Key Pool...</div>
+              ) : keyPool.length === 0 ? (
+                <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-3">
+                  <Key className="h-8 w-8 mx-auto text-muted-foreground/60" />
+                  <p className="font-semibold">No API keys configured in the failover pool.</p>
+                  <p className="text-[11px]">Add your Anthropic, OpenAI, Gemini, or OpenRouter/DeepSeek keys to enable seamless failover redundancy.</p>
+                  <Button onClick={() => setShowAddKeyModal(true)} variant="gold" size="sm">
+                    Add First API Key
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Model</label>
-                  <Input 
-                    value={config.model || 'claude-3-5-sonnet-20241022'} 
-                    onChange={(e) => setConfig({ ...config, model: e.target.value })} 
-                  />
+              ) : (
+                <div className="border border-border/60 rounded-xl overflow-hidden">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
+                      <tr>
+                        <th className="p-3">Priority</th>
+                        <th className="p-3">Provider & Model</th>
+                        <th className="p-3">Masked Secret Key</th>
+                        <th className="p-3">Health Status</th>
+                        <th className="p-3">Latency</th>
+                        <th className="p-3">Failures</th>
+                        <th className="p-3">Active</th>
+                        <th className="p-3 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {keyPool.map((k) => (
+                        <tr key={k.id} className="hover:bg-muted/20">
+                          <td className="p-3 font-bold">#{k.priority}</td>
+                          <td className="p-3">
+                            <p className="font-bold text-foreground capitalize">{k.provider}</p>
+                            <p className="font-mono text-[11px] text-muted-foreground">{k.model}</p>
+                            {k.label && <span className="text-[10px] text-primary font-semibold">{k.label}</span>}
+                          </td>
+                          <td className="p-3 font-mono text-muted-foreground">{k.maskedKey}</td>
+                          <td className="p-3">
+                            {k.lastStatus === 'HEALTHY' && (
+                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] flex items-center gap-1 w-max">
+                                <CheckCircle2 className="h-3 w-3" /> HEALTHY
+                              </span>
+                            )}
+                            {k.lastStatus === 'RATE_LIMITED' && (
+                              <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px] flex items-center gap-1 w-max">
+                                <AlertTriangle className="h-3 w-3" /> RATE LIMITED (429)
+                              </span>
+                            )}
+                            {k.lastStatus === 'FAILED' && (
+                              <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-600 font-bold text-[10px] flex items-center gap-1 w-max">
+                                <XCircle className="h-3 w-3" /> FAILED
+                              </span>
+                            )}
+                            {k.lastStatus === 'UNTESTED' && (
+                              <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-bold text-[10px]">
+                                UNTESTED
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-mono">{k.lastLatencyMs ? `${k.lastLatencyMs} ms` : '—'}</td>
+                          <td className="p-3 font-semibold">{k.failCount}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${k.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
+                              {k.isActive ? 'Active' : 'Disabled'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-right space-x-1.5">
+                            <Button 
+                              onClick={() => handleTestKey(k.id)} 
+                              disabled={testingKeyId === k.id} 
+                              size="xs" 
+                              variant="outline"
+                            >
+                              <Play className={`h-3 w-3 ${testingKeyId === k.id ? 'animate-spin' : ''}`} />
+                            </Button>
+                            <Button 
+                              onClick={() => handleDeleteKey(k.id)} 
+                              size="xs" 
+                              variant="destructive"
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">API Key (Optional Override)</label>
-                  <Input 
-                    type="password" 
-                    placeholder={config.encryptedApiKey ? "••••••••••••••••" : "Enter Anthropic API Key"} 
-                    value={apiKeyInput}
-                    onChange={(e) => setApiKeyInput(e.target.value)} 
-                  />
-                </div>
-              </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
 
+        {/* Tab 3: Core Prompts & Personality */}
+        <TabsContent value="config" className="m-0 space-y-6">
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Settings className="h-5 w-5 text-primary" /> GuideR Personality & Execution Prompts
+              </CardTitle>
+              <CardDescription>
+                Fine-tune system instructions, sales concierge persona, tone of voice, and default fallback responses.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Sales Personality</label>
-                  <Input 
-                    value={config.salesPersonality || ''} 
-                    onChange={(e) => setConfig({ ...config, salesPersonality: e.target.value })} 
-                  />
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Default Fallback Provider</label>
+                  <select
+                    value={config.provider || 'anthropic'}
+                    onChange={(e) => {
+                      const p = SUPPORTED_PROVIDERS.find((x) => x.id === e.target.value);
+                      setConfig({ ...config, provider: e.target.value, model: p?.defaultModel || config.model });
+                    }}
+                    className="w-full p-2.5 rounded-lg bg-background border border-border/80 text-xs font-semibold"
+                  >
+                    {SUPPORTED_PROVIDERS.map((p) => (
+                      <option key={p.id} value={p.id}>{p.name}</option>
+                    ))}
+                  </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Tone of Voice</label>
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Default Model</label>
                   <Input 
-                    value={config.toneOfVoice || ''} 
-                    onChange={(e) => setConfig({ ...config, toneOfVoice: e.target.value })} 
+                    value={config.model || ''}
+                    onChange={(e) => setConfig({ ...config, model: e.target.value })}
+                    className="text-xs font-mono font-semibold"
                   />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">System Prompt Instructions</label>
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Master System Prompt & Zero-Hallucination Guardrails</label>
                 <Textarea 
-                  rows={6}
-                  value={config.systemInstructions || ''} 
+                  rows={7}
+                  value={config.systemInstructions || ''}
                   onChange={(e) => setConfig({ ...config, systemInstructions: e.target.value })}
-                  className="font-mono text-xs" 
+                  className="text-xs leading-relaxed font-mono"
                 />
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Fallback Message</label>
-                  <Textarea 
-                    rows={2}
-                    value={config.fallbackMessage || ''} 
-                    onChange={(e) => setConfig({ ...config, fallbackMessage: e.target.value })} 
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Sales Persona</label>
+                  <Input 
+                    value={config.salesPersonality || ''}
+                    onChange={(e) => setConfig({ ...config, salesPersonality: e.target.value })}
+                    className="text-xs"
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Escalation / Handoff Message</label>
-                  <Textarea 
-                    rows={2}
-                    value={config.escalationMessage || ''} 
-                    onChange={(e) => setConfig({ ...config, escalationMessage: e.target.value })} 
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Tone of Voice</label>
+                  <Input 
+                    value={config.toneOfVoice || ''}
+                    onChange={(e) => setConfig({ ...config, toneOfVoice: e.target.value })}
+                    className="text-xs"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Offline / RAG Fallback Response</label>
+                <Textarea 
+                  rows={2}
+                  value={config.fallbackMessage || ''}
+                  onChange={(e) => setConfig({ ...config, fallbackMessage: e.target.value })}
+                  className="text-xs"
+                />
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button onClick={handleTestConnection} disabled={testingConnection} variant="outline" size="sm">
+                  {testingConnection ? "Testing..." : "Test Connection"}
+                </Button>
+                <Button onClick={handleSaveConfig} disabled={savingConfig} variant="gold" size="sm">
+                  {savingConfig ? "Saving..." : "Save Concierge Settings"}
+                </Button>
               </div>
             </CardContent>
           </Card>
         </TabsContent>
 
-        {/* Tab 4: RAG Knowledge Base */}
+        {/* Tab 4: 5-Language RAG Knowledge Base */}
         <TabsContent value="knowledge" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">RAG Knowledge Base & Database Ingestion</CardTitle>
-                <CardDescription>Manage RAG documents and sync active database tours/guides to ground Guider responses.</CardDescription>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Database className="h-5 w-5 text-primary" /> Grounded RAG Knowledge Base (5 Languages)
+                </CardTitle>
+                <CardDescription>
+                  Grounded facts across Tours, Nile Cruises, Booking Policies, and Destinations in Arabic, English, Spanish, Portuguese, and Italian.
+                </CardDescription>
               </div>
               <div className="flex gap-2">
-                <Button onClick={() => setShowUploadModal(true)} variant="outline" size="sm" className="gap-1.5">
-                  <Plus className="h-4 w-4" /> Upload Document
+                <Button onClick={() => setShowMultiLangModal(true)} variant="gold" size="sm" className="gap-1.5">
+                  <Languages className="h-4 w-4" /> Add 5-Language Article
                 </Button>
-                <Button onClick={handleSyncCatalog} disabled={syncingCatalog} variant="gold" size="sm" className="gap-1.5">
-                  <RefreshCw className={`h-4 w-4 ${syncingCatalog ? 'animate-spin' : ''}`} />
-                  {syncingCatalog ? "Syncing..." : "Sync DB Catalog to RAG"}
+                <Button onClick={handleSyncCatalog} disabled={syncingCatalog} variant="outline" size="sm" className="gap-1.5">
+                  <RefreshCw className={`h-3.5 w-3.5 ${syncingCatalog ? 'animate-spin' : ''}`} /> Sync DB Catalog
                 </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex gap-3">
+              <div className="flex flex-wrap gap-3">
                 <Input 
-                  placeholder="Search knowledge documents by title or content..."
+                  placeholder="Search articles by title, content, or tag..."
                   value={knowledgeSearch}
                   onChange={(e) => setKnowledgeSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchKnowledge()}
-                  className="max-w-md text-xs"
+                  className="max-w-xs text-xs"
                 />
+                <select
+                  value={knowledgeLocale}
+                  onChange={(e) => { setKnowledgeLocale(e.target.value); }}
+                  className="text-xs bg-muted border border-border/60 rounded-md px-2 py-1 font-semibold"
+                >
+                  <option value="">All Locales (جميع اللغات)</option>
+                  <option value="ar">🇸🇦 Arabic (ar)</option>
+                  <option value="en">🇬🇧 English (en)</option>
+                  <option value="es">🇪🇸 Spanish (es)</option>
+                  <option value="pt">🇵🇹 Portuguese (pt)</option>
+                  <option value="it">🇮🇹 Italian (it)</option>
+                </select>
                 <Button onClick={fetchKnowledge} size="sm" variant="outline">
                   <Search className="h-3.5 w-3.5 mr-1" /> Search
                 </Button>
@@ -650,17 +1067,17 @@ export default function AiAgentsPage() {
               ) : knowledgeItems.length === 0 ? (
                 <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-2">
                   <Database className="h-8 w-8 mx-auto text-muted-foreground/60" />
-                  <p>No knowledge base items found. Click "Sync DB Catalog to RAG" to ingest active tours!</p>
+                  <p>No knowledge base items found. Click "Add 5-Language Article" or "Sync DB Catalog".</p>
                 </div>
               ) : (
                 <div className="border border-border/60 rounded-xl overflow-hidden">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
                       <tr>
+                        <th className="p-3">Locale</th>
                         <th className="p-3">Title</th>
                         <th className="p-3">Category</th>
                         <th className="p-3">Source</th>
-                        <th className="p-3">Status</th>
                         <th className="p-3">Priority</th>
                         <th className="p-3">Last Updated</th>
                       </tr>
@@ -668,6 +1085,11 @@ export default function AiAgentsPage() {
                     <tbody className="divide-y divide-border/60">
                       {knowledgeItems.map((item) => (
                         <tr key={item.id} className="hover:bg-muted/20">
+                          <td className="p-3">
+                            <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-muted uppercase">
+                              {item.locale}
+                            </span>
+                          </td>
                           <td className="p-3 font-semibold text-foreground max-w-xs truncate">{item.title}</td>
                           <td className="p-3">
                             <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold text-[10px]">
@@ -675,11 +1097,6 @@ export default function AiAgentsPage() {
                             </span>
                           </td>
                           <td className="p-3 font-mono text-[11px] text-muted-foreground">{item.source || 'DB_SYNC'}</td>
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px]">
-                              {item.status}
-                            </span>
-                          </td>
                           <td className="p-3 font-bold">{item.priority}</td>
                           <td className="p-3 text-muted-foreground">{new Date(item.updatedAt).toLocaleDateString()}</td>
                         </tr>
@@ -692,13 +1109,13 @@ export default function AiAgentsPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab 5: Visitor Chats & Leads */}
+        {/* Tab 5: Visitor Chats, Live Takeover & Leads */}
         <TabsContent value="conversations" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Visitor Conversations & Qualified Leads</CardTitle>
-                <CardDescription>Review live visitor chats, human handoff requests, and lead records.</CardDescription>
+                <CardTitle className="text-base font-semibold">Visitor Conversations, Live Takeover & Leads</CardTitle>
+                <CardDescription>Review live visitor chats, take over conversations as a human agent, and manage leads.</CardDescription>
               </div>
               <Button onClick={fetchConversations} size="sm" variant="outline" className="gap-1.5">
                 <RefreshCw className="h-3.5 w-3.5" /> Refresh List
@@ -731,12 +1148,12 @@ export default function AiAgentsPage() {
                     <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
                       <tr>
                         <th className="p-3">Session / Visitor</th>
-                        <th className="p-3">Contact Email</th>
+                        <th className="p-3">Contact Details</th>
                         <th className="p-3">Locale</th>
                         <th className="p-3">Status</th>
                         <th className="p-3">Lead Score</th>
                         <th className="p-3">Created</th>
-                        <th className="p-3">Action</th>
+                        <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
@@ -746,20 +1163,25 @@ export default function AiAgentsPage() {
                             <p className="font-bold text-foreground">{conv.visitorName || 'Anonymous Visitor'}</p>
                             <p className="font-mono text-[10px] text-muted-foreground truncate max-w-[150px]">{conv.publicSessionId}</p>
                           </td>
-                          <td className="p-3 font-medium">{conv.visitorEmail || '—'}</td>
+                          <td className="p-3 font-medium">
+                            <p>{conv.visitorEmail || '—'}</p>
+                            {conv.visitorPhone && <p className="text-[11px] text-muted-foreground">{conv.visitorPhone}</p>}
+                          </td>
                           <td className="p-3 font-mono uppercase font-bold">{conv.locale}</td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                              conv.status === 'HANDED_OFF' ? 'bg-amber-500/20 text-amber-600' : 'bg-emerald-500/10 text-emerald-600'
+                              conv.status === 'HANDED_OFF' ? 'bg-amber-500/20 text-amber-600' :
+                              conv.status === 'CLOSED' ? 'bg-muted text-muted-foreground' :
+                              'bg-emerald-500/10 text-emerald-600'
                             }`}>
                               {conv.status}
                             </span>
                           </td>
                           <td className="p-3 font-bold text-primary">{conv.leadScore || 0} pts</td>
                           <td className="p-3 text-muted-foreground">{new Date(conv.createdAt).toLocaleDateString()}</td>
-                          <td className="p-3">
+                          <td className="p-3 text-right space-x-1.5">
                             <Button onClick={() => handleViewConversation(conv)} size="xs" variant="outline" className="gap-1">
-                              <Eye className="h-3 w-3" /> View Transcript
+                              <Eye className="h-3 w-3" /> Live Takeover & Transcript
                             </Button>
                           </td>
                         </tr>
@@ -771,90 +1193,760 @@ export default function AiAgentsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Tab 6: Testing Playground Simulator */}
+        <TabsContent value="simulator" className="m-0 space-y-6">
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader>
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Bot className="h-5 w-5 text-primary" /> Live AI Concierge Simulator
+              </CardTitle>
+              <CardDescription>
+                Test real-time conversation flows, grounded tour matching, policy answers, and security rejection in a sandboxed session.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex gap-2">
+                <select
+                  value={simLocale}
+                  onChange={(e) => setSimLocale(e.target.value)}
+                  className="p-2 rounded-lg bg-muted border border-border/80 text-xs font-semibold"
+                >
+                  <option value="ar">🇸🇦 Arabic (ar)</option>
+                  <option value="en">🇬🇧 English (en)</option>
+                  <option value="es">🇪🇸 Spanish (es)</option>
+                  <option value="pt">🇵🇹 Portuguese (pt)</option>
+                  <option value="it">🇮🇹 Italian (it)</option>
+                </select>
+                <Button 
+                  onClick={() => {
+                    setSimLog([{ role: 'agent', text: "أهلاً بك! 👋 أنا جايدر (GuideR)، كيف أساعدك اليوم؟" }]);
+                  }} 
+                  variant="outline" 
+                  size="sm"
+                >
+                  Reset Session
+                </Button>
+              </div>
+
+              <div className="h-80 overflow-y-auto p-4 rounded-xl border border-border/60 bg-muted/20 space-y-3">
+                {simLog.map((m, idx) => (
+                  <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
+                      m.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-xs' : 'bg-background border border-border/60 text-foreground rounded-tl-xs space-y-2'
+                    }`}>
+                      <p className="whitespace-pre-wrap">{m.text}</p>
+                      {m.tours && m.tours.length > 0 && (
+                        <div className="pt-1 space-y-1">
+                          <p className="font-bold text-primary">Matched Catalog Tours:</p>
+                          {m.tours.map((t: any) => (
+                            <div key={t.id} className="p-1.5 bg-muted rounded-md text-[11px]">
+                              <p className="font-bold">{t.title} (${t.price} {t.currency})</p>
+                              {t.matchReasons && <p className="text-muted-foreground">{t.matchReasons.join(', ')}</p>}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {simTyping && (
+                  <div className="text-xs text-muted-foreground animate-pulse">GuideR is typing...</div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Input 
+                  placeholder="Type a message (e.g. 'عايز رحلة نايل كروز 8 أيام' or 'What is your refund policy?')..."
+                  value={simPrompt}
+                  onChange={(e) => setSimPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendSimulator()}
+                  className="text-xs"
+                />
+                <Button onClick={handleSendSimulator} disabled={simTyping || !simPrompt.trim()} variant="gold" size="sm">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Analytics & FinOps */}
+        <TabsContent value="analytics" className="m-0 space-y-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lead Conversion Rate</p>
+                  <h3 className="text-2xl font-bold mt-1 text-emerald-500">{analyticsData?.summary?.conversionRate || 0}%</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.summary?.qualifiedLeadsCount || 0} qualified CRM leads</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                  <TrendingUp className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Traveler Satisfaction</p>
+                  <h3 className="text-2xl font-bold mt-1 text-gold-400">{analyticsData?.summary?.satisfactionRate || 100}%</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.feedbackSummary?.positive || 0} positive ratings</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-400">
+                  <ThumbsUp className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Latency (P50/P95)</p>
+                  <h3 className="text-2xl font-bold mt-1 text-sky-400">{analyticsData?.summary?.avgLatencyMs || 0}ms</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">End-to-end response time</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400">
+                  <Clock className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardContent className="p-5 flex items-center justify-between">
+                <div>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estimated AI Cost</p>
+                  <h3 className="text-2xl font-bold mt-1 text-amber-400">${analyticsData?.summary?.totalCostUsd?.toFixed(4) || "0.0000"}</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{((analyticsData?.summary?.totalTokens || 0) / 1000).toFixed(1)}k tokens used</p>
+                </div>
+                <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
+                  <DollarSign className="h-5 w-5" />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-bold flex items-center gap-2">
+                <DollarSign className="h-4 w-4 text-amber-400" /> FinOps Provider Cost Breakdown
+              </CardTitle>
+              <CardDescription className="text-xs">
+                Usage and cost telemetry aggregated across all configured AI providers and models.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {analyticsData?.providerBreakdown && analyticsData.providerBreakdown.length > 0 ? (
+                <div className="border border-border/60 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left">
+                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground border-b border-border/60">
+                      <tr>
+                        <th className="p-3">Provider</th>
+                        <th className="p-3">Model</th>
+                        <th className="p-3">Total Requests</th>
+                        <th className="p-3">Total Tokens</th>
+                        <th className="p-3">Estimated Cost</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {analyticsData.providerBreakdown.map((p, idx) => (
+                        <tr key={idx} className="hover:bg-muted/20">
+                          <td className="p-3 font-semibold">{p.provider}</td>
+                          <td className="p-3 font-mono text-muted-foreground">{p.model}</td>
+                          <td className="p-3">{p.requestCount}</td>
+                          <td className="p-3">{p.totalTokens.toLocaleString()}</td>
+                          <td className="p-3 font-bold text-amber-400">${p.costUsd.toFixed(5)}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  No provider logs recorded yet. Run requests through the testing playground or public widget to gather FinOps telemetry.
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Prompt Versions & Rollback */}
+        <TabsContent value="prompts" className="m-0 space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <FileCode className="h-4 w-4 text-primary" /> Prompt Version Control & Audit Trail
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Manage versioned system prompts, test drafts, publish changes safely, and rollback with one click.
+              </p>
+            </div>
+            <Button onClick={() => setShowNewPromptModal(true)} variant="gold" size="sm" className="gap-1.5">
+              <Plus className="h-3.5 w-3.5" /> Create Draft Version
+            </Button>
+          </div>
+
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardContent className="p-0">
+              {promptVersions.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  <FileCode className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  No versioned prompt snapshots created yet. Click "Create Draft Version" to start versioning.
+                </div>
+              ) : (
+                <div className="divide-y divide-border/60 text-xs">
+                  {promptVersions.map((v) => (
+                    <div key={v.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
+                      <div className="space-y-1 max-w-2xl">
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-foreground">{v.name}</span>
+                          <span className="font-mono text-[10px] text-muted-foreground">v{v.versionNumber}</span>
+                          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                            v.status === 'PUBLISHED'
+                              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
+                              : v.status === 'DRAFT'
+                              ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
+                              : 'bg-muted text-muted-foreground'
+                          }`}>
+                            {v.status}
+                          </span>
+                        </div>
+                        {v.changeNote && <p className="text-muted-foreground text-xs">{v.changeNote}</p>}
+                        <p className="font-mono text-[10px] text-muted-foreground truncate max-w-xl">
+                          {v.systemPrompt.slice(0, 120)}...
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        {v.status !== 'PUBLISHED' && (
+                          <Button onClick={() => handlePublishPrompt(v.id)} variant="gold" size="sm" className="h-8 text-xs">
+                            Publish Live
+                          </Button>
+                        )}
+                        {v.status === 'ARCHIVED' && (
+                          <Button onClick={() => handleRollbackPrompt(v.id)} variant="outline" size="sm" className="h-8 text-xs">
+                            <RotateCcw className="h-3 w-3 mr-1" /> Rollback
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab: Traveler Feedback Inspector */}
+        <TabsContent value="feedback" className="m-0 space-y-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <ThumbsUp className="h-4 w-4 text-primary" /> Traveler Ratings & Satisfaction
+              </h3>
+              <p className="text-xs text-muted-foreground">
+                Inspect visitor message ratings, negative feedback categories, and recommendations refinement insights.
+              </p>
+            </div>
+            <div className="flex items-center gap-3 bg-muted/60 px-3 py-1.5 rounded-xl text-xs font-semibold">
+              <span className="text-emerald-500">👍 {feedbackSummary.positive} Positive</span>
+              <span className="text-rose-500">👎 {feedbackSummary.negative} Negative</span>
+              <span className="text-gold-400 font-bold">★ {feedbackSummary.satisfactionRate}% Score</span>
+            </div>
+          </div>
+
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardContent className="p-0">
+              {feedbackList.length === 0 ? (
+                <div className="py-12 text-center text-xs text-muted-foreground">
+                  <ThumbsUp className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
+                  No feedback ratings recorded yet. Visitor ratings will appear here in real-time.
+                </div>
+              ) : (
+                <div className="border border-border/60 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left">
+                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground border-b border-border/60">
+                      <tr>
+                        <th className="p-3">Rating</th>
+                        <th className="p-3">Category</th>
+                        <th className="p-3">Traveler Comments</th>
+                        <th className="p-3">Visitor / Locale</th>
+                        <th className="p-3">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {feedbackList.map((f) => (
+                        <tr key={f.id} className="hover:bg-muted/20">
+                          <td className="p-3">
+                            {f.rating === 1 ? (
+                              <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
+                                <ThumbsUp className="h-3.5 w-3.5" /> Helpful (+1)
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 text-rose-500 font-bold">
+                                <ThumbsDown className="h-3.5 w-3.5" /> Unhelpful (-1)
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3 font-semibold">
+                            <span className="px-2 py-0.5 rounded-full bg-muted font-mono text-[10px]">
+                              {f.category || 'GENERAL'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-muted-foreground italic">{f.comments || '—'}</td>
+                          <td className="p-3 font-semibold">{f.conversation?.visitorName || 'Guest'} ({f.locale?.toUpperCase()})</td>
+                          <td className="p-3 text-muted-foreground">{new Date(f.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {/* Custom Document Upload Modal */}
-      {showUploadModal && (
+      {/* Create Draft Prompt Modal */}
+      {showNewPromptModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <UploadCloud className="h-5 w-5 text-primary" /> Upload Custom RAG Document
+                <FileCode className="h-5 w-5 text-primary" /> Create New Prompt Draft
               </h3>
-              <button onClick={() => setShowUploadModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+              <button onClick={() => setShowNewPromptModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-3">
+            <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Document Title</label>
+                <label className="font-semibold uppercase text-muted-foreground">Prompt Version Name</label>
                 <Input 
-                  placeholder="e.g., Cancellation & Payment Policies 2026"
-                  value={uploadTitle}
-                  onChange={(e) => setUploadTitle(e.target.value)}
+                  value={newPromptName}
+                  onChange={(e) => setNewPromptName(e.target.value)}
+                  placeholder="e.g. Luxury Nile Cruise & VIP Sales v2"
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Category</label>
+                <label className="font-semibold uppercase text-muted-foreground">Change Summary / Notes</label>
                 <Input 
-                  placeholder="e.g., POLICY, FAQ, GENERAL"
-                  value={uploadCategory}
-                  onChange={(e) => setUploadCategory(e.target.value)}
+                  value={newPromptNote}
+                  onChange={(e) => setNewPromptNote(e.target.value)}
+                  placeholder="e.g. Added strict price verification guardrails and refined tone."
                 />
               </div>
               <div className="space-y-1">
-                <label className="text-xs font-semibold uppercase text-muted-foreground">Document Text / Knowledge Content</label>
+                <label className="font-semibold uppercase text-muted-foreground">Master System Prompt</label>
                 <Textarea 
-                  rows={6}
-                  placeholder="Paste article, guide, policy text, or tour notes here..."
-                  value={uploadContent}
-                  onChange={(e) => setUploadContent(e.target.value)}
+                  rows={8}
+                  value={newPromptText}
+                  onChange={(e) => setNewPromptText(e.target.value)}
+                  placeholder="You are GuideR (جايدر), the luxury AI travel concierge..."
+                  className="font-mono text-xs leading-relaxed"
                 />
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
-              <Button onClick={() => setShowUploadModal(false)} variant="outline" size="sm">Cancel</Button>
-              <Button onClick={handleUploadDocument} disabled={uploadingDoc} variant="gold" size="sm">
-                {uploadingDoc ? "Ingesting..." : "Ingest Document"}
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button onClick={() => setShowNewPromptModal(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleCreatePromptDraft} disabled={creatingPromptDraft} variant="gold" size="sm">
+                {creatingPromptDraft ? "Creating..." : "Save Draft"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Chat Transcript Inspector Modal */}
+      {/* Add API Key Modal */}
+      {showAddKeyModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <Key className="h-5 w-5 text-amber-500" /> Add API Key to Failover Pool
+              </h3>
+              <button onClick={() => setShowAddKeyModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="space-y-1">
+                <label className="font-semibold uppercase text-muted-foreground">Provider</label>
+                <select
+                  value={newKeyProvider}
+                  onChange={(e) => {
+                    setNewKeyProvider(e.target.value);
+                    const p = SUPPORTED_PROVIDERS.find((x) => x.id === e.target.value);
+                    if (p) setNewKeyModel(p.defaultModel);
+                  }}
+                  className="w-full p-2 rounded-lg bg-background border border-border/80 font-semibold"
+                >
+                  {SUPPORTED_PROVIDERS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-semibold uppercase text-muted-foreground">Model Name</label>
+                <Input 
+                  value={newKeyModel}
+                  onChange={(e) => setNewKeyModel(e.target.value)}
+                  placeholder="e.g. claude-3-5-sonnet-20241022, deepseek/deepseek-chat, gpt-4o"
+                />
+              </div>
+
+              {(newKeyProvider === 'custom' || newKeyProvider === 'openrouter') && (
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Base URL (Optional)</label>
+                  <Input 
+                    value={newKeyBaseUrl}
+                    onChange={(e) => setNewKeyBaseUrl(e.target.value)}
+                    placeholder="https://api.deepseek.com/v1 or https://openrouter.ai/api/v1"
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1">
+                <label className="font-semibold uppercase text-muted-foreground">API Secret Key</label>
+                <Input 
+                  type="password"
+                  value={newKeySecret}
+                  onChange={(e) => setNewKeySecret(e.target.value)}
+                  placeholder="sk-..."
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Friendly Label</label>
+                  <Input 
+                    value={newKeyLabel}
+                    onChange={(e) => setNewKeyLabel(e.target.value)}
+                    placeholder="e.g. Primary Anthropic Key"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Priority (1 = Highest)</label>
+                  <Input 
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={newKeyPriority}
+                    onChange={(e) => setNewKeyPriority(Number(e.target.value))}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button onClick={() => setShowAddKeyModal(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleAddKeyToPool} disabled={addingKey} variant="gold" size="sm">
+                {addingKey ? "Adding..." : "Add Key"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 5-Language AI Ingestion Modal */}
+      {showMultiLangModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-3xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Languages className="h-5 w-5 text-primary" /> 5-Language AI Knowledge Generator
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Write the content once in your preferred language, and AI will automatically translate and localize all 5 languages.
+                </p>
+              </div>
+              <button onClick={() => setShowMultiLangModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Source Language</label>
+                  <select
+                    value={sourceLocale}
+                    onChange={(e) => setSourceLocale(e.target.value)}
+                    className="w-full p-2 rounded-lg bg-background border border-border/80 text-xs font-semibold"
+                  >
+                    <option value="ar">🇸🇦 Arabic (العربية)</option>
+                    <option value="en">🇬🇧 English</option>
+                    <option value="es">🇪🇸 Spanish (Español)</option>
+                    <option value="pt">🇵🇹 Portuguese (Português)</option>
+                    <option value="it">🇮🇹 Italian (Italiano)</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold uppercase text-muted-foreground">Category</label>
+                  <select
+                    value={sourceCategory}
+                    onChange={(e) => setSourceCategory(e.target.value)}
+                    className="w-full p-2 rounded-lg bg-background border border-border/80 text-xs font-semibold"
+                  >
+                    <option value="CUSTOM_TOURS">CUSTOM_TOURS (VIP & Packages)</option>
+                    <option value="BOOKING_POLICY">BOOKING_POLICY (Payments & Cancellations)</option>
+                    <option value="DESTINATION_INFO">DESTINATION_INFO (Guides & Sites)</option>
+                    <option value="FAQ">FAQ (General Inquiries)</option>
+                    <option value="TRANSPORTATION">TRANSPORTATION (Transfers & Fleet)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Article Title</label>
+                <Input 
+                  value={sourceTitle}
+                  onChange={(e) => setSourceTitle(e.target.value)}
+                  placeholder="e.g. VIP Nile Dahabiya Private Charters & Excursions"
+                  className="text-xs font-semibold"
+                />
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-xs font-semibold uppercase text-muted-foreground">Article Content / Policy</label>
+                <Textarea 
+                  rows={4}
+                  value={sourceContent}
+                  onChange={(e) => setSourceContent(e.target.value)}
+                  placeholder="Detailed facts, pricing rules, inclusions, and policies..."
+                  className="text-xs leading-relaxed"
+                />
+              </div>
+
+              <Button
+                onClick={handleAutoTranslateFiveLanguages}
+                disabled={translatingFiveLang || !sourceTitle.trim() || !sourceContent.trim()}
+                variant="gold"
+                size="sm"
+                className="w-full gap-2 font-bold"
+              >
+                <Languages className={`h-4 w-4 ${translatingFiveLang ? 'animate-spin' : ''}`} />
+                {translatingFiveLang ? "AI is Generating 5 Languages..." : "Auto-Generate 5 Languages with AI (توليد الـ 5 لغات بالذكاء الاصطناعي)"}
+              </Button>
+            </div>
+
+            {/* Step 2: Review & Edit Tabs for each Language */}
+            {(translations.ar.title || translations.en.title) && (
+              <div className="space-y-3 border-t pt-3">
+                <span className="text-xs font-bold uppercase text-emerald-600">Step 2: Review & Edit Localized Versions</span>
+                <Tabs value={multiLangActiveTab} onValueChange={setMultiLangActiveTab}>
+                  <TabsList className="grid grid-cols-5 h-auto p-1 bg-muted">
+                    <TabsTrigger value="ar" className="text-xs font-bold">🇸🇦 AR (عربي)</TabsTrigger>
+                    <TabsTrigger value="en" className="text-xs font-bold">🇬🇧 EN (English)</TabsTrigger>
+                    <TabsTrigger value="es" className="text-xs font-bold">🇪🇸 ES (Español)</TabsTrigger>
+                    <TabsTrigger value="pt" className="text-xs font-bold">🇵🇹 PT (Português)</TabsTrigger>
+                    <TabsTrigger value="it" className="text-xs font-bold">🇮🇹 IT (Italiano)</TabsTrigger>
+                  </TabsList>
+
+                  {(['ar', 'en', 'es', 'pt', 'it'] as const).map((loc) => (
+                    <TabsContent key={loc} value={loc} className="space-y-3 pt-2">
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Title ({loc.toUpperCase()})</label>
+                        <Input 
+                          value={translations[loc]?.title || ''}
+                          onChange={(e) => setTranslations({
+                            ...translations,
+                            [loc]: { ...translations[loc], title: e.target.value }
+                          })}
+                          className="text-xs font-semibold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-semibold text-muted-foreground">Content ({loc.toUpperCase()})</label>
+                        <Textarea 
+                          rows={5}
+                          value={translations[loc]?.content || ''}
+                          onChange={(e) => setTranslations({
+                            ...translations,
+                            [loc]: { ...translations[loc], content: e.target.value }
+                          })}
+                          className="text-xs leading-relaxed"
+                        />
+                      </div>
+                    </TabsContent>
+                  ))}
+                </Tabs>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <Button onClick={() => setShowMultiLangModal(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button
+                onClick={handleSaveBatchMultiLang}
+                disabled={savingMultiLang || (!translations.ar.title && !sourceTitle)}
+                variant="gold"
+                size="sm"
+                className="font-bold"
+              >
+                {savingMultiLang ? "Saving All 5..." : "Save All 5 Languages to RAG (حفظ كافة اللغات)"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Transcript & Live Human Takeover Modal */}
       {selectedConversation && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl max-h-[85vh] flex flex-col shadow-2xl animate-in zoom-in-95">
-            <div className="p-4 border-b border-border/60 flex justify-between items-center">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-3xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
               <div>
-                <h3 className="text-base font-bold text-foreground">
-                  Transcript: {selectedConversation.visitorName || 'Anonymous Visitor'}
-                </h3>
-                <p className="text-xs text-muted-foreground font-mono">Session ID: {selectedConversation.publicSessionId}</p>
+                <div className="flex items-center gap-2">
+                  <h3 className="text-base font-bold flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-primary" /> Live Chat & Takeover Control
+                  </h3>
+                  <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                    selectedConversation.status === 'HANDED_OFF' ? 'bg-amber-500/20 text-amber-600' :
+                    selectedConversation.status === 'CLOSED' ? 'bg-muted text-muted-foreground' :
+                    'bg-emerald-500/10 text-emerald-600'
+                  }`}>
+                    {selectedConversation.status}
+                  </span>
+                </div>
+                <p className="text-xs text-muted-foreground font-mono">
+                  Session: {selectedConversation.publicSessionId} | Visitor: {selectedConversation.visitorName || 'Anonymous'} ({selectedConversation.visitorEmail || 'No email'})
+                </p>
               </div>
               <button onClick={() => setSelectedConversation(null)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="flex-1 overflow-y-auto p-4 space-y-3">
+
+            {/* Quick Action Bar for Live Takeover */}
+            <div className="flex flex-wrap gap-2 p-2 bg-muted/40 rounded-xl border border-border/60 text-xs">
+              <Button onClick={() => handleTakeover(selectedConversation.id)} size="xs" variant="gold" className="gap-1 font-bold">
+                <UserCheck className="h-3.5 w-3.5" /> Take Over Chat (Pause AI)
+              </Button>
+              <Button onClick={() => handleReturnToAi(selectedConversation.id)} size="xs" variant="outline" className="gap-1">
+                <RotateCcw className="h-3.5 w-3.5" /> Return to AI Concierge
+              </Button>
+              <Button onClick={() => handleResolve(selectedConversation.id)} size="xs" variant="outline" className="gap-1 text-emerald-600">
+                <Check className="h-3.5 w-3.5" /> Resolve & Close Chat
+              </Button>
+            </div>
+
+            {/* Message Stream */}
+            <div className="flex-1 overflow-y-auto space-y-3 p-3 bg-muted/20 rounded-xl max-h-[40vh]">
               {selectedConversation.messages && selectedConversation.messages.length > 0 ? (
                 selectedConversation.messages.map((m: any) => (
                   <div key={m.id} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-xl p-3 text-xs ${
-                      m.role === 'user' ? 'bg-primary text-primary-foreground' : 'bg-muted border border-border/60 text-foreground'
+                    <div className={`max-w-[85%] rounded-2xl p-3.5 text-xs ${
+                      m.role === 'user'
+                        ? 'bg-primary text-primary-foreground rounded-tr-xs'
+                        : m.role === 'staff'
+                        ? 'bg-amber-500/15 border border-amber-500/40 text-amber-950 dark:text-amber-100 rounded-tl-xs space-y-1'
+                        : 'bg-background border border-border/60 text-foreground rounded-tl-xs space-y-1.5'
                     }`}>
-                      <p className="font-bold text-[10px] uppercase opacity-75 mb-1">{m.role}</p>
-                      <p className="whitespace-pre-wrap">{m.textContent || m.content}</p>
+                      {m.role === 'staff' && (
+                        <span className="text-[10px] font-bold uppercase text-amber-600 dark:text-amber-400 block">
+                          Dunas Concierge Staff (Human Agent)
+                        </span>
+                      )}
+                      <p className="whitespace-pre-wrap">{m.textContent}</p>
+                      <span className="text-[10px] text-muted-foreground block text-right">
+                        {new Date(m.createdAt).toLocaleTimeString()}
+                      </span>
                     </div>
                   </div>
                 ))
               ) : (
-                <p className="text-xs text-muted-foreground text-center py-6">No messages recorded for this session.</p>
+                <p className="text-xs text-center py-6 text-muted-foreground">No message transcript found for this session.</p>
               )}
             </div>
-            <div className="p-4 border-t border-border/60 bg-muted/20 flex justify-end">
-              <Button onClick={() => setSelectedConversation(null)} variant="outline" size="sm">Close</Button>
+
+            {/* Staff Direct Reply Box */}
+            <div className="pt-2 border-t space-y-2 shrink-0">
+              <label className="text-xs font-semibold text-muted-foreground">Reply as Concierge Specialist:</label>
+              <div className="flex gap-2">
+                <Input 
+                  value={staffReplyText}
+                  onChange={(e) => setStaffReplyText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendStaffReply()}
+                  placeholder="Type direct response to visitor..."
+                  className="text-xs"
+                />
+                <Button onClick={handleSendStaffReply} disabled={sendingStaffReply || !staffReplyText.trim()} variant="gold" size="sm">
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Safety & Prompt Injection Audit Events Modal */}
+      {showSafetyModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-3xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[85vh] flex flex-col">
+            <div className="flex justify-between items-center border-b pb-3 shrink-0">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <ShieldAlert className="h-5 w-5 text-red-500" /> AI Security & Safety Audit Events
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  Real-time telemetry log of blocked prompt injections, security pattern detections, and error events.
+                </p>
+              </div>
+              <button onClick={() => setShowSafetyModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-2 p-2">
+              {loadingSafetyEvents ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">Loading safety audit logs...</div>
+              ) : safetyEvents.length === 0 ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">
+                  <ShieldCheck className="h-8 w-8 mx-auto text-emerald-500 mb-2" />
+                  No security incidents or blocked attacks recorded. All input streams are healthy!
+                </div>
+              ) : (
+                <div className="border border-border/60 rounded-xl overflow-hidden text-xs">
+                  <table className="w-full text-left">
+                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground border-b border-border/60">
+                      <tr>
+                        <th className="p-2.5">Category</th>
+                        <th className="p-2.5">Provider / Filter</th>
+                        <th className="p-2.5">Session</th>
+                        <th className="p-2.5">Timestamp</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-border/60">
+                      {safetyEvents.map((evt) => (
+                        <tr key={evt.id} className="hover:bg-muted/20">
+                          <td className="p-2.5">
+                            <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-bold font-mono text-[10px]">
+                              {evt.errorCategory || 'SECURITY_VIOLATION'}
+                            </span>
+                          </td>
+                          <td className="p-2.5 font-mono text-muted-foreground">{evt.provider} ({evt.model})</td>
+                          <td className="p-2.5 font-mono truncate max-w-[140px]">{evt.sessionId || '—'}</td>
+                          <td className="p-2.5 text-muted-foreground">{new Date(evt.createdAt).toLocaleString()}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t">
+              <Button onClick={() => setShowSafetyModal(false)} variant="outline" size="sm">
+                Close
+              </Button>
             </div>
           </div>
         </div>
