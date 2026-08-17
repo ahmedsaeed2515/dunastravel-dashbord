@@ -16,13 +16,13 @@ export default function ToursPage() {
         description="Manage landing pages, tour collections, multi-country packages, localized content, and global tour library."
       />
 
-      <Tabs defaultValue="interfaces" className="w-full">
+      <Tabs defaultValue="tours" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-          <TabsTrigger value="interfaces" className="flex items-center gap-2">
-            <Globe className="w-4 h-4" /> Tour Interfaces & Landing Pages
-          </TabsTrigger>
           <TabsTrigger value="tours" className="flex items-center gap-2">
             <Package className="w-4 h-4" /> All Tours Library
+          </TabsTrigger>
+          <TabsTrigger value="interfaces" className="flex items-center gap-2">
+            <Globe className="w-4 h-4" /> Tour Interfaces & Landing Pages
           </TabsTrigger>
         </TabsList>
 
