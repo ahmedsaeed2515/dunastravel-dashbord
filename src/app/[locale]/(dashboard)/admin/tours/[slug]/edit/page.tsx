@@ -86,6 +86,21 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
     );
   }
 
+  function getLocalizedFieldText(data: any, lang: string): string {
+    if (!data) return "";
+    if (typeof data === "string") return data;
+    if (Array.isArray(data)) {
+      return data.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join("\n");
+    }
+    const val = data[lang];
+    if (val === undefined || val === null) return "";
+    if (typeof val === "string") return val;
+    if (Array.isArray(val)) {
+      return val.map((item) => (typeof item === "string" ? item : JSON.stringify(item))).join("\n");
+    }
+    return JSON.stringify(val);
+  }
+
   const handleJsonChange = (field: string, lang: string, value: string) => {
     setFormData((prev) => {
       const currentObj = (prev as any)[field] || {};
@@ -322,7 +337,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <div>
                 <label className="text-sm font-medium block mb-1">Title ({activeLang.toUpperCase()})</label>
                 <Input
-                  value={(formData.titleJsonb as any)?.[activeLang] || ""}
+                  value={getLocalizedFieldText(formData.titleJsonb, activeLang)}
                   onChange={(e) => handleJsonChange("titleJsonb", activeLang, e.target.value)}
                   placeholder={`Tour title in ${activeLangConfig.name}...`}
                 />
@@ -332,7 +347,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                 <label className="text-sm font-medium block mb-1">Duration Label ({activeLang.toUpperCase()})</label>
                 <Input
                   placeholder="e.g. 8 Days / 7 Nights"
-                  value={(formData.durationJsonb as any)?.[activeLang] || ""}
+                  value={getLocalizedFieldText(formData.durationJsonb, activeLang)}
                   onChange={(e) => handleJsonChange("durationJsonb", activeLang, e.target.value)}
                 />
               </div>
@@ -341,7 +356,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                 <label className="text-sm font-medium block mb-1">Overview / Description ({activeLang.toUpperCase()})</label>
                 <Textarea
                   rows={5}
-                  value={(formData.overviewJsonb as any)?.[activeLang] || ""}
+                  value={getLocalizedFieldText(formData.overviewJsonb, activeLang)}
                   onChange={(e) => handleJsonChange("overviewJsonb", activeLang, e.target.value)}
                   placeholder={`Detailed overview in ${activeLangConfig.name}...`}
                 />
@@ -352,7 +367,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                   <label className="text-sm font-medium block mb-1">Included Services ({activeLang.toUpperCase()})</label>
                   <Textarea
                     rows={3}
-                    value={(formData.includedServicesJsonb as any)?.[activeLang] || ""}
+                    value={getLocalizedFieldText(formData.includedServicesJsonb, activeLang)}
                     onChange={(e) => handleJsonChange("includedServicesJsonb", activeLang, e.target.value)}
                     placeholder="Hotels, Transport, Guides..."
                   />
@@ -361,7 +376,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                   <label className="text-sm font-medium block mb-1">Excluded Services ({activeLang.toUpperCase()})</label>
                   <Textarea
                     rows={3}
-                    value={(formData.excludedServicesJsonb as any)?.[activeLang] || ""}
+                    value={getLocalizedFieldText(formData.excludedServicesJsonb, activeLang)}
                     onChange={(e) => handleJsonChange("excludedServicesJsonb", activeLang, e.target.value)}
                     placeholder="International Flights, Personal expenses..."
                   />
