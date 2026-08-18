@@ -146,6 +146,8 @@ export function ToursTable() {
 
   const columns = getColumns(handleView, handleEdit, handleDelete, tTours, tCommon, currentLocale);
   const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
+  const totalCount: number = (data as any)?.meta?.total ?? (data as any)?.total ?? (Array.isArray(data) ? data.length : (data?.data?.length || 0));
+  const overallTotal: number = stats?.totalTours ? Number(stats.totalTours) : totalCount;
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -248,11 +250,26 @@ export function ToursTable() {
               <Compass className="h-4 w-4" />
             </div>
           </div>
-          <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.totalTours ?? "23"}
+          <div className="flex items-baseline gap-2">
+            <span className="text-3xl font-extrabold font-mono text-foreground">
+              {hasActiveFilters ? totalCount : overallTotal}
+            </span>
+            {hasActiveFilters && (
+              <span className="text-xs text-muted-foreground font-medium">
+                / {overallTotal} total
+              </span>
+            )}
           </div>
           <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
-            <span className="font-semibold text-foreground">{stats?.publishedTours ?? 20} {tDashboard("publishedTours")}</span>
+            {hasActiveFilters ? (
+              <span className="font-semibold text-primary">
+                {totalCount} matching filters ({totalCount} رحلة مطابقة)
+              </span>
+            ) : (
+              <span className="font-semibold text-foreground">
+                {stats?.publishedTours ?? overallTotal} {tDashboard("publishedTours")}
+              </span>
+            )}
           </p>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-primary/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -390,11 +407,12 @@ export function ToursTable() {
           </div>
         </div>
 
-        {/* Active Filter Badges */}
-        {hasActiveFilters && (
-          <div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-border/60 text-xs text-muted-foreground">
-            <span className="font-semibold text-foreground/80 mr-1 flex items-center gap-1">
-              <Filter className="h-3 w-3" /> Active:
+        {/* Results Counter & Active Filter Badges */}
+        <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60 text-xs">
+          <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span className="font-semibold text-foreground flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
+              <Filter className="h-3.5 w-3.5" />
+              <span>{isLoading ? "Loading..." : `${totalCount} ${totalCount === 1 ? "Tour" : "Tours"} Found (${totalCount} رحلة)`}</span>
             </span>
             {search && (
               <Badge variant="secondary" className="gap-1 text-xs font-normal">
@@ -421,7 +439,11 @@ export function ToursTable() {
               </Badge>
             )}
           </div>
-        )}
+
+          <div className="text-xs text-muted-foreground font-mono">
+            Showing {toursList.length} of {totalCount}
+          </div>
+        </div>
       </div>
 
       {/* Body View Rendering */}
