@@ -98,36 +98,34 @@ export function CreateTourWizard() {
 
     try {
       setIsLoading(true);
+      const price = Math.max(0.01, parseFloat(basePriceUsd) || 0.01);
       await createTour.mutateAsync({
-        slug,
-        titleJsonb: { en: titleEn },
-        descriptionJsonb: { en: descriptionEn },
-        category,
-        basePriceUsd: parseFloat(basePriceUsd) || 0,
+        slug: slug.trim().toLowerCase(),
+        titleJsonb: { en: titleEn.trim() },
+        overviewJsonb: descriptionEn.trim() ? { en: descriptionEn.trim() } : { en: titleEn.trim() },
+        category: category || "ADVENTURE",
+        basePriceUsd: price,
         currency: "USD",
         isActive: status === "PUBLISHED",
         status,
         isFeatured,
-        country,
-        city,
-        capacity: parseInt(capacity) || 10,
-        minParticipants: parseInt(minParticipants) || 1,
-        remainingSeats: parseInt(capacity) || 10,
-        inclusionJsonb: includesEn ? { en: includesEn } : null,
-        exclusionJsonb: excludesEn ? { en: excludesEn } : null,
-        importantNotesJsonb: importantNotesEn ? { en: importantNotesEn } : null,
-        cancellationPolicyJsonb: cancellationEn ? { en: cancellationEn } : null,
-        seoTitle,
-        seoDescription,
+        country: country || undefined,
+        city: city || undefined,
+        includedServicesJsonb: includesEn ? { en: includesEn } : undefined,
+        excludedServicesJsonb: excludesEn ? { en: excludesEn } : undefined,
+        termsJsonb: importantNotesEn ? { en: importantNotesEn } : undefined,
+        cancellationPolicyJsonb: cancellationEn ? { en: cancellationEn } : undefined,
+        seoTitle: seoTitle || undefined,
+        seoDescription: seoDescription || undefined,
         tags: tagsString.split(',').map(t => t.trim()).filter(Boolean),
         itineraries: itineraryDays.map((it, idx) => ({
-          dayLabel: it.dayLabel,
-          descriptionJsonb: { en: it.description },
+          dayLabel: it.dayLabel || `Day ${idx + 1}`,
+          descriptionJsonb: { en: it.description || `Day ${idx + 1} plan` },
           sortOrder: idx + 1,
         })),
-        images: images.filter(img => img.url).map((img, idx) => ({
-          imageUrl: img.url,
-          isHero: img.isHero,
+        images: images.filter(img => img.url && img.url.trim()).map((img, idx) => ({
+          imageUrl: img.url.trim(),
+          isHero: Boolean(img.isHero),
           sortOrder: idx + 1,
         }))
       });

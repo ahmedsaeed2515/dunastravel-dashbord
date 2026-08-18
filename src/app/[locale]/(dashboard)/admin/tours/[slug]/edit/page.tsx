@@ -40,23 +40,24 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
   useEffect(() => {
     if (tour) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         slug: tour.slug,
         category: tour.category || "",
         country: tour.country || "",
         city: tour.city || "",
-        basePriceUsd: tour.basePriceUsd || "0",
+        basePriceUsd: tour.basePriceUsd && parseFloat(tour.basePriceUsd) > 0 ? tour.basePriceUsd : "100",
         currency: tour.currency || "USD",
         capacity: tour.capacity || 30,
         status: tour.status || "PUBLISHED",
         isActive: tour.isActive ?? true,
         isFeatured: tour.isFeatured ?? false,
         titleJsonb: tour.titleJsonb || {},
-        subtitleJsonb: tour.subtitleJsonb || {},
-        overviewJsonb: tour.overviewJsonb || {},
+        overviewJsonb: tour.overviewJsonb || tour.descriptionJsonb || {},
         durationJsonb: tour.durationJsonb || {},
-        descriptionJsonb: tour.descriptionJsonb || {},
+        includedServicesJsonb: tour.includedServicesJsonb || {},
+        excludedServicesJsonb: tour.excludedServicesJsonb || {},
+        cancellationPolicyJsonb: tour.cancellationPolicyJsonb || {},
+        termsJsonb: tour.termsJsonb || {},
         seoTitle: tour.seoTitle || "",
         seoDescription: tour.seoDescription || "",
       });
@@ -100,23 +101,60 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
   const handleSave = async (statusOverride?: string) => {
     try {
-      const payload: any = {
-        ...formData,
-        basePriceUsd: parseFloat(String(formData.basePriceUsd)) || 0,
-        capacity: parseInt(String(formData.capacity)) || 30,
-        itineraries: itineraries.map((it, idx) => ({
-          ...it,
-          sortOrder: idx + 1,
-        })),
-        images: images.map((img, idx) => ({
-          ...img,
-          sortOrder: idx + 1,
-        })),
-      };
-
-      if (statusOverride) {
-        payload.status = statusOverride;
+      const price = parseFloat(String(formData.basePriceUsd));
+      if (isNaN(price) || price < 0.01) {
+        toast.error("Base Price must be at least $0.01 USD");
+        return;
       }
+
+      // Ensure title has at least English title
+      const titleJson = formData.titleJsonb || {};
+      if (!titleJson.en && !titleJson[activeLang]) {
+        toast.error("Tour title is required");
+        return;
+      }
+
+      const cleanItineraries = itineraries.map((it, idx) => ({
+        dayLabel: it.dayLabel || `Day ${idx + 1}`,
+        descriptionJsonb: it.descriptionJsonb || { en: `Day ${idx + 1} itinerary` },
+        mealsJsonb: it.mealsJsonb && Object.keys(it.mealsJsonb).length > 0 ? it.mealsJsonb : undefined,
+        activitiesJsonb: it.activitiesJsonb && Object.keys(it.activitiesJsonb).length > 0 ? it.activitiesJsonb : undefined,
+        hotelsJsonb: it.hotelsJsonb && Object.keys(it.hotelsJsonb).length > 0 ? it.hotelsJsonb : undefined,
+        transportationJsonb: it.transportationJsonb && Object.keys(it.transportationJsonb).length > 0 ? it.transportationJsonb : undefined,
+        notesJsonb: it.notesJsonb && Object.keys(it.notesJsonb).length > 0 ? it.notesJsonb : undefined,
+        sortOrder: idx + 1,
+      }));
+
+      const cleanImages = images.map((img, idx) => ({
+        imageUrl: img.imageUrl || img.url,
+        isHero: Boolean(img.isHero),
+        isVideo: Boolean(img.isVideo),
+        videoUrl: img.videoUrl && String(img.videoUrl).trim().length > 0 ? String(img.videoUrl).trim() : undefined,
+        altText: img.altText || undefined,
+        sortOrder: idx + 1,
+      }));
+
+      const payload: any = {
+        category: formData.category?.trim() || undefined,
+        country: formData.country?.trim() || undefined,
+        city: formData.city?.trim() || undefined,
+        basePriceUsd: price,
+        currency: "USD",
+        status: statusOverride || formData.status || "PUBLISHED",
+        isActive: formData.isActive ?? true,
+        isFeatured: formData.isFeatured ?? false,
+        titleJsonb: formData.titleJsonb || {},
+        overviewJsonb: formData.overviewJsonb || {},
+        durationJsonb: formData.durationJsonb && Object.keys(formData.durationJsonb).length > 0 ? formData.durationJsonb : undefined,
+        includedServicesJsonb: formData.includedServicesJsonb && Object.keys(formData.includedServicesJsonb).length > 0 ? formData.includedServicesJsonb : undefined,
+        excludedServicesJsonb: formData.excludedServicesJsonb && Object.keys(formData.excludedServicesJsonb).length > 0 ? formData.excludedServicesJsonb : undefined,
+        cancellationPolicyJsonb: formData.cancellationPolicyJsonb && Object.keys(formData.cancellationPolicyJsonb).length > 0 ? formData.cancellationPolicyJsonb : undefined,
+        termsJsonb: formData.termsJsonb && Object.keys(formData.termsJsonb).length > 0 ? formData.termsJsonb : undefined,
+        seoTitle: formData.seoTitle?.trim() || undefined,
+        seoDescription: formData.seoDescription?.trim() || undefined,
+        itineraries: cleanItineraries,
+        images: cleanImages,
+      };
 
       await updateMutation.mutateAsync({
         slug: tour.slug,
@@ -147,11 +185,11 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
   };
 
   const handleAddImage = () => {
-    if (!newImageUrl) return;
+    if (!newImageUrl || !newImageUrl.trim()) return;
     setImages([
       ...images,
       {
-        imageUrl: newImageUrl,
+        imageUrl: newImageUrl.trim(),
         isHero: images.length === 0,
         sortOrder: images.length + 1,
       },
@@ -227,11 +265,12 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Slug (Route Identifier)</label>
-                  <Input value={formData.slug || ""} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} />
+                  <Input value={formData.slug || ""} disabled className="bg-muted" />
+                  <p className="text-[11px] text-muted-foreground mt-1">Slug is the unique permanent identifier</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Category / Theme</label>
-                  <Input value={formData.category || ""} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. egypt, turkey" />
+                  <Input value={formData.category || ""} onChange={(e) => setFormData({ ...formData, category: e.target.value })} placeholder="e.g. egypt, luxury, adventure" />
                 </div>
               </div>
 
@@ -259,14 +298,14 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
         {/* 2. TRANSLATIONS */}
         <TabsContent value="translations" className="space-y-4">
-          <div className="flex gap-2 border-b pb-3">
+          <div className="flex gap-2 border-b pb-3 overflow-x-auto">
             {LOCALES.map((loc) => (
               <Button
                 key={loc.code}
                 variant={activeLang === loc.code ? "default" : "outline"}
                 size="sm"
                 onClick={() => setActiveLang(loc.code)}
-                className="gap-1.5"
+                className="gap-1.5 shrink-0"
               >
                 <Globe className="w-3.5 h-3.5" /> {loc.name}
               </Button>
@@ -285,14 +324,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                 <Input
                   value={(formData.titleJsonb as any)?.[activeLang] || ""}
                   onChange={(e) => handleJsonChange("titleJsonb", activeLang, e.target.value)}
-                />
-              </div>
-
-              <div>
-                <label className="text-sm font-medium block mb-1">Subtitle ({activeLang.toUpperCase()})</label>
-                <Input
-                  value={(formData.subtitleJsonb as any)?.[activeLang] || ""}
-                  onChange={(e) => handleJsonChange("subtitleJsonb", activeLang, e.target.value)}
+                  placeholder={`Tour title in ${activeLangConfig.name}...`}
                 />
               </div>
 
@@ -306,21 +338,34 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               </div>
 
               <div>
-                <label className="text-sm font-medium block mb-1">Overview ({activeLang.toUpperCase()})</label>
+                <label className="text-sm font-medium block mb-1">Overview / Description ({activeLang.toUpperCase()})</label>
                 <Textarea
-                  rows={4}
+                  rows={5}
                   value={(formData.overviewJsonb as any)?.[activeLang] || ""}
                   onChange={(e) => handleJsonChange("overviewJsonb", activeLang, e.target.value)}
+                  placeholder={`Detailed overview in ${activeLangConfig.name}...`}
                 />
               </div>
 
-              <div>
-                <label className="text-sm font-medium block mb-1">Full Description ({activeLang.toUpperCase()})</label>
-                <Textarea
-                  rows={6}
-                  value={(formData.descriptionJsonb as any)?.[activeLang] || ""}
-                  onChange={(e) => handleJsonChange("descriptionJsonb", activeLang, e.target.value)}
-                />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="text-sm font-medium block mb-1">Included Services ({activeLang.toUpperCase()})</label>
+                  <Textarea
+                    rows={3}
+                    value={(formData.includedServicesJsonb as any)?.[activeLang] || ""}
+                    onChange={(e) => handleJsonChange("includedServicesJsonb", activeLang, e.target.value)}
+                    placeholder="Hotels, Transport, Guides..."
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium block mb-1">Excluded Services ({activeLang.toUpperCase()})</label>
+                  <Textarea
+                    rows={3}
+                    value={(formData.excludedServicesJsonb as any)?.[activeLang] || ""}
+                    onChange={(e) => handleJsonChange("excludedServicesJsonb", activeLang, e.target.value)}
+                    placeholder="International Flights, Personal expenses..."
+                  />
+                </div>
               </div>
             </CardContent>
           </Card>
@@ -333,23 +378,28 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <CardTitle className="text-base">Pricing & Seat Capacity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div>
                   <label className="text-sm font-medium">Base Price (USD)</label>
                   <Input
                     type="number"
-                    value={formData.basePriceUsd || 0}
+                    min="0.01"
+                    step="0.01"
+                    value={formData.basePriceUsd || ""}
                     onChange={(e) => setFormData({ ...formData, basePriceUsd: e.target.value as any })}
+                    placeholder="e.g. 450.00"
                   />
+                  <p className="text-[11px] text-muted-foreground mt-1">Starting price per adult in USD (min: $0.01)</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Currency</label>
-                  <Input value={formData.currency || "USD"} onChange={(e) => setFormData({ ...formData, currency: e.target.value })} />
+                  <Input value={formData.currency || "USD"} disabled className="bg-muted" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">Total Capacity (Max Seats)</label>
                   <Input
                     type="number"
+                    min="1"
                     value={formData.capacity || 30}
                     onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 30 })}
                   />
@@ -403,6 +453,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                       };
                       setItineraries(updated);
                     }}
+                    placeholder={`Day ${idx + 1} description...`}
                   />
                 </div>
               </Card>
@@ -419,11 +470,11 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
             <CardContent className="space-y-4">
               <div className="flex gap-2">
                 <Input
-                  placeholder="Paste image URL..."
+                  placeholder="Paste image URL (https://...)"
                   value={newImageUrl}
                   onChange={(e) => setNewImageUrl(e.target.value)}
                 />
-                <Button size="sm" onClick={handleAddImage} disabled={!newImageUrl}>
+                <Button size="sm" onClick={handleAddImage} disabled={!newImageUrl.trim()}>
                   <Plus className="w-4 h-4 mr-1" /> Add Image
                 </Button>
               </div>
@@ -431,7 +482,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
                 {images.map((img, idx) => (
                   <div key={idx} className="relative h-40 rounded-lg overflow-hidden border bg-muted group">
-                    <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
+                    <img src={img.imageUrl || img.url} alt="" className="w-full h-full object-cover" />
                     <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
                       <div className="flex justify-between items-center">
                         <Button
