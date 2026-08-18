@@ -148,4 +148,24 @@ describe('apiClient Interceptors', () => {
 
     expect(window.location.href).toBe('/ar/login?expired=1');
   });
+
+  it('handles 403 Invalid CSRF token error by refreshing token and retrying request', async () => {
+    const getSpy = vi.spyOn(axios, 'get').mockResolvedValueOnce({
+      data: {
+        success: true,
+        statusCode: 200,
+        data: { csrfToken: 'new-valid-csrf-token-123456789' },
+      },
+    });
+
+    const error403 = {
+      config: { url: '/admin/tours/wonders-of-egypt', method: 'patch', headers: {} },
+      response: { status: 403, data: { message: 'Invalid CSRF token' } },
+    };
+
+    const errorInterceptor = (apiClient.interceptors.response as any).handlers[0].rejected;
+    const retryPromise = errorInterceptor(error403).catch(() => {});
+    expect(getSpy).toHaveBeenCalled();
+    await retryPromise;
+  });
 });

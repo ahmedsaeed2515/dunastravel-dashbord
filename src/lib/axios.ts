@@ -15,37 +15,86 @@ export const apiClient = axios.create({
 
 // --- CSRF Token Management ---
 let csrfToken: string | null = null;
-let isFetchingCsrf = false;
-let csrfSubscribers: ((token: string) => void)[] = [];
+let csrfFetchPromise: Promise<string | null> | null = null;
 
-function onCsrfFetched(token: string) {
-  csrfSubscribers.forEach((callback) => callback(token));
-  csrfSubscribers = [];
+function getCsrfFromCookie(): string | null {
+  if (typeof document === 'undefined') return null;
+  const match = document.cookie.match(/(?:^|;\s*)csrf_token=([^;]+)/);
+  if (match && match[1]) {
+    try {
+      const decoded = decodeURIComponent(match[1]).trim();
+      return decoded.length >= 16 ? decoded : null;
+    } catch {
+      return match[1].length >= 16 ? match[1] : null;
+    }
+  }
+  return null;
 }
 
-function addCsrfSubscriber(callback: (token: string) => void) {
-  csrfSubscribers.push(callback);
+export function setCsrfToken(token: string | null) {
+  if (typeof token === 'string' && token.trim().length >= 16) {
+    csrfToken = token.trim();
+  } else {
+    csrfToken = null;
+  }
 }
 
-export async function initCsrfToken(): Promise<string | null> {
-  if (csrfToken) return csrfToken;
-  if (!isFetchingCsrf) {
-    isFetchingCsrf = true;
+export function clearCsrfToken() {
+  csrfToken = null;
+  csrfFetchPromise = null;
+}
+
+export async function initCsrfToken(forceRefresh = false): Promise<string | null> {
+  if (!forceRefresh) {
+    const cookieToken = getCsrfFromCookie();
+    if (cookieToken) {
+      csrfToken = cookieToken;
+      return csrfToken;
+    }
+    if (csrfToken && typeof csrfToken === 'string' && csrfToken.length >= 16) {
+      return csrfToken;
+    }
+  }
+
+  if (csrfFetchPromise) {
+    return csrfFetchPromise;
+  }
+
+  csrfFetchPromise = (async () => {
     try {
       const baseUrl = isServer ? env.NEXT_PUBLIC_API_URL : '/api';
       const response = await axios.get(`${baseUrl}/auth/csrf`, {
         withCredentials: true,
       });
-      csrfToken = response.data?.token || response.data?.csrfToken || response.data;
-      isFetchingCsrf = false;
-      if (csrfToken) {
-        onCsrfFetched(csrfToken);
+      const raw = response.data;
+      const extractedToken =
+        raw?.data?.csrfToken ||
+        raw?.data?.token ||
+        raw?.csrfToken ||
+        raw?.token ||
+        (typeof raw === 'string' ? raw : null);
+
+      if (typeof extractedToken === 'string' && extractedToken.trim().length >= 16) {
+        csrfToken = extractedToken.trim();
+      } else {
+        const cookieToken = getCsrfFromCookie();
+        if (cookieToken) {
+          csrfToken = cookieToken;
+        }
       }
-    } catch {
-      isFetchingCsrf = false;
+      return csrfToken;
+    } catch (err) {
+      const cookieToken = getCsrfFromCookie();
+      if (cookieToken) {
+        csrfToken = cookieToken;
+      }
+      return csrfToken;
+    } finally {
+      csrfFetchPromise = null;
     }
-  }
-  return csrfToken;
+  })();
+
+  return csrfFetchPromise;
 }
 
 // Request Interceptor: Attach CSRF token to mutative requests
@@ -55,12 +104,9 @@ apiClient.interceptors.request.use(
     const isMutative = ['post', 'put', 'patch', 'delete'].includes(method);
 
     if (isMutative) {
-      if (!csrfToken) {
-        await initCsrfToken();
-      }
-
-      if (csrfToken) {
-        config.headers['x-csrf-token'] = csrfToken;
+      const token = await initCsrfToken();
+      if (token) {
+        config.headers['x-csrf-token'] = token;
       }
     }
 
@@ -84,7 +130,7 @@ function addRefreshSubscriber(callback: (success: boolean) => void) {
   refreshSubscribers.push(callback);
 }
 
-// Response Interceptor for global unwrapping, error mapping, and silent refresh
+// Response Interceptor for global unwrapping, error mapping, silent refresh, and CSRF retry
 apiClient.interceptors.response.use(
   (response) => {
     const raw = response.data;
@@ -198,6 +244,23 @@ apiClient.interceptors.response.use(
       errors: error.response?.data?.errors,
     };
 
+    // If 403 Invalid CSRF token, auto-heal by fetching fresh token and retrying once
+    const isCsrfError =
+      error.response?.status === 403 &&
+      typeof error.response?.data?.message === 'string' &&
+      error.response.data.message.toLowerCase().includes('csrf');
+
+    if (isCsrfError && !originalRequest._csrfRetry) {
+      originalRequest._csrfRetry = true;
+      clearCsrfToken();
+      const freshToken = await initCsrfToken(true);
+      if (freshToken) {
+        originalRequest.headers = originalRequest.headers || {};
+        originalRequest.headers['x-csrf-token'] = freshToken;
+        return apiClient(originalRequest);
+      }
+    }
+
     // If 401 Unauthorized, attempt a silent refresh
     if (error.response?.status === 401 && !originalRequest._retry) {
       const requestUrl = originalRequest.url || '';
@@ -244,7 +307,7 @@ apiClient.interceptors.response.use(
           isRefreshing = false;
           onRefreshed(true);
 
-          csrfToken = null;
+          clearCsrfToken();
           return apiClient(originalRequest);
         } catch {
           isRefreshing = false;

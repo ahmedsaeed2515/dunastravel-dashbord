@@ -1,4 +1,4 @@
-import { apiClient } from '@/lib/axios';
+import { apiClient, clearCsrfToken, setCsrfToken } from '@/lib/axios';
 import { UserSession } from '@/lib/api-types';
 
 export interface LoginPayload {
@@ -7,11 +7,20 @@ export interface LoginPayload {
 }
 
 export const authApi = {
-  login: async (credentials: LoginPayload): Promise<{ user: UserSession }> => {
-    return apiClient.post('/auth/login', credentials);
+  login: async (credentials: LoginPayload): Promise<{ user: UserSession; csrfToken?: string }> => {
+    clearCsrfToken();
+    const res: any = await apiClient.post('/auth/login', credentials);
+    if (res && typeof res === 'object' && res.csrfToken && typeof res.csrfToken === 'string') {
+      setCsrfToken(res.csrfToken);
+    }
+    return res;
   },
   logout: async (): Promise<{ message: string }> => {
-    return apiClient.post('/auth/logout', {});
+    try {
+      return await apiClient.post('/auth/logout', {});
+    } finally {
+      clearCsrfToken();
+    }
   },
   getMe: async (): Promise<UserSession> => {
     return apiClient.get('/auth/me');
