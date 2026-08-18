@@ -45,7 +45,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         category: tour.category || "",
         country: tour.country || "",
         city: tour.city || "",
-        basePriceUsd: tour.basePriceUsd && parseFloat(tour.basePriceUsd) > 0 ? tour.basePriceUsd : "100",
+        basePriceUsd: tour.basePriceUsd !== undefined && tour.basePriceUsd !== null ? String(tour.basePriceUsd) : "0",
         currency: tour.currency || "USD",
         capacity: tour.capacity || 30,
         status: tour.status || "PUBLISHED",
@@ -102,8 +102,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
   const handleSave = async (statusOverride?: string) => {
     try {
       const price = parseFloat(String(formData.basePriceUsd));
-      if (isNaN(price) || price < 0.01) {
-        toast.error("Base Price must be at least $0.01 USD");
+      if (isNaN(price) || price < 0) {
+        toast.error("Base Price must be 0 or greater (USD)");
         return;
       }
 
@@ -383,13 +383,13 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                   <label className="text-sm font-medium">Base Price (USD)</label>
                   <Input
                     type="number"
-                    min="0.01"
-                    step="0.01"
-                    value={formData.basePriceUsd || ""}
+                    min="0"
+                    step="any"
+                    value={formData.basePriceUsd ?? 0}
                     onChange={(e) => setFormData({ ...formData, basePriceUsd: e.target.value as any })}
-                    placeholder="e.g. 450.00"
+                    placeholder="e.g. 0.00 or 450.00"
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Starting price per adult in USD (min: $0.01)</p>
+                  <p className="text-[11px] text-muted-foreground mt-1">Starting price per adult in USD (enter 0 for free / on request)</p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Currency</label>

@@ -32,7 +32,7 @@ const formSchema = z.object({
   overviewIt: z.string().optional(),
 
   category: z.string().min(1),
-  basePriceUsd: z.coerce.number().min(0.01, "Base price must be at least $0.01"),
+  basePriceUsd: z.coerce.number().min(0, "Base price must be 0 or greater"),
   capacity: z.coerce.number().min(1),
   minParticipants: z.coerce.number().min(1),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
