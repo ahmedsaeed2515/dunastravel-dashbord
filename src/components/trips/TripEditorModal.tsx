@@ -366,6 +366,85 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 </div>
               </div>
 
+              {/* Egypt Destination Placement Selector */}
+              {formData.destination === 'egypt' && (
+                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Layers className="w-4 h-4 text-amber-500" />
+                      إدراج وموقع الرحلة في واجهة مصر (Egypt Destination Placement):
+                    </span>
+                    <span className="text-[10px] font-black px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-500 border border-amber-500/30">
+                      🇪🇬 مصر
+                    </span>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {/* Option 1: Main Tours */}
+                    <button
+                      type="button"
+                      onClick={() => handleChange('packageId', undefined)}
+                      className={`flex items-start gap-3 p-3.5 rounded-2xl border text-start transition-all cursor-pointer ${
+                        !formData.packageId
+                          ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md font-bold'
+                          : 'bg-card text-foreground border-border hover:border-amber-500/40'
+                      }`}
+                    >
+                      <span className="text-2xl">🏛️</span>
+                      <div>
+                        <span className="text-xs font-black block">إضافة للرحلات الرئيسية لمصر</span>
+                        <span className={`text-[10px] block mt-0.5 ${!formData.packageId ? 'text-slate-950 font-semibold' : 'text-muted-foreground'}`}>
+                          رحلة سياحية أساسية (أهرامات، الأقصر، الغردقة) بدون ربط بباكج معين.
+                        </span>
+                      </div>
+                    </button>
+
+                    {/* Option 2: Special Packages */}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (!formData.packageId) {
+                          handleChange('packageId', egyptPackages[0]?.id || 'egypt-classic');
+                        }
+                      }}
+                      className={`flex items-start gap-3 p-3.5 rounded-2xl border text-start transition-all cursor-pointer ${
+                        formData.packageId
+                          ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md font-bold'
+                          : 'bg-card text-foreground border-border hover:border-amber-500/40'
+                      }`}
+                    >
+                      <span className="text-2xl">👑</span>
+                      <div>
+                        <span className="text-xs font-black block">إضافة لإحدى باكدجات مصر الـ 5</span>
+                        <span className={`text-[10px] block mt-0.5 ${formData.packageId ? 'text-slate-950 font-semibold' : 'text-muted-foreground'}`}>
+                          ربط الرحلة ببرنامج فاخر مخصص (كلاسيكي، شهر عسل، نايل كروز، إلخ).
+                        </span>
+                      </div>
+                    </button>
+                  </div>
+
+                  {/* Sub Package Dropdown Selector if Option 2 active */}
+                  {formData.packageId && (
+                    <div className="pt-2 border-t border-amber-500/20 space-y-1.5">
+                      <label className="text-xs font-black text-foreground block">
+                        اختر الباكج المخصص للرحلة (Egypt Package Assignment):
+                      </label>
+                      <select
+                        value={formData.packageId}
+                        onChange={e => handleChange('packageId', e.target.value)}
+                        className="w-full h-10 px-3 rounded-xl border border-amber-500/50 bg-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                      >
+                        {egyptPackages.map(pkg => (
+                          <option key={pkg.id} value={pkg.id}>
+                            {pkg.icon} {pkg.titleAr} ({pkg.badge || pkg.type})
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground">السعر بالدولار ($) *</label>

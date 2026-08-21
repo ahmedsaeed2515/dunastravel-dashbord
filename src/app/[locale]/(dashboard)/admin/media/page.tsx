@@ -246,8 +246,8 @@ export default function MediaPage() {
               </h1>
               <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
                 {isAr
-                  ? "إدارة كاملة لمعرض الصور والفيديوهات وميديا الصفحة الرئيسية باللغات الـ 5."
-                  : "Full management of photos, videos & homepage media gallery in 5 languages."}
+                  ? "إدارة كاملة لمعرض الصور والفيديوهات الخاصة بالشرايط المتحركة."
+                  : "Full management of photos and videos gallery for interactive sliders."}
               </p>
             </div>
           </div>
@@ -286,8 +286,8 @@ export default function MediaPage() {
         </div>
       </div>
 
-      {/* 2. Top 4 Metric Cards */}
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* 2. Top 3 Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-3">
         {/* Card 1: Total Photos */}
         <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
           <div className="space-y-1">
@@ -318,22 +318,7 @@ export default function MediaPage() {
           </div>
         </Card>
 
-        {/* Card 3: Homepage Active Slides */}
-        <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">
-              {isAr ? "سلايدر الصفحة الرئيسية" : "Homepage Active Hero"}
-            </span>
-            <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              {homepageSlides.filter(s => s.isActive).length} <span className="text-xs font-bold text-emerald-500">مفعل 🟢</span>
-            </div>
-          </div>
-          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
-            <Sliders className="w-6 h-6 stroke-[2.2]" />
-          </div>
-        </Card>
-
-        {/* Card 4: Storage Used */}
+        {/* Card 3: Storage Used */}
         <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
           <div className="space-y-1">
             <span className="text-xs font-bold text-muted-foreground">
@@ -349,7 +334,7 @@ export default function MediaPage() {
         </Card>
       </div>
 
-      {/* 3. Classification & Homepage Media Tabs Switcher */}
+      {/* 3. Classification Tabs Switcher */}
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 bg-card border border-border/80 rounded-2xl shadow-xs">
         <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-xl border border-border overflow-x-auto">
           <button
@@ -376,19 +361,6 @@ export default function MediaPage() {
             <Video className="w-4 h-4" />
             <span>{isAr ? "معرض الفيديوهات" : "Videos Gallery"}</span>
             <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{videoAssets.length}</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("homepage")}
-            className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-              activeTab === "homepage"
-                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            <Sliders className="w-4 h-4 text-amber-950" />
-            <span>{isAr ? "ميديا الصفحة الرئيسية 🎡" : "Homepage Hero Media 🎡"}</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{homepageSlides.length}</span>
           </button>
         </div>
 
@@ -584,149 +556,7 @@ export default function MediaPage() {
         </div>
       )}
 
-      {/* 6. Homepage Hero Slider Management Section */}
-      {activeTab === "homepage" && (
-        <div className="space-y-6">
-          {/* Hero Section Banner */}
-          <div className="p-6 bg-linear-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-3xl space-y-3">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h2 className="text-lg font-black text-foreground flex items-center gap-2">
-                  <Sliders className="w-5 h-5 text-amber-500" />
-                  <span>{isAr ? "ميديا الصفحة الرئيسية (Hero Media Slider)" : "Homepage Hero Slider Media"}</span>
-                </h2>
-                <p className="text-xs text-muted-foreground font-semibold">
-                  {isAr
-                    ? "التحكم الكامل بالصور والفيديوهات المعروضة في الشريط المتحرك في الصفحة الرئيسية للموقع."
-                    : "Manage active background photos & promo videos displayed in the main homepage hero slider."}
-                </p>
-              </div>
 
-              <Button
-                onClick={handleOpenPhotoDialog}
-                variant="gold"
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl gap-2 cursor-pointer shadow-md shadow-amber-500/20 shrink-0"
-              >
-                <PlusCircle className="w-4 h-4" />
-                <span>{isAr ? "إضافة سلايد جديد للرئيسية 🎡" : "Add Hero Slide 🎡"}</span>
-              </Button>
-            </div>
-          </div>
-
-          {/* Homepage Hero Media Cards Grid */}
-          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
-            {homepageSlides.map((slide) => (
-              <Card
-                key={slide.id}
-                className={`overflow-hidden bg-card border transition-all duration-300 rounded-3xl flex flex-col justify-between group ${
-                  slide.isActive
-                    ? "border-amber-500/50 shadow-md shadow-amber-500/5"
-                    : "border-border/60 opacity-75"
-                }`}
-              >
-                <div>
-                  {/* Hero Thumbnail Preview */}
-                  <div className="relative h-56 w-full overflow-hidden bg-slate-950">
-                    <img
-                      src={slide.url}
-                      alt={slide.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/30 to-black/30" />
-
-                    {/* Order Badge */}
-                    <span className="absolute top-3 right-3 text-xs font-black px-3 py-1 rounded-full bg-amber-500 text-slate-950 shadow-md flex items-center gap-1">
-                      <ArrowUpDown className="w-3.5 h-3.5" />
-                      <span>{isAr ? `ترتيب السلايدر: #${slide.order}` : `Order: #${slide.order}`}</span>
-                    </span>
-
-                    {/* Active Status Badge */}
-                    <span
-                      className={`absolute top-3 left-3 text-xs font-extrabold px-3 py-1 rounded-full border shadow-md flex items-center gap-1.5 ${
-                        slide.isActive
-                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
-                          : "bg-slate-900/90 text-slate-400 border-slate-700"
-                      }`}
-                    >
-                      {slide.isActive ? (
-                        <>
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-                          <span>{isAr ? "معروض بالرئيسية 🟢" : "Active on Hero 🟢"}</span>
-                        </>
-                      ) : (
-                        <>
-                          <XCircle className="w-3.5 h-3.5 text-slate-400" />
-                          <span>{isAr ? "غير معروض ⚪" : "Inactive ⚪"}</span>
-                        </>
-                      )}
-                    </span>
-
-                    {/* Overlay Title */}
-                    <div className="absolute bottom-4 right-4 left-4 space-y-1">
-                      <span className="text-[11px] font-bold text-amber-400 block">
-                        {slide.badge}
-                      </span>
-                      <h3 className="text-base font-black text-white leading-tight">
-                        {slide.title}
-                      </h3>
-                      <p className="text-xs text-slate-300 font-medium line-clamp-1">
-                        {slide.subtitle}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Footer Controls */}
-                <div className="p-4 bg-muted/30 border-t border-border/60 flex items-center justify-between gap-2">
-                  <button
-                    onClick={() => toggleSlideStatus(slide.id)}
-                    className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
-                      slide.isActive
-                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
-                        : "bg-muted text-muted-foreground border border-border hover:text-foreground"
-                    }`}
-                  >
-                    {slide.isActive ? (
-                      <>
-                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                        <span>{isAr ? "إخفاء من السلايدر" : "Hide from Slider"}</span>
-                      </>
-                    ) : (
-                      <>
-                        <Sparkles className="w-4 h-4 text-amber-500" />
-                        <span>{isAr ? "تفعيل في السلايدر" : "Activate on Slider"}</span>
-                      </>
-                    )}
-                  </button>
-
-                  <div className="flex items-center gap-2">
-                    <button
-                      onClick={() => setPreviewMedia(slide)}
-                      className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold cursor-pointer"
-                      title={isAr ? "معاينة السلايد" : "Preview Slide"}
-                    >
-                      <Eye className="w-4 h-4" />
-                    </button>
-
-                    <Button
-                      onClick={() => {
-                        if (confirm(isAr ? "هل أنت تأكد من حذف هذا السلايد من الرئيسية؟" : "Remove slide?")) {
-                          setHomepageSlides((prev) => prev.filter((s) => s.id !== slide.id));
-                        }
-                      }}
-                      variant="ghost"
-                      size="icon"
-                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 rounded-xl"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                </div>
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Lightbox / Preview Modal */}
       <Dialog open={!!previewMedia} onOpenChange={(open) => !open && setPreviewMedia(null)}>
