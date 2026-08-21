@@ -3,7 +3,6 @@ import { AppSidebar } from "@/components/core/AppSidebar";
 import { Topbar } from "@/components/core/Topbar";
 
 import { CommandPalette } from "@/components/core/CommandPalette";
-import { CurrencyConverterWidget } from "@/features/currency/components/CurrencyConverterWidget";
 
 export default function DashboardLayout({
   children,
@@ -14,17 +13,21 @@ export default function DashboardLayout({
     <SidebarProvider>
       <CommandPalette />
       <AppSidebar />
-      <main className="flex-1 flex flex-col min-h-screen overflow-hidden bg-background">
+      <main
+        className="flex-1 flex flex-col min-h-screen overflow-hidden bg-[#0d1117]"
+      >
         <Topbar />
-        <div className="flex-1 overflow-y-auto overflow-x-hidden p-3.5 sm:p-5 md:p-8">
-          {children}
+        <div
+          className="flex-1 overflow-y-auto overflow-x-hidden p-3 sm:p-6 lg:p-8 custom-scrollbar bg-[#0d1117]"
+        >
+          <div className="max-w-7xl mx-auto space-y-6">
+            {children}
+          </div>
         </div>
-        
-        {/* Floating Currency Widget */}
-        {/* <div className="fixed bottom-6 right-6 z-50">
-          <CurrencyConverterWidget />
-        </div> */}
       </main>
     </SidebarProvider>
   );
 }
+
+
+

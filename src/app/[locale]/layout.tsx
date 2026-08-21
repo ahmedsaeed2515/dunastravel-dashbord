@@ -50,8 +50,8 @@ export default async function LocaleLayout({
           <DirectionProvider dir={dir}>
             <ThemeProvider
               attribute="class"
-              defaultTheme="system"
-              enableSystem
+              defaultTheme="dark"
+              enableSystem={false}
               disableTransitionOnChange
             >
               <QueryProvider>

@@ -124,15 +124,21 @@ export function NotificationBellDropdown() {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="relative rounded-full hover:bg-muted/80 transition-colors"
+          className="relative p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors border-0"
           title="Notifications / الإشعارات"
           aria-label="Notifications"
         >
-          <Bell className="w-4 h-4 text-foreground" />
-          {unreadCount > 0 && (
-            <span className="absolute -top-0.5 -end-0.5 px-1.5 py-0.5 min-w-[18px] h-[18px] bg-amber-500 text-white font-bold text-[10px] rounded-full flex items-center justify-center ring-2 ring-background animate-pulse">
-              {unreadCount > 99 ? "99+" : unreadCount}
-            </span>
+          <Bell className="w-4 h-4" />
+          {unreadCount > 0 ? (
+            <>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
+            </>
+          ) : (
+            <>
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-500" />
+            </>
           )}
         </Button>
       </PopoverTrigger>
