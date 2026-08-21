@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo } from "react";
 import { usePathname } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -24,7 +25,6 @@ import {
   Users, 
   User,
   MessageSquare, 
-  Image as ImageIcon,
   Settings,
   LogOut,
   Building2,
@@ -33,17 +33,23 @@ import {
   ShieldCheck,
   Bot,
   Bell,
-  BellRing,
   ClipboardList,
-  Tag
+  Compass,
+  Hotel,
+  Sparkles,
+  DollarSign,
+  Package,
+  Film,
+  FileText,
+  Star,
+  MessageCircle,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
-export function AppSidebar() {
+export const AppSidebar = memo(function AppSidebar() {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
-  const tCommon = useTranslations("common");
   const { logout } = useAuth();
   const { isB2B, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
   const { isMobile, setOpenMobile } = useSidebar();
@@ -65,270 +71,199 @@ export function AppSidebar() {
   };
 
   if (isLoading) {
-    return <Sidebar className="bg-background/50 border-e" />;
+    return <Sidebar className="border-e border-border bg-card" />;
   }
 
-  return (
-    <Sidebar variant="inset" collapsible="icon" className="border-e border-border/70 bg-sidebar shadow-xs">
-      <SidebarHeader className="flex items-center justify-between px-4 py-4 h-16 border-b border-border/60">
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden transition-all duration-300">
-          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-9 w-auto object-contain shrink-0" />
-          <div className="flex flex-col">
-            <span className="font-bold tracking-tight text-sm text-foreground font-heading">
-              {tCommon("appName")}
-            </span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-              {tCommon("adminSuite")}
-            </span>
+  // Match active state exactly
+  const isActiveRoute = (href: string, exact = false) =>
+    exact ? pathname === href : pathname === href || pathname.startsWith(href + '/') || pathname.startsWith(href);
+
+  // Nav item renderer
+  const NavItem = ({
+    href,
+    icon: Icon,
+    label,
+    badge,
+    exact = false,
+  }: {
+    href: string;
+    icon: React.ElementType;
+    label: string;
+    badge?: string;
+    exact?: boolean;
+  }) => {
+    const active = isActiveRoute(href, exact);
+    return (
+      <SidebarMenuItem>
+        <SidebarMenuButton
+          onClick={handleNavClick}
+          render={<Link href={href} className="transition-all duration-200" />}
+          isActive={active}
+          tooltip={label}
+          className={
+            active
+              ? "flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-[14px] bg-linear-to-r from-amber-500/20 to-amber-600/10 text-amber-500 dark:text-amber-400 border border-amber-500/30 shadow-md shadow-amber-500/5 transition-all duration-200"
+              : "flex items-center justify-between px-3.5 py-3 rounded-xl font-bold text-[14px] text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800/70 transition-all duration-200"
+          }
+        >
+          <div className="flex items-center gap-3">
+            <Icon
+              size={20}
+              className={active ? "text-amber-500 dark:text-amber-400 shrink-0" : "text-slate-400 shrink-0"}
+            />
+            <span>{label}</span>
           </div>
-        </div>
-        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
-          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-8 w-auto object-contain shrink-0" />
+          {badge && (
+            <span
+              className={`text-[11px] px-2.5 py-0.5 rounded-full font-bold border shrink-0 ${
+                active
+                  ? "bg-amber-500/20 text-amber-600 dark:text-amber-300 border-amber-500/30"
+                  : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+              }`}
+            >
+              {badge}
+            </span>
+          )}
+        </SidebarMenuButton>
+      </SidebarMenuItem>
+    );
+  };
+
+  return (
+    <Sidebar
+      variant="inset"
+      collapsible="icon"
+      className="border-e border-border bg-card"
+    >
+      {/* Logo Header */}
+      <SidebarHeader
+        className="flex items-center justify-center px-4 py-3 h-20 border-b border-border bg-card"
+      >
+        <div className="flex items-center justify-center w-full transition-all duration-300">
+          <img
+            src="/dunas-travel-logo.png"
+            alt="Dunas Travel"
+            className="h-12 max-h-14 w-auto object-contain shrink-0 hover:scale-105 transition-transform"
+          />
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
-        {/* OVERVIEW */}
+      <SidebarContent className="bg-card px-2 py-2">
+
+        {/* =============================== */}
+        {/* منظومة الإدارة والتحكم          */}
+        {/* =============================== */}
         <SidebarGroup>
-          <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
+          <SidebarGroupLabel className="px-3 pt-4 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide">
             {tNav("overview")}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu>
-              <SidebarMenuItem>
-                <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.dashboard} className="transition-all duration-300" />} isActive={pathname === adminRoutes.dashboard} tooltip={tNav("dashboard")}>
-                  <LayoutDashboard />
-                  <span>{tNav("dashboard")}</span>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
+            <SidebarMenu className="space-y-1">
+              <NavItem href={adminRoutes.dashboard} icon={LayoutDashboard} label={tNav("dashboard")} exact />
+              {canAccessFullOperations && (
+                <>
+                  <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("bookings")} />
+                  <NavItem
+                    href={adminRoutes.destinations}
+                    icon={Compass}
+                    label={tNav("destinations")}
+                    badge="8"
+                  />
+                  <NavItem href={adminRoutes.tours} icon={Map} label={tNav("tours")} />
+                  <NavItem href={adminRoutes.promotions} icon={Package} label={tNav("promotions")} />
+                  <NavItem href={adminRoutes.media} icon={Film} label={tNav("media")} />
+                  <NavItem href={adminRoutes.hotels} icon={Hotel} label={tNav("hotels")} />
+                  <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
+                  <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
+                  <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />
+                  <NavItem href={adminRoutes.inquiries} icon={Star} label={tNav("inquiries")} />
+                  <NavItem href={adminRoutes.reviews} icon={MessageCircle} label={tNav("reviews")} />
+                  <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} />
+                </>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* OPERATIONS (Admins) */}
-        {canAccessFullOperations && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
-              {tNav("operations")}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.bookings} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.bookings)} tooltip={tNav("bookings")}>
-                    <CalendarCheck />
-                    <span>{tNav("bookings")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.tours} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.tours)} tooltip={tNav("tours")}>
-                    <Map />
-                    <span>{tNav("tours")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.promotions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.promotions)} tooltip={tNav("promotions")}>
-                    <Tag />
-                    <span>{tNav("promotions")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.media} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.media)} tooltip={tNav("media")}>
-                    <ImageIcon />
-                    <span>{tNav("media")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* B2B SELF SERVICE (Companies & Agents) */}
+        {/* B2B SELF SERVICE */}
         {isB2B && !isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
+            <SidebarGroupLabel className="px-3 pt-5 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide border-t border-border">
               {tNav("myOperations")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.bookings} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.bookings)} tooltip={tNav("myBookings")}>
-                    <CalendarCheck />
-                    <span>{tNav("myBookings")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.finance.commissions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.commissions)} tooltip={tNav("myCommissions")}>
-                    <Briefcase />
-                    <span>{tNav("myCommissions")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.finance.wallet} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.wallet)} tooltip={tNav("myWallet")}>
-                    <Wallet />
-                    <span>{tNav("myWallet")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+              <SidebarMenu className="space-y-1">
+                <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("myBookings")} />
+                <NavItem href={adminRoutes.finance.commissions} icon={Briefcase} label={tNav("myCommissions")} />
+                <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("myWallet")} />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
 
-        {/* CUSTOMER RELATIONS */}
+        {/* ================================= */}
+        {/* شركاء الأعمال والمالية B2B       */}
+        {/* ================================= */}
         {canAccessFullOperations && (
           <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
-              {tNav("customerRelations")}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.customers} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.customers)} tooltip={tNav("customers")}>
-                    <Users />
-                    <span>{tNav("customers")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.inquiries} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.inquiries)} tooltip={tNav("inquiries")}>
-                    <MessageSquare />
-                    <span>{tNav("inquiries")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* B2B ENTERPRISE */}
-        {canAccessFullOperations && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
+            <SidebarGroupLabel className="px-3 pt-5 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide border-t border-border">
               {tNav("b2bEnterprise")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.companies} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.companies)} tooltip={tNav("companies")}>
-                    <Building2 />
-                    <span>{tNav("companies")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.agents} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.agents)} tooltip={tNav("agents")}>
-                    <Users />
-                    <span>{tNav("agents")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* FINANCE */}
-        {canAccessFullOperations && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
-              {tNav("finance")}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.finance.commissions} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.commissions)} tooltip={tNav("commissions")}>
-                    <Briefcase />
-                    <span>{tNav("commissions")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.finance.wallet} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.finance.wallet)} tooltip={tNav("wallets")}>
-                    <Wallet />
-                    <span>{tNav("wallets")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-        )}
-
-        {/* SYSTEM & AI */}
-        {canAccessFullOperations && (
-          <SidebarGroup>
-            <SidebarGroupLabel className="uppercase tracking-widest text-xs font-semibold text-muted-foreground/70">
-              {tNav("systemAi")}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.ai} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.ai)} tooltip={tNav("aiConcierge")}>
-                    <Bot />
-                    <span>{tNav("aiConcierge")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.notifications} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.notifications)} tooltip="Notifications">
-                    <Bell />
-                    <span>{pathname.includes("/ar") ? "مركز الإشعارات" : "Notifications"}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.communications} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.communications)} tooltip={tNav("communications")}>
-                    <BellRing />
-                    <span>{tNav("communications")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-
-                <SidebarMenuItem>
-                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.content} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.content)} tooltip={tNav("content")}>
-                    <ClipboardList />
-                    <span>{tNav("content")}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-                
+              <SidebarMenu className="space-y-1">
+                <NavItem href={adminRoutes.customers} icon={Users} label={tNav("customers")} />
+                <NavItem href={adminRoutes.companies} icon={Building2} label={tNav("companies")} />
+                <NavItem href={adminRoutes.agents} icon={Users} label={tNav("agents")} />
+                <NavItem href={adminRoutes.finance.commissions} icon={DollarSign} label={tNav("commissions")} />
+                <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("wallets")} />
                 {canManageAdmins && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.audit} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.audit)} tooltip={tNav("auditLog")}>
-                      <ClipboardList />
-                      <span>{tNav("auditLog")}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <NavItem href={adminRoutes.audit} icon={ClipboardList} label={tNav("auditLog")} />
                 )}
-                
                 {canManageRoles && (
-                  <SidebarMenuItem>
-                    <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.roles} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.roles)} tooltip={tNav("usersRoles")}>
-                      <ShieldCheck />
-                      <span>{tNav("usersRoles")}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                  <NavItem href={adminRoutes.roles} icon={ShieldCheck} label={tNav("usersRoles")} />
                 )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         )}
+
       </SidebarContent>
 
-      <SidebarFooter>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.profile} />} isActive={pathname.startsWith(adminRoutes.profile)} tooltip={tNav("profile")}>
-              <User />
-              <span>{tNav("profile")}</span>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
+      {/* Footer — Dunas Travel Suite Info Box & Profile */}
+      <SidebarFooter className="border-t border-border p-3 bg-card">
+        <SidebarMenu className="space-y-1 mb-2">
+          {/* Profile */}
+          <NavItem href={adminRoutes.profile} icon={User} label={tNav("profile")} badge="Admin" />
+
+          {/* Settings */}
           {isAdmin && (
-            <SidebarMenuItem>
-              <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.settings} />} isActive={pathname.startsWith(adminRoutes.settings)} tooltip={tNav("settings")}>
-                <Settings />
-                <span>{tNav("settings")}</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
+            <NavItem href={adminRoutes.settings} icon={Settings} label={tNav("settings")} />
           )}
+
+          {/* Logout */}
           <SidebarMenuItem>
-            <SidebarMenuButton onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-              <LogOut />
+            <SidebarMenuButton
+              onClick={handleLogout}
+              tooltip={tNav("logOut")}
+              className="flex items-center gap-3 px-4 py-3 rounded-xl font-bold text-[13px] transition-all duration-200 w-full text-red-500 dark:text-red-400 hover:text-red-600 hover:bg-red-500/10 cursor-pointer"
+            >
+              <LogOut size={19} className="text-red-500 dark:text-red-400 shrink-0" />
               <span>{tNav("logOut")}</span>
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
+
+        {/* Dunas Travel Suite Info Box */}
+        <div className="p-3.5 bg-muted/70 border border-border rounded-2xl space-y-1.5">
+          <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400">
+            <Sparkles size={16} />
+            <span className="text-xs font-extrabold">Dunas Travel Suite 👑</span>
+          </div>
+          <p className="text-[11px] font-semibold text-muted-foreground leading-relaxed">
+            Attia Yamany • المدير العام
+          </p>
+        </div>
       </SidebarFooter>
     </Sidebar>
   );
-}
+});

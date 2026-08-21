@@ -29,6 +29,7 @@ export function getTourTitle(tour: Tour, lang: string = "en"): string {
 export function getColumns(
   onView: (tour: Tour) => void,
   onEdit: (tour: Tour) => void,
+  onMove: (tour: Tour) => void,
   onDelete: (tour: Tour) => void,
   tTours: (key: string) => string,
   tCommon: (key: string) => string,
@@ -42,7 +43,7 @@ export function getColumns(
           checked={table.getIsAllPageRowsSelected()}
           onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
           aria-label="Select all"
-          className="translate-y-[2px]"
+          className="translate-y-0.5"
         />
       ),
       cell: ({ row }) => (
@@ -50,7 +51,7 @@ export function getColumns(
           checked={row.getIsSelected()}
           onCheckedChange={(value) => row.toggleSelected(!!value)}
           aria-label="Select row"
-          className="translate-y-[2px]"
+          className="translate-y-0.5"
         />
       ),
       enableSorting: false,
@@ -65,8 +66,8 @@ export function getColumns(
         const heroImg = tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
 
         return (
-          <div className="flex items-center gap-3 min-w-[280px] max-w-[380px]">
-            <div className="relative h-12 w-16 rounded-lg overflow-hidden bg-muted border flex-shrink-0">
+          <div className="flex items-center gap-3 min-w-70 max-w-95">
+            <div className="relative h-12 w-16 rounded-lg overflow-hidden bg-muted border shrink-0">
               {heroImg ? (
                 <img
                   src={heroImg}
@@ -86,7 +87,7 @@ export function getColumns(
               <div className="flex items-center gap-1.5 font-medium text-foreground truncate text-sm">
                 <span className="truncate">{title}</span>
                 {tour.isFeatured && (
-                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500 flex-shrink-0" />
+                  <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-500 shrink-0" />
                 )}
               </div>
               <span className="text-xs font-mono text-muted-foreground truncate dir-ltr text-start">{tour.slug}</span>
@@ -101,7 +102,7 @@ export function getColumns(
       cell: ({ row }) => {
         const tour = row.original;
         return (
-          <div className="flex flex-col gap-1 min-w-[140px]">
+          <div className="flex flex-col gap-1 min-w-35">
             <Badge variant="outline" className="w-fit text-[10px] uppercase font-bold tracking-wider py-0 px-2">
               {tour.category || "General"}
             </Badge>
@@ -164,6 +165,7 @@ export function getColumns(
             tour={row.original}
             onView={onView}
             onEdit={onEdit}
+            onMove={onMove}
             onDelete={onDelete}
           />
         );

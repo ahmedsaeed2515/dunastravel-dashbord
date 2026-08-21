@@ -14,6 +14,9 @@ import { getColumns } from "./columns";
 import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
 import { EditTourDrawer } from "../Drawers/EditTourDrawer";
+import { MoveTourDialog } from "../Drawers/MoveTourDialog";
+import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
+import { EgyptInterfaceDrawer } from "../Drawers/EgyptInterfaceDrawer";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
@@ -39,7 +42,9 @@ import {
   Filter,
   X,
   RotateCcw,
-  Globe
+  Globe,
+  ArrowRightLeft,
+  Folder
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -70,6 +75,9 @@ export function ToursTable() {
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
   const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
+
+  // Egypt Interface Drawer state
+  const [isEgyptDrawerOpen, setIsEgyptDrawerOpen] = useState(false);
   
   const queryFilters = {
     page: pagination.pageIndex + 1,
@@ -101,10 +109,16 @@ export function ToursTable() {
   const bulkUpdate = useBulkUpdateTours();
   const [isExporting, setIsExporting] = useState(false);
 
-  // Drawer states
+  // Drawer & Modal states
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
+  
+  // Single & Bulk Move state
+  const [tourToMove, setTourToMove] = useState<Tour | null>(null);
+  const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
+  const [bulkMoveSlugs, setBulkMoveSlugs] = useState<string[]>([]);
+  const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
 
   // Handlers
   const handleView = (tour: Tour) => {
@@ -115,6 +129,16 @@ export function ToursTable() {
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
     setEditDrawerOpen(true); 
+  };
+
+  const handleMove = (tour: Tour) => {
+    setTourToMove(tour);
+    setIsMoveDialogOpen(true);
+  };
+
+  const handleOpenBulkMove = (slugs: string[]) => {
+    setBulkMoveSlugs(slugs);
+    setIsBulkMoveOpen(true);
   };
 
   const handleDelete = async (tour: Tour) => {
@@ -144,7 +168,7 @@ export function ToursTable() {
     }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete, tTours, tCommon, currentLocale);
+  const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
   const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
   const totalCount: number = (data as any)?.meta?.total ?? (data as any)?.total ?? (Array.isArray(data) ? data.length : (data?.data?.length || 0));
   const overallTotal: number = stats?.totalTours ? Number(stats.totalTours) : totalCount;
@@ -174,7 +198,13 @@ export function ToursTable() {
               <CheckSquare className="h-4 w-4 text-primary" />
               <span>{tCommon("actions")} ({slugs.length})</span>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
+            <DropdownMenuContent align="start" className="w-52">
+              <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
+              <DropdownMenuItem onClick={() => handleOpenBulkMove(slugs)} className="font-semibold text-primary focus:text-primary">
+                <ArrowRightLeft className="h-4 w-4 mr-2 text-primary" />
+                {currentLocale === "ar" ? "نقل الرحلات المحددة" : "Move Selected Tours"}
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
               <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkStatus("PUBLISHED")}>
                 {tStatus("PUBLISHED")}
@@ -314,13 +344,49 @@ export function ToursTable() {
         </div>
       </div>
 
+      {/* 🇪🇬 Egypt Interface Folders Banner - ONLY shown when Destination is Egypt */}
+      {selectedDestination === "Egypt" && (
+        <div className="bg-linear-to-r from-amber-500/10 via-primary/10 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <div className="p-3 bg-amber-500/20 text-amber-600 rounded-xl shrink-0 text-2xl border border-amber-500/30">
+              🇪🇬
+            </div>
+            <div>
+              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
+                <span>{currentLocale === "ar" ? "واجهة مصر - ملفات الرحلات والباكدجز (Egypt Interface)" : "Egypt Interface & Folder Collections"}</span>
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-bold">
+                  {currentLocale === "ar" ? "منظمة في ملفين" : "2 Folders Structured"}
+                </Badge>
+              </h3>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {currentLocale === "ar"
+                  ? "الملف الأول: الرحلات العادية (9 رحلات) | الملف الثاني: الباكدجز والبرامج (5 باكدجز)."
+                  : "Folder 1: Standard Tours (9 tours) | Folder 2: Packages & Programs (5 packages)."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              type="button"
+              variant="default"
+              onClick={() => setIsEgyptDrawerOpen(true)}
+              className="h-10 px-4 gap-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+            >
+              <Folder className="w-4 h-4" />
+              <span>{currentLocale === "ar" ? "استعراض ملفات واجهة مصر (الملفين)" : "Open Egypt Interface Folders"}</span>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Advanced Filter & Toolbar Controls */}
       <div className="bg-card border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
           {/* Left Controls: Search & Dropdowns */}
           <div className="flex flex-wrap items-center gap-2.5 flex-1">
             {/* Search Input */}
-            <div className="relative min-w-[220px] sm:w-[260px]">
+            <div className="relative min-w-55 sm:w-65">
               <Input 
                 aria-label={tCommon("search")}
                 placeholder={`${tCommon("search")} ${tTours("title")}...`} 
@@ -341,7 +407,7 @@ export function ToursTable() {
 
             {/* Destination / Country Filter */}
             <Select value={selectedDestination} onValueChange={(val: any) => setSelectedDestination(val || "ALL")}>
-              <SelectTrigger className="h-9 w-[170px] text-xs font-medium">
+              <SelectTrigger className="h-9 w-42.5 text-xs font-medium">
                 <div className="flex items-center gap-1.5 truncate">
                   <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
                   <SelectValue placeholder="Destination" />
@@ -362,7 +428,7 @@ export function ToursTable() {
 
             {/* Market / Category Filter */}
             <Select value={selectedMarket} onValueChange={(val: any) => setSelectedMarket(val || "ALL")}>
-              <SelectTrigger className="h-9 w-[150px] text-xs font-medium">
+              <SelectTrigger className="h-9 w-37.5 text-xs font-medium">
                 <div className="flex items-center gap-1.5 truncate">
                   <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
                   <SelectValue placeholder="Market" />
@@ -410,7 +476,7 @@ export function ToursTable() {
         {/* Results Counter & Active Filter Badges */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60 text-xs">
           <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="font-semibold text-foreground flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
+            <span className="font-semibold flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
               <Filter className="h-3.5 w-3.5" />
               <span>{isLoading ? "Loading..." : `${totalCount} ${totalCount === 1 ? "Tour" : "Tours"} Found (${totalCount} رحلة)`}</span>
             </span>
@@ -456,6 +522,7 @@ export function ToursTable() {
           tours={toursList}
           onView={handleView}
           onEdit={handleEdit}
+          onMove={handleMove}
           onDelete={handleDelete}
         />
       ) : (
@@ -463,7 +530,7 @@ export function ToursTable() {
           columns={columns}
           data={toursList}
           isLoading={isLoading}
-          renderToolbarActions={() => null}
+          renderToolbarActions={renderToolbarActions}
           pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
           pagination={pagination}
           onPaginationChange={setPagination}
@@ -482,6 +549,23 @@ export function ToursTable() {
         tour={selectedTour}
         open={isEditDrawerOpen}
         onOpenChange={setEditDrawerOpen}
+      />
+
+      <MoveTourDialog
+        tour={tourToMove}
+        open={isMoveDialogOpen}
+        onOpenChange={setIsMoveDialogOpen}
+      />
+
+      <BulkMoveToursDialog
+        slugs={bulkMoveSlugs}
+        open={isBulkMoveOpen}
+        onOpenChange={setIsBulkMoveOpen}
+      />
+
+      <EgyptInterfaceDrawer
+        open={isEgyptDrawerOpen}
+        onOpenChange={setIsEgyptDrawerOpen}
       />
     </div>
   );
