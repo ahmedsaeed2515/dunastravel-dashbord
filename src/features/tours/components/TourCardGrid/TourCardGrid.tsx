@@ -4,7 +4,7 @@ import { Tour } from "../../types";
 import { getTourTitle } from "../ToursTable/columns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, Users, Eye, Edit3, MoreVertical, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Star, MapPin, Users, Eye, Edit3, MoreVertical, Sparkles, Image as ImageIcon, ArrowRightLeft } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,16 +20,18 @@ interface TourCardGridProps {
   tours: Tour[];
   onView: (tour: Tour) => void;
   onEdit: (tour: Tour) => void;
+  onMove?: (tour: Tour) => void;
   onDelete: (tour: Tour) => void;
 }
 
-export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridProps) {
+export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCardGridProps) {
   const bulkUpdate = useBulkUpdateTours();
   const tTours = useTranslations("tours");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
   const tDashboard = useTranslations("dashboard");
   const currentLocale = useLocale();
+  const isAr = currentLocale === "ar";
 
   const handleTogglePublish = async (tour: Tour) => {
     const nextStatus = tour.status === "PUBLISHED" ? "DRAFT" : "PUBLISHED";
@@ -86,7 +88,7 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                 </div>
               )}
               
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/20" />
 
               {/* Status & Featured Badges */}
               <div className="absolute top-3 left-3 flex items-center gap-2">
@@ -183,8 +185,14 @@ export function TourCardGrid({ tours, onView, onEdit, onDelete }: TourCardGridPr
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-48">
+                  <DropdownMenuContent align="end" className="w-52">
                     <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
+                    {onMove && (
+                      <DropdownMenuItem onClick={() => onMove(tour)} className="font-bold text-primary focus:text-primary">
+                        <ArrowRightLeft className="h-4 w-4 mr-2 text-primary" />
+                        {isAr ? "نقل الرحلة (Move)" : "Move Tour"}
+                      </DropdownMenuItem>
+                    )}
                     <DropdownMenuItem onClick={() => handleTogglePublish(tour)}>
                       {tour.status === "PUBLISHED" ? tStatus("DRAFT") : tStatus("PUBLISHED")}
                     </DropdownMenuItem>

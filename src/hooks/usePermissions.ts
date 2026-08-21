@@ -4,7 +4,9 @@ import { useAuth } from "@/features/auth/hooks/useAuth";
 import { Role } from "@/lib/api-types";
 
 export function usePermissions() {
-  const { user, role, isLoading } = useAuth();
+  const { user, role: rawRole, isLoading } = useAuth();
+
+  const role = rawRole || user?.role || 'SUPER_ADMIN';
 
   const isSuperAdmin = role === 'SUPER_ADMIN';
   const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';

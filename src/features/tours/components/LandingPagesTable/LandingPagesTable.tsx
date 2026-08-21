@@ -4,12 +4,13 @@ import { useState } from "react";
 import { TourLandingPage } from "../../api/landingPagesApi";
 import { useLandingPages, useDeleteLandingPage, usePublishLandingPage, useUnpublishLandingPage } from "../../hooks/useLandingPages";
 import { LandingPageEditorDrawer } from "../Drawers/LandingPageEditorDrawer";
+import { EgyptInterfaceDrawer } from "../Drawers/EgyptInterfaceDrawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, Plus, MoreHorizontal, Edit, Globe, CheckCircle2, AlertCircle, Trash2, Eye, ExternalLink, Package } from "lucide-react";
+import { Loader2, Search, Plus, MoreHorizontal, Edit, Globe, CheckCircle2, AlertCircle, Trash2, Eye, ExternalLink, Package, Folder } from "lucide-react";
 import { toast } from "sonner";
 
 export function LandingPagesTable() {
@@ -17,6 +18,7 @@ export function LandingPagesTable() {
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
   const [selectedPage, setSelectedPage] = useState<TourLandingPage | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
+  const [isEgyptDrawerOpen, setIsEgyptDrawerOpen] = useState(false);
 
   const { data, isLoading } = useLandingPages({
     search: search || undefined,
@@ -72,24 +74,37 @@ export function LandingPagesTable() {
           </select>
         </div>
 
-        <Button
-          onClick={() => {
-            setSelectedPage({
-              id: "",
-              slug: "new-interface-" + Date.now().toString().slice(-4),
-              type: "DESTINATION",
-              titleJsonb: { en: "New Tour Interface" },
-              status: "DRAFT",
-              isActive: true,
-              sortOrder: 0,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            } as any);
-            setIsDrawerOpen(true);
-          }}
-        >
-          <Plus className="w-4 h-4 mr-2" /> Create New Interface
-        </Button>
+        <div className="flex items-center gap-2">
+          {/* Egypt Interface Direct Folder Button */}
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setIsEgyptDrawerOpen(true)}
+            className="h-10 border-amber-500/40 bg-amber-500/10 text-amber-700 dark:text-amber-400 hover:bg-amber-500/20 font-bold gap-2 text-xs"
+          >
+            <span>🇪🇬</span>
+            <span>واجهة مصر (الملفات والباكدجز)</span>
+          </Button>
+
+          <Button
+            onClick={() => {
+              setSelectedPage({
+                id: "",
+                slug: "new-interface-" + Date.now().toString().slice(-4),
+                type: "DESTINATION",
+                titleJsonb: { en: "New Tour Interface" },
+                status: "DRAFT",
+                isActive: true,
+                sortOrder: 0,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
+              } as any);
+              setIsDrawerOpen(true);
+            }}
+          >
+            <Plus className="w-4 h-4 mr-2" /> Create New Interface
+          </Button>
+        </div>
       </div>
 
       {/* Table */}
@@ -97,7 +112,7 @@ export function LandingPagesTable() {
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
-              <TableHead className="w-[60px]">Cover</TableHead>
+              <TableHead className="w-15">Cover</TableHead>
               <TableHead>Interface Title & Slug</TableHead>
               <TableHead>Type</TableHead>
               <TableHead>Status</TableHead>
@@ -124,6 +139,7 @@ export function LandingPagesTable() {
                 const comp = item.translationCompletion || {};
                 const enTitle = item.titleJsonb?.en || item.slug;
                 const arTitle = item.titleJsonb?.ar;
+                const isEgypt = item.slug.toLowerCase().includes("egypt");
 
                 return (
                   <TableRow key={item.id} className="hover:bg-muted/30">
@@ -205,6 +221,11 @@ export function LandingPagesTable() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuLabel>Interface Actions</DropdownMenuLabel>
+                          {isEgypt && (
+                            <DropdownMenuItem onClick={() => setIsEgyptDrawerOpen(true)} className="font-bold text-amber-600">
+                              <Folder className="w-4 h-4 mr-2" /> فتح ملفات واجهة مصر
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem onClick={() => handleEdit(item)}>
                             <Edit className="w-4 h-4 mr-2" /> Full Edit & Manage Tours
                           </DropdownMenuItem>
@@ -240,6 +261,12 @@ export function LandingPagesTable() {
         landingPage={selectedPage}
         open={isDrawerOpen}
         onOpenChange={setIsDrawerOpen}
+      />
+
+      {/* Egypt Interface Folders Drawer */}
+      <EgyptInterfaceDrawer
+        open={isEgyptDrawerOpen}
+        onOpenChange={setIsEgyptDrawerOpen}
       />
     </div>
   );

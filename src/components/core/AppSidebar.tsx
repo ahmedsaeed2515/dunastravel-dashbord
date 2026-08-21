@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo } from "react";
 import { usePathname } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
 import { useTranslations } from "next-intl";
@@ -35,12 +36,14 @@ import {
   Bell,
   BellRing,
   ClipboardList,
-  Tag
+  Tag,
+  Compass,
+  Hotel
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
 
-export function AppSidebar() {
+export const AppSidebar = memo(function AppSidebar() {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
   const tCommon = useTranslations("common");
@@ -70,20 +73,9 @@ export function AppSidebar() {
 
   return (
     <Sidebar variant="inset" collapsible="icon" className="border-e border-border/70 bg-sidebar shadow-xs">
-      <SidebarHeader className="flex items-center justify-between px-4 py-4 h-16 border-b border-border/60">
-        <div className="flex items-center gap-3 group-data-[collapsible=icon]:hidden transition-all duration-300">
-          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-9 w-auto object-contain shrink-0" />
-          <div className="flex flex-col">
-            <span className="font-bold tracking-tight text-sm text-foreground font-heading">
-              {tCommon("appName")}
-            </span>
-            <span className="text-[10px] text-muted-foreground uppercase tracking-widest font-semibold">
-              {tCommon("adminSuite")}
-            </span>
-          </div>
-        </div>
-        <div className="hidden group-data-[collapsible=icon]:flex items-center justify-center">
-          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-8 w-auto object-contain shrink-0" />
+      <SidebarHeader className="flex items-center justify-center px-4 py-3 h-20 border-b border-border/60">
+        <div className="flex items-center justify-center w-full transition-all duration-300">
+          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-12 max-h-14 w-auto object-contain shrink-0 filter drop-shadow-xs" />
         </div>
       </SidebarHeader>
 
@@ -120,9 +112,21 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.destinations} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.destinations)} tooltip="Destinations">
+                    <Compass className="w-4 h-4 text-amber-500" />
+                    <span>{pathname.includes("/ar") ? "الواجهات السياحية الـ 8" : "Destinations (8)"}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
                   <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.tours} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.tours)} tooltip={tNav("tours")}>
                     <Map />
                     <span>{tNav("tours")}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.hotels} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.hotels)} tooltip="Hotels">
+                    <Hotel className="w-4 h-4 text-emerald-500" />
+                    <span>{pathname.includes("/ar") ? "إدارة الفنادق" : "Hotels Manager"}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
@@ -331,4 +335,4 @@ export function AppSidebar() {
       </SidebarFooter>
     </Sidebar>
   );
-}
+});

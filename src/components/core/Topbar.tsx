@@ -1,5 +1,6 @@
 "use client";
 
+import React, { memo } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Search, Bell, Globe, Moon, Sun, Check } from "lucide-react";
 import { useTheme } from "next-themes";
@@ -29,7 +30,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { DropdownMenuSeparator, DropdownMenuLabel } from "@/components/ui/dropdown-menu";
 import { User, Settings, LogOut } from "lucide-react";
 
-export function Topbar() {
+export const Topbar = memo(function Topbar() {
   const { setTheme, theme } = useTheme();
   const { user, logout } = useAuth();
   const pathname = usePathname();
@@ -69,7 +70,7 @@ export function Topbar() {
 
         {/* Mobile Brand Logo */}
         <Link href={pathname} className="sm:hidden flex items-center gap-2 font-bold text-xs">
-          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-7 w-auto object-contain shrink-0" />
+          <img src="/dunas-travel-logo.png" alt="Dunas Travel" className="h-9 w-auto object-contain shrink-0" />
         </Link>
 
         {/* Desktop Global Search Trigger (Cmd+K) */}
@@ -189,4 +190,4 @@ export function Topbar() {
       </div>
     </header>
   );
-}
+});
