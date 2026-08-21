@@ -124,7 +124,7 @@ export function NotificationBellDropdown() {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="relative p-2 rounded-xl bg-slate-800/80 hover:bg-slate-800 text-slate-300 hover:text-white transition-colors border-0"
+          className="relative p-2 rounded-xl bg-white dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700/60 cursor-pointer shadow-2xs"
           title="Notifications / الإشعارات"
           aria-label="Notifications"
         >

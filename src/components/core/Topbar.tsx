@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, Languages, Moon, Sun } from "lucide-react";
+import { Search, Languages, Moon, Sun, Crown } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useParams, useSearchParams } from "next/navigation";
@@ -71,21 +71,9 @@ export const Topbar = memo(function Topbar() {
     <header
       className="h-16 border-b border-border px-3 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card transition-colors duration-200"
     >
-      {/* Left: Sidebar Trigger + Logo */}
+      {/* Left: Sidebar Trigger */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
         <SidebarTrigger className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700/60" />
-
-        {/* Logo + Admin Suite Badge */}
-        <Link href={pathname} className="flex items-center gap-2 sm:gap-3 shrink-0">
-          <img
-            src="/dunas-travel-logo.png"
-            alt="Dunas Travel"
-            className="h-8 sm:h-10 w-auto object-contain hover:scale-105 transition-transform"
-          />
-          <span className="hidden md:inline-block px-2.5 py-0.5 text-xs font-semibold rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-            Admin Suite
-          </span>
-        </Link>
       </div>
 
       {/* Right: Controls */}

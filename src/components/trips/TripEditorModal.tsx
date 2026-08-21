@@ -30,6 +30,9 @@ import {
   XCircle,
   Star,
   Flame,
+  Check,
+  MapPin,
+  ListOrdered
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -147,10 +150,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
     if (trip) {
       updateTrip(payload);
-      toast.success('تم تحديث الرحلة بنجاح!');
+      toast.success('تم تحديث الرحلة والترجمات بنجاح!');
     } else {
       addTrip(payload);
-      toast.success('تمت إضافة الرحلة الجديدة بنجاح!');
+      toast.success('تمت إضافة الرحلة والترجمات بنجاح!');
     }
     onClose();
   };
@@ -185,7 +188,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const removeItineraryDay = (index: number) => {
     const days = [...(formData.itinerary || [])];
     days.splice(index, 1);
-    // reindex days
     const reindexed = days.map((d, i) => ({ ...d, day: i + 1 }));
     handleChange('itinerary', reindexed);
   };
@@ -222,52 +224,90 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     handleChange('translations', trans);
   };
 
+  // Array translation helper for highlights, included, excluded
+  const handleTranslationArrayChange = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded', index: number, val: string) => {
+    const trans = { ...(formData.translations || {}) };
+    if (!trans[lang]) trans[lang] = {};
+    const arr = [...(trans[lang]?.[field] || [])];
+    arr[index] = val;
+    trans[lang] = { ...trans[lang], [field]: arr };
+    handleChange('translations', trans);
+  };
+
+  const addTranslationArrayItem = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded') => {
+    const trans = { ...(formData.translations || {}) };
+    if (!trans[lang]) trans[lang] = {};
+    const arr = [...(trans[lang]?.[field] || []), ''];
+    trans[lang] = { ...trans[lang], [field]: arr };
+    handleChange('translations', trans);
+  };
+
+  const removeTranslationArrayItem = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded', index: number) => {
+    const trans = { ...(formData.translations || {}) };
+    if (!trans[lang]) trans[lang] = {};
+    const arr = [...(trans[lang]?.[field] || [])];
+    arr.splice(index, 1);
+    trans[lang] = { ...trans[lang], [field]: arr };
+    handleChange('translations', trans);
+  };
+
+  // Itinerary translation helper
+  const handleTranslationItineraryChange = (lang: LanguageCode, dayIndex: number, field: 'title' | 'description' | 'meals', val: string) => {
+    const trans = { ...(formData.translations || {}) };
+    if (!trans[lang]) trans[lang] = {};
+    const itin = [...(trans[lang]?.itinerary || [])];
+    if (!itin[dayIndex]) itin[dayIndex] = { day: dayIndex + 1, title: '', description: '', meals: '' };
+    itin[dayIndex] = { ...itin[dayIndex], [field]: val };
+    trans[lang] = { ...trans[lang], itinerary: itin };
+    handleChange('translations', trans);
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-card border border-border/80 rounded-3xl shadow-2xl p-0 overflow-hidden">
-        {/* Header */}
-        <DialogHeader className="p-6 border-b border-border/60 bg-muted/20">
+        {/* Fixed Header */}
+        <DialogHeader className="p-5 border-b border-border/60 bg-muted/20 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              <Sparkles className="w-6 h-6" />
+            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+              <Sparkles className="w-5 h-5" />
             </div>
             <div>
-              <DialogTitle className="text-xl font-bold font-heading text-foreground">
-                {trip ? 'تعديل الرحلة السياحية (Edit Trip)' : 'إضافة رحلة جديدة (Add New Trip)'}
+              <DialogTitle className="text-lg font-extrabold font-heading text-foreground">
+                {trip ? 'تعديل الرحلة والترجمات الـ 5 (Edit Trip & 5-Lang Translations)' : 'إضافة رحلة جديدة (Add New Trip)'}
               </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground">
-                تحرير كامل الخصائص الفنية، الأيام، الفنادق والترجمات للغات الـ 5.
+              <DialogDescription className="text-xs text-muted-foreground font-medium mt-0.5">
+                تحرير كامل الخصائص الفنية، الأيام، الفنادق والترجمات باللغات الخمس (Key Highlights, Itinerary, What's Included & Excluded).
               </DialogDescription>
             </div>
           </div>
         </DialogHeader>
 
-        {/* 6 Tabs Container */}
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
-          <div className="border-b border-border/60 bg-muted/40 px-6 pt-2 overflow-x-auto">
-            <TabsList className="bg-transparent h-12 gap-1 p-0">
-              <TabsTrigger value="basic" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
+        {/* 6 Tabs Container with Fixed Top Tabs Bar */}
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="border-b border-border/60 bg-muted/40 px-6 pt-2 overflow-x-auto shrink-0 z-20">
+            <TabsList className="bg-transparent h-11 gap-1 p-0">
+              <TabsTrigger value="basic" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <DollarSign className="w-3.5 h-3.5 me-1.5" /> 1. الأساسية والتسعير
               </TabsTrigger>
-              <TabsTrigger value="overview" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
+              <TabsTrigger value="overview" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <Hotel className="w-3.5 h-3.5 me-1.5" /> 2. الوصف والإقامة
               </TabsTrigger>
-              <TabsTrigger value="itinerary" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
+              <TabsTrigger value="itinerary" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <Calendar className="w-3.5 h-3.5 me-1.5" /> 3. البرنامج اليومي
               </TabsTrigger>
-              <TabsTrigger value="inclusions" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
+              <TabsTrigger value="inclusions" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <CheckCircle2 className="w-3.5 h-3.5 me-1.5" /> 4. المشتملات والمميزات
               </TabsTrigger>
-              <TabsTrigger value="gallery" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
+              <TabsTrigger value="gallery" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <ImageIcon className="w-3.5 h-3.5 me-1.5" /> 5. معرض الصور
               </TabsTrigger>
-              <TabsTrigger value="translations" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs">
-                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 6. الترجمات الـ 5
+              <TabsTrigger value="translations" className="rounded-xl px-3.5 py-2 text-xs font-black data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-xs cursor-pointer">
+                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 6. الترجمات 🌐
               </TabsTrigger>
             </TabsList>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
             {/* TAB 1: BASIC & PRICING */}
             <TabsContent value="basic" className="space-y-5 m-0">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -637,68 +677,230 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               </div>
             </TabsContent>
 
-            {/* TAB 6: 5-LANGUAGE TRANSLATIONS */}
-            <TabsContent value="translations" className="space-y-4 m-0">
-              <div className="flex items-center justify-between border-b border-border/60 pb-3">
-                <div>
-                  <span className="text-xs font-bold text-foreground block">محرر الترجمات الـ 5 للرحلة (Multi-Language Translator)</span>
-                  <span className="text-[11px] text-muted-foreground">قم بترجمة عنوان ووصف وبرنامج الرحلة لكل لغة على حدة.</span>
-                </div>
-                <div className="flex items-center gap-1 bg-muted p-1 rounded-xl">
-                  {LANGUAGES.map(l => (
-                    <button
-                      key={l.code}
-                      type="button"
-                      onClick={() => setTranslationLang(l.code)}
-                      className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
-                        translationLang === l.code
-                          ? 'bg-amber-500 text-slate-950 shadow-xs'
-                          : 'text-muted-foreground hover:text-foreground'
-                      }`}
-                    >
-                      {l.flag} {l.code.toUpperCase()}
-                    </button>
-                  ))}
-                </div>
+            {/* TAB 6: 5-LANGUAGE TRANSLATIONS (Key Highlights, Itinerary, What's Included & Excluded) */}
+            <TabsContent value="translations" className="space-y-6 m-0">
+              {/* Minimal 5-Language Switcher Bar */}
+              <div className="flex items-center justify-start gap-1.5 overflow-x-auto pb-2 border-b border-border/60">
+                {LANGUAGES.map(l => (
+                  <button
+                    key={l.code}
+                    type="button"
+                    onClick={() => setTranslationLang(l.code)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
+                      translationLang === l.code
+                        ? 'bg-amber-500 text-slate-950 shadow-xs font-black'
+                        : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
+                    }`}
+                  >
+                    {l.flag} {l.label} ({l.code.toUpperCase()})
+                  </button>
+                ))}
               </div>
 
-              {/* Translation form for active language */}
-              <div className="space-y-4 pt-2">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">
-                    العنوان المترجم ({translationLang.toUpperCase()})
-                  </label>
-                  <Input
-                    value={formData.translations?.[translationLang]?.title || ''}
-                    onChange={e => handleTranslationChange(translationLang, 'title', e.target.value)}
-                    placeholder={`Title in ${translationLang}...`}
-                    className="rounded-xl text-xs"
-                  />
+              {/* 1. Basic Info Translation Section */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                  <Sparkles className="w-4 h-4" />
+                  1. ترجمة البيانات والوصف العام ({translationLang.toUpperCase()})
+                </span>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">العنوان المترجم ({translationLang.toUpperCase()})</label>
+                    <Input
+                      value={formData.translations?.[translationLang]?.title || ''}
+                      onChange={e => handleTranslationChange(translationLang, 'title', e.target.value)}
+                      placeholder={`Title in ${translationLang.toUpperCase()}...`}
+                      className="rounded-xl text-xs font-semibold"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">العنوان الفرعي المترجم ({translationLang.toUpperCase()})</label>
+                    <Input
+                      value={formData.translations?.[translationLang]?.subtitle || ''}
+                      onChange={e => handleTranslationChange(translationLang, 'subtitle', e.target.value)}
+                      placeholder={`Subtitle in ${translationLang.toUpperCase()}...`}
+                      className="rounded-xl text-xs font-semibold"
+                    />
+                  </div>
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">
-                    العنوان الفرعي المترجم ({translationLang.toUpperCase()})
-                  </label>
-                  <Input
-                    value={formData.translations?.[translationLang]?.subtitle || ''}
-                    onChange={e => handleTranslationChange(translationLang, 'subtitle', e.target.value)}
-                    placeholder={`Subtitle in ${translationLang}...`}
-                    className="rounded-xl text-xs"
-                  />
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">
-                    الوصف المترجم ({translationLang.toUpperCase()})
-                  </label>
+                  <label className="text-xs font-bold text-foreground">الوصف التفصيلي المترجم ({translationLang.toUpperCase()})</label>
                   <Textarea
                     value={formData.translations?.[translationLang]?.overview || ''}
                     onChange={e => handleTranslationChange(translationLang, 'overview', e.target.value)}
                     rows={3}
-                    placeholder={`Overview in ${translationLang}...`}
+                    placeholder={`Overview & Description in ${translationLang.toUpperCase()}...`}
                     className="rounded-xl text-xs"
                   />
+                </div>
+              </div>
+
+              {/* 2. Key Highlights Translation Section */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <Star className="w-4 h-4 fill-amber-500" />
+                    2. ترجمة مميزات ومحطات الرحلة (Key Highlights in {translationLang.toUpperCase()})
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => addTranslationArrayItem(translationLang, 'highlights')}
+                    className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة ميزة مترجمة
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {(formData.translations?.[translationLang]?.highlights || ['']).map((hl, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={hl}
+                        onChange={e => handleTranslationArrayChange(translationLang, 'highlights', idx, e.target.value)}
+                        placeholder={`Highlight #${idx + 1} in ${translationLang.toUpperCase()}...`}
+                        className="rounded-xl text-xs font-semibold"
+                      />
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => removeTranslationArrayItem(translationLang, 'highlights', idx)}
+                        className="text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* 3. Itinerary Day-by-Day Translation Section */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <ListOrdered className="w-4 h-4" />
+                    3. ترجمة جدول برنامج الرحلة اليومي (Day-by-Day Itinerary in {translationLang.toUpperCase()})
+                  </span>
+                  <span className="text-[11px] font-bold text-muted-foreground">
+                    ({(formData.itinerary || []).length} أيام محددة)
+                  </span>
+                </div>
+
+                <div className="space-y-3">
+                  {(formData.itinerary || []).map((day, idx) => {
+                    const itinTrans = (formData.translations?.[translationLang]?.itinerary?.[idx] || {}) as Record<string, string>;
+                    return (
+                      <div key={idx} className="p-3.5 rounded-xl bg-muted/30 border border-border/60 space-y-2.5">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex items-center gap-2 flex-1">
+                            <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
+                              {day.day}
+                            </span>
+                            <Input
+                              value={itinTrans.title || ''}
+                              onChange={e => handleTranslationItineraryChange(translationLang, idx, 'title', e.target.value)}
+                              placeholder={`Day ${day.day} Title in ${translationLang.toUpperCase()} (e.g. ${day.title})...`}
+                              className="rounded-xl text-xs font-bold h-8"
+                            />
+                          </div>
+                          <Input
+                            value={itinTrans.meals || ''}
+                            onChange={e => handleTranslationItineraryChange(translationLang, idx, 'meals', e.target.value)}
+                            placeholder={`Meals (${translationLang.toUpperCase()})...`}
+                            className="rounded-xl text-xs h-8 w-36 shrink-0"
+                          />
+                        </div>
+                        <Textarea
+                          value={itinTrans.description || ''}
+                          onChange={e => handleTranslationItineraryChange(translationLang, idx, 'description', e.target.value)}
+                          rows={2}
+                          placeholder={`Day ${day.day} Activities & Details in ${translationLang.toUpperCase()}...`}
+                          className="rounded-xl text-xs font-medium"
+                        />
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* 4. What's Included & Excluded Translation Section */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5 border-b border-border/40 pb-2">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                  4. ترجمة المشمولات والمستثنيات (What's Included & Excluded in {translationLang.toUpperCase()})
+                </span>
+
+                {/* Included Translation */}
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-emerald-500 flex items-center gap-1">
+                      <CheckCircle2 className="w-3.5 h-3.5" /> ترجمة الخدمات المشمولة (Included in {translationLang.toUpperCase()}):
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => addTranslationArrayItem(translationLang, 'included')}
+                      className="text-xs text-emerald-500 gap-1 font-bold cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة مشمول مترجم
+                    </Button>
+                  </div>
+                  {(formData.translations?.[translationLang]?.included || ['']).map((inc, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={inc}
+                        onChange={e => handleTranslationArrayChange(translationLang, 'included', idx, e.target.value)}
+                        placeholder={`Included item #${idx + 1} in ${translationLang.toUpperCase()}...`}
+                        className="rounded-xl text-xs border-emerald-500/30 font-semibold"
+                      />
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => removeTranslationArrayItem(translationLang, 'included', idx)}
+                        className="text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+
+                {/* Excluded Translation */}
+                <div className="space-y-2 pt-2 border-t border-border/40">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-rose-500 flex items-center gap-1">
+                      <XCircle className="w-3.5 h-3.5" /> ترجمة الخدمات غير المشمولة (Excluded in {translationLang.toUpperCase()}):
+                    </label>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => addTranslationArrayItem(translationLang, 'excluded')}
+                      className="text-xs text-rose-500 gap-1 font-bold cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة مستثنى مترجم
+                    </Button>
+                  </div>
+                  {(formData.translations?.[translationLang]?.excluded || ['']).map((exc, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={exc}
+                        onChange={e => handleTranslationArrayChange(translationLang, 'excluded', idx, e.target.value)}
+                        placeholder={`Excluded item #${idx + 1} in ${translationLang.toUpperCase()}...`}
+                        className="rounded-xl text-xs border-rose-500/30 font-semibold"
+                      />
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => removeTranslationArrayItem(translationLang, 'excluded', idx)}
+                        className="text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
                 </div>
               </div>
             </TabsContent>
@@ -707,11 +909,11 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
         {/* Footer */}
         <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 flex items-center justify-between sm:justify-between">
-          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs">
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-bold">
             إلغاء
           </Button>
-          <Button onClick={handleSave} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 text-xs">
-            حفظ الرحلة الآن
+          <Button onClick={handleSave} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-6 text-xs shadow-md shadow-amber-500/20 cursor-pointer">
+            حفظ الرحلة والترجمات الـ 5 الآن 💾
           </Button>
         </DialogFooter>
       </DialogContent>
