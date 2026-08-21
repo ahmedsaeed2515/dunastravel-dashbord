@@ -116,7 +116,7 @@ export function PopularToursSection() {
                     alt={tour.title}
                     className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 opacity-90 group-hover:opacity-100"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-slate-950/80 via-transparent to-black/30" />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
                   
                   {/* Badge */}
                   <span className={`absolute top-3 right-3 text-[11px] font-black px-2.5 py-1 rounded-full shadow-md ${tour.badgeBg}`}>
@@ -155,7 +155,7 @@ export function PopularToursSection() {
               </div>
 
               {/* Price & Action Footer */}
-              <div className="p-4 pt-0 mt-2 flex items-center justify-between border-t border-border/40 pt-3">
+              <div className="px-4 py-3 mt-2 flex items-center justify-between border-t border-border/40">
                 <div>
                   <span className="text-[10px] font-bold text-muted-foreground block">{isAr ? "السعر من" : "Starting From"}</span>
                   <span className="text-lg font-black font-mono text-amber-600 dark:text-amber-400">{tour.price}</span>

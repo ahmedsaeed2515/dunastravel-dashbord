@@ -5,131 +5,795 @@ import { UploadMediaDialog } from "@/features/media/components/UploadMediaDialog
 import { useMediaAssets, useUploadMedia, useDeleteMedia } from "@/features/media/hooks/useMedia";
 import { MediaQueryFilters, UploadMediaPayload } from "@/features/media/types";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, Trash2, Image as ImageIcon, Loader2 } from "lucide-react";
-import { format } from "date-fns";
-import { PageHeader } from "@/components/shared/PageHeader";
+import { Card } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { 
+  Film, 
+  Image as ImageIcon, 
+  Video, 
+  Search, 
+  PlusCircle, 
+  Trash2, 
+  Copy, 
+  Check, 
+  Eye, 
+  RefreshCw, 
+  HardDrive, 
+  Globe2, 
+  Sparkles,
+  MapPin,
+  Play,
+  Share2,
+  Download,
+  Filter,
+  Sliders,
+  Tv,
+  Flame,
+  CheckCircle2,
+  XCircle,
+  ArrowUpDown
+} from "lucide-react";
 import { useTranslations } from "next-intl";
-import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useParams } from "next/navigation";
 
 export default function MediaPage() {
   const tMedia = useTranslations("media");
-  const tCommon = useTranslations("common");
+  const params = useParams();
+  const isAr = params?.locale === "ar";
 
   const [filters, setFilters] = useState<MediaQueryFilters>({ page: 1, limit: 20 });
+  const [activeTab, setActiveTab] = useState<"photos" | "videos" | "homepage">("photos");
+  const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
+  const [searchQuery, setSearchQuery] = useState("");
   const [isUploadOpen, setIsUploadOpen] = useState(false);
-  
-  const { data, isLoading } = useMediaAssets(filters);
+  const [uploadInitialType, setUploadInitialType] = useState<"photo" | "video">("photo");
+  const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [previewMedia, setPreviewMedia] = useState<any | null>(null);
+
+  const { data, isLoading, refetch, isRefetching } = useMediaAssets(filters);
   const { mutate: uploadMedia, isPending: isUploading } = useUploadMedia();
   const { mutate: deleteMedia, isPending: isDeleting } = useDeleteMedia();
 
-  const handleUpload = (payload: UploadMediaPayload) => {
-    uploadMedia(payload, {
-      onSuccess: () => setIsUploadOpen(false),
-    });
-  };
+  // High-Res Photos State Matching Vercel Dashboard
+  const [photoAssets, setPhotoAssets] = useState([
+    {
+      id: "ph-1",
+      title: isAr ? "كروز النيل الأقصر - مرسى الكروان" : "Luxor Nile Cruise - Al Karawan Dock",
+      category: isAr ? "الأقصر وأسوان" : "Luxor & Aswan",
+      url: "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=800&q=80",
+      resolution: "3840x2160 (4K)",
+      size: "3.4 MB",
+      badge: "VIP 👑",
+      tag: "Luxor-Nile-01",
+    },
+    {
+      id: "ph-2",
+      title: isAr ? "أهرامات الجيزة - بانوراما أبو الهول" : "Giza Pyramids Panorama & Sphinx",
+      category: isAr ? "القاهرة والأهرامات" : "Cairo & Pyramids",
+      url: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80",
+      resolution: "4096x2730 (HD)",
+      size: "4.1 MB",
+      badge: "الأكثر استخداماً ⭐",
+      tag: "Pyramids-Main",
+    },
+    {
+      id: "ph-3",
+      title: isAr ? "الغردقة - منتجع الشاطئ الذهبي والرياضات البحرية" : "Hurghada Gold Beach & Scuba Diving",
+      category: isAr ? "البحر الأحمر والغردقة" : "Hurghada & Red Sea",
+      url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      resolution: "3840x2160 (4K)",
+      size: "2.9 MB",
+      badge: "البحر الأحمر 🏖️",
+      tag: "Hurghada-Resort",
+    },
+    {
+      id: "ph-4",
+      title: isAr ? "كابادوكيا - رحلة المناطيد عند الشروق" : "Cappadocia Sunrise Balloons Tour",
+      category: isAr ? "تركيا وكابادوكيا" : "Turkey & Cappadocia",
+      url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=800&q=80",
+      resolution: "3840x2160 (4K)",
+      size: "3.8 MB",
+      badge: "عالمي 🎈",
+      tag: "Cappadocia-Balloons",
+    },
+    {
+      id: "ph-5",
+      title: isAr ? "البتراء - الخزنة الأثرية والسيق" : "Petra Al-Khazneh Treasury & Siq",
+      category: isAr ? "الأردن والبتراء" : "Jordan & Petra",
+      url: "https://images.unsplash.com/photo-1579606032821-4f67d26fb511?auto=format&fit=crop&w=800&q=80",
+      resolution: "3840x2160 (4K)",
+      size: "3.2 MB",
+      badge: "ثقافي 🏛️",
+      tag: "Jordan-Petra-01",
+    },
+    {
+      id: "ph-6",
+      title: isAr ? "معبد فيلة - أسوان عند الغروب" : "Philae Temple Aswan Sunset View",
+      category: isAr ? "الأقصر وأسوان" : "Luxor & Aswan",
+      url: "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=800&q=80",
+      resolution: "4096x2304 (4K)",
+      size: "4.5 MB",
+      badge: "تاريخي 🌅",
+      tag: "Aswan-Philae",
+    },
+  ]);
 
-  const formatDate = (dateStr?: string) => {
-    if (!dateStr) return "";
-    try {
-      const d = new Date(dateStr);
-      if (isNaN(d.getTime())) return "";
-      return format(d, "MMM d, yyyy");
-    } catch {
-      return "";
+  // Videos State Matching Vercel Dashboard
+  const [videoAssets, setVideoAssets] = useState([
+    {
+      id: "vd-1",
+      title: isAr ? "فيديو ترويجي لكروز النيل الذهبي (HD 4K)" : "Nile Cruise Promo Video (4K Ultra HD)",
+      category: isAr ? "الأقصر وأسوان" : "Luxor & Aswan",
+      url: "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=800&q=80",
+      duration: "03:45",
+      size: "148 MB",
+      badge: "فيديو ترويجي 🎥",
+      tag: "Nile-Cruise-Promo-4K",
+    },
+    {
+      id: "vd-2",
+      title: isAr ? "فيلم وثائقي قصير: سحر الأهرامات والمتحف الكبير" : "Documentary: Magic of Pyramids & Grand Museum",
+      category: isAr ? "القاهرة والأهرامات" : "Cairo & Pyramids",
+      url: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80",
+      duration: "05:12",
+      size: "210 MB",
+      badge: "وثائقي 🏛️",
+      tag: "Cairo-Pyramids-Docu",
+    },
+    {
+      id: "vd-3",
+      title: isAr ? "رحلات الغوص والاسترخاء في البحر الأحمر" : "Red Sea Diving & Coral Reefs Adventure",
+      category: isAr ? "البحر الأحمر والغردقة" : "Hurghada & Red Sea",
+      url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=800&q=80",
+      duration: "02:30",
+      size: "95 MB",
+      badge: "رياضات بحرية 🤿",
+      tag: "RedSea-Diving-4K",
+    },
+  ]);
+
+  // Homepage Hero Media Slider State
+  const [homepageSlides, setHomepageSlides] = useState([
+    {
+      id: "hp-1",
+      title: isAr ? "سحر كروز النيل في الأقصر وأسوان" : "Magical Nile Cruise Luxor & Aswan",
+      subtitle: isAr ? "استمتع بأفخم الرحلات النيلية عبر 8 واجهات سياحية باللغات الـ 5" : "Enjoy luxury Nile Cruises across 8 destinations in 5 languages",
+      url: "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=1200&q=80",
+      type: "IMAGE",
+      badge: "سلايد 1 • السلايدر الرئيسي 🌟",
+      order: 1,
+      isActive: true,
+    },
+    {
+      id: "hp-2",
+      title: isAr ? "بانوراما الأهرامات والمتحف المصري الكبير" : "Giza Pyramids & Grand Egyptian Museum",
+      subtitle: isAr ? "استكشف أقدم الحضارات البشرية مع برامجنا الفاخرة المترجمة" : "Explore ancient history with luxury translated itineraries",
+      url: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=1200&q=80",
+      type: "VIDEO_BG",
+      badge: "فيديو ترويجي 🎥",
+      order: 2,
+      isActive: true,
+    },
+    {
+      id: "hp-3",
+      title: isAr ? "شواطئ الغردقة والمنتجعات الذهبية" : "Hurghada Gold Beaches & Luxury Resorts",
+      subtitle: isAr ? "عروض الاسترخاء، والغوص في البحر الأحمر، والرياضات المائية" : "Relaxation offers, Red Sea diving & marine sports",
+      url: "https://images.unsplash.com/photo-1544551763-46a013bb70d5?auto=format&fit=crop&w=1200&q=80",
+      type: "IMAGE",
+      badge: "سلايد 3 🏖️",
+      order: 3,
+      isActive: true,
+    },
+    {
+      id: "hp-4",
+      title: isAr ? "خدمات VIP والطيران الخاص لكبار الشخصيات" : "VIP Private Jets & Executive Transfers",
+      subtitle: isAr ? "برامج خاصة ومجهزة بأعلى معايير الرفاهية والأمان" : "Executive programs tailored to highest luxury standards",
+      url: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=1200&q=80",
+      type: "IMAGE",
+      badge: "VIP 👑",
+      order: 4,
+      isActive: false,
+    },
+  ]);
+
+  const handleAddMedia = (newMedia: any) => {
+    if (newMedia.type === "video") {
+      setVideoAssets((prev) => [newMedia, ...prev]);
+      setActiveTab("videos");
+    } else {
+      setPhotoAssets((prev) => [newMedia, ...prev]);
+      setActiveTab("photos");
     }
   };
 
-  return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      <PageHeader
-        title={tMedia("title")}
-        description={tMedia("description")}
-        actions={
-          <Button onClick={() => setIsUploadOpen(true)} size="sm" variant="gold" className="gap-1.5">
-            <PlusCircle className="h-4 w-4" />
-            <span>{tMedia("uploadAsset")}</span>
-          </Button>
-        }
-      />
+  const handleCopyUrl = (id: string, url: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
-      {isLoading ? (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground gap-3">
-          <Loader2 className="h-8 w-8 animate-spin text-primary/50" />
-          <p>{tCommon("loading")}</p>
-        </div>
-      ) : (Array.isArray(data) ? data : (data?.data || [])).length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-24 text-muted-foreground bg-card rounded-xl border border-dashed border-border">
-          <ImageIcon className="h-12 w-12 mb-3 opacity-20" />
-          <h3 className="font-semibold text-foreground mb-1">{tMedia("noMedia")}</h3>
-          <p className="text-sm">{tMedia("noMediaDesc")}</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-          {(Array.isArray(data) ? data : (data?.data || [])).map((asset) => (
-            <div
-              key={asset.id}
-              className="group relative rounded-xl border border-border overflow-hidden bg-muted/40 aspect-square shadow-xs hover:border-amber-500/40 transition-all duration-200"
+  const handleOpenPhotoDialog = () => {
+    setUploadInitialType("photo");
+    setIsUploadOpen(true);
+  };
+
+  const handleOpenVideoDialog = () => {
+    setUploadInitialType("video");
+    setIsUploadOpen(true);
+  };
+
+  const toggleSlideStatus = (id: string) => {
+    setHomepageSlides((prev) =>
+      prev.map((slide) =>
+        slide.id === id ? { ...slide, isActive: !slide.isActive } : slide
+      )
+    );
+  };
+
+  return (
+    <div className="space-y-6 pb-16 animate-in fade-in duration-300">
+      {/* 1. Header Banner matching Vercel 1:1 */}
+      <div className="p-6 sm:p-8 bg-card border border-border/80 rounded-3xl shadow-sm space-y-4">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-amber-500/15 border border-amber-500/30 text-amber-500 shrink-0">
+              <Film className="w-7 h-7 text-amber-500 stroke-[2.2]" />
+            </div>
+            <div>
+              <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
+                <span>{isAr ? "مكتبة الصور والفيديوهات (Media Gallery)" : "Media Gallery Assets"}</span>
+                <Sparkles className="w-5 h-5 text-amber-500" />
+              </h1>
+              <p className="text-xs sm:text-sm text-muted-foreground font-semibold mt-0.5">
+                {isAr
+                  ? "إدارة كاملة لمعرض الصور والفيديوهات وميديا الصفحة الرئيسية باللغات الـ 5."
+                  : "Full management of photos, videos & homepage media gallery in 5 languages."}
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
+            <Button
+              onClick={handleOpenPhotoDialog}
+              variant="gold"
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold shadow-md shadow-amber-500/20 text-xs px-4 py-2 rounded-xl gap-2 cursor-pointer"
             >
-              { }
-              <img 
-                src={asset.url} 
-                alt={asset.altText || "Media asset"} 
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              <div className="absolute inset-0 bg-slate-950/70 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex flex-col justify-between p-3">
-                <div className="flex justify-between items-start">
-                  <StatusBadge status={asset.entityType || "GENERAL"} />
-                  <Button 
-                    variant="ghost" 
-                    size="icon-xs" 
-                    className="text-white hover:bg-destructive hover:text-white"
-                    onClick={() => {
-                      if (confirm(`${tCommon("confirm")} ${tCommon("delete")}?`)) {
-                        deleteMedia(asset.id);
-                      }
-                    }}
-                    disabled={isDeleting}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
+              <PlusCircle className="w-4 h-4" />
+              <span>{isAr ? "إضافة صورة جديدة 📸" : "Add New Photo 📸"}</span>
+            </Button>
+
+            <Button
+              onClick={handleOpenVideoDialog}
+              variant="outline"
+              className="bg-slate-900/80 dark:bg-slate-800 text-white border-slate-700 text-xs px-4 py-2 rounded-xl gap-2 cursor-pointer hover:bg-slate-800"
+            >
+              <Video className="w-4 h-4 text-amber-400" />
+              <span>{isAr ? "إضافة فيديو جديد 🎥" : "Add New Video 🎥"}</span>
+            </Button>
+
+            <Button
+              onClick={() => refetch()}
+              variant="ghost"
+              size="icon"
+              disabled={isRefetching}
+              className="rounded-xl border border-border text-muted-foreground hover:text-foreground"
+              title={isAr ? "تحديث المكتبة" : "Refresh Gallery"}
+            >
+              <RefreshCw className={`w-4 h-4 ${isRefetching ? "animate-spin" : ""}`} />
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* 2. Top 4 Metric Cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {/* Card 1: Total Photos */}
+        <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              {isAr ? "إجمالي الصور بالمكتبة" : "Total Photos"}
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
+              184 <span className="text-xs font-bold text-amber-500">صورة 📸</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+            <ImageIcon className="w-6 h-6 stroke-[2.2]" />
+          </div>
+        </Card>
+
+        {/* Card 2: Total Videos */}
+        <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              {isAr ? "مقاطع الفيديو المرفقة" : "Attached Videos"}
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
+              42 <span className="text-xs font-bold text-sky-500">فيديو 🎥</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-500">
+            <Video className="w-6 h-6 stroke-[2.2]" />
+          </div>
+        </Card>
+
+        {/* Card 3: Homepage Active Slides */}
+        <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              {isAr ? "سلايدر الصفحة الرئيسية" : "Homepage Active Hero"}
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
+              {homepageSlides.filter(s => s.isActive).length} <span className="text-xs font-bold text-emerald-500">مفعل 🟢</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+            <Sliders className="w-6 h-6 stroke-[2.2]" />
+          </div>
+        </Card>
+
+        {/* Card 4: Storage Used */}
+        <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+          <div className="space-y-1">
+            <span className="text-xs font-bold text-muted-foreground">
+              {isAr ? "المساحة المستخدمة" : "Storage Used"}
+            </span>
+            <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
+              4.2 <span className="text-xs font-bold text-purple-500">GB / 20 GB 💾</span>
+            </div>
+          </div>
+          <div className="p-3 rounded-2xl bg-purple-500/10 border border-purple-500/20 text-purple-500">
+            <HardDrive className="w-6 h-6 stroke-[2.2]" />
+          </div>
+        </Card>
+      </div>
+
+      {/* 3. Classification & Homepage Media Tabs Switcher */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2 bg-card border border-border/80 rounded-2xl shadow-xs">
+        <div className="flex items-center gap-2 bg-muted/60 p-1.5 rounded-xl border border-border overflow-x-auto">
+          <button
+            onClick={() => setActiveTab("photos")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === "photos"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <ImageIcon className="w-4 h-4" />
+            <span>{isAr ? "معرض الصور" : "Photos Gallery"}</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{photoAssets.length}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("videos")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === "videos"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Video className="w-4 h-4" />
+            <span>{isAr ? "معرض الفيديوهات" : "Videos Gallery"}</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{videoAssets.length}</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab("homepage")}
+            className={`px-4 py-2.5 rounded-xl text-xs font-black flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
+              activeTab === "homepage"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            <Sliders className="w-4 h-4 text-amber-950" />
+            <span>{isAr ? "ميديا الصفحة الرئيسية 🎡" : "Homepage Hero Media 🎡"}</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{homepageSlides.length}</span>
+          </button>
+        </div>
+
+        <div className="text-xs font-bold text-muted-foreground px-3 hidden sm:block">
+          {activeTab === "photos" ? (isAr ? `عرض ${photoAssets.length} صورة عالية الدقة 📸` : `Showing ${photoAssets.length} Photos`) :
+           activeTab === "videos" ? (isAr ? `عرض ${videoAssets.length} فيديو 🎥` : `Showing ${videoAssets.length} Videos`) :
+           (isAr ? `متحكم سكرول وسلايدر الصفحة الرئيسية 🎡` : `Homepage Hero Carousel Manager 🎡`)}
+        </div>
+      </div>
+
+      {/* 4. Photos Gallery Grid */}
+      {activeTab === "photos" && (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+          {photoAssets.map((asset) => (
+            <Card key={asset.id} className="overflow-hidden bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl flex flex-col justify-between group">
+              <div>
+                {/* Thumbnail Header */}
+                <div className="relative h-48 w-full overflow-hidden bg-slate-950">
+                  <img
+                    src={asset.url}
+                    alt={asset.title}
+                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                  />
+                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
+
+                  {/* Badge */}
+                  <span className="absolute top-3 right-3 text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-400 border border-amber-500/30 shadow-md">
+                    {asset.badge}
+                  </span>
+
+                  {/* Category Pill */}
+                  <span className="absolute bottom-3 right-3 text-[11px] font-extrabold text-white flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                    {asset.category}
+                  </span>
                 </div>
-                <div className="text-white">
-                  <p className="text-xs font-medium truncate">{asset.altText || "No alt text"}</p>
-                  <p className="text-[10px] text-slate-300">{formatDate(asset.createdAt)}</p>
+
+                {/* Content */}
+                <div className="p-4 space-y-3">
+                  <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors line-clamp-1">
+                    {asset.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
+                    <span>{asset.resolution}</span>
+                    <span>{asset.size}</span>
+                  </div>
+
+                  {/* URL Bar & Copy Button */}
+                  <div className="flex items-center gap-1.5 p-1.5 bg-muted/60 rounded-xl border border-border">
+                    <input
+                      type="text"
+                      readOnly
+                      value={asset.url}
+                      className="w-full bg-transparent text-[11px] font-mono text-muted-foreground focus:outline-none truncate dir-ltr"
+                    />
+                    <button
+                      onClick={() => handleCopyUrl(asset.id, asset.url)}
+                      className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                      title={isAr ? "نسخ الرابط" : "Copy URL"}
+                    >
+                      {copiedId === asset.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
                 </div>
               </div>
-            </div>
+
+              {/* Action Buttons */}
+              <div className="px-4 py-3 mt-1 flex items-center justify-between border-t border-border/40">
+                <button
+                  onClick={() => setPreviewMedia(asset)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{isAr ? "معاينة مكبرة 🔍" : "Preview 🔍"}</span>
+                </button>
+
+                <Button
+                  onClick={() => {
+                    if (confirm(isAr ? "هل أنت تأكد من حذف هذه الصورة؟" : "Delete photo?")) {
+                      deleteMedia(asset.id);
+                    }
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 rounded-xl"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isAr ? "حذف" : "Delete"}</span>
+                </Button>
+              </div>
+            </Card>
           ))}
         </div>
       )}
 
-      {/* Pagination Controls */}
-      {data && (Array.isArray(data) ? 1 : (data.meta?.totalPages || 1)) > 1 && (
-        <div className="flex justify-center gap-2 pt-4">
-          <Button 
-            variant="outline" 
-            size="sm"
-            disabled={filters.page === 1}
-            onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) - 1 }))}
-          >
-            {tCommon("previous")}
-          </Button>
-          <Button 
-            variant="outline" 
-            size="sm"
-            disabled={filters.page === (Array.isArray(data) ? 1 : data.meta?.totalPages)}
-            onClick={() => setFilters(f => ({ ...f, page: (f.page || 1) + 1 }))}
-          >
-            {tCommon("next")}
-          </Button>
+      {/* 5. Videos Gallery Grid */}
+      {activeTab === "videos" && (
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+          {videoAssets.map((video) => (
+            <Card key={video.id} className="overflow-hidden bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl flex flex-col justify-between group">
+              <div>
+                {/* Video Preview Header */}
+                <div className="relative h-48 w-full overflow-hidden bg-slate-950">
+                  <img
+                    src={video.url}
+                    alt={video.title}
+                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 opacity-80"
+                  />
+                  <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                    <div className="p-4 rounded-full bg-amber-500/90 text-slate-950 shadow-xl group-hover:scale-110 transition-transform">
+                      <Play className="w-6 h-6 fill-slate-950 text-slate-950 me-0.5" />
+                    </div>
+                  </div>
+
+                  {/* Badge */}
+                  <span className="absolute top-3 right-3 text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-400 border border-amber-500/30 shadow-md">
+                    {video.badge}
+                  </span>
+
+                  {/* Duration Pill */}
+                  <span className="absolute bottom-3 right-3 text-[11px] font-extrabold text-white bg-black/70 px-2.5 py-1 rounded-lg backdrop-blur-xs dir-ltr">
+                    ⏱️ {video.duration}
+                  </span>
+                </div>
+
+                {/* Content */}
+                <div className="p-4 space-y-3">
+                  <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors line-clamp-1">
+                    {video.title}
+                  </h3>
+
+                  <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
+                    <span>{video.category}</span>
+                    <span>{video.size}</span>
+                  </div>
+
+                  {/* URL Bar & Copy */}
+                  <div className="flex items-center gap-1.5 p-1.5 bg-muted/60 rounded-xl border border-border">
+                    <input
+                      type="text"
+                      readOnly
+                      value={video.url}
+                      className="w-full bg-transparent text-[11px] font-mono text-muted-foreground focus:outline-none truncate dir-ltr"
+                    />
+                    <button
+                      onClick={() => handleCopyUrl(video.id, video.url)}
+                      className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                      title={isAr ? "نسخ الرابط" : "Copy URL"}
+                    >
+                      {copiedId === video.id ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-500" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Action Footer */}
+              <div className="px-4 py-3 mt-1 flex items-center justify-between border-t border-border/40">
+                <button
+                  onClick={() => setPreviewMedia(video)}
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>{isAr ? "معاينة وتشغيل 🎬" : "Play Preview 🎬"}</span>
+                </button>
+
+                <Button
+                  onClick={() => {
+                    if (confirm(isAr ? "هل أنت تأكد من حذف هذا الفيديو؟" : "Delete video?")) {
+                      deleteMedia(video.id);
+                    }
+                  }}
+                  variant="ghost"
+                  size="sm"
+                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 rounded-xl"
+                  disabled={isDeleting}
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                  <span>{isAr ? "حذف" : "Delete"}</span>
+                </Button>
+              </div>
+            </Card>
+          ))}
         </div>
       )}
 
+      {/* 6. Homepage Hero Slider Management Section */}
+      {activeTab === "homepage" && (
+        <div className="space-y-6">
+          {/* Hero Section Banner */}
+          <div className="p-6 bg-linear-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/30 rounded-3xl space-y-3">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="space-y-1">
+                <h2 className="text-lg font-black text-foreground flex items-center gap-2">
+                  <Sliders className="w-5 h-5 text-amber-500" />
+                  <span>{isAr ? "ميديا الصفحة الرئيسية (Hero Media Slider)" : "Homepage Hero Slider Media"}</span>
+                </h2>
+                <p className="text-xs text-muted-foreground font-semibold">
+                  {isAr
+                    ? "التحكم الكامل بالصور والفيديوهات المعروضة في الشريط المتحرك في الصفحة الرئيسية للموقع."
+                    : "Manage active background photos & promo videos displayed in the main homepage hero slider."}
+                </p>
+              </div>
+
+              <Button
+                onClick={handleOpenPhotoDialog}
+                variant="gold"
+                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs px-4 py-2 rounded-xl gap-2 cursor-pointer shadow-md shadow-amber-500/20 shrink-0"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>{isAr ? "إضافة سلايد جديد للرئيسية 🎡" : "Add Hero Slide 🎡"}</span>
+              </Button>
+            </div>
+          </div>
+
+          {/* Homepage Hero Media Cards Grid */}
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-2">
+            {homepageSlides.map((slide) => (
+              <Card
+                key={slide.id}
+                className={`overflow-hidden bg-card border transition-all duration-300 rounded-3xl flex flex-col justify-between group ${
+                  slide.isActive
+                    ? "border-amber-500/50 shadow-md shadow-amber-500/5"
+                    : "border-border/60 opacity-75"
+                }`}
+              >
+                <div>
+                  {/* Hero Thumbnail Preview */}
+                  <div className="relative h-56 w-full overflow-hidden bg-slate-950">
+                    <img
+                      src={slide.url}
+                      alt={slide.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/30 to-black/30" />
+
+                    {/* Order Badge */}
+                    <span className="absolute top-3 right-3 text-xs font-black px-3 py-1 rounded-full bg-amber-500 text-slate-950 shadow-md flex items-center gap-1">
+                      <ArrowUpDown className="w-3.5 h-3.5" />
+                      <span>{isAr ? `ترتيب السلايدر: #${slide.order}` : `Order: #${slide.order}`}</span>
+                    </span>
+
+                    {/* Active Status Badge */}
+                    <span
+                      className={`absolute top-3 left-3 text-xs font-extrabold px-3 py-1 rounded-full border shadow-md flex items-center gap-1.5 ${
+                        slide.isActive
+                          ? "bg-emerald-500/20 text-emerald-400 border-emerald-500/40"
+                          : "bg-slate-900/90 text-slate-400 border-slate-700"
+                      }`}
+                    >
+                      {slide.isActive ? (
+                        <>
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+                          <span>{isAr ? "معروض بالرئيسية 🟢" : "Active on Hero 🟢"}</span>
+                        </>
+                      ) : (
+                        <>
+                          <XCircle className="w-3.5 h-3.5 text-slate-400" />
+                          <span>{isAr ? "غير معروض ⚪" : "Inactive ⚪"}</span>
+                        </>
+                      )}
+                    </span>
+
+                    {/* Overlay Title */}
+                    <div className="absolute bottom-4 right-4 left-4 space-y-1">
+                      <span className="text-[11px] font-bold text-amber-400 block">
+                        {slide.badge}
+                      </span>
+                      <h3 className="text-base font-black text-white leading-tight">
+                        {slide.title}
+                      </h3>
+                      <p className="text-xs text-slate-300 font-medium line-clamp-1">
+                        {slide.subtitle}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Footer Controls */}
+                <div className="p-4 bg-muted/30 border-t border-border/60 flex items-center justify-between gap-2">
+                  <button
+                    onClick={() => toggleSlideStatus(slide.id)}
+                    className={`px-4 py-2 rounded-xl text-xs font-extrabold flex items-center gap-1.5 transition-all cursor-pointer ${
+                      slide.isActive
+                        ? "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 hover:bg-amber-500/30"
+                        : "bg-muted text-muted-foreground border border-border hover:text-foreground"
+                    }`}
+                  >
+                    {slide.isActive ? (
+                      <>
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                        <span>{isAr ? "إخفاء من السلايدر" : "Hide from Slider"}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Sparkles className="w-4 h-4 text-amber-500" />
+                        <span>{isAr ? "تفعيل في السلايدر" : "Activate on Slider"}</span>
+                      </>
+                    )}
+                  </button>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => setPreviewMedia(slide)}
+                      className="p-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold cursor-pointer"
+                      title={isAr ? "معاينة السلايد" : "Preview Slide"}
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+
+                    <Button
+                      onClick={() => {
+                        if (confirm(isAr ? "هل أنت تأكد من حذف هذا السلايد من الرئيسية؟" : "Remove slide?")) {
+                          setHomepageSlides((prev) => prev.filter((s) => s.id !== slide.id));
+                        }
+                      }}
+                      variant="ghost"
+                      size="icon"
+                      className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 rounded-xl"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+              </Card>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Lightbox / Preview Modal */}
+      <Dialog open={!!previewMedia} onOpenChange={(open) => !open && setPreviewMedia(null)}>
+        <DialogContent className="sm:max-w-175 p-0 overflow-hidden bg-slate-950 border border-amber-500/40 text-white">
+          {previewMedia && (
+            <div>
+              <div className="relative h-80 sm:h-96 w-full bg-black flex items-center justify-center">
+                <img
+                  src={previewMedia.url}
+                  alt={previewMedia.title}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+
+              <div className="p-6 space-y-4 bg-slate-900">
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <span className="text-xs font-bold text-amber-400 block mb-1">
+                      {previewMedia.category || previewMedia.badge} • {previewMedia.resolution || previewMedia.duration || "Hero Slide"}
+                    </span>
+                    <h2 className="text-lg font-black text-white">{previewMedia.title}</h2>
+                    {previewMedia.subtitle && (
+                      <p className="text-xs text-slate-300 font-semibold mt-1">{previewMedia.subtitle}</p>
+                    )}
+                  </div>
+
+                  <a
+                    href={previewMedia.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="p-2.5 rounded-xl bg-amber-500 text-slate-950 font-bold text-xs flex items-center gap-1.5 hover:bg-amber-600 transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>{isAr ? "تحميل" : "Download"}</span>
+                  </a>
+                </div>
+
+                <div className="flex items-center gap-2 p-2 bg-slate-950 rounded-xl border border-slate-800 dir-ltr">
+                  <input
+                    type="text"
+                    readOnly
+                    value={previewMedia.url}
+                    className="w-full bg-transparent text-xs font-mono text-slate-300 focus:outline-none"
+                  />
+                  <button
+                    onClick={() => handleCopyUrl(previewMedia.id, previewMedia.url)}
+                    className="px-3 py-1.5 rounded-lg bg-amber-500/20 text-amber-400 text-xs font-bold shrink-0 hover:bg-amber-500/30 transition-colors cursor-pointer"
+                  >
+                    {copiedId === previewMedia.id ? (
+                      <span className="text-emerald-400 font-bold">{isAr ? "تم النسخ ✓" : "Copied ✓"}</span>
+                    ) : (
+                      <span>{isAr ? "نسخ الرابط" : "Copy URL"}</span>
+                    )}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Media via Direct URL Dialog */}
       <UploadMediaDialog 
         open={isUploadOpen}
         onOpenChange={setIsUploadOpen}
-        onUpload={handleUpload}
-        isUploading={isUploading}
+        onAddMedia={handleAddMedia}
+        initialType={uploadInitialType}
       />
     </div>
   );

@@ -336,17 +336,43 @@ html.light-mode header {
   border-bottom-color: #e2e8f0 !important;
 }
 
-/* Welcome banner stays dark even in light mode */
+/* Welcome banner stays dark with pure white text & crisp badges even in light mode */
 .light .welcome-banner-card,
 html.light-mode .welcome-banner-card {
-  background: linear-gradient(to right, rgba(69, 26, 3, 0.95), #1e1b4b, #0f172a) !important;
+  background: linear-gradient(to right, #451a03, #1e1b4b, #0f172a) !important;
   border-color: rgba(217, 119, 6, 0.4) !important;
+  color: #ffffff !important;
 }
 
 .light .welcome-banner-card h1,
-.light .welcome-banner-card .text-white,
+.light .welcome-banner-card p,
+.light .welcome-banner-card span,
+.light .welcome-banner-card div,
 html.light-mode .welcome-banner-card h1,
-html.light-mode .welcome-banner-card .text-white {
+html.light-mode .welcome-banner-card p,
+html.light-mode .welcome-banner-card span,
+html.light-mode .welcome-banner-card div {
+  color: #ffffff !important;
+}
+
+.light .welcome-banner-card .text-slate-300,
+.light .welcome-banner-card .text-slate-200,
+.light .welcome-banner-card .text-slate-400,
+html.light-mode .welcome-banner-card .text-slate-300,
+html.light-mode .welcome-banner-card .text-slate-200,
+html.light-mode .welcome-banner-card .text-slate-400 {
+  color: #f1f5f9 !important;
+}
+
+.light .welcome-banner-card .text-amber-400,
+html.light-mode .welcome-banner-card .text-amber-400 {
+  color: #fbbf24 !important;
+}
+
+.light .welcome-banner-card [class*="bg-slate-"],
+html.light-mode .welcome-banner-card [class*="bg-slate-"] {
+  background-color: rgba(15, 23, 42, 0.85) !important;
+  border-color: rgba(51, 65, 85, 0.8) !important;
   color: #ffffff !important;
 }
 

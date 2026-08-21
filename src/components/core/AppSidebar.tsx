@@ -135,17 +135,20 @@ export const AppSidebar = memo(function AppSidebar() {
       collapsible="icon"
       className="border-e border-border bg-card"
     >
-      {/* Logo Header */}
+      {/* Logo Header with Admin Suite Badge */}
       <SidebarHeader
-        className="flex items-center justify-center px-4 py-3 h-20 border-b border-border bg-card"
+        className="flex items-center justify-between px-4 py-3 h-20 border-b border-border bg-card"
       >
-        <div className="flex items-center justify-center w-full transition-all duration-300">
+        <Link href={adminRoutes.dashboard} className="flex items-center justify-between w-full gap-2 transition-all duration-300 hover:opacity-90">
           <img
             src="/dunas-travel-logo.png"
             alt="Dunas Travel"
-            className="h-12 max-h-14 w-auto object-contain shrink-0 hover:scale-105 transition-transform"
+            className="h-12 sm:h-14 max-h-16 w-auto object-contain shrink-0 hover:scale-105 transition-transform"
           />
-        </div>
+          <span className="px-2.5 py-1 text-[11px] font-extrabold rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shrink-0 shadow-xs">
+            Admin Suite
+          </span>
+        </Link>
       </SidebarHeader>
 
       <SidebarContent className="bg-card px-2 py-2">

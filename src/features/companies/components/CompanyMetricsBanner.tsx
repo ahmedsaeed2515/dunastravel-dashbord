@@ -15,8 +15,8 @@ export function CompanyMetricsBanner() {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="bg-white dark:bg-[#0C1C48]/30 rounded-xl p-5 border border-gray-100 dark:border-gray-800/50 flex items-center justify-center h-[104px]">
-            <Loader2 className="h-5 w-5 animate-spin text-primary/40" />
+          <div key={i} className="bg-card rounded-2xl p-5 border border-border flex items-center justify-center h-27.5">
+            <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
           </div>
         ))}
       </div>
@@ -28,50 +28,61 @@ export function CompanyMetricsBanner() {
       title: tCompanies("title"),
       value: metrics?.totalCompanies || 0,
       icon: Building2,
-      color: "text-primary dark:text-blue-400",
-      bg: "bg-blue-50 dark:bg-blue-900/20"
+      color: "text-amber-500 dark:text-amber-400",
+      bg: "bg-amber-500/10 border-amber-500/20"
     },
     {
       title: tCompanies("travelAgencies"),
       value: metrics?.activeAgencies || 0,
       icon: Briefcase,
-      color: "text-amber-500 dark:text-amber-400",
-      bg: "bg-amber-50 dark:bg-amber-900/20"
+      color: "text-sky-500 dark:text-sky-400",
+      bg: "bg-sky-500/10 border-sky-500/20"
     },
     {
       title: tCompanies("corporateAccounts"),
       value: metrics?.activeCorporate || 0,
       icon: Award,
       color: "text-emerald-500 dark:text-emerald-400",
-      bg: "bg-emerald-50 dark:bg-emerald-900/20"
+      bg: "bg-emerald-500/10 border-emerald-500/20"
     },
     {
       title: tFinance("outstandingBalance"),
       value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(metrics?.totalOutstandingBalance || 0),
       icon: DollarSign,
       color: "text-rose-500 dark:text-rose-400",
-      bg: "bg-rose-50 dark:bg-rose-900/20"
+      bg: "bg-rose-500/10 border-rose-500/20"
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-      {statCards.map((stat, index) => (
-        <div 
-          key={index} 
-          className="bg-white dark:bg-gray-900/40 rounded-xl p-5 border border-gray-100 dark:border-gray-800/50 shadow-sm transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 group"
-        >
-          <div className="flex items-start justify-between">
-            <div>
-              <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider mb-1">{stat.title}</p>
-              <h3 className="text-2xl font-bold font-playfair text-gray-900 dark:text-white group-hover:text-amber-500 transition-colors dir-ltr text-start">{stat.value}</h3>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+      {statCards.map((stat, index) => {
+        const Icon = stat.icon;
+        return (
+          <div 
+            key={index} 
+            className="bg-card rounded-2xl p-5 border border-border/80 shadow-xs transition-all duration-300 hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 group flex flex-col justify-between"
+          >
+            {/* Title on Top */}
+            <div className="mb-2">
+              <p className="text-xs sm:text-sm font-extrabold text-muted-foreground group-hover:text-amber-500 transition-colors leading-tight">
+                {stat.title}
+              </p>
             </div>
-            <div className={`p-2.5 rounded-lg ${stat.bg}`}>
-              <stat.icon className={`h-4 w-4 ${stat.color}`} />
+
+            {/* Middle Row: Value on Right + Large Icon on Left at exact same height */}
+            <div className="flex items-center justify-between gap-3 my-1">
+              <div className="text-3xl sm:text-4xl font-black font-mono text-foreground tracking-tight dir-ltr text-start">
+                {stat.value}
+              </div>
+
+              <div className={`p-3 rounded-2xl border ${stat.bg} shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-xs flex items-center justify-center`}>
+                <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${stat.color} stroke-[2.2]`} />
+              </div>
             </div>
           </div>
-        </div>
-      ))}
+        );
+      })}
     </div>
   );
 }

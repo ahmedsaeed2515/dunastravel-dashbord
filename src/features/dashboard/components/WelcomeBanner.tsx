@@ -9,7 +9,7 @@ import { cn } from "@/lib/utils";
 
 export function WelcomeBanner() {
   return (
-    <div className="welcome-banner-card relative overflow-hidden rounded-3xl p-6 sm:p-8 border shadow-xl">
+    <div className="welcome-banner-card relative overflow-hidden rounded-3xl p-6 sm:p-8 border shadow-xl text-white">
       {/* Background Subtle Highlights */}
       <div className="absolute -top-24 -inset-e-24 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute -bottom-24 -inset-s-24 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none" />
@@ -28,28 +28,28 @@ export function WelcomeBanner() {
             </span>
           </h1>
 
-          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-2xl">
+          <p className="text-white text-xs sm:text-sm leading-relaxed max-w-2xl font-medium">
             منصة مستقلة للتحكم الكامل ببيانات موقع Dunas Travel، إدارة 8 واجهات سياحية، البرامج الفاخرة، الحجوزات، الرسائل، والإشعارات المباشرة باللغات الخمس (العربية، الإسبانية، البرتغالية، الإنجليزية، الإيطالية).
           </p>
 
           {/* 5 Languages & Badges */}
           <div className="flex flex-wrap items-center gap-2 pt-2">
-            <span className="text-xs text-slate-400 font-medium me-1 flex items-center gap-1">
-              <Globe2 size={13} className="text-amber-400" /> دعم 5 لغات:
+            <span className="text-xs text-slate-100 font-bold me-1 flex items-center gap-1">
+              <Globe2 size={14} className="text-amber-400" /> دعم 5 لغات:
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
               <span>🇸🇦</span> العربية
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
               <span>🇪🇸</span> الإسبانية
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
               <span>🇵🇹</span> البرتغالية
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
               <span>🇬🇧</span> الإنجليزية
             </span>
-            <span className="px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/60 text-slate-200 text-xs font-medium flex items-center gap-1.5">
+            <span className="px-3 py-1 rounded-xl bg-slate-900/90 border border-slate-700/80 text-white text-xs font-bold flex items-center gap-1.5 shadow-xs">
               <span>🇮🇹</span> الإيطالية
             </span>
           </div>
@@ -72,7 +72,7 @@ export function WelcomeBanner() {
             href={adminRoutes.destinations}
             className={cn(
               buttonVariants({ variant: "outline" }),
-              "bg-slate-900/80 hover:bg-slate-800 border-slate-700 text-slate-200 hover:text-white text-xs px-5 py-2.5 h-auto rounded-xl gap-2 cursor-pointer"
+              "bg-slate-900/80 hover:bg-slate-800 border-slate-700 text-white hover:text-amber-400 text-xs px-5 py-2.5 h-auto rounded-xl gap-2 cursor-pointer"
             )}
           >
             <Layers size={16} className="text-amber-400" />
@@ -83,4 +83,3 @@ export function WelcomeBanner() {
     </div>
   );
 }
-
