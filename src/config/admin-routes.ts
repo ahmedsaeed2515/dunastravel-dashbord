@@ -2,6 +2,10 @@ export const adminRoutes = {
   dashboard: "/dashboard",
   bookings: "/admin/bookings",
   tours: "/admin/tours",
+  packages: "/admin/packages",
+  hotels: "/admin/hotels",
+  transportation: "/admin/transportation",
+  reviews: "/admin/reviews",
   promotions: "/admin/promotions",
   media: "/admin/media",
   finance: {

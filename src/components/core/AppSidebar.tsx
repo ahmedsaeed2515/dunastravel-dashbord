@@ -35,7 +35,11 @@ import {
   Bell,
   BellRing,
   ClipboardList,
-  Tag
+  Tag,
+  Package,
+  Hotel,
+  Bus,
+  Star
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -123,6 +127,30 @@ export function AppSidebar() {
                   <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.tours} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.tours)} tooltip={tNav("tours")}>
                     <Map />
                     <span>{tNav("tours")}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.packages} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.packages)} tooltip={tNav("packages")}>
+                    <Package />
+                    <span>{tNav("packages")}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.hotels} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.hotels)} tooltip={tNav("hotels")}>
+                    <Hotel />
+                    <span>{tNav("hotels")}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.transportation} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.transportation)} tooltip={tNav("transportation")}>
+                    <Bus />
+                    <span>{tNav("transportation")}</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton onClick={handleNavClick} render={<Link href={adminRoutes.reviews} className="transition-all duration-300" />} isActive={pathname.startsWith(adminRoutes.reviews)} tooltip={tNav("reviews")}>
+                    <Star />
+                    <span>{tNav("reviews")}</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
                 <SidebarMenuItem>

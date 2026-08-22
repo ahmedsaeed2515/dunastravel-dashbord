@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { KPIGrid } from "@/features/dashboard/components/KPIGrid";
+import { QuickActionShortcuts } from "@/features/dashboard/components/QuickActionShortcuts";
 import { ActionCenter } from "@/features/dashboard/components/ActionCenter";
 import { AnalyticsCharts } from "@/features/dashboard/components/AnalyticsCharts";
 import { ConversionFunnelCard } from "@/features/dashboard/components/ConversionFunnelCard";
@@ -48,6 +49,9 @@ export default function DashboardPage() {
 
       {/* 2. Executive KPIs Section */}
       <KPIGrid data={summary} isLoading={isLoadingSummary} />
+
+      {/* Quick Action Shortcuts (الوصول السريع للأقسام الرئيسية) */}
+      <QuickActionShortcuts />
 
       {/* 3. Operational Action Center Alerts */}
       <ActionCenter alerts={actionAlerts} isLoading={isLoadingAlerts} />
