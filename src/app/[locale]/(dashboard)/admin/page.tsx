@@ -4,6 +4,7 @@ import { useState } from "react";
 import { WelcomeBanner } from "@/features/dashboard/components/WelcomeBanner";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { KPIGrid } from "@/features/dashboard/components/KPIGrid";
+import { QuickActionShortcuts } from "@/features/dashboard/components/QuickActionShortcuts";
 import { AnalyticsCharts } from "@/features/dashboard/components/AnalyticsCharts";
 import { RecentBookingsTable } from "@/features/dashboard/components/RecentBookingsTable";
 import { RecentActivityFeed } from "@/features/dashboard/components/RecentActivityFeed";
@@ -41,6 +42,9 @@ export default function DashboardPage() {
 
       {/* 2. Executive KPIs Section (8 Cards in 2 Equal Rows) */}
       <KPIGrid data={summary} isLoading={isLoadingSummary} />
+
+      {/* Quick Action Shortcuts (الوصول السريع للأقسام الرئيسية) */}
+      <QuickActionShortcuts />
 
       {/* 3. Financial & Revenue Analytics */}
       <AnalyticsCharts
