@@ -6,12 +6,12 @@ import { Role } from "@/lib/api-types";
 export function usePermissions() {
   const { user, role: rawRole, isLoading } = useAuth();
 
-  const role = rawRole || user?.role || 'SUPER_ADMIN';
+  const role: Role | undefined = rawRole || user?.role || undefined;
 
-  const isSuperAdmin = role === 'SUPER_ADMIN';
-  const isAdmin = role === 'ADMIN' || role === 'SUPER_ADMIN';
-  const isAgent = role === 'AGENT';
-  const isB2B = role === 'COMPANY' || role === 'AGENT';
+  const isSuperAdmin = !isLoading && role === 'SUPER_ADMIN';
+  const isAdmin = !isLoading && (role === 'ADMIN' || role === 'SUPER_ADMIN');
+  const isAgent = !isLoading && role === 'AGENT';
+  const isB2B = !isLoading && (role === 'COMPANY' || role === 'AGENT');
 
   const canManageRoles = isSuperAdmin;
   const canAccessAuditLogs = isSuperAdmin;
@@ -24,7 +24,7 @@ export function usePermissions() {
   const canAccessFinance = isAdmin || isB2B;
 
   const hasPermission = (action: string, resource: string): boolean => {
-    if (!role) return false;
+    if (isLoading || !role) return false;
     if (isSuperAdmin) return true;
 
     if (isAdmin) {
@@ -47,7 +47,7 @@ export function usePermissions() {
   };
 
   const canAccessRoute = (pathname: string): boolean => {
-    if (!role) return false;
+    if (isLoading || !role) return false;
     if (isSuperAdmin) return true;
 
     if (pathname.includes('/admin/settings/roles') || pathname.includes('/admin/audit')) {
