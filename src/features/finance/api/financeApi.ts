@@ -8,23 +8,24 @@ import {
   CommissionQueryFilters, 
   PaginatedResponse 
 } from "../types";
+import { requireArray, requireObject, requirePaginated } from "@/lib/api-response";
 
 export const financeApi = {
   // Wallets
   getWalletMetrics: async (): Promise<WalletMetrics> => {
     const res: any = await apiClient.get("/admin/finance/wallets/metrics");
-    return res?.totalLiabilitiesUsd !== undefined ? res : res?.data || res;
+    return requireObject(res, "wallet metrics");
   },
 
   getWallet: async (ownerType: 'USER' | 'COMPANY', ownerId: string): Promise<Wallet> => {
     const response = await apiClient.get(`/admin/finance/wallets/${ownerType}/${ownerId}`);
-    return response as any;
+    return requireObject(response, "wallet");
   },
 
   getWalletTransactions: async (walletId: string, referenceType?: string): Promise<WalletTransaction[]> => {
     const params = referenceType ? { referenceType } : {};
     const response = await apiClient.get(`/admin/finance/wallets/${walletId}/transactions`, { params });
-    return response as any;
+    return requireArray(response, "wallet transactions");
   },
 
   addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string }): Promise<WalletTransaction> => {
@@ -35,12 +36,12 @@ export const financeApi = {
   // Commissions
   getCommissionMetrics: async (): Promise<CommissionMetrics> => {
     const res: any = await apiClient.get("/admin/finance/commissions/metrics");
-    return res?.totalPendingUsd !== undefined ? res : res?.data || res;
+    return requireObject(res, "commission metrics");
   },
 
   getCommissions: async (filters: CommissionQueryFilters): Promise<PaginatedResponse<Commission>> => {
     const response = await apiClient.get("/admin/finance/commissions", { params: filters });
-    return response as any;
+    return requirePaginated(response, "commissions");
   },
 
   updateCommissionStatus: async (id: string, status: string): Promise<Commission> => {

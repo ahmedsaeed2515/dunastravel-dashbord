@@ -16,6 +16,7 @@ import { useTranslations } from "next-intl";
 import { adminRoutes } from "@/config/admin-routes";
 import { DashboardFilters, TourPerformanceItem } from "../types";
 import { useTourPerformance } from "../hooks/useDashboardData";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 interface PopularToursSectionProps {
   filters?: DashboardFilters;
@@ -27,7 +28,11 @@ export function PopularToursSection({ filters }: PopularToursSectionProps) {
   const isAr = locale === "ar";
   const t = useTranslations("dashboard");
 
-  const { data, isLoading } = useTourPerformance(filters);
+  const { data, isLoading, isError, refetch } = useTourPerformance(filters);
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل أداء الرحلات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   if (isLoading) {
     return (

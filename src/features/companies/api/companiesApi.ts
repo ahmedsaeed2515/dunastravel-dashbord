@@ -9,16 +9,17 @@ import {
   UpdateCompanyPayload 
 } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
+import { requireObject, requirePaginated } from "@/lib/api-response";
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
     const res: any = await apiClient.get("/admin/companies/metrics");
-    return res?.totalCompanies !== undefined ? res : res?.data || res;
+    return requireObject(res, "company metrics");
   },
 
   getCompanies: async (filters: CompanyQueryFilters): Promise<PaginatedResponse<Company>> => {
     const response = await apiClient.get("/admin/companies", { params: filters });
-    return response as any;
+    return requirePaginated(response, "companies");
   },
 
   getCompanyById: async (id: string): Promise<CompanyDetail> => {

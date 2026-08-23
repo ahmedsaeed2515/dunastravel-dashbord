@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
 import { Loader2, Search } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CommissionsView() {
   const [filters, setFilters] = useState<CommissionQueryFilters>({
@@ -16,7 +17,11 @@ export function CommissionsView() {
     status: undefined,
   });
 
-  const { data, isLoading } = useCommissions(filters);
+  const { data, isLoading, isError, refetch } = useCommissions(filters);
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل العمولات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 p-6">

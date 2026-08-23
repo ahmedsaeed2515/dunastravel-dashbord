@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +31,7 @@ export default function AgentsPage() {
   
   const [agentToDelete, setAgentToDelete] = useState<Agent | null>(null);
 
-  const { data, isLoading } = useAgents(filters);
+  const { data, isLoading, isError, refetch } = useAgents(filters);
   const { mutate: createAgent, isPending: isCreating } = useCreateAgent();
   const { mutate: updateAgent, isPending: isUpdating } = useUpdateAgent();
   const { mutate: deleteAgent, isPending: isDeleting } = useDeleteAgent();
@@ -72,6 +73,10 @@ export default function AgentsPage() {
       });
     }
   };
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل وكلاء السفر من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">

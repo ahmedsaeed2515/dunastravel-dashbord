@@ -10,6 +10,7 @@ import { Loader2, LayoutGrid, Table as TableIcon, Star, CheckCircle2, MessageSqu
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export default function ReviewsPage() {
   const tReviews = useTranslations("reviews");
@@ -19,13 +20,26 @@ export default function ReviewsPage() {
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   
   // Pending reviews
-  const { data: pendingData, isLoading: pendingLoading } = useReviews({ status: "PENDING", limit: 50 });
+  const pendingQuery = useReviews({ status: "PENDING", limit: 50 });
   
   // Approved/Published reviews
-  const { data: publishedData, isLoading: publishedLoading } = useReviews({ status: "APPROVED", limit: 50 });
+  const publishedQuery = useReviews({ status: "APPROVED", limit: 50 });
 
   // All reviews
-  const { data: allData, isLoading: allLoading } = useReviews({ limit: 50 });
+  const allQuery = useReviews({ limit: 50 });
+
+  const { data: pendingData, isLoading: pendingLoading } = pendingQuery;
+  const { data: publishedData, isLoading: publishedLoading } = publishedQuery;
+  const { data: allData, isLoading: allLoading } = allQuery;
+
+  if (pendingQuery.isError || publishedQuery.isError || allQuery.isError) {
+    return (
+      <QueryErrorState
+        message="تعذر تحميل التقييمات من الباك إند."
+        onRetry={() => void Promise.all([pendingQuery.refetch(), publishedQuery.refetch(), allQuery.refetch()])}
+      />
+    );
+  }
 
   const pendingList = Array.isArray(pendingData) ? pendingData : ((pendingData as any)?.data || (pendingData as any)?.items || []);
   const publishedList = Array.isArray(publishedData) ? publishedData : ((publishedData as any)?.data || (publishedData as any)?.items || []);

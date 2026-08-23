@@ -23,6 +23,7 @@ import {
 import { Download, CheckSquare, Star, Tag, Layers, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CustomersTable() {
   const tCustomers = useTranslations("customers");
@@ -30,7 +31,7 @@ export function CustomersTable() {
 
   // Filters state
   const [filters, setFilters] = useState({ page: 1, limit: 10, isVip: undefined, status: undefined });
-  const { data, isLoading } = useCustomers(filters);
+  const { data, isLoading, isError, refetch } = useCustomers(filters);
   const bulkUpdate = useBulkUpdateCustomers();
   const updateCrm = useUpdateCustomerCrm();
   const [isExporting, setIsExporting] = useState(false);
@@ -158,6 +159,10 @@ export function CustomersTable() {
       </div>
     );
   };
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل سجل العملاء من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-4">

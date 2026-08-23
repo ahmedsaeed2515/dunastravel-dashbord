@@ -2,12 +2,17 @@
 
 import { useCustomerMetrics } from "../hooks/useCustomers";
 import { Users, Star, AlertCircle, TrendingUp, HeartHandshake, Loader2 } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CustomerMetricsBanner() {
-  const { data: rawMetrics, isLoading } = useCustomerMetrics();
+  const { data: rawMetrics, isLoading, isError, refetch } = useCustomerMetrics();
   const metrics = (rawMetrics as any)?.totalCustomers !== undefined ? rawMetrics : (rawMetrics as any)?.data || rawMetrics;
 
-  if (isLoading || !metrics) {
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل مؤشرات العملاء من الباك إند." onRetry={() => void refetch()} />;
+  }
+
+  if (isLoading) {
     return (
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
         {[1, 2, 3, 4].map((i) => (

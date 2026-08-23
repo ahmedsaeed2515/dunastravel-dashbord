@@ -9,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Loader2, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function InquiriesView() {
   const tInquiries = useTranslations("inquiries");
@@ -21,11 +22,15 @@ export function InquiriesView() {
     status: undefined,
   });
 
-  const { data, isLoading } = useInquiries(filters);
+  const { data, isLoading, isError, refetch } = useInquiries(filters);
 
   const inquiriesList = Array.isArray(data) ? data : (data?.data || []);
   const totalPages = (data as any)?.meta?.totalPages ?? (data as any)?.totalPages ?? 1;
   const totalCount = (data as any)?.meta?.total ?? (data as any)?.total ?? inquiriesList.length;
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل الاستفسارات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 p-6">

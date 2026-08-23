@@ -25,11 +25,47 @@ import { useTranslations } from "next-intl";
 import { adminRoutes } from "@/config/admin-routes";
 import { RevenueTrendItem, TopDestinationItem, DashboardFilters } from "../types";
 import { useRevenueTrend, useTopDestinations } from "../hooks/useDashboardData";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 interface AnalyticsChartsProps {
   filters?: DashboardFilters;
   revenueTrend?: RevenueTrendItem[];
   isLoadingRevenue?: boolean;
+}
+
+interface ChartTooltipProps {
+  active?: boolean;
+  payload?: Array<{ color?: string; name?: string; value?: number }>;
+  label?: string;
+  metricMode: "revenue" | "bookings";
+  locale: string;
+}
+
+function ChartTooltip({ active, payload, label, metricMode, locale }: ChartTooltipProps) {
+  if (!active || !payload?.length) return null;
+
+  const formatCurrency = (value: number) => new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+    style: "currency",
+    currency: "USD",
+    maximumFractionDigits: 0,
+  }).format(value);
+
+  return (
+    <div className="p-3 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-xl text-xs space-y-1.5 min-w-[150px]">
+      <p className="font-bold text-foreground border-b border-border pb-1">{label}</p>
+      {payload.map((entry, index) => (
+        <div key={`item-${index}`} className="flex items-center justify-between gap-3">
+          <span className="flex items-center gap-1.5 text-muted-foreground">
+            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+            <span>{entry.name}</span>
+          </span>
+          <span className="font-mono font-bold text-foreground">
+            {metricMode === "revenue" ? formatCurrency(entry.value ?? 0) : `${entry.value ?? 0} bookings`}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRevenue }: AnalyticsChartsProps) {
@@ -41,8 +77,14 @@ export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRev
   const [metricMode, setMetricMode] = useState<"revenue" | "bookings">("revenue");
 
   // Query real data if not provided in props
-  const { data: queriedTrend, isLoading: trendLoading } = useRevenueTrend(filters);
-  const { data: topDestinations, isLoading: destLoading } = useTopDestinations(filters);
+  const trendQuery = useRevenueTrend(filters);
+  const destinationsQuery = useTopDestinations(filters);
+  const { data: queriedTrend, isLoading: trendLoading } = trendQuery;
+  const { data: topDestinations, isLoading: destLoading } = destinationsQuery;
+
+  if (trendQuery.isError || destinationsQuery.isError) {
+    return <QueryErrorState message="تعذر تحميل تحليلات الإيرادات والوجهات من الباك إند." onRetry={() => void Promise.all([trendQuery.refetch(), destinationsQuery.refetch()])} />;
+  }
 
   const rawTrend = propTrend || queriedTrend || [];
   const loading = isLoadingRevenue || trendLoading;
@@ -84,29 +126,6 @@ export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRev
   const totalCollectedInPeriod = formattedChartData.reduce((acc, cur) => acc + cur.collected, 0);
   const totalBookingsInPeriod = formattedChartData.reduce((acc, cur) => acc + cur.bookingsCount, 0);
   const abv = totalBookingsInPeriod > 0 ? totalGrossInPeriod / totalBookingsInPeriod : 0;
-
-  // Custom Chart Tooltip
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <div className="p-3 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-xl text-xs space-y-1.5 min-w-[150px]">
-          <p className="font-bold text-foreground border-b border-border pb-1">{label}</p>
-          {payload.map((entry: any, index: number) => (
-            <div key={`item-${index}`} className="flex items-center justify-between gap-3">
-              <span className="flex items-center gap-1.5 text-muted-foreground">
-                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
-                <span>{entry.name}</span>
-              </span>
-              <span className="font-mono font-bold text-foreground">
-                {metricMode === "revenue" ? formatCurrency(entry.value) : `${entry.value} bookings`}
-              </span>
-            </div>
-          ))}
-        </div>
-      );
-    }
-    return null;
-  };
 
   const destinationsList: TopDestinationItem[] = topDestinations || [];
 
@@ -195,7 +214,7 @@ export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRev
                     axisLine={false}
                     tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<ChartTooltip metricMode={metricMode} locale={locale} />} />
                   <Area
                     type="monotone"
                     dataKey="grossRevenue"
@@ -232,7 +251,7 @@ export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRev
                     axisLine={false}
                     allowDecimals={false}
                   />
-                  <Tooltip content={<CustomTooltip />} />
+                  <Tooltip content={<ChartTooltip metricMode={metricMode} locale={locale} />} />
                   <Bar
                     dataKey="bookingsCount"
                     name={isAr ? "عدد الحجوزات" : "Bookings Count"}

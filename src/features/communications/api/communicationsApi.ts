@@ -5,6 +5,7 @@ import {
   NotificationDeliveryLogQueryFilters, 
   PaginatedResponse 
 } from "../types";
+import { requirePaginated } from "@/lib/api-response";
 
 export const communicationsApi = {
   getMetrics: async (): Promise<CommunicationMetrics> => {
@@ -24,7 +25,7 @@ export const communicationsApi = {
 
   getInquiries: async (filters: any): Promise<PaginatedResponse<any>> => {
     const response = await apiClient.get("/admin/inquiries", { params: filters });
-    return response as any;
+    return requirePaginated(response, "inquiries");
   },
 
   updateInquiry: async (referenceCode: string, payload: { assigneeId?: string; status?: string }): Promise<any> => {

@@ -6,17 +6,19 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from "@/components/ui/textarea";
-import { FileText, Search, Plus, ExternalLink, Save, Loader2 } from "lucide-react";
+import { FileText, Search, Save, Loader2 } from "lucide-react";
 import { useContentBlocks, useUpdateContentBlock } from "@/features/content/hooks/useContent";
 import { ContentBlock } from "@/features/content/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export default function ContentPage() {
   const tContent = useTranslations("content");
   const tCommon = useTranslations("common");
 
-  const { data: rawBlocks, isLoading } = useContentBlocks();
+  const blocksQuery = useContentBlocks();
+  const { data: rawBlocks, isLoading } = blocksQuery;
   const blocks: ContentBlock[] = Array.isArray(rawBlocks) 
     ? rawBlocks 
     : (rawBlocks as any)?.data && Array.isArray((rawBlocks as any).data) 
@@ -25,32 +27,46 @@ export default function ContentPage() {
 
   const updateBlock = useUpdateContentBlock();
 
-  const [seoForm, setSeoForm] = useState({
-    titleSuffix: " | Dunas Travel - Luxury Experiences",
-    metaDescription: "Discover the world's most exclusive luxury travel destinations, bespoke itineraries, and premium B2B travel agency services with Dunas Travel.",
-    ogImageUrl: "https://dunas.travel/og-default.jpg"
-  });
+  const [seoForm, setSeoForm] = useState<Partial<Record<"titleSuffix" | "metaDescription" | "ogImageUrl", string>>>({});
+  const [selectedBlock, setSelectedBlock] = useState<ContentBlock | null>(null);
+  const [blockContent, setBlockContent] = useState("");
+
+  const seoBlock = blocks.find(b => b?.key === "global_seo");
+  const storedSeo = seoBlock?.content && typeof seoBlock.content === "object" ? seoBlock.content : {};
+  const seoValues = {
+    titleSuffix: seoForm.titleSuffix ?? storedSeo.titleSuffix ?? "",
+    metaDescription: seoForm.metaDescription ?? storedSeo.metaDescription ?? "",
+    ogImageUrl: seoForm.ogImageUrl ?? storedSeo.ogImageUrl ?? "",
+  };
 
   const handleSaveSeo = () => {
     updateBlock.mutate({
       key: "global_seo",
-      payload: { content: seoForm }
+      payload: { content: seoValues }
     });
   };
 
-  const seoBlock = blocks.find(b => b?.key === "global_seo");
+  const editBlock = (block: ContentBlock) => {
+    setSelectedBlock(block);
+    setBlockContent(typeof block.content === "string" ? block.content : JSON.stringify(block.content, null, 2));
+  };
+
+  const saveBlock = () => {
+    if (!selectedBlock) return;
+    let content: unknown = blockContent;
+    try { content = JSON.parse(blockContent); } catch { /* Plain text is valid CMS content. */ }
+    updateBlock.mutate({ key: selectedBlock.key, payload: { content } });
+  };
+
+  if (blocksQuery.isError) {
+    return <QueryErrorState message="تعذر تحميل المحتوى من الباك إند." onRetry={() => void blocksQuery.refetch()} />;
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
         title={tContent("title")}
         description={tContent("description")}
-        actions={
-          <Button size="sm" variant="gold" className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span>{tCommon("create")}</span>
-          </Button>
-        }
       />
 
       <Tabs defaultValue="pages" className="space-y-6">
@@ -87,12 +103,20 @@ export default function ContentPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">{tCommon("edit")}</Button>
-                    <Button variant="ghost" size="icon-sm"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => editBlock(block)}>{tCommon("edit")}</Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
+          )}
+          {selectedBlock && (
+            <Card className="mt-5 border-amber-500/30">
+              <CardHeader><CardTitle className="font-mono text-base">{selectedBlock.key}</CardTitle></CardHeader>
+              <CardContent className="space-y-3">
+                <Textarea value={blockContent} onChange={(event) => setBlockContent(event.target.value)} className="min-h-64 font-mono text-xs" />
+                <Button onClick={saveBlock} disabled={updateBlock.isPending} className="gap-2"><Save className="h-4 w-4" />{updateBlock.isPending ? tCommon("saving") : tCommon("saveChanges")}</Button>
+              </CardContent>
+            </Card>
           )}
         </TabsContent>
 
@@ -108,7 +132,7 @@ export default function ContentPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Default Title Suffix</label>
                 <Input 
-                  value={seoBlock?.content?.titleSuffix || seoForm.titleSuffix}
+                  value={seoValues.titleSuffix}
                   onChange={(e) => setSeoForm({ ...seoForm, titleSuffix: e.target.value })}
                   className="dir-ltr text-start"
                 />
@@ -116,7 +140,7 @@ export default function ContentPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Global Meta Description</label>
                 <Textarea 
-                  value={seoBlock?.content?.metaDescription || seoForm.metaDescription}
+                  value={seoValues.metaDescription}
                   onChange={(e) => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
                   className="h-24"
                 />

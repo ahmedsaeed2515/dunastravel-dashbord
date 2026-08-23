@@ -39,7 +39,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
   const [newImageUrl, setNewImageUrl] = useState("");
 
   useEffect(() => {
-    if (tour) {
+    if (!tour) return;
+    const timeout = setTimeout(() => {
       setFormData({
         slug: tour.slug,
         category: tour.category || "",
@@ -63,7 +64,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
       });
       setItineraries(tour.itineraries || []);
       setImages(tour.images || []);
-    }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [tour]);
 
   if (isLoading) {

@@ -48,10 +48,13 @@ export function NotificationBellDropdown() {
   }, []);
 
   useEffect(() => {
-    fetchNotifications();
+    const timeout = setTimeout(fetchNotifications, 0);
     // Poll every 30 seconds for near-real-time delivery
     const interval = setInterval(fetchNotifications, 30000);
-    return () => clearInterval(interval);
+    return () => {
+      clearTimeout(timeout);
+      clearInterval(interval);
+    };
   }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {

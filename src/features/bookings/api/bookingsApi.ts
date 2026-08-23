@@ -1,11 +1,12 @@
 import { apiClient } from "@/lib/axios";
 import { Booking, BookingQueryFilters, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload, CreateManualBookingPayload } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
+import { requirePaginated } from "@/lib/api-response";
 
 export const bookingsApi = {
   getBookings: async (filters: BookingQueryFilters): Promise<PaginatedResponse<Booking>> => {
     const response = await apiClient.get<PaginatedResponse<Booking>>("/admin/bookings", { params: filters });
-    return response as any;
+    return requirePaginated(response, "bookings");
   },
 
   getBookingByReferenceCode: async (referenceCode: string): Promise<Booking> => {

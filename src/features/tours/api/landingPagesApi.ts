@@ -1,6 +1,7 @@
  
 import { apiClient } from "@/lib/axios";
 import { PaginatedResponse } from "@/lib/api-types";
+import { requirePaginated } from "@/lib/api-response";
 
 export interface TourLandingPage {
   id: string;
@@ -58,7 +59,7 @@ export interface LandingPageFilters {
 export const landingPagesApi = {
   getLandingPages: async (filters?: LandingPageFilters): Promise<PaginatedResponse<TourLandingPage>> => {
     const response = await apiClient.get<PaginatedResponse<TourLandingPage>>("/admin/tour-landing-pages", { params: filters });
-    return response as any;
+    return requirePaginated(response, "tour landing pages");
   },
 
   getLandingPageBySlug: async (slug: string): Promise<TourLandingPage> => {

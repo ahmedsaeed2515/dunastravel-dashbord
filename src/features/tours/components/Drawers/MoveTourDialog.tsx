@@ -91,7 +91,8 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
 
   // Load available tour landing page interfaces
   useEffect(() => {
-    if (open) {
+    if (!open) return;
+    const timeout = setTimeout(() => {
       setIsLoadingLandingPages(true);
       landingPagesApi
         .getLandingPages({ limit: 100 })
@@ -100,12 +101,14 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
         })
         .catch(() => {})
         .finally(() => setIsLoadingLandingPages(false));
-    }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [open]);
 
   // Sync state when tour changes
   useEffect(() => {
-    if (tour && open) {
+    if (!tour || !open) return;
+    const timeout = setTimeout(() => {
       setCountry(tour.country || "Egypt");
       setCity(tour.city || "");
       setCategory(tour.category || "Multi-Country");
@@ -115,7 +118,8 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
         ? tour.landingPages[0]?.slug
         : "NONE";
       setSelectedLandingPage(attachedPage || "NONE");
-    }
+    }, 0);
+    return () => clearTimeout(timeout);
   }, [tour, open]);
 
   if (!tour) return null;

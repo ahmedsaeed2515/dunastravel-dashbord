@@ -12,16 +12,17 @@ import {
   CustomerDocument 
 } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
+import { requireObject, requirePaginated } from "@/lib/api-response";
 
 export const customersApi = {
   getMetrics: async (): Promise<CustomerCrmMetrics> => {
     const res: any = await apiClient.get<CustomerCrmMetrics>("/admin/users/crm/metrics");
-    return res?.totalCustomers !== undefined ? res : res?.data || res;
+    return requireObject(res, "customer metrics");
   },
 
   getCustomers: async (params: ListCustomersParams): Promise<PaginatedResponse<Customer>> => {
     const response = await apiClient.get<PaginatedResponse<Customer>>("/admin/users/crm/list", { params });
-    return response as any;
+    return requirePaginated(response, "customers");
   },
 
   getCustomerDetail: async (id: string): Promise<CustomerDetail> => {

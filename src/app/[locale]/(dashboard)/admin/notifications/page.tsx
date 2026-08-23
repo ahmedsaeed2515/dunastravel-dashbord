@@ -58,7 +58,8 @@ export default function AdminNotificationsPage() {
   }, [page, categoryFilter, readFilter]);
 
   useEffect(() => {
-    fetchNotifications();
+    const timeout = setTimeout(fetchNotifications, 0);
+    return () => clearTimeout(timeout);
   }, [fetchNotifications]);
 
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {

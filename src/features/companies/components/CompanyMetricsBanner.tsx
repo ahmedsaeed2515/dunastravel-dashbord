@@ -3,13 +3,18 @@
 import { useCompanyMetrics } from "../hooks/useCompanies";
 import { Building2, Briefcase, DollarSign, Award, Loader2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CompanyMetricsBanner() {
   const tCompanies = useTranslations("companies");
   const tFinance = useTranslations("finance");
 
-  const { data: rawMetrics, isLoading } = useCompanyMetrics();
+  const { data: rawMetrics, isLoading, isError, refetch } = useCompanyMetrics();
   const metrics = (rawMetrics as any)?.totalCompanies !== undefined ? rawMetrics : (rawMetrics as any)?.data || rawMetrics;
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل مؤشرات الشركات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   if (isLoading) {
     return (
@@ -26,28 +31,28 @@ export function CompanyMetricsBanner() {
   const statCards = [
     {
       title: tCompanies("title"),
-      value: metrics?.totalCompanies || 0,
+      value: metrics?.totalCompanies ?? "—",
       icon: Building2,
       color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-500/10 border-amber-500/20"
     },
     {
       title: tCompanies("travelAgencies"),
-      value: metrics?.activeAgencies || 0,
+      value: metrics?.activeAgencies ?? "—",
       icon: Briefcase,
       color: "text-sky-500 dark:text-sky-400",
       bg: "bg-sky-500/10 border-sky-500/20"
     },
     {
       title: tCompanies("corporateAccounts"),
-      value: metrics?.activeCorporate || 0,
+      value: metrics?.activeCorporate ?? "—",
       icon: Award,
       color: "text-emerald-500 dark:text-emerald-400",
       bg: "bg-emerald-500/10 border-emerald-500/20"
     },
     {
       title: tFinance("outstandingBalance"),
-      value: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(metrics?.totalOutstandingBalance || 0),
+      value: metrics ? new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(metrics.totalOutstandingBalance) : "—",
       icon: DollarSign,
       color: "text-rose-500 dark:text-rose-400",
       bg: "bg-rose-500/10 border-rose-500/20"

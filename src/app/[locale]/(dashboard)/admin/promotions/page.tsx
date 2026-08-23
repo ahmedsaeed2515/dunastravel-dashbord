@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -30,7 +31,7 @@ export default function PromotionsPage() {
   
   const [promotionToDelete, setPromotionToDelete] = useState<Promotion | null>(null);
 
-  const { data, isLoading } = usePromotions(filters);
+  const { data, isLoading, isError, refetch } = usePromotions(filters);
   const { mutate: createPromotion, isPending: isCreating } = useCreatePromotion();
   const { mutate: updatePromotion, isPending: isUpdating } = useUpdatePromotion();
   const { mutate: deletePromotion, isPending: isDeleting } = useDeletePromotion();
@@ -72,6 +73,10 @@ export default function PromotionsPage() {
       });
     }
   };
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل العروض والخصومات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">

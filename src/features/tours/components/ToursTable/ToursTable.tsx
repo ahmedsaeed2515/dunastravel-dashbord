@@ -103,7 +103,8 @@ export function ToursTable() {
   };
 
   const { data, isLoading, isError, error, refetch } = useTours(queryFilters);
-  const { data: stats } = useTourStats();
+  const statsQuery = useTourStats();
+  const { data: stats } = statsQuery;
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
   const [isExporting, setIsExporting] = useState(false);
@@ -476,7 +477,7 @@ export function ToursTable() {
       </div>
 
       {/* Body View Rendering */}
-      {isError ? (
+      {isError || statsQuery.isError ? (
         <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-16 text-center">
           <AlertTriangle className="h-10 w-10 text-destructive" />
           <div>
@@ -487,7 +488,7 @@ export function ToursTable() {
               {error instanceof Error ? error.message : tCommon("error")}
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={() => refetch()} className="gap-2">
+          <Button type="button" variant="outline" onClick={() => void Promise.all([refetch(), statsQuery.refetch()])} className="gap-2">
             <RefreshCw className="h-4 w-4" />
             {currentLocale === "ar" ? "إعادة المحاولة" : "Retry"}
           </Button>

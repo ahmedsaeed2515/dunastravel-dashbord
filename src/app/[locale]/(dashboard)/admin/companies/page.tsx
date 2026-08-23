@@ -11,6 +11,7 @@ import { useCompanies } from "@/features/companies/hooks/useCompanies";
 import { Company, CompanyQueryFilters } from "@/features/companies/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export default function CompaniesPage() {
   const tCompanies = useTranslations("companies");
@@ -26,7 +27,11 @@ export default function CompaniesPage() {
   const [selectedCompany, setSelectedCompany] = useState<Company | null>(null);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
 
-  const { data, isLoading, refetch } = useCompanies(filters);
+  const { data, isLoading, isError, refetch } = useCompanies(filters);
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل الشركات الشريكة من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">

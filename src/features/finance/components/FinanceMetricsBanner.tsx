@@ -3,10 +3,17 @@
 import { useWalletMetrics, useCommissionMetrics } from "../hooks/useFinance";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Wallet, Landmark, DollarSign, Clock } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function FinanceMetricsBanner() {
-  const { data: rawWallet, isLoading: walletLoading } = useWalletMetrics();
-  const { data: rawCommission, isLoading: commissionLoading } = useCommissionMetrics();
+  const walletQuery = useWalletMetrics();
+  const commissionQuery = useCommissionMetrics();
+  const { data: rawWallet, isLoading: walletLoading } = walletQuery;
+  const { data: rawCommission, isLoading: commissionLoading } = commissionQuery;
+
+  if (walletQuery.isError || commissionQuery.isError) {
+    return <QueryErrorState message="تعذر تحميل المؤشرات المالية من الباك إند." onRetry={() => void Promise.all([walletQuery.refetch(), commissionQuery.refetch()])} />;
+  }
 
   const walletData = (rawWallet as any)?.totalLiabilitiesUsd !== undefined ? rawWallet : (rawWallet as any)?.data || rawWallet;
   const commissionData = (rawCommission as any)?.totalPendingUsd !== undefined ? rawCommission : (rawCommission as any)?.data || rawCommission;
@@ -14,7 +21,7 @@ export function FinanceMetricsBanner() {
   const metrics = [
     {
       title: "Platform Liabilities (Wallets)",
-      value: typeof walletData?.totalLiabilitiesUsd === "number" ? `$${walletData.totalLiabilitiesUsd.toLocaleString()}` : "$0",
+      value: typeof walletData?.totalLiabilitiesUsd === "number" ? `$${walletData.totalLiabilitiesUsd.toLocaleString()}` : "—",
       icon: Landmark,
       color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-500/10 border-amber-500/20",
@@ -22,7 +29,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Active B2B Wallets",
-      value: walletData?.totalCompanyWallets ?? 0,
+      value: walletData?.totalCompanyWallets ?? "—",
       icon: Wallet,
       color: "text-indigo-500 dark:text-indigo-400",
       bg: "bg-indigo-500/10 border-indigo-500/20",
@@ -30,7 +37,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Pending Commissions",
-      value: typeof commissionData?.totalPendingUsd === "number" ? `$${commissionData.totalPendingUsd.toLocaleString()}` : "$0",
+      value: typeof commissionData?.totalPendingUsd === "number" ? `$${commissionData.totalPendingUsd.toLocaleString()}` : "—",
       icon: Clock,
       color: "text-sky-500 dark:text-sky-400",
       bg: "bg-sky-500/10 border-sky-500/20",
@@ -38,7 +45,7 @@ export function FinanceMetricsBanner() {
     },
     {
       title: "Approved Payouts",
-      value: typeof commissionData?.totalApprovedUsd === "number" ? `$${commissionData.totalApprovedUsd.toLocaleString()}` : "$0",
+      value: typeof commissionData?.totalApprovedUsd === "number" ? `$${commissionData.totalApprovedUsd.toLocaleString()}` : "—",
       icon: DollarSign,
       color: "text-emerald-500 dark:text-emerald-400",
       bg: "bg-emerald-500/10 border-emerald-500/20",

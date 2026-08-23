@@ -12,6 +12,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 interface WalletLedgerProps {
   ownerType: 'USER' | 'COMPANY';
@@ -19,8 +20,10 @@ interface WalletLedgerProps {
 }
 
 export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
-  const { data: wallet, isLoading: walletLoading } = useWallet(ownerType, ownerId);
-  const { data: transactions, isLoading: txLoading } = useWalletTransactions(wallet?.id || "", { enabled: !!wallet?.id });
+  const walletQuery = useWallet(ownerType, ownerId);
+  const { data: wallet, isLoading: walletLoading } = walletQuery;
+  const transactionsQuery = useWalletTransactions(wallet?.id || "", { enabled: !!wallet?.id });
+  const { data: transactions, isLoading: txLoading } = transactionsQuery;
   const addTransaction = useAddManualTransaction();
 
   // Dialog state
@@ -48,6 +51,10 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
     }
   };
 
+  if (walletQuery.isError || transactionsQuery.isError) {
+    return <QueryErrorState message="تعذر تحميل المحفظة من الباك إند." onRetry={() => void Promise.all([walletQuery.refetch(), transactionsQuery.refetch()])} />;
+  }
+
   return (
     <div className="space-y-6">
       <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
@@ -58,7 +65,7 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
               <Skeleton className="h-8 w-32" />
             ) : (
               <p className="text-3xl font-bold tracking-tight">
-                {new Intl.NumberFormat("en-US", { style: "currency", currency: wallet?.currency || "USD" }).format(parseFloat(wallet?.balance || "0"))}
+                {wallet ? new Intl.NumberFormat("en-US", { style: "currency", currency: wallet.currency }).format(parseFloat(wallet.balance)) : "—"}
               </p>
             )}
           </div>

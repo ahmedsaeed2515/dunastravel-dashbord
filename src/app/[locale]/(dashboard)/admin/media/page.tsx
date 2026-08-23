@@ -35,7 +35,7 @@ export default function MediaPage() {
       />
 
       <div className="grid gap-3 rounded-2xl border bg-card p-4 sm:grid-cols-[1fr_1fr_auto]">
-        <Input type="file" accept="image/*,video/*" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
+        <Input type="file" accept="image/jpeg,image/png,image/webp" onChange={(event) => setFile(event.target.files?.[0] ?? null)} />
         <Input value={altText} onChange={(event) => setAltText(event.target.value)} placeholder={isAr ? "وصف الملف" : "Asset description"} />
         <Button onClick={submit} disabled={!file || upload.isPending} className="gap-2">
           {upload.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}

@@ -5,6 +5,7 @@ import {
   CreateAgentPayload,
   UpdateAgentPayload
 } from "../types";
+import { requirePaginated } from "@/lib/api-response";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -19,7 +20,7 @@ export interface PaginatedResponse<T> {
 export const agentsApi = {
   getAgents: async (filters: AgentQueryFilters = {}): Promise<PaginatedResponse<Agent>> => {
     const response = await apiClient.get("/admin/agents", { params: filters });
-    return response as any;
+    return requirePaginated(response, "agents");
   },
 
   getAgentById: async (id: string): Promise<Agent> => {

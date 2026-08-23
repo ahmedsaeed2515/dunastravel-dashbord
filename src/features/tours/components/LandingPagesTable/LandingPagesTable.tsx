@@ -11,6 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Loader2, Search, Plus, MoreHorizontal, Edit, Globe, CheckCircle2, AlertCircle, Trash2, Eye, ExternalLink, Package } from "lucide-react";
 import { toast } from "sonner";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function LandingPagesTable() {
   const [search, setSearch] = useState("");
@@ -18,7 +19,7 @@ export function LandingPagesTable() {
   const [selectedPage, setSelectedPage] = useState<TourLandingPage | null>(null);
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
-  const { data, isLoading } = useLandingPages({
+  const { data, isLoading, isError, refetch } = useLandingPages({
     search: search || undefined,
     status: statusFilter !== "ALL" ? statusFilter : undefined,
   });
@@ -44,6 +45,10 @@ export function LandingPagesTable() {
   };
 
   const items = data?.data || [];
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل صفحات الرحلات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-4">

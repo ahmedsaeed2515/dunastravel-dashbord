@@ -1,10 +1,11 @@
 import { apiClient } from "@/lib/axios";
 import { Review, ReviewQueryFilters, PaginatedResponse, ReviewStatus } from "../types";
+import { requirePaginated } from "@/lib/api-response";
 
 export const reviewsApi = {
   getReviews: async (filters: ReviewQueryFilters = {}): Promise<PaginatedResponse<Review>> => {
     const response = await apiClient.get("/admin/reviews", { params: filters });
-    return response as any;
+    return requirePaginated(response, "reviews");
   },
 
   updateStatus: async (id: string, status: ReviewStatus): Promise<Review> => {

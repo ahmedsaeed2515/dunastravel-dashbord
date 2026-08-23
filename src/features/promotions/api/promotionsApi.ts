@@ -5,6 +5,7 @@ import {
   CreatePromotionPayload,
   UpdatePromotionPayload
 } from "../types";
+import { requirePaginated } from "@/lib/api-response";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -19,7 +20,7 @@ export interface PaginatedResponse<T> {
 export const promotionsApi = {
   getPromotions: async (filters: PromotionQueryFilters = {}): Promise<PaginatedResponse<Promotion>> => {
     const response = await apiClient.get("/admin/promotions", { params: filters });
-    return response as any;
+    return requirePaginated(response, "promotions");
   },
 
   getPromotionById: async (id: string): Promise<Promotion> => {

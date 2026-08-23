@@ -26,6 +26,7 @@ import {
 import { Download, CheckSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function BookingsTable() {
   const tBookings = useTranslations("bookings");
@@ -44,7 +45,7 @@ export function BookingsTable() {
     ...(statusFilter && statusFilter !== "ALL" ? { status: statusFilter } : {})
   };
   
-  const { data, isLoading } = useBookings(queryFilters);
+  const { data, isLoading, isError, refetch } = useBookings(queryFilters);
   const deleteBooking = useSoftDeleteBooking();
   const bulkUpdate = useBulkUpdateBookings();
   const [isExporting, setIsExporting] = useState(false);
@@ -168,6 +169,10 @@ export function BookingsTable() {
       </div>
     );
   };
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل الحجوزات من الباك إند." onRetry={() => void refetch()} />;
+  }
 
   return (
     <div className="space-y-4">
