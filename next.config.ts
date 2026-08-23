@@ -4,7 +4,7 @@ import path from 'path';
 
 const withNextIntl = createNextIntlPlugin();
 
-const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://dunastravel-backend-seven.vercel.app/api').replace(/\/$/, '');
+const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || (process.env.NODE_ENV === 'production' ? 'https://dunastravel-backend-seven.vercel.app/api' : 'http://localhost:5000/api')).replace(/\/$/, '');
 const destinationApiUrl = rawApiUrl.endsWith('/api') ? `${rawApiUrl}/:path*` : `${rawApiUrl}/api/:path*`;
 
 const nextConfig: NextConfig = {

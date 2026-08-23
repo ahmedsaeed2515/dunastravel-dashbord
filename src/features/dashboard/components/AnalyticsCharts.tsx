@@ -1,308 +1,359 @@
 "use client";
 
-import { useState } from "react";
+import React, { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { 
   BarChart3, 
-  TrendingUp, 
-  ArrowUpRight, 
-  Crown, 
-  ChevronLeft, 
-  Flame,
-  PieChart
+  MapPin, 
+  Calendar,
+  ArrowUpRight
 } from "lucide-react";
-import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
+import { 
+  ResponsiveContainer, 
+  AreaChart, 
+  Area, 
+  BarChart,
+  Bar,
+  XAxis, 
+  YAxis, 
+  Tooltip, 
+  CartesianGrid 
+} from "recharts";
 import { useParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { adminRoutes } from "@/config/admin-routes";
+import { RevenueTrendItem, TopDestinationItem, DashboardFilters } from "../types";
+import { useRevenueTrend, useTopDestinations } from "../hooks/useDashboardData";
 
 interface AnalyticsChartsProps {
-  revenueTrend?: any;
+  filters?: DashboardFilters;
+  revenueTrend?: RevenueTrendItem[];
   isLoadingRevenue?: boolean;
 }
 
-export function AnalyticsCharts({}: AnalyticsChartsProps) {
+export function AnalyticsCharts({ filters, revenueTrend: propTrend, isLoadingRevenue }: AnalyticsChartsProps) {
   const params = useParams();
-  const isAr = params?.locale === "ar";
-  const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "6m">("2026");
+  const locale = (params?.locale as string) || "ar";
+  const isAr = locale === "ar";
+  const t = useTranslations("dashboard");
 
-  // Monthly Revenue Chart Data matching the image (Jan to Aug 2026)
-  const monthlyData = [
-    { month: isAr ? "أغسطس" : "Aug", amount: 58400, isPeak: true },
-    { month: isAr ? "يوليو" : "Jul", amount: 48200, isPeak: false },
-    { month: isAr ? "يونيو" : "Jun", amount: 44100, isPeak: false },
-    { month: isAr ? "مايو" : "May", amount: 41500, isPeak: false },
-    { month: isAr ? "أبريل" : "Apr", amount: 32000, isPeak: false },
-    { month: isAr ? "مارس" : "Mar", amount: 35800, isPeak: false },
-    { month: isAr ? "فبراير" : "Feb", amount: 29400, isPeak: false },
-    { month: isAr ? "يناير" : "Jan", amount: 26100, isPeak: false },
-  ];
+  const [metricMode, setMetricMode] = useState<"revenue" | "bookings">("revenue");
 
-  // Destinations breakdown data matching the image
-  const destinations = [
-    {
-      name: isAr ? "EG مصر والرحلات النيلية" : "EG Egypt & Nile Cruises",
-      percent: 48,
-      amount: "$28,032",
-      color: "bg-amber-500",
-      textColor: "text-amber-600 dark:text-amber-400",
-    },
-    {
-      name: isAr ? "TR تركيا وكابادوكيا" : "TR Turkey & Cappadocia",
-      percent: 22,
-      amount: "$12,848",
-      color: "bg-blue-600",
-      textColor: "text-blue-600 dark:text-blue-400",
-    },
-    {
-      name: isAr ? "JO الأردن والبتراء" : "JO Jordan & Petra",
-      percent: 15,
-      amount: "$8,768",
-      color: "bg-emerald-500",
-      textColor: "text-emerald-600 dark:text-emerald-400",
-    },
-    {
-      name: isAr ? "MA المغرب واليونان ودبي" : "MA Morocco, Greece & Dubai",
-      percent: 10,
-      amount: "$5,840",
-      color: "bg-yellow-500",
-      textColor: "text-yellow-600 dark:text-yellow-400",
-    },
-    {
-      name: isAr ? "TN تونس والأرض المقدسة" : "TN Tunisia & Holy Land",
-      percent: 5,
-      amount: "$2,920",
-      color: "bg-pink-500",
-      textColor: "text-pink-600 dark:text-pink-400",
-    },
-  ];
+  // Query real data if not provided in props
+  const { data: queriedTrend, isLoading: trendLoading } = useRevenueTrend(filters);
+  const { data: topDestinations, isLoading: destLoading } = useTopDestinations(filters);
+
+  const rawTrend = propTrend || queriedTrend || [];
+  const loading = isLoadingRevenue || trendLoading;
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(val);
+
+  // Format date buckets for X-Axis cleanly
+  const formattedChartData = rawTrend.map((item) => {
+    const rawDate = item.period;
+    let label = rawDate;
+    try {
+      const d = new Date(rawDate);
+      if (!isNaN(d.getTime())) {
+        label = new Intl.DateTimeFormat(locale === "ar" ? "ar-EG" : "en-US", {
+          month: "short",
+          day: "numeric",
+        }).format(d);
+      }
+    } catch {
+      label = rawDate;
+    }
+
+    return {
+      period: label,
+      rawPeriod: item.period,
+      grossRevenue: Number(item.grossRevenue || 0),
+      collected: Number(item.collected || 0),
+      bookingsCount: Number(item.bookingsCount || 0),
+    };
+  });
+
+  // Calculate totals for summary strip
+  const totalGrossInPeriod = formattedChartData.reduce((acc, cur) => acc + cur.grossRevenue, 0);
+  const totalCollectedInPeriod = formattedChartData.reduce((acc, cur) => acc + cur.collected, 0);
+  const totalBookingsInPeriod = formattedChartData.reduce((acc, cur) => acc + cur.bookingsCount, 0);
+  const abv = totalBookingsInPeriod > 0 ? totalGrossInPeriod / totalBookingsInPeriod : 0;
+
+  // Custom Chart Tooltip
+  const CustomTooltip = ({ active, payload, label }: any) => {
+    if (active && payload && payload.length) {
+      return (
+        <div className="p-3 bg-card/95 backdrop-blur-md border border-border shadow-xl rounded-xl text-xs space-y-1.5 min-w-[150px]">
+          <p className="font-bold text-foreground border-b border-border pb-1">{label}</p>
+          {payload.map((entry: any, index: number) => (
+            <div key={`item-${index}`} className="flex items-center justify-between gap-3">
+              <span className="flex items-center gap-1.5 text-muted-foreground">
+                <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+                <span>{entry.name}</span>
+              </span>
+              <span className="font-mono font-bold text-foreground">
+                {metricMode === "revenue" ? formatCurrency(entry.value) : `${entry.value} bookings`}
+              </span>
+            </div>
+          ))}
+        </div>
+      );
+    }
+    return null;
+  };
+
+  const destinationsList: TopDestinationItem[] = topDestinations || [];
 
   return (
-    <Card className="p-5 sm:p-6 bg-card border border-border/80 rounded-3xl shadow-sm space-y-6">
-      {/* 1. Header Section */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-border/60 pb-4">
-        {/* Right side in Arabic (Left in English): Title & Subtitle */}
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              <BarChart3 className="w-5 h-5" />
+    <div className="grid gap-5 lg:grid-cols-12 items-start">
+      {/* 1. Revenue & Sales Trend Chart (7 cols on lg) */}
+      <Card className="lg:col-span-7 p-5 sm:p-6 bg-card border border-border/80 rounded-2xl shadow-xs space-y-5">
+        {/* Header with Title & Metric Mode Switcher */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/60 pb-4">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                <BarChart3 className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <h2 className="text-base font-extrabold text-foreground">
+                {t("revenueTrend")}
+              </h2>
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight flex items-center gap-2">
-              {isAr ? "اتجاه الإيرادات والنمو الشهري" : "Revenue Trend Analytics"}
-              <span className="text-xs font-bold text-muted-foreground dir-ltr">
-                (Revenue Trend Analytics)
-              </span>
-            </h2>
+            <p className="text-xs text-muted-foreground">
+              {t("revenueTrendSubtitle")}
+            </p>
           </div>
-          <p className="text-xs text-muted-foreground font-semibold">
-            {isAr
-              ? "تحليل شامل ومفصل لحركة الإيرادات، المبيعات الشهرية، ونسب النمو لعام 2026 مقارنة بالفترات السابقة."
-              : "Comprehensive analysis of monthly revenue flow, sales performance, and 2026 growth ratios."}
-          </p>
+
+          {/* Metric Mode Toggle */}
+          <div className="flex items-center gap-1 p-1 rounded-xl bg-muted/50 border border-border text-xs shrink-0 self-start sm:self-auto">
+            <button
+              onClick={() => setMetricMode("revenue")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                metricMode === "revenue"
+                  ? "bg-card text-foreground shadow-xs border border-border text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {isAr ? "الإيرادات ($)" : "Revenue ($)"}
+            </button>
+            <button
+              onClick={() => setMetricMode("bookings")}
+              className={`px-3 py-1 rounded-lg font-bold transition-all cursor-pointer ${
+                metricMode === "bookings"
+                  ? "bg-card text-foreground shadow-xs border border-border text-amber-600 dark:text-amber-400"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              {isAr ? "الحجوزات (#)" : "Bookings (#)"}
+            </button>
+          </div>
         </div>
 
-        {/* Year Filter Buttons (Top-Left in Arabic) */}
-        <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-2xl border border-border">
-          <button
-            onClick={() => setSelectedYear("2026")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-              selectedYear === "2026"
-                ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            2026
-          </button>
-          <button
-            onClick={() => setSelectedYear("2025")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-              selectedYear === "2025"
-                ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            2025
-          </button>
-          <button
-            onClick={() => setSelectedYear("6m")}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-              selectedYear === "6m"
-                ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
-                : "text-muted-foreground hover:text-foreground"
-            }`}
-          >
-            {isAr ? "آخر 6 أشهر" : "Last 6 Months"}
-          </button>
-        </div>
-      </div>
-
-      {/* 2. Top 4 Metric Cards Row */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {/* Card 1: Monthly Sales Rate */}
-        <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground block">
-              {isAr ? "معدل المبيعات الشهري" : "Monthly Sales Rate"}
-            </span>
-            <div className="text-xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
-              $39,425 <span className="text-xs font-medium text-muted-foreground">{isAr ? "/شهر" : "/mo"}</span>
+        {/* Chart Viewport */}
+        <div className="h-64 sm:h-72 w-full pt-2" dir="ltr">
+          {loading ? (
+            <div className="h-full flex items-center justify-center text-xs text-muted-foreground animate-pulse">
+              Loading financial trends...
             </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 flex items-center gap-1">
-            <ArrowUpRight className="w-3.5 h-3.5" /> +18.4%
-          </span>
-        </div>
-
-        {/* Card 2: Average Booking Value */}
-        <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground block">
-              {isAr ? "متوسط قيمة الحجز الفردي" : "Average Booking Value"}
-            </span>
-            <div className="text-xl font-extrabold font-mono text-amber-600 dark:text-amber-400">
-              $1,850
+          ) : formattedChartData.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-xs text-muted-foreground gap-2">
+              <Calendar className="w-8 h-8 text-muted-foreground/40" />
+              <span>{t("noRevenueData")}</span>
             </div>
-          </div>
-          <span className="text-xs font-semibold text-muted-foreground">
-            {isAr ? "لكل حاجز" : "Per Client"}
-          </span>
-        </div>
-
-        {/* Card 3: Top Revenue Destination */}
-        <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground block">
-              {isAr ? "الوجهة الأعلى تحصيلاً" : "Top Revenue Destination"}
-            </span>
-            <div className="text-base font-extrabold text-foreground">
-              EG مصر <span className="text-xs font-semibold text-muted-foreground">(Egypt)</span>
-            </div>
-          </div>
-          <span className="px-2.5 py-1 rounded-full text-xs font-extrabold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30">
-            48%
-          </span>
-        </div>
-
-        {/* Card 4: Booking Conversion Rate */}
-        <div className="p-4 rounded-2xl bg-muted/40 border border-border flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground block">
-              {isAr ? "معدل تحويل الحجوزات" : "Booking Conversion Rate"}
-            </span>
-            <div className="text-xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono">
-              92.5%
-            </div>
-          </div>
-          <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-            {isAr ? "مكتمل ومؤكد" : "Confirmed"}
-          </span>
-        </div>
-      </div>
-
-      {/* 3. Main Split Section: Chart & Destination Breakdown */}
-      <div className="grid gap-6 lg:grid-cols-12 pt-2">
-        {/* Main Column: Bar Chart (8 cols) */}
-        <div className="lg:col-span-7 xl:col-span-8 p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-500" />
-              {isAr ? "الرسم البياني لحركة الإيرادات الشهرية ($ USD)" : "Monthly Revenue Trend Chart ($ USD)"}
-            </h3>
-            <span className="text-xs font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1.5 bg-amber-500/10 px-3 py-1 rounded-full border border-amber-500/20">
-              <Flame className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-              {isAr ? "أغسطس 2026: الأعلى نمواً" : "Aug 2026: Peak Month"}
-            </span>
-          </div>
-
-          {/* Bar Chart Container */}
-          <div className="relative h-64 sm:h-72 w-full pt-4">
+          ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
-                <XAxis 
-                  dataKey="month" 
-                  fontSize={12} 
-                  fontWeight="bold"
-                  tickLine={false} 
-                  axisLine={false}
-                  stroke="#94a3b8" 
-                />
-                <YAxis 
-                  fontSize={10} 
-                  tickLine={false} 
-                  axisLine={false} 
-                  tickFormatter={(val) => `$${val / 1000}k`}
-                  stroke="#94a3b8"
-                />
-                <Tooltip
-                  formatter={(value: any) => [`$${Number(value).toLocaleString()} USD`, isAr ? "الإيراد" : "Revenue"]}
-                  contentStyle={{ 
-                    borderRadius: "12px", 
-                    backgroundColor: "rgba(15, 23, 42, 0.95)",
-                    color: "#fff",
-                    border: "1px solid rgba(217, 119, 6, 0.3)",
-                    fontWeight: "bold"
-                  }}
-                />
-                <Bar dataKey="amount" radius={[8, 8, 0, 0]}>
-                  {monthlyData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={entry.isPeak ? "#d97706" : "#3b82f6"}
-                      className="transition-all duration-300 hover:opacity-80"
-                    />
-                  ))}
-                </Bar>
-              </BarChart>
+              {metricMode === "revenue" ? (
+                <AreaChart data={formattedChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="grossRevGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#f59e0b" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#f59e0b" stopOpacity={0.0} />
+                    </linearGradient>
+                    <linearGradient id="collectedGrad" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#10b981" stopOpacity={0.35} />
+                      <stop offset="95%" stopColor="#10b981" stopOpacity={0.0} />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.6} />
+                  <XAxis
+                    dataKey="period"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(val) => `$${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Area
+                    type="monotone"
+                    dataKey="grossRevenue"
+                    name={isAr ? "المبيعات الإجمالية" : "Gross Volume"}
+                    stroke="#f59e0b"
+                    strokeWidth={2.5}
+                    fillOpacity={1}
+                    fill="url(#grossRevGrad)"
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="collected"
+                    name={isAr ? "المدفوعات المحصلة" : "Collected Net"}
+                    stroke="#10b981"
+                    strokeWidth={2}
+                    fillOpacity={1}
+                    fill="url(#collectedGrad)"
+                  />
+                </AreaChart>
+              ) : (
+                <BarChart data={formattedChartData} margin={{ top: 10, right: 10, left: -15, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="hsl(var(--border))" opacity={0.6} />
+                  <XAxis
+                    dataKey="period"
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                  />
+                  <YAxis
+                    stroke="hsl(var(--muted-foreground))"
+                    fontSize={11}
+                    tickLine={false}
+                    axisLine={false}
+                    allowDecimals={false}
+                  />
+                  <Tooltip content={<CustomTooltip />} />
+                  <Bar
+                    dataKey="bookingsCount"
+                    name={isAr ? "عدد الحجوزات" : "Bookings Count"}
+                    fill="#f59e0b"
+                    radius={[6, 6, 0, 0]}
+                    maxBarSize={45}
+                  />
+                </BarChart>
+              )}
             </ResponsiveContainer>
-
-            {/* Peak Month Badge on top of August */}
-            <div className="absolute top-0 right-8 sm:right-10 flex items-center gap-1 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-md animate-bounce">
-              <Crown className="w-3 h-3 fill-slate-950" />
-              <span>{isAr ? "القمة 👑" : "Peak 👑"}</span>
-            </div>
-          </div>
+          )}
         </div>
 
-        {/* Side Column: Destination Revenue Breakdown (4 cols) */}
-        <div className="lg:col-span-5 xl:col-span-4 p-5 rounded-2xl bg-muted/30 border border-border flex flex-col justify-between space-y-4">
-          <div>
-            <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4 pb-2 border-b border-border/60">
-              <PieChart className="w-4 h-4 text-amber-500" />
-              {isAr ? "توزيع الإيرادات حسب الواجهات الـ 8 🕓" : "Revenue by Destinations 🕓"}
-            </h3>
+        {/* Micro-Summary Stats Bar */}
+        <div className="grid grid-cols-3 gap-2 pt-3 border-t border-border/60 text-center">
+          <div className="p-2 rounded-xl bg-muted/30">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+              {isAr ? "المبيعات بالفترة" : "Period Gross"}
+            </span>
+            <span className="text-xs sm:text-sm font-black font-mono text-foreground">
+              {formatCurrency(totalGrossInPeriod)}
+            </span>
+          </div>
+          <div className="p-2 rounded-xl bg-muted/30">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+              {isAr ? "التحصيل الصافي" : "Net Captured"}
+            </span>
+            <span className="text-xs sm:text-sm font-black font-mono text-emerald-600 dark:text-emerald-400">
+              {formatCurrency(totalCollectedInPeriod)}
+            </span>
+          </div>
+          <div className="p-2 rounded-xl bg-muted/30">
+            <span className="text-[10px] text-muted-foreground uppercase font-bold block">
+              {isAr ? "متوسط الحجز" : "Average Order"}
+            </span>
+            <span className="text-xs sm:text-sm font-black font-mono text-amber-600 dark:text-amber-400">
+              {formatCurrency(abv)}
+            </span>
+          </div>
+        </div>
+      </Card>
 
-            {/* Destination Items List */}
-            <div className="space-y-3.5">
-              {destinations.map((dest, idx) => (
-                <div key={idx} className="space-y-1.5">
-                  <div className="flex items-center justify-between text-xs font-bold">
-                    <span className="text-foreground">{dest.name}</span>
-                    <span className={`font-mono ${dest.textColor}`}>
-                      ({dest.percent}%) {dest.amount}
-                    </span>
-                  </div>
-                  {/* Progress Bar */}
-                  <div className="h-2 w-full bg-muted rounded-full overflow-hidden">
-                    <div
-                      className={`h-full ${dest.color} rounded-full transition-all duration-500`}
-                      style={{ width: `${dest.percent}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
+      {/* 2. Top Destinations Performance Breakdown (5 cols on lg) */}
+      <Card className="lg:col-span-5 p-5 sm:p-6 bg-card border border-border/80 rounded-2xl shadow-xs space-y-5">
+        <div className="flex items-center justify-between border-b border-border/60 pb-4">
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-500/10 text-blue-500 border border-blue-500/20">
+                <MapPin className="w-4 h-4 stroke-[2.2]" />
+              </div>
+              <h2 className="text-base font-extrabold text-foreground">
+                {t("topDestinations")}
+              </h2>
             </div>
+            <p className="text-xs text-muted-foreground">
+              {t("topDestinationsSubtitle")}
+            </p>
           </div>
 
-          {/* Bottom Action Button */}
           <Link
-            href={adminRoutes.finance.commissions}
-            className="w-full mt-4 py-2.5 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center justify-center gap-2 transition-all duration-200 cursor-pointer"
+            href={adminRoutes.destinations}
+            className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-0.5 shrink-0"
           >
-            <span>{isAr ? "استعراض تقارير المالية الحجز الكاملة" : "View Full Financial Reports"}</span>
-            <ChevronLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+            <span>{isAr ? "الواجهات" : "All"}</span>
+            <ArrowUpRight className="w-3.5 h-3.5" />
           </Link>
         </div>
-      </div>
-    </Card>
+
+        {/* Destinations List */}
+        <div className="space-y-3.5 pt-1">
+          {destLoading ? (
+            <div className="space-y-3 py-4 animate-pulse">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="h-10 bg-muted/60 rounded-xl" />
+              ))}
+            </div>
+          ) : destinationsList.length === 0 ? (
+            <div className="py-8 text-center text-xs text-muted-foreground">
+              {t("noDestinationsData")}
+            </div>
+          ) : (
+            destinationsList.slice(0, 5).map((dest, idx) => {
+              const displayName = isAr ? (dest.nameAr || dest.name) : dest.name;
+              return (
+                <div key={idx} className="space-y-1.5">
+                  <div className="flex items-center justify-between text-xs font-bold">
+                    <div className="flex items-center gap-2">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-mono bg-muted font-bold border border-border">
+                        {dest.countryCode || "GL"}
+                      </span>
+                      <span className="text-foreground truncate max-w-[160px] sm:max-w-[200px]">
+                        {displayName}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 font-mono">
+                      <span className="text-muted-foreground text-[11px]">
+                        {dest.bookingsCount} {isAr ? "حجز" : "bkgs"}
+                      </span>
+                      <span className="text-foreground font-extrabold">
+                        {formatCurrency(dest.grossRevenue)}
+                      </span>
+                    </div>
+                  </div>
+
+                  {/* Progress Bar with Real Percentage */}
+                  <div className="w-full bg-muted/70 h-2 rounded-full overflow-hidden flex items-center">
+                    <div
+                      className={`h-full rounded-full transition-all duration-500 ${dest.color || "bg-amber-500"}`}
+                      style={{ width: `${Math.max(dest.sharePercent, 4)}%` }}
+                    />
+                  </div>
+                  <div className="flex items-center justify-between text-[10px] text-muted-foreground">
+                    <span>{isAr ? "الحصة من المبيعات" : "Revenue Share"}</span>
+                    <span className="font-bold font-mono text-foreground">{dest.sharePercent}%</span>
+                  </div>
+                </div>
+              );
+            })
+          )}
+        </div>
+      </Card>
+    </div>
   );
 }

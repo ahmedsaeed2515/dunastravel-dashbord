@@ -241,7 +241,7 @@ export const AppSidebar = memo(function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-0.5">
-                <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
+                <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} />
                 <NavItem href={adminRoutes.media} icon={Film} label={tNav("media")} />
                 <NavItem href={adminRoutes.promotions} icon={Tag} label={tNav("promotions")} />
                 <NavItem href={adminRoutes.reviews} icon={MessageCircle} label={tNav("reviews")} />
@@ -262,7 +262,7 @@ export const AppSidebar = memo(function AppSidebar() {
               <SidebarMenu className="space-y-0.5">
                 <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
                 <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />
-                <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} badge="AI" />
+                <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
@@ -295,7 +295,7 @@ export const AppSidebar = memo(function AppSidebar() {
       <SidebarFooter className="border-t border-border p-3 bg-card">
         <SidebarMenu className="space-y-1">
           {/* Profile */}
-          <NavItem href={adminRoutes.profile} icon={User} label={tNav("profile")} badge="Admin" />
+          <NavItem href={adminRoutes.profile} icon={User} label={tNav("profile")} />
 
           {/* Settings */}
           {isAdmin && (

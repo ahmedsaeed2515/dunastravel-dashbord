@@ -2,6 +2,7 @@ export interface DashboardFilters {
   from?: string;
   to?: string;
   period?: 'daily' | 'weekly' | 'monthly';
+  preset?: '7d' | '30d' | '90d' | '12m' | 'all';
   interfaceSlug?: string;
   tourSlug?: string;
   currency?: string;
@@ -62,6 +63,17 @@ export interface BookingsTrendItem {
   confirmed: number;
   pending: number;
   cancelled: number;
+}
+
+export interface TopDestinationItem {
+  name: string;
+  nameAr: string;
+  countryCode: string;
+  bookingsCount: number;
+  grossRevenue: number;
+  collectedRevenue: number;
+  sharePercent: number;
+  color: string;
 }
 
 export interface TourPerformanceItem {
@@ -147,7 +159,9 @@ export interface RecentActivityItem {
   id: string;
   actor: string;
   action: string;
+  actionAr?: string;
   entity: string;
+  rawAction?: string;
   timestamp: string;
   type: string;
 }

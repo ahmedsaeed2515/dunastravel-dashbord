@@ -1,172 +1,163 @@
 "use client";
 
+import React from "react";
 import { Card } from "@/components/ui/card";
 import { 
   Flame, 
-  Star, 
   MapPin, 
-  Users, 
-  ChevronLeft, 
-  Sparkles, 
-  Compass, 
-  TrendingUp,
-  CalendarCheck
+  ArrowUpRight,
+  CalendarCheck,
+  Compass,
+  Layers
 } from "lucide-react";
 import { useParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
+import { useTranslations } from "next-intl";
 import { adminRoutes } from "@/config/admin-routes";
+import { DashboardFilters, TourPerformanceItem } from "../types";
+import { useTourPerformance } from "../hooks/useDashboardData";
 
-export function PopularToursSection() {
+interface PopularToursSectionProps {
+  filters?: DashboardFilters;
+}
+
+export function PopularToursSection({ filters }: PopularToursSectionProps) {
   const params = useParams();
-  const isAr = params?.locale === "ar";
+  const locale = (params?.locale as string) || "ar";
+  const isAr = locale === "ar";
+  const t = useTranslations("dashboard");
 
-  const popularTours = [
-    {
-      id: "nile-cruise-5d4n",
-      title: isAr ? "رحلة الكروز النيلي الفاخرة (الأقصر وأسوان 5 أيام)" : "Luxury Nile Cruise (Luxor & Aswan 5D/4N)",
-      category: isAr ? "رحلات نيلية VIP" : "Nile Cruises VIP",
-      image: "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=600&q=80",
-      price: "$1,450",
-      bookingsCount: isAr ? "142 حجز مؤكد" : "142 Confirmed Bookings",
-      rating: "4.9",
-      growth: "+24%",
-      badge: isAr ? "الأعلى مبيعاً 🔥" : "Top Seller 🔥",
-      badgeBg: "bg-amber-500 text-slate-950",
-      destination: isAr ? "مصر • الأقصر وأسوان" : "Egypt • Luxor & Aswan",
-    },
-    {
-      title: isAr ? "برنامج مصر الشامل (القاهرة، الأقصر، والغردقة)" : "Grand Egypt Tour (Cairo, Luxor & Hurghada)",
-      category: isAr ? "الباكدجز الخاصة" : "Special Packages",
-      image: "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=600&q=80",
-      price: "$2,200",
-      bookingsCount: isAr ? "98 حجز مؤكد" : "98 Confirmed Bookings",
-      rating: "4.95",
-      growth: "+18%",
-      badge: isAr ? "برنامج ذهبي 👑" : "VIP Gold 👑",
-      badgeBg: "bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30",
-      destination: isAr ? "مصر • القاهرة والبحر الأحمر" : "Egypt • Cairo & Red Sea",
-    },
-    {
-      title: isAr ? "رحلة إسطنبول وكابادوكيا (المناطيد الساحرة 7 أيام)" : "Istanbul & Cappadocia Balloons Experience (7D)",
-      category: isAr ? "الواجهات العالمية" : "Global Tours",
-      image: "https://images.unsplash.com/photo-1541432901042-2d8bd64b4a9b?auto=format&fit=crop&w=600&q=80",
-      price: "$1,890",
-      bookingsCount: isAr ? "76 حجز مؤكد" : "76 Confirmed Bookings",
-      rating: "4.85",
-      growth: "+15%",
-      badge: isAr ? "إقبال مرتفع ⭐️" : "High Demand ⭐️",
-      badgeBg: "bg-blue-500/20 text-blue-600 dark:text-blue-400 border border-blue-500/30",
-      destination: isAr ? "تركيا • كابادوكيا" : "Turkey • Cappadocia",
-    },
-    {
-      title: isAr ? "مغامرة البتراء ووادي رم والبحيرة الميتة (5 أيام)" : "Petra, Wadi Rum & Dead Sea Adventure (5D)",
-      category: isAr ? "سياحة ثقافية" : "Cultural Tours",
-      image: "https://images.unsplash.com/photo-1579606032821-4f67d26fb511?auto=format&fit=crop&w=600&q=80",
-      price: "$1,650",
-      bookingsCount: isAr ? "64 حجز مؤكد" : "64 Confirmed Bookings",
-      rating: "4.88",
-      growth: "+12%",
-      badge: isAr ? "برنامج مميز 🌟" : "Featured 🌟",
-      badgeBg: "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30",
-      destination: isAr ? "الأردن • البتراء ووادي رم" : "Jordan • Petra & Wadi Rum",
-    },
-  ];
+  const { data, isLoading } = useTourPerformance(filters);
+
+  if (isLoading) {
+    return (
+      <Card className="p-5 sm:p-6 bg-card border border-border/80 rounded-2xl shadow-xs space-y-4">
+        <div className="h-5 w-48 bg-muted rounded-md animate-pulse" />
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[1, 2, 3, 4].map((i) => (
+            <div key={i} className="h-64 bg-muted/50 rounded-2xl animate-pulse" />
+          ))}
+        </div>
+      </Card>
+    );
+  }
+
+  const allTours: TourPerformanceItem[] = (data as any)?.all || [];
+  const mostBooked: TourPerformanceItem[] = (data as any)?.rankings?.mostBooked || [];
+  const displayTours = mostBooked.length > 0 ? mostBooked.slice(0, 4) : allTours.slice(0, 4);
+
+  if (displayTours.length === 0) {
+    return null;
+  }
+
+  const getTourTitle = (tour: TourPerformanceItem) => {
+    if (!tour.titleJsonb) return tour.slug;
+    if (typeof tour.titleJsonb === "string") return tour.titleJsonb;
+    return tour.titleJsonb[locale] || tour.titleJsonb["en"] || tour.titleJsonb["ar"] || tour.slug;
+  };
+
+  const formatCurrency = (val: number) =>
+    new Intl.NumberFormat(locale === "ar" ? "ar-EG" : "en-US", {
+      style: "currency",
+      currency: "USD",
+      maximumFractionDigits: 0,
+    }).format(val);
 
   return (
-    <Card className="p-6 bg-card border border-border/80 rounded-3xl shadow-sm space-y-6">
-      {/* Header Section */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pb-4 border-b border-border/60">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-500 border border-amber-500/20">
-              <Flame className="w-5 h-5 fill-amber-500 text-amber-500" />
+    <Card className="p-5 sm:p-6 bg-card border border-border/80 rounded-2xl shadow-xs space-y-5">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pb-4 border-b border-border/60">
+        <div className="space-y-0.5">
+          <div className="flex items-center gap-2">
+            <div className="p-1.5 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
+              <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
             </div>
-            <h2 className="text-lg sm:text-xl font-black text-foreground tracking-tight flex items-center gap-2">
-              {isAr ? "الرحلات والبرامج الأكثر إقبالاً وحجزاً" : "Most Popular & High-Demand Tours"}
-              <Sparkles className="w-4 h-4 text-amber-500" />
+            <h2 className="text-base font-extrabold text-foreground">
+              {t("popularTours")}
             </h2>
           </div>
-          <p className="text-xs text-muted-foreground font-semibold">
-            {isAr
-              ? "أعلى البرامج السياحية والرحلات البحرية طلباً وحجزاً من العملاء والوكلاء هذا الموسم."
-              : "Highest booked travel programs and Nile cruises requested by clients and B2B agents."}
+          <p className="text-xs text-muted-foreground">
+            {t("popularToursSubtitle")}
           </p>
         </div>
 
-        {/* View All Button */}
         <Link
           href={adminRoutes.tours}
-          className="py-2 px-4 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-all duration-200 cursor-pointer shrink-0"
+          className="text-xs font-bold text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 shrink-0"
         >
-          <span>{isAr ? "عرض جميع الرحلات 🗺️" : "View All Tours 🗺️"}</span>
-          <ChevronLeft className="w-4 h-4 rtl:rotate-0 ltr:rotate-180" />
+          <span>{t("viewAllTours")}</span>
+          <ArrowUpRight className="w-3.5 h-3.5" />
         </Link>
       </div>
 
-      {/* Cards Grid: 4 Equal Popular Tours */}
-      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-        {popularTours.map((tour, idx) => (
-          <Link key={idx} href={adminRoutes.tours} className="block group">
-            <Card className="overflow-hidden bg-muted/30 border border-border hover:border-amber-500/40 hover:-translate-y-1 hover:shadow-xl transition-all duration-300 rounded-2xl h-full flex flex-col justify-between">
-              <div>
-                {/* Image Header */}
-                <div className="relative h-44 w-full overflow-hidden bg-slate-900">
-                  <img
-                    src={tour.image}
-                    alt={tour.title}
-                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500 opacity-90 group-hover:opacity-100"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
-                  
-                  {/* Badge */}
-                  <span className={`absolute top-3 right-3 text-[11px] font-black px-2.5 py-1 rounded-full shadow-md ${tour.badgeBg}`}>
-                    {tour.badge}
-                  </span>
+      {/* Cards Grid: 4 Real Tours */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {displayTours.map((tour, idx) => {
+          const title = getTourTitle(tour);
+          const heroImg = tour.heroImage || "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=600&q=80";
 
-                  {/* Growth Tag */}
-                  <span className="absolute top-3 left-3 bg-emerald-500/90 text-white font-extrabold text-[10px] px-2 py-0.5 rounded-full flex items-center gap-0.5 backdrop-blur-xs">
-                    <TrendingUp className="w-3 h-3" /> {tour.growth}
-                  </span>
-
-                  {/* Category Pill */}
-                  <div className="absolute bottom-3 right-3 text-xs font-bold text-white flex items-center gap-1">
-                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                    <span className="text-[11px] text-slate-200">{tour.destination}</span>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-2.5">
-                  <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors line-clamp-2 leading-snug">
-                    {tour.title}
-                  </h3>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
-                    <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
-                      <CalendarCheck className="w-3.5 h-3.5" />
-                      {tour.bookingsCount}
-                    </span>
-                    <span className="flex items-center gap-1 font-bold text-amber-500 dir-ltr">
-                      <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" />
-                      {tour.rating}
-                    </span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Price & Action Footer */}
-              <div className="px-4 py-3 mt-2 flex items-center justify-between border-t border-border/40">
+          return (
+            <Link key={tour.id || idx} href={`${adminRoutes.tours}/${tour.id}`} className="block group">
+              <Card className="overflow-hidden bg-card border border-border/80 hover:border-amber-500/40 hover:-translate-y-1 hover:shadow-md transition-all duration-200 rounded-2xl h-full flex flex-col justify-between">
                 <div>
-                  <span className="text-[10px] font-bold text-muted-foreground block">{isAr ? "السعر من" : "Starting From"}</span>
-                  <span className="text-lg font-black font-mono text-amber-600 dark:text-amber-400">{tour.price}</span>
+                  {/* Hero Image */}
+                  <div className="relative h-36 w-full overflow-hidden bg-slate-900">
+                    <img
+                      src={heroImg}
+                      alt={title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90 group-hover:opacity-100"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/20" />
+                    
+                    {/* Rank Badge */}
+                    <span className="absolute top-2.5 right-2.5 text-[10px] font-black px-2 py-0.5 rounded-full bg-slate-950/80 text-amber-400 border border-amber-500/30 backdrop-blur-xs font-mono">
+                      #{idx + 1}
+                    </span>
+
+                    {/* Destination Pill */}
+                    <div className="absolute bottom-2.5 right-2.5 text-xs font-semibold text-white flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-amber-400" />
+                      <span className="text-[11px] text-slate-200">{tour.country || tour.category || "Egypt"}</span>
+                    </div>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-3.5 space-y-2">
+                    <h3 className="text-xs font-bold text-foreground group-hover:text-amber-500 transition-colors line-clamp-2 leading-snug" title={title}>
+                      {title}
+                    </h3>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground pt-1">
+                      <span className="flex items-center gap-1 font-semibold text-emerald-600 dark:text-emerald-400">
+                        <CalendarCheck className="w-3 h-3" />
+                        <span>{tour.confirmedBookings || tour.totalBookings || 0} {isAr ? "حجز" : "bookings"}</span>
+                      </span>
+                      {tour.totalRevenue > 0 && (
+                        <span className="font-mono font-bold text-foreground text-[11px]">
+                          {formatCurrency(tour.totalRevenue)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
-                <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 group-hover:translate-x-1 rtl:group-hover:-translate-x-1 transition-transform flex items-center gap-1">
-                  {isAr ? "تفاصيل ←" : "Details →"}
-                </span>
-              </div>
-            </Card>
-          </Link>
-        ))}
+
+                {/* Price Footer */}
+                <div className="px-3.5 py-2.5 flex items-center justify-between border-t border-border/40 bg-muted/20 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block">{isAr ? "السعر يبدأ من" : "From"}</span>
+                    <span className="text-sm font-black font-mono text-amber-600 dark:text-amber-400">
+                      {formatCurrency(tour.basePriceUsd || 0)}
+                    </span>
+                  </div>
+                  <span className="text-[11px] font-bold text-muted-foreground group-hover:text-amber-500 transition-colors flex items-center gap-0.5">
+                    {isAr ? "تفاصيل" : "Details"}
+                    <ArrowUpRight className="w-3 h-3" />
+                  </span>
+                </div>
+              </Card>
+            </Link>
+          );
+        })}
       </div>
     </Card>
   );

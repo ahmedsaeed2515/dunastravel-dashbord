@@ -39,6 +39,11 @@ export const dashboardApi = {
     return res?.data ?? res;
   },
 
+  getTopDestinations: async (filters?: DashboardFilters): Promise<TopDestinationItem[]> => {
+    const res: any = await apiClient.get("/admin/dashboard/top-destinations", { params: filters });
+    return Array.isArray(res) ? res : (res?.data ?? []);
+  },
+
   getInterfacePerformance: async (filters?: DashboardFilters): Promise<InterfacePerformanceItem[]> => {
     const res: any = await apiClient.get("/admin/dashboard/interface-performance", { params: filters });
     return Array.isArray(res) ? res : (res?.data ?? []);

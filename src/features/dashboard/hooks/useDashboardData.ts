@@ -34,6 +34,14 @@ export function useTourPerformance(filters?: DashboardFilters) {
   });
 }
 
+export function useTopDestinations(filters?: DashboardFilters) {
+  return useQuery({
+    queryKey: ["dashboard", "top-destinations", filters],
+    queryFn: () => dashboardApi.getTopDestinations(filters),
+    staleTime: 60000,
+  });
+}
+
 export function useInterfacePerformance(filters?: DashboardFilters) {
   return useQuery({
     queryKey: ["dashboard", "interface-performance", filters],

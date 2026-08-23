@@ -49,12 +49,13 @@ describe('KPIGrid', () => {
   it('renders metric cards with formatted server data', () => {
     render(<KPIGrid data={mockSummary} isLoading={false} />);
 
-    expect(screen.getByText('Gross Revenue')).toBeInTheDocument();
-    expect(screen.getByText(/15,000/)).toBeInTheDocument();
-    expect(screen.getByText('Total Bookings')).toBeInTheDocument();
-    expect(screen.getByText('120')).toBeInTheDocument();
-    expect(screen.getByText('Tour Occupancy')).toBeInTheDocument();
-    expect(screen.getByText('85%')).toBeInTheDocument();
+    expect(screen.getByText('Collected Payments (Net)')).toBeInTheDocument();
+    expect(screen.getByText(/\$14,000/)).toBeInTheDocument();
+    expect(screen.getByText('Confirmed & Paid Bookings')).toBeInTheDocument();
+    expect(screen.getByText('Outstanding / Pipeline Balance')).toBeInTheDocument();
+    expect(screen.getByText(/\$1,000/)).toBeInTheDocument();
+    expect(screen.getByText('Active Inquiries & Leads')).toBeInTheDocument();
+    expect(screen.getByText('8')).toBeInTheDocument();
   });
 
   it('renders skeleton cards when loading', () => {

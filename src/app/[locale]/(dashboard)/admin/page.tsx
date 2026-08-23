@@ -1,38 +1,67 @@
 "use client";
 
 import { useState } from "react";
-import { WelcomeBanner } from "@/features/dashboard/components/WelcomeBanner";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { KPIGrid } from "@/features/dashboard/components/KPIGrid";
-import { QuickActionShortcuts } from "@/features/dashboard/components/QuickActionShortcuts";
+import { ActionCenter } from "@/features/dashboard/components/ActionCenter";
 import { AnalyticsCharts } from "@/features/dashboard/components/AnalyticsCharts";
 import { RecentBookingsTable } from "@/features/dashboard/components/RecentBookingsTable";
 import { RecentActivityFeed } from "@/features/dashboard/components/RecentActivityFeed";
 import { PopularToursSection } from "@/features/dashboard/components/PopularToursSection";
 import {
-  useDashboardSummary, useRevenueTrend,
-  useRecentBookings, useRecentActivity
+  useDashboardSummary, 
+  useRevenueTrend,
+  useActionCenter,
+  useRecentBookings, 
+  useRecentActivity
 } from "@/features/dashboard/hooks/useDashboardData";
 import { DashboardFilters } from "@/features/dashboard/types";
 
-export default function DashboardPage() {
-  const [filters, setFilters] = useState<DashboardFilters>({});
+export default function AdminDashboardPage() {
+  const [filters, setFilters] = useState<DashboardFilters>({ preset: "all" });
 
-  const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary, isRefetching: isRefetchingSummary } = useDashboardSummary(filters);
-  const { data: revenueTrend, isLoading: isLoadingRevenue } = useRevenueTrend(filters);
-  const { data: recentBookings, isLoading: isLoadingRecentBookings } = useRecentBookings();
-  const { data: recentActivity, isLoading: isLoadingActivity } = useRecentActivity();
+  const { 
+    data: summary, 
+    isLoading: isLoadingSummary, 
+    refetch: refetchSummary, 
+    isRefetching: isRefetchingSummary 
+  } = useDashboardSummary(filters);
+
+  const { 
+    data: revenueTrend, 
+    isLoading: isLoadingRevenue,
+    refetch: refetchRevenue 
+  } = useRevenueTrend(filters);
+
+  const { 
+    data: actionAlerts, 
+    isLoading: isLoadingAlerts,
+    refetch: refetchAlerts 
+  } = useActionCenter(filters);
+
+  const { 
+    data: recentBookings, 
+    isLoading: isLoadingRecentBookings,
+    refetch: refetchBookings 
+  } = useRecentBookings();
+
+  const { 
+    data: recentActivity, 
+    isLoading: isLoadingActivity,
+    refetch: refetchActivity 
+  } = useRecentActivity();
 
   const handleRefreshAll = () => {
     refetchSummary();
+    refetchRevenue();
+    refetchAlerts();
+    refetchBookings();
+    refetchActivity();
   };
 
   return (
-    <div className="space-y-6 pb-16 animate-in fade-in duration-300">
-      {/* 0. Welcome & Greeting Banner */}
-      <WelcomeBanner />
-
-      {/* 1. Global Header & Filter Bar */}
+    <div className="space-y-6 pb-12 animate-in fade-in duration-200">
+      {/* 1. Executive Operational Header with Period Selector & CTAs */}
       <DashboardHeader
         filters={filters}
         onFilterChange={(newFilters) => setFilters(newFilters)}
@@ -40,30 +69,37 @@ export default function DashboardPage() {
         isRefreshing={isRefetchingSummary}
       />
 
-      {/* 2. Executive KPIs Section (8 Cards in 2 Equal Rows) */}
+      {/* 2. Core Executive Financial & Operational KPI Strip (4 Cards) */}
       <KPIGrid data={summary} isLoading={isLoadingSummary} />
 
-      {/* Quick Action Shortcuts (الوصول السريع للأقسام الرئيسية) */}
-      <QuickActionShortcuts />
+      {/* 3. Operational Attention & Exceptions Center */}
+      <ActionCenter alerts={actionAlerts} isLoading={isLoadingAlerts} />
 
-      {/* 3. Financial & Revenue Analytics */}
+      {/* 4. Financial & Revenue Analytics + Real Destination Share */}
       <AnalyticsCharts
+        filters={filters}
         revenueTrend={revenueTrend}
         isLoadingRevenue={isLoadingRevenue}
       />
 
-      {/* 4. Recent Bookings Table & System Audit Activity Feed */}
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RecentBookingsTable bookings={recentBookings} isLoading={isLoadingRecentBookings} />
+      {/* 5. Live Operations Bookings Feed (8 cols) + Humanized Audit Stream (4 cols) */}
+      <div className="grid gap-5 lg:grid-cols-12 items-start">
+        <div className="lg:col-span-8">
+          <RecentBookingsTable 
+            bookings={recentBookings} 
+            isLoading={isLoadingRecentBookings} 
+          />
         </div>
-        <div>
-          <RecentActivityFeed activities={recentActivity} isLoading={isLoadingActivity} />
+        <div className="lg:col-span-4">
+          <RecentActivityFeed 
+            activities={recentActivity} 
+            isLoading={isLoadingActivity} 
+          />
         </div>
       </div>
 
-      {/* 5. Most Popular & High-Demand Tours Section */}
-      <PopularToursSection />
+      {/* 6. Ranked High-Demand Tour Performance (Real Database Records) */}
+      <PopularToursSection filters={filters} />
     </div>
   );
 }
