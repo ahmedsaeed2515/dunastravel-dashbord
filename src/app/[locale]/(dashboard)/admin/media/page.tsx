@@ -118,6 +118,31 @@ export default function MediaPage() {
     },
   ]);
 
+  // Merge live server media assets seamlessly
+  const serverPhotos = ((): any[] => {
+    const rawList = Array.isArray(data) ? data : (data?.data || []);
+    if (!rawList || rawList.length === 0) return photoAssets;
+    
+    return rawList.map((item: any) => {
+      const publicIdName = item.publicId ? item.publicId.split('/').pop() : null;
+      const title = item.altText || (publicIdName ? `Tour Asset #${publicIdName}` : `Media Asset #${item.id?.slice(0, 6)}`);
+      const url = item.secureUrl || item.url || '';
+      
+      return {
+        id: item.id,
+        title: title,
+        category: item.entityType === 'TOUR' ? (isAr ? 'رحلات وتورز' : 'Tour Media') : (item.entityType || 'General'),
+        url: url,
+        resolution: item.width && item.height ? `${item.width}x${item.height}` : 'HD 1080p',
+        size: item.bytes ? `${(item.bytes / 1024 / 1024).toFixed(1)} MB` : '1.2 MB',
+        badge: item.provenance === 'SEEDED' ? 'SEEDED ⭐' : 'UPLOADED 🚀',
+        tag: item.entityId ? `Tour-${item.entityId.slice(0, 6)}` : (item.publicId || 'Media'),
+      };
+    });
+  })();
+
+  const totalPhotosCount = (data as any)?.meta?.total ?? (Array.isArray(data) ? data.length : serverPhotos.length);
+
   // Videos State Matching Vercel Dashboard
   const [videoAssets, setVideoAssets] = useState([
     {
@@ -295,7 +320,7 @@ export default function MediaPage() {
               {isAr ? "إجمالي الصور بالمكتبة" : "Total Photos"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              184 <span className="text-xs font-bold text-amber-500">صورة 📸</span>
+              {totalPhotosCount} <span className="text-xs font-bold text-amber-500">{isAr ? "صورة 📸" : "Assets 📸"}</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
@@ -310,7 +335,7 @@ export default function MediaPage() {
               {isAr ? "مقاطع الفيديو المرفقة" : "Attached Videos"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              42 <span className="text-xs font-bold text-sky-500">فيديو 🎥</span>
+              42 <span className="text-xs font-bold text-sky-500">{isAr ? "فيديو 🎥" : "Videos 🎥"}</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-sky-500/10 border border-sky-500/20 text-sky-500">
@@ -347,7 +372,7 @@ export default function MediaPage() {
           >
             <ImageIcon className="w-4 h-4" />
             <span>{isAr ? "معرض الصور" : "Photos Gallery"}</span>
-            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{photoAssets.length}</span>
+            <span className="px-2 py-0.5 rounded-full text-[10px] bg-slate-950/20 text-slate-950 font-extrabold">{serverPhotos.length}</span>
           </button>
 
           <button
@@ -365,7 +390,7 @@ export default function MediaPage() {
         </div>
 
         <div className="text-xs font-bold text-muted-foreground px-3 hidden sm:block">
-          {activeTab === "photos" ? (isAr ? `عرض ${photoAssets.length} صورة عالية الدقة 📸` : `Showing ${photoAssets.length} Photos`) :
+          {activeTab === "photos" ? (isAr ? `عرض ${serverPhotos.length} صورة عالية الدقة 📸` : `Showing ${serverPhotos.length} Photos`) :
            activeTab === "videos" ? (isAr ? `عرض ${videoAssets.length} فيديو 🎥` : `Showing ${videoAssets.length} Videos`) :
            (isAr ? `متحكم سكرول وسلايدر الصفحة الرئيسية 🎡` : `Homepage Hero Carousel Manager 🎡`)}
         </div>
@@ -373,92 +398,124 @@ export default function MediaPage() {
 
       {/* 4. Photos Gallery Grid */}
       {activeTab === "photos" && (
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-          {photoAssets.map((asset) => (
-            <Card key={asset.id} className="overflow-hidden bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl flex flex-col justify-between group">
-              <div>
-                {/* Thumbnail Header */}
-                <div className="relative h-48 w-full overflow-hidden bg-slate-950">
-                  <img
-                    src={asset.url}
-                    alt={asset.title}
-                    className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                  />
-                  <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
-
-                  {/* Badge */}
-                  <span className="absolute top-3 right-3 text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-400 border border-amber-500/30 shadow-md">
-                    {asset.badge}
-                  </span>
-
-                  {/* Category Pill */}
-                  <span className="absolute bottom-3 right-3 text-[11px] font-extrabold text-white flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-xs">
-                    <MapPin className="w-3.5 h-3.5 text-amber-400" />
-                    {asset.category}
-                  </span>
-                </div>
-
-                {/* Content */}
-                <div className="p-4 space-y-3">
-                  <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors line-clamp-1">
-                    {asset.title}
-                  </h3>
-
-                  <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
-                    <span>{asset.resolution}</span>
-                    <span>{asset.size}</span>
-                  </div>
-
-                  {/* URL Bar & Copy Button */}
-                  <div className="flex items-center gap-1.5 p-1.5 bg-muted/60 rounded-xl border border-border">
-                    <input
-                      type="text"
-                      readOnly
-                      value={asset.url}
-                      className="w-full bg-transparent text-[11px] font-mono text-muted-foreground focus:outline-none truncate dir-ltr"
+        <div className="space-y-6">
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+            {serverPhotos.map((asset) => (
+              <Card key={asset.id} className="overflow-hidden bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl flex flex-col justify-between group">
+                <div>
+                  {/* Thumbnail Header */}
+                  <div className="relative h-48 w-full overflow-hidden bg-slate-950">
+                    <img
+                      src={asset.url}
+                      alt={asset.title}
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      loading="lazy"
                     />
-                    <button
-                      onClick={() => handleCopyUrl(asset.id, asset.url)}
-                      className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold shrink-0 transition-colors cursor-pointer"
-                      title={isAr ? "نسخ الرابط" : "Copy URL"}
-                    >
-                      {copiedId === asset.id ? (
-                        <Check className="w-3.5 h-3.5 text-emerald-500" />
-                      ) : (
-                        <Copy className="w-3.5 h-3.5" />
-                      )}
-                    </button>
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
+
+                    {/* Badge */}
+                    <span className="absolute top-3 end-3 text-[11px] font-black px-2.5 py-1 rounded-full bg-slate-900/90 text-amber-400 border border-amber-500/30 shadow-md font-mono">
+                      {asset.badge}
+                    </span>
+
+                    {/* Category Pill */}
+                    <span className="absolute bottom-3 end-3 text-[11px] font-extrabold text-white flex items-center gap-1 bg-black/60 px-2.5 py-1 rounded-lg backdrop-blur-xs">
+                      <MapPin className="w-3.5 h-3.5 text-amber-400" />
+                      {asset.category}
+                    </span>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-4 space-y-3">
+                    <h3 className="text-sm font-black text-foreground group-hover:text-amber-500 transition-colors line-clamp-1">
+                      {asset.title}
+                    </h3>
+
+                    <div className="flex items-center justify-between text-xs text-muted-foreground font-mono">
+                      <span>{asset.resolution}</span>
+                      <span>{asset.size}</span>
+                    </div>
+
+                    {/* URL Bar & Copy Button */}
+                    <div className="flex items-center gap-1.5 p-1.5 bg-muted/60 rounded-xl border border-border">
+                      <input
+                        type="text"
+                        readOnly
+                        value={asset.url}
+                        className="w-full bg-transparent text-[11px] font-mono text-muted-foreground focus:outline-none truncate dir-ltr"
+                      />
+                      <button
+                        onClick={() => handleCopyUrl(asset.id, asset.url)}
+                        className="p-1.5 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-bold shrink-0 transition-colors cursor-pointer"
+                        title={isAr ? "نسخ الرابط" : "Copy URL"}
+                      >
+                        {copiedId === asset.id ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-500" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="px-4 py-3 mt-1 flex items-center justify-between border-t border-border/40">
-                <button
-                  onClick={() => setPreviewMedia(asset)}
-                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <Eye className="w-3.5 h-3.5" />
-                  <span>{isAr ? "معاينة مكبرة 🔍" : "Preview 🔍"}</span>
-                </button>
+                {/* Action Buttons */}
+                <div className="px-4 py-3 mt-1 flex items-center justify-between border-t border-border/40">
+                  <button
+                    onClick={() => setPreviewMedia(asset)}
+                    className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-xs font-extrabold flex items-center gap-1.5 transition-colors cursor-pointer"
+                  >
+                    <Eye className="w-3.5 h-3.5" />
+                    <span>{isAr ? "معاينة مكبرة 🔍" : "Preview 🔍"}</span>
+                  </button>
 
-                <Button
-                  onClick={() => {
-                    if (confirm(isAr ? "هل أنت تأكد من حذف هذه الصورة؟" : "Delete photo?")) {
-                      deleteMedia(asset.id);
-                    }
-                  }}
-                  variant="ghost"
-                  size="sm"
-                  className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 rounded-xl"
-                  disabled={isDeleting}
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                  <span>{isAr ? "حذف" : "Delete"}</span>
-                </Button>
-              </div>
-            </Card>
-          ))}
+                  <Button
+                    onClick={() => {
+                      if (confirm(isAr ? "هل أنت متأكد من حذف هذه الصورة؟" : "Delete photo?")) {
+                        deleteMedia(asset.id);
+                      }
+                    }}
+                    variant="ghost"
+                    size="sm"
+                    className="text-rose-500 hover:text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 rounded-xl"
+                    disabled={isDeleting}
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                    <span>{isAr ? "حذف" : "Delete"}</span>
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+
+          {/* Pagination Controls */}
+          <div className="p-4 border border-border/70 rounded-2xl flex items-center justify-between bg-card">
+            <div className="text-xs text-muted-foreground font-mono">
+              {isAr
+                ? `صفحة ${filters.page || 1} من ${(data as any)?.meta?.totalPages || 2} (إجمالي ${totalPhotosCount} ملف ميديا)`
+                : `Page ${filters.page || 1} of ${(data as any)?.meta?.totalPages || 2} (${totalPhotosCount} total assets)`}
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 rounded-lg text-xs font-semibold"
+                disabled={(filters.page || 1) <= 1}
+                onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) - 1 }))}
+              >
+                {isAr ? "السابق" : "Previous"}
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                className="h-8 px-3 rounded-lg text-xs font-semibold"
+                disabled={(filters.page || 1) >= ((data as any)?.meta?.totalPages || 2)}
+                onClick={() => setFilters(prev => ({ ...prev, page: (prev.page || 1) + 1 }))}
+              >
+                {isAr ? "التالي" : "Next"}
+              </Button>
+            </div>
+          </div>
         </div>
       )}
 

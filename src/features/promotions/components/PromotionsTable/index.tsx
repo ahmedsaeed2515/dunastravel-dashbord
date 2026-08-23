@@ -1,5 +1,6 @@
 "use client";
 
+import { useMemo } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -28,8 +29,30 @@ export function PromotionsTable({ data, total, isLoading, filters, onFilterChang
   const tCommon = useTranslations("common");
   const columns = getColumns(onEdit, onDelete, tPromotions, tCommon);
 
+  const filteredData = useMemo(() => {
+    const list = Array.isArray(data) ? data : [];
+    if (!filters.search?.trim()) return list;
+    const s = filters.search.toLowerCase().trim();
+    return list.filter(item => 
+      item.code?.toLowerCase().includes(s) || 
+      String(item.discountPercent).includes(s)
+    );
+  }, [data, filters.search]);
+
+  const page = filters.page || 1;
+  const limit = filters.limit || 10;
+  const effectiveTotal = filteredData.length;
+  const totalPages = Math.max(1, Math.ceil(effectiveTotal / limit));
+
+  const paginatedData = useMemo(() => {
+    // If server already paginated data to limit size, use directly
+    if (data.length <= limit && total > limit) return filteredData;
+    const start = (page - 1) * limit;
+    return filteredData.slice(start, start + limit);
+  }, [filteredData, page, limit, data.length, total]);
+
   const table = useReactTable({
-    data,
+    data: paginatedData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
@@ -39,26 +62,30 @@ export function PromotionsTable({ data, total, isLoading, filters, onFilterChang
   };
 
   return (
-    <div className="bg-white dark:bg-gray-900/40 rounded-xl border border-gray-100 dark:border-gray-800/50 shadow-sm overflow-hidden flex flex-col">
-      <div className="p-4 border-b border-gray-100 dark:border-gray-800/50 flex justify-between items-center gap-4">
+    <div className="bg-white dark:bg-card rounded-2xl border border-border/80 shadow-xs overflow-hidden flex flex-col">
+      <div className="p-4 border-b border-border/70 flex justify-between items-center gap-4 bg-muted/20">
         <div className="relative w-full sm:max-w-xs">
           <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input 
             placeholder={`${tCommon("search")}...`} 
             value={filters.search || ""}
             onChange={handleSearch}
-            className="ps-9 h-9 text-sm bg-gray-50/50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700"
+            className="ps-9 h-9 text-xs sm:text-sm bg-background border-border rounded-xl"
           />
+        </div>
+
+        <div className="text-xs text-muted-foreground font-mono">
+          {effectiveTotal} {tCommon("total")}
         </div>
       </div>
 
       <div className="overflow-x-auto">
         <Table>
-          <TableHeader className="bg-gray-50/50 dark:bg-gray-900/50">
+          <TableHeader className="bg-muted/40">
             {table.getHeaderGroups().map((headerGroup) => (
-              <TableRow key={headerGroup.id} className="hover:bg-transparent border-gray-100 dark:border-gray-800">
+              <TableRow key={headerGroup.id} className="hover:bg-transparent border-border/70">
                 {headerGroup.headers.map((header) => (
-                  <TableHead key={header.id} className="text-xs font-semibold text-muted-foreground h-10">
+                  <TableHead key={header.id} className="text-xs font-bold text-muted-foreground h-11 px-4">
                     {header.isPlaceholder ? null : flexRender(header.column.columnDef.header, header.getContext())}
                   </TableHead>
                 ))}
@@ -79,10 +106,10 @@ export function PromotionsTable({ data, total, isLoading, filters, onFilterChang
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  className="hover:bg-blue-50/50 dark:hover:bg-blue-900/10 border-gray-100 dark:border-gray-800/50 transition-colors"
+                  className="hover:bg-muted/40 border-border/60 transition-colors"
                 >
                   {row.getVisibleCells().map((cell) => (
-                    <TableCell key={cell.id} className="py-3">
+                    <TableCell key={cell.id} className="py-3.5 px-4 text-xs sm:text-sm">
                       {flexRender(cell.column.columnDef.cell, cell.getContext())}
                     </TableCell>
                   ))}
@@ -102,28 +129,30 @@ export function PromotionsTable({ data, total, isLoading, filters, onFilterChang
         </Table>
       </div>
 
-      <div className="p-4 border-t border-gray-100 dark:border-gray-800/50 flex items-center justify-between bg-gray-50/30 dark:bg-gray-900/30">
-        <div className="text-xs text-muted-foreground">
-          {data.length} {tCommon("total")}
+      <div className="p-4 border-t border-border/70 flex items-center justify-between bg-muted/20">
+        <div className="text-xs text-muted-foreground font-mono">
+          Page {page} of {totalPages}
         </div>
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <Button 
             variant="outline" 
-            size="icon" 
-            className="h-8 w-8"
-            disabled={(filters.page || 1) === 1}
-            onClick={() => onFilterChange({ ...filters, page: (filters.page || 1) - 1 })}
+            size="sm" 
+            className="h-8 px-3 rounded-lg text-xs font-semibold gap-1"
+            disabled={page <= 1}
+            onClick={() => onFilterChange({ ...filters, page: page - 1 })}
           >
-            <ChevronLeft className="h-4 w-4 rtl:rotate-180" />
+            <ChevronLeft className="h-3.5 w-3.5 rtl:rotate-180" />
+            <span>Previous</span>
           </Button>
           <Button 
             variant="outline" 
-            size="icon" 
-            className="h-8 w-8"
-            disabled={(filters.page || 1) * (filters.limit || 10) >= total}
-            onClick={() => onFilterChange({ ...filters, page: (filters.page || 1) + 1 })}
+            size="sm" 
+            className="h-8 px-3 rounded-lg text-xs font-semibold gap-1"
+            disabled={page >= totalPages}
+            onClick={() => onFilterChange({ ...filters, page: page + 1 })}
           >
-            <ChevronRight className="h-4 w-4 rtl:rotate-180" />
+            <span>Next</span>
+            <ChevronRight className="h-3.5 w-3.5 rtl:rotate-180" />
           </Button>
         </div>
       </div>

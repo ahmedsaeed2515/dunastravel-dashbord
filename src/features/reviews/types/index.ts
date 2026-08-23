@@ -1,4 +1,3 @@
- 
 export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 
 export interface Review {
@@ -8,12 +7,14 @@ export interface Review {
   reviewerName: string;
   rating: number;
   comment: string | null;
+  status: ReviewStatus;
   isPublished: boolean;
-  publishedAt: string | null;
+  publishedAt?: string | null;
+  adminReply?: string | null;
   createdAt: string;
   updatedAt: string;
-  tour?: { titleJsonb: any; slug: string };
-  user?: { name: string; email: string };
+  tour?: { id?: string; titleJsonb?: any; slug?: string };
+  user?: { id?: string; name?: string; email?: string } | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -27,7 +28,8 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ReviewQueryFilters {
-  isPublished?: boolean;
+  status?: ReviewStatus;
+  tourId?: string;
   page?: number;
   limit?: number;
 }

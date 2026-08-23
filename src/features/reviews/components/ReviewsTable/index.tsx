@@ -15,6 +15,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useTranslations } from "next-intl";
 
 interface ReviewsTableProps {
   data: Review[];
@@ -22,6 +23,9 @@ interface ReviewsTableProps {
 }
 
 export function ReviewsTable({ data, isLoading }: ReviewsTableProps) {
+  const tReviews = useTranslations("reviews");
+  const tCommon = useTranslations("common");
+
   const table = useReactTable({
     data,
     columns,
@@ -29,14 +33,14 @@ export function ReviewsTable({ data, isLoading }: ReviewsTableProps) {
   });
 
   return (
-    <div className="rounded-md border bg-card/50 overflow-hidden">
+    <div className="rounded-2xl border border-border/80 bg-card overflow-hidden shadow-xs">
       <Table>
         <TableHeader>
           {table.getHeaderGroups().map((headerGroup) => (
-            <TableRow key={headerGroup.id}>
+            <TableRow key={headerGroup.id} className="bg-muted/40">
               {headerGroup.headers.map((header) => {
                 return (
-                  <TableHead key={header.id}>
+                  <TableHead key={header.id} className="font-bold text-xs">
                     {header.isPlaceholder
                       ? null
                       : flexRender(
@@ -52,13 +56,13 @@ export function ReviewsTable({ data, isLoading }: ReviewsTableProps) {
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Loading reviews...
+              <TableCell colSpan={columns.length} className="h-28 text-center text-sm text-muted-foreground">
+                {tCommon("loading")}
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows?.length ? (
             table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
+              <TableRow key={row.id} className="hover:bg-muted/30 transition-colors">
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>
                     {flexRender(cell.column.columnDef.cell, cell.getContext())}
@@ -68,8 +72,8 @@ export function ReviewsTable({ data, isLoading }: ReviewsTableProps) {
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No pending reviews to moderate.
+              <TableCell colSpan={columns.length} className="h-28 text-center text-sm text-muted-foreground">
+                {tReviews("noPending")}
               </TableCell>
             </TableRow>
           )}

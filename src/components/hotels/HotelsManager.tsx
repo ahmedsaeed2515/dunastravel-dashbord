@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useCallback } from 'react';
+import { useParams } from 'next/navigation';
 import { useDataContext } from '@/context/DataContext';
 import { HotelModel, RoomType, LanguageCode } from '@/types/dunas-suite';
 import { Button } from '@/components/ui/button';
@@ -35,6 +36,10 @@ import {
 import { toast } from 'sonner';
 
 export const HotelsManager: React.FC = React.memo(() => {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
+  const isAr = locale === 'ar';
+
   const { hotels, destinations, addHotel, updateHotel, deleteHotel } = useDataContext();
   const [searchQuery, setSearchQuery] = useState<string>('');
 
@@ -61,11 +66,30 @@ export const HotelsManager: React.FC = React.memo(() => {
   }, []);
 
   const handleDelete = useCallback((id: string, name: string) => {
-    if (confirm(`هل أنت تأكد من حذف الفندق "${name}"؟`)) {
+    const confirmMsg = isAr
+      ? `هل أنت متأكد من حذف الفندق "${name}"؟`
+      : `Are you sure you want to delete "${name}"?`;
+    if (confirm(confirmMsg)) {
       deleteHotel(id);
-      toast.success('تم حذف الفندق بنجاح.');
+      toast.success(isAr ? 'تم حذف الفندق بنجاح.' : 'Hotel deleted successfully.');
     }
-  }, [deleteHotel]);
+  }, [deleteHotel, isAr]);
+
+  const getHotelName = (hotel: HotelModel): string => {
+    const trans = hotel.translations as Record<string, any> | undefined;
+    if (trans && trans[locale]?.name) {
+      return String(trans[locale].name);
+    }
+    return isAr ? hotel.name : String(trans?.en?.name || hotel.name || '');
+  };
+
+  const getHotelDescription = (hotel: HotelModel): string => {
+    const trans = hotel.translations as Record<string, any> | undefined;
+    if (trans && trans[locale]?.description) {
+      return String(trans[locale].description);
+    }
+    return isAr ? hotel.description : String(trans?.en?.description || hotel.description || '');
+  };
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -77,93 +101,103 @@ export const HotelsManager: React.FC = React.memo(() => {
           </div>
           <div>
             <h2 className="text-xl font-bold font-heading text-foreground">
-              إدارة الفنادق والإقامة (Hotels Suite)
+              {isAr ? "إدارة الفنادق والإقامة (Hotels Suite)" : "Hotels & Accommodations Suite"}
             </h2>
-            <p className="text-xs text-muted-foreground">
-              دليل الفنادق المعتمدة في رحلات Dunas Travel مع المرافق والأسعار والترجمات.
+            <p className="text-xs text-muted-foreground mt-0.5">
+              {isAr
+                ? "دليل الفنادق المعتمدة في رحلات Dunas Travel مع المرافق والأسعار والترجمات."
+                : "Curated portfolio of luxury partner hotels, room tiers, live rates, and amenities."}
             </p>
           </div>
         </div>
 
-        <Button onClick={handleOpenNew} className="rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 shadow-sm gap-2">
-          <Plus className="w-4 h-4" /> إضافة فندق جديد
+        <Button onClick={handleOpenNew} className="rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold px-6 shadow-sm gap-2 shrink-0 cursor-pointer">
+          <Plus className="w-4 h-4" /> {isAr ? "إضافة فندق جديد" : "Add New Hotel"}
         </Button>
       </div>
 
       {/* Filters Bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
         <div className="relative w-full sm:w-80">
-          <Search className="w-4 h-4 absolute right-3 top-3 text-muted-foreground" />
+          <Search className="w-4 h-4 absolute start-3 top-3 text-muted-foreground" />
           <Input
             value={searchQuery}
             onChange={e => setSearchQuery(e.target.value)}
-            placeholder="بحث بالاسم أو المدينة..."
-            className="rounded-2xl pe-9 text-xs"
+            placeholder={isAr ? "بحث بالاسم أو المدينة..." : "Search by hotel name or city..."}
+            className="rounded-2xl ps-9 text-xs"
           />
         </div>
       </div>
 
       {/* Hotels Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-        {filteredHotels.map(hotel => (
-          <div
-            key={hotel.id}
-            className="group rounded-3xl border border-border/80 bg-card hover:border-emerald-500/40 transition-all duration-300 overflow-hidden shadow-xs hover:shadow-md flex flex-col sm:flex-row"
-          >
-            {/* Image */}
-            <div className="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden bg-slate-900">
-              <img
-                src={hotel.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800'}
-                alt={hotel.name}
-                className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-              />
-              <div className="absolute top-3 right-3">
-                <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 shadow-xs">
-                  {hotel.status}
-                </span>
-              </div>
-            </div>
+        {filteredHotels.map(hotel => {
+          const hotelName = getHotelName(hotel);
+          const hotelDesc = getHotelDescription(hotel);
 
-            {/* Details */}
-            <div className="p-5 sm:w-3/5 flex-1 flex flex-col justify-between space-y-3">
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
-                    <MapPin className="w-3 h-3" /> {hotel.city} • {hotel.destination.toUpperCase()}
-                  </span>
-                  <span className="flex items-center gap-0.5 text-xs text-amber-400 font-bold">
-                    <Star className="w-3.5 h-3.5 fill-amber-400" /> {hotel.stars} نجوم ({hotel.rating})
+          return (
+            <div
+              key={hotel.id}
+              className="group rounded-3xl border border-border/80 bg-card hover:border-emerald-500/40 transition-all duration-300 overflow-hidden shadow-xs hover:shadow-md flex flex-col sm:flex-row"
+            >
+              {/* Image */}
+              <div className="sm:w-2/5 h-48 sm:h-auto relative overflow-hidden bg-slate-900">
+                <img
+                  src={hotel.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800'}
+                  alt={hotelName}
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                  loading="lazy"
+                />
+                <div className="absolute top-3 end-3">
+                  <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 shadow-xs">
+                    {hotel.status}
                   </span>
                 </div>
-
-                <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-emerald-500 transition-colors">
-                  {hotel.name}
-                </h3>
-
-                <p className="text-xs text-muted-foreground line-clamp-2">
-                  {hotel.description}
-                </p>
               </div>
 
-              {/* Price & Amenities */}
-              <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
-                <div>
-                  <span className="text-[10px] text-muted-foreground block">السعر الليلة تبدأ من</span>
-                  <span className="font-bold text-emerald-500 text-sm">${hotel.pricePerNight}</span>
+              {/* Details */}
+              <div className="p-5 sm:w-3/5 flex-1 flex flex-col justify-between space-y-3">
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                      <MapPin className="w-3 h-3" /> {hotel.city} • {hotel.destination.toUpperCase()}
+                    </span>
+                    <span className="flex items-center gap-0.5 text-xs text-amber-500 font-bold">
+                      <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" /> {hotel.stars} {isAr ? "نجوم" : "Stars"} ({hotel.rating})
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-sm text-foreground line-clamp-1 group-hover:text-emerald-500 transition-colors">
+                    {hotelName}
+                  </h3>
+
+                  <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                    {hotelDesc}
+                  </p>
                 </div>
 
-                <div className="flex items-center gap-1">
-                  <Button size="icon-sm" variant="ghost" onClick={() => handleOpenEdit(hotel)} className="hover:bg-emerald-500/10 hover:text-emerald-500">
-                    <Edit className="w-4 h-4" />
-                  </Button>
-                  <Button size="icon-sm" variant="ghost" onClick={() => handleDelete(hotel.id, hotel.name)} className="hover:bg-destructive/10 text-destructive">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                {/* Price & Amenities */}
+                <div className="flex items-center justify-between pt-2 border-t border-border/60 text-xs">
+                  <div>
+                    <span className="text-[10px] text-muted-foreground block font-medium">
+                      {isAr ? "السعر للّيلة يبدأ من" : "Starting per night"}
+                    </span>
+                    <span className="font-black text-emerald-600 dark:text-emerald-400 text-sm font-mono">${hotel.pricePerNight}</span>
+                  </div>
+
+                  <div className="flex items-center gap-1">
+                    <Button size="icon-sm" variant="ghost" onClick={() => handleOpenEdit(hotel)} className="hover:bg-emerald-500/10 hover:text-emerald-500 rounded-xl" title={isAr ? "تعديل الفندق" : "Edit Hotel"}>
+                      <Edit className="w-4 h-4" />
+                    </Button>
+                    <Button size="icon-sm" variant="ghost" onClick={() => handleDelete(hotel.id, hotelName)} className="hover:bg-destructive/10 text-destructive rounded-xl" title={isAr ? "حذف الفندق" : "Delete Hotel"}>
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* Hotel Add/Edit Modal */}
@@ -187,6 +221,10 @@ interface HotelFormModalProps {
 }
 
 const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose }) => {
+  const params = useParams();
+  const locale = (params?.locale as string) || 'en';
+  const isAr = locale === 'ar';
+
   const { destinations, addHotel, updateHotel } = useDataContext();
   const [formData, setFormData] = useState<Partial<HotelModel>>({});
 
@@ -219,7 +257,7 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
 
   const handleSave = () => {
     if (!formData.name || !formData.city) {
-      toast.error('يرجى ملء كافة بيانات الفندق الأساسية');
+      toast.error(isAr ? 'يرجى ملء كافة بيانات الفندق الأساسية' : 'Please fill in all required hotel fields');
       return;
     }
 
@@ -248,10 +286,10 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
 
     if (hotel) {
       updateHotel(payload);
-      toast.success('تم تحديث بيانات الفندق بنجاح!');
+      toast.success(isAr ? 'تم تحديث بيانات الفندق بنجاح!' : 'Hotel updated successfully!');
     } else {
       addHotel(payload);
-      toast.success('تمت إضافة الفندق الجديد بنجاح!');
+      toast.success(isAr ? 'تمت إضافة الفندق الجديد بنجاح!' : 'New hotel added successfully!');
     }
     onClose();
   };
@@ -261,39 +299,47 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto bg-card border border-border/80 rounded-3xl p-6">
         <DialogHeader>
           <DialogTitle className="text-xl font-bold font-heading">
-            {hotel ? 'تعديل بيانات الفندق' : 'إضافة فندق جديد'}
+            {hotel ? (isAr ? 'تعديل بيانات الفندق' : 'Edit Hotel Details') : (isAr ? 'إضافة فندق جديد' : 'Add New Hotel')}
           </DialogTitle>
           <DialogDescription className="text-xs text-muted-foreground">
-            أدخل تفاصيل الفندق، النجوم، الغرف وسياسات الإقامة.
+            {isAr
+              ? 'أدخل تفاصيل الفندق، النجوم، الغرف وسياسات الإقامة.'
+              : 'Enter hotel details, star rating, room tiers, and accommodation policies.'}
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
           <div className="space-y-1.5">
-            <label className="text-xs font-bold">اسم الفندق (Hotel Name) *</label>
+            <label className="text-xs font-bold text-foreground">
+              {isAr ? 'اسم الفندق (Hotel Name) *' : 'Hotel Name *'}
+            </label>
             <Input
               value={formData.name || ''}
               onChange={e => setFormData({ ...formData, name: e.target.value })}
-              placeholder="مثال: فندق ماريوت مينا هاوس"
+              placeholder={isAr ? 'مثال: فندق ماريوت مينا هاوس' : 'e.g. Marriott Mena House'}
               className="rounded-xl text-xs"
             />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold">الوجهة *</label>
+              <label className="text-xs font-bold text-foreground">
+                {isAr ? 'الوجهة *' : 'Destination *'}
+              </label>
               <select
                 value={formData.destination || 'egypt'}
                 onChange={e => setFormData({ ...formData, destination: e.target.value })}
                 className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-semibold"
               >
                 {destinations.map(d => (
-                  <option key={d.id} value={d.id}>{d.flag} {d.nameAr}</option>
+                  <option key={d.id} value={d.id}>{d.flag} {isAr ? d.nameAr : d.nameEn}</option>
                 ))}
               </select>
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold">المدينة (City) *</label>
+              <label className="text-xs font-bold text-foreground">
+                {isAr ? 'المدينة (City) *' : 'City *'}
+              </label>
               <Input
                 value={formData.city || ''}
                 onChange={e => setFormData({ ...formData, city: e.target.value })}
@@ -302,7 +348,9 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold">عدد النجوم (Stars)</label>
+              <label className="text-xs font-bold text-foreground">
+                {isAr ? 'عدد النجوم (Stars)' : 'Star Rating'}
+              </label>
               <Input
                 type="number"
                 value={formData.stars || 5}
@@ -314,16 +362,20 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
 
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1.5">
-              <label className="text-xs font-bold">السعر المبدئي لليلة ($)</label>
+              <label className="text-xs font-bold text-foreground">
+                {isAr ? 'السعر المبدئي لليلة ($)' : 'Starting Price / Night ($)'}
+              </label>
               <Input
                 type="number"
                 value={formData.pricePerNight || 100}
                 onChange={e => setFormData({ ...formData, pricePerNight: parseFloat(e.target.value) })}
-                className="rounded-xl text-xs font-bold text-emerald-500"
+                className="rounded-xl text-xs font-bold text-emerald-500 font-mono"
               />
             </div>
             <div className="space-y-1.5">
-              <label className="text-xs font-bold">صورة الفندق الرئيسية (Image URL)</label>
+              <label className="text-xs font-bold text-foreground">
+                {isAr ? 'صورة الفندق الرئيسية (Image URL)' : 'Hotel Image URL'}
+              </label>
               <Input
                 value={formData.image || ''}
                 onChange={e => setFormData({ ...formData, image: e.target.value })}
@@ -334,21 +386,25 @@ const HotelFormModal: React.FC<HotelFormModalProps> = ({ hotel, isOpen, onClose 
           </div>
 
           <div className="space-y-1.5">
-            <label className="text-xs font-bold">وصف الفندق</label>
+            <label className="text-xs font-bold text-foreground">
+              {isAr ? 'وصف الفندق' : 'Hotel Description'}
+            </label>
             <Textarea
               value={formData.description || ''}
               onChange={e => setFormData({ ...formData, description: e.target.value })}
               rows={3}
-              placeholder="اكتب وصفاً للفندق..."
+              placeholder={isAr ? 'اكتب وصفاً للفندق...' : 'Write hotel overview and highlights...'}
               className="rounded-xl text-xs"
             />
           </div>
         </div>
 
         <DialogFooter className="border-t border-border/60 pt-4">
-          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs">إلغاء</Button>
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs">
+            {isAr ? 'إلغاء' : 'Cancel'}
+          </Button>
           <Button onClick={handleSave} className="rounded-xl bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold text-xs px-5">
-            حفظ الفندق
+            {isAr ? 'حفظ الفندق' : 'Save Hotel'}
           </Button>
         </DialogFooter>
       </DialogContent>

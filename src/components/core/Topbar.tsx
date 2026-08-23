@@ -86,7 +86,7 @@ export const Topbar = memo(function Topbar() {
             window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
           }}
           aria-label={tAccess("searchDashboard")}
-          className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 px-3 py-1.5 rounded-xl w-44 transition-all duration-200"
+          className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 px-3 py-1.5 rounded-xl w-48 sm:w-56 transition-all duration-200"
         >
           <Search className="w-4 h-4 shrink-0 text-slate-400" />
           <span className="truncate">{tCommon("searchPlaceholder")}</span>
@@ -113,17 +113,17 @@ export const Topbar = memo(function Topbar() {
         <button
           onClick={() => setTheme(isDark ? "light" : "dark")}
           className="p-2 rounded-xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 dark:border-slate-800 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer shrink-0"
-          title={isDark ? "التحويل للوضع الفاتح (Light Mode)" : "التحويل للوضع الداكن (Dark Mode)"}
+          title={isDark ? (currentLocale === "ar" ? "التحويل للوضع الفاتح" : "Switch to Light Mode") : (currentLocale === "ar" ? "التحويل للوضع الداكن" : "Switch to Dark Mode")}
         >
           {isDark ? (
             <>
               <Sun size={17} className="text-amber-400 animate-pulse" />
-              <span className="hidden md:inline text-slate-200 text-[11px]">الوضع الفاتح</span>
+              <span className="hidden md:inline text-slate-200 text-[11px]">{currentLocale === "ar" ? "الوضع الفاتح" : "Light Mode"}</span>
             </>
           ) : (
             <>
               <Moon size={17} className="text-indigo-600" />
-              <span className="hidden md:inline text-slate-700 text-[11px]">الوضع الداكن</span>
+              <span className="hidden md:inline text-slate-700 text-[11px]">{currentLocale === "ar" ? "الوضع الداكن" : "Dark Mode"}</span>
             </>
           )}
         </button>

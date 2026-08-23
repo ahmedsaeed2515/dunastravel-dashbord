@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useParams } from "next/navigation";
 import { TransportVehicle } from "../types";
 import { useDeleteVehicle } from "../hooks/useTransportation";
 import { CreateTransportDialog } from "./CreateTransportDialog";
@@ -14,6 +15,9 @@ interface TransportationFleetGridProps {
 }
 
 export function TransportationFleetGrid({ fleet, isLoading }: TransportationFleetGridProps) {
+  const params = useParams();
+  const isAr = params?.locale === "ar";
+
   const deleteVeh = useDeleteVehicle();
   const [search, setSearch] = useState("");
   const [selectedCat, setSelectedCat] = useState("all");
@@ -27,7 +31,10 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
   });
 
   const handleDelete = async (id: string, name: string) => {
-    if (confirm(`هل أنت متأكد من حذف مركبة "${name}" من الأسطول؟`)) {
+    const confirmMsg = isAr
+      ? `هل أنت متأكد من حذف مركبة "${name}" من الأسطول؟`
+      : `Are you sure you want to delete "${name}" from the fleet?`;
+    if (confirm(confirmMsg)) {
       await deleteVeh.mutateAsync(id);
     }
   };
@@ -42,42 +49,46 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
       {/* Search & Category Filter */}
       <div className="flex flex-col sm:flex-row items-center gap-4 bg-card border border-border/80 rounded-2xl p-4 shadow-xs">
         <div className="relative flex-1 w-full">
-          <Search className="absolute right-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Search className="absolute start-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <input
             type="text"
-            placeholder="بحث باسم أو فئة المركبة..."
+            placeholder={isAr ? "بحث باسم أو فئة المركبة..." : "Search by vehicle name or category..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="w-full bg-background border border-border rounded-xl pr-10 pl-4 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:border-purple-500/50"
+            className="w-full bg-background border border-border rounded-xl ps-10 pe-4 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:border-purple-500/50"
           />
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          <span className="text-xs text-muted-foreground whitespace-nowrap">الفئة:</span>
+          <span className="text-xs text-muted-foreground whitespace-nowrap">{isAr ? "الفئة:" : "Category:"}</span>
           <select
             value={selectedCat}
             onChange={(e) => setSelectedCat(e.target.value)}
-            className="bg-background border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:border-purple-500/50 w-full sm:w-auto font-medium"
+            className="bg-background border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:border-purple-500/50 w-full sm:w-auto font-medium cursor-pointer"
           >
-            <option value="all">كل الفئات ({fleet.length})</option>
-            <option value="bus">حافلات سياحية (Bus)</option>
-            <option value="van">ميني باص فان (Van)</option>
-            <option value="luxury_sedan">سيدان فاخرة (Sedan)</option>
-            <option value="suv">دفع رباعي سفاري (SUV)</option>
+            <option value="all">{isAr ? `كل الفئات (${fleet.length})` : `All Categories (${fleet.length})`}</option>
+            <option value="bus">{isAr ? "حافلات سياحية (Bus)" : "Tour Coaches (Bus)"}</option>
+            <option value="van">{isAr ? "ميني باص فان (Van)" : "Executive Vans (Van)"}</option>
+            <option value="luxury_sedan">{isAr ? "سيدان فاخرة (Sedan)" : "Luxury Sedan (Sedan)"}</option>
+            <option value="suv">{isAr ? "دفع رباعي سفاري (SUV)" : "Safari 4x4 (SUV)"}</option>
           </select>
         </div>
       </div>
 
       {/* Grid */}
       {isLoading ? (
-        <div className="text-center py-16 text-muted-foreground text-sm">
-          جاري تحميل بيانات أسطول Dunas Travel...
+        <div className="text-center py-16 text-muted-foreground text-sm font-medium">
+          {isAr ? "جاري تحميل بيانات أسطول Dunas Travel..." : "Loading Dunas Travel luxury fleet..."}
         </div>
       ) : filtered.length === 0 ? (
-        <div className="text-center py-16 bg-card border rounded-2xl p-8">
+        <div className="text-center py-16 bg-card border border-border/80 rounded-2xl p-8 space-y-2">
           <Bus className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-          <h3 className="text-base font-bold text-foreground">لا توجد مركبات مطابقة</h3>
-          <p className="text-xs text-muted-foreground mt-1">جرب تغيير شروط البحث أو قم بإضافة مركبة جديدة للأسطول.</p>
+          <h3 className="text-base font-bold text-foreground">
+            {isAr ? "لا توجد مركبات مطابقة" : "No matching vehicles found"}
+          </h3>
+          <p className="text-xs text-muted-foreground">
+            {isAr ? "جرب تغيير شروط البحث أو قم بإضافة مركبة جديدة للأسطول." : "Try adjusting your search criteria or add a new fleet vehicle."}
+          </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -87,18 +98,19 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
               className="group bg-card border border-border/80 rounded-2xl overflow-hidden shadow-xs hover:shadow-md hover:border-purple-500/40 transition-all duration-300 flex flex-col justify-between"
             >
               <div>
-                <div className="h-44 bg-muted relative overflow-hidden">
+                <div className="h-44 bg-muted relative overflow-hidden bg-slate-900">
                   <img 
                     src={item.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80'} 
                     alt={item.name}
                     className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    loading="lazy"
                   />
-                  <div className="absolute top-3 right-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-purple-300 border border-purple-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md uppercase">
+                  <div className="absolute top-3 end-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-purple-300 border border-purple-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono">
                     {item.category}
                   </div>
-                  <div className="absolute bottom-3 left-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-md">
-                    <Star size={11} className="fill-amber-400" />
-                    <span>{item.rating}</span>
+                  <div className="absolute bottom-3 start-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-amber-400 text-[10px] font-bold px-2 py-0.5 rounded-md">
+                    <Star size={11} className="fill-amber-400 text-amber-400" />
+                    <span className="font-mono">{item.rating}</span>
                   </div>
                 </div>
 
@@ -106,17 +118,17 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground font-medium">
                       <Users size={14} className="text-purple-400" />
-                      <span>{item.seats} مقعد</span>
+                      <span>{isAr ? `${item.seats} مقعد` : `${item.seats} Seats`}</span>
                       <span className="text-border">•</span>
-                      <span>{item.doors} أبواب</span>
+                      <span>{isAr ? `${item.doors} أبواب` : `${item.doors} Doors`}</span>
                     </div>
 
-                    <span className="text-base font-black text-amber-500">
-                      ${item.pricePerDay} <span className="text-[10px] font-normal text-muted-foreground">/ يوم</span>
+                    <span className="text-base font-black text-amber-500 font-mono">
+                      ${item.pricePerDay} <span className="text-[10px] font-normal text-muted-foreground font-sans">{isAr ? "/ يوم" : "/ day"}</span>
                     </span>
                   </div>
 
-                  <h3 className="font-bold text-foreground text-sm leading-snug group-hover:text-primary transition-colors">
+                  <h3 className="font-bold text-foreground text-sm leading-snug group-hover:text-purple-400 transition-colors">
                     {item.name}
                   </h3>
 
@@ -129,7 +141,7 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
                         </span>
                       ))}
                       {item.features.length > 3 && (
-                        <span className="text-[10px] text-muted-foreground self-center">+{item.features.length - 3}</span>
+                        <span className="text-[10px] text-muted-foreground self-center font-mono">+{item.features.length - 3}</span>
                       )}
                     </div>
                   )}
@@ -144,7 +156,7 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
                     variant="ghost"
                     className="h-8 w-8 rounded-lg hover:bg-purple-500/10 hover:text-purple-400"
                     onClick={() => handleOpenEdit(item)}
-                    title="تعديل"
+                    title={isAr ? "تعديل المركبة" : "Edit Vehicle"}
                   >
                     <Edit size={14} />
                   </Button>
@@ -153,7 +165,7 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
                     variant="ghost"
                     className="h-8 w-8 rounded-lg hover:bg-destructive/10 hover:text-destructive text-muted-foreground"
                     onClick={() => handleDelete(item.id, item.name)}
-                    title="حذف"
+                    title={isAr ? "حذف المركبة" : "Delete Vehicle"}
                   >
                     <Trash2 size={14} />
                   </Button>

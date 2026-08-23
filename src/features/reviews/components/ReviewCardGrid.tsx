@@ -1,10 +1,12 @@
 "use client";
 
 import { Review } from "../types";
-import { usePublishReview, useDeleteReview } from "../hooks/useReviews";
-import { Star, MessageSquare, CheckCircle, XCircle, Trash2, Calendar, MapPin, User } from "lucide-react";
+import { usePublishReview, useRejectReview, useDeleteReview } from "../hooks/useReviews";
+import { Star, MessageSquare, CheckCircle, XCircle, Trash2, Calendar, MapPin, User, MessageCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useTranslations } from "next-intl";
+import { useParams } from "next/navigation";
 
 interface ReviewCardGridProps {
   data: Review[];
@@ -12,23 +14,29 @@ interface ReviewCardGridProps {
 }
 
 export function ReviewCardGrid({ data, isLoading }: ReviewCardGridProps) {
+  const tReviews = useTranslations("reviews");
+  const tCommon = useTranslations("common");
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
+
   const publish = usePublishReview();
+  const reject = useRejectReview();
   const deleteRev = useDeleteReview();
 
   if (isLoading) {
     return (
-      <div className="text-center py-16 text-muted-foreground text-sm">
-        جاري تحميل تقييمات وآراء العملاء...
+      <div className="text-center py-16 text-muted-foreground text-sm flex items-center justify-center gap-2">
+        <span>{tCommon("loading")}</span>
       </div>
     );
   }
 
   if (!data || data.length === 0) {
     return (
-      <div className="text-center py-16 bg-card border rounded-2xl p-8">
-        <MessageSquare className="h-12 w-12 text-muted-foreground/40 mx-auto mb-3" />
-        <h3 className="text-base font-bold text-foreground">لا توجد تقييمات في هذا القسم</h3>
-        <p className="text-xs text-muted-foreground mt-1">سيتم عرض آراء العملاء الجديدة فور وصولها.</p>
+      <div className="text-center py-16 bg-card border border-border/70 rounded-3xl p-8 shadow-xs">
+        <MessageSquare className="h-12 w-12 text-muted-foreground/30 mx-auto mb-3" />
+        <h3 className="text-base font-bold text-foreground">{tReviews("noPending")}</h3>
+        <p className="text-xs text-muted-foreground mt-1">{tReviews("noPendingDesc")}</p>
       </div>
     );
   }
@@ -37,13 +45,15 @@ export function ReviewCardGrid({ data, isLoading }: ReviewCardGridProps) {
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
       {data.map((review) => {
         const tourTitle = typeof review.tour?.titleJsonb === "object"
-          ? (review.tour?.titleJsonb?.ar || review.tour?.titleJsonb?.en || review.tour?.slug)
-          : review.tour?.slug || "رحلة عامة";
+          ? (review.tour?.titleJsonb?.[locale] || review.tour?.titleJsonb?.["en"] || review.tour?.titleJsonb?.["ar"] || review.tour?.slug)
+          : review.tour?.slug || "Tour Experience";
+
+        const isApproved = review.status === "APPROVED" || review.isPublished;
 
         return (
           <div 
             key={review.id}
-            className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-amber-500/30 transition-all flex flex-col justify-between"
+            className="bg-card border border-border/80 rounded-2xl p-5 shadow-xs hover:shadow-md hover:border-amber-500/30 transition-all flex flex-col justify-between overflow-hidden"
           >
             <div className="space-y-3">
               {/* Header: User & Rating */}
@@ -53,7 +63,7 @@ export function ReviewCardGrid({ data, isLoading }: ReviewCardGridProps) {
                     {review.reviewerName?.charAt(0)?.toUpperCase() || "U"}
                   </div>
                   <div>
-                    <h4 className="font-bold text-sm text-foreground">{review.reviewerName || "عميل Dunas"}</h4>
+                    <h4 className="font-bold text-sm text-foreground">{review.reviewerName || "Dunas Guest"}</h4>
                     <span className="text-[11px] text-muted-foreground font-mono">{new Date(review.createdAt).toLocaleDateString()}</span>
                   </div>
                 </div>
@@ -70,49 +80,63 @@ export function ReviewCardGrid({ data, isLoading }: ReviewCardGridProps) {
               </div>
 
               {/* Comment text */}
-              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3">
-                "{review.comment || "لا يوجد تعليق نصي مكتوب."}"
+              <p className="text-xs text-muted-foreground leading-relaxed line-clamp-3 bg-muted/30 p-2.5 rounded-xl border border-border/40 font-normal">
+                "{review.comment || tReviews("noReviews")}"
               </p>
+
+              {/* Admin reply if present */}
+              {review.adminReply && (
+                <div className="text-[11px] bg-amber-500/10 text-amber-900 dark:text-amber-200 border border-amber-500/20 p-2 rounded-xl flex items-start gap-1.5">
+                  <MessageCircle className="h-3.5 w-3.5 text-amber-500 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold block">Official Reply:</span>
+                    <span className="line-clamp-2">{review.adminReply}</span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* Actions Bar */}
             <div className="mt-4 pt-3 border-t border-border/70 flex items-center justify-between">
-              <Badge variant={review.isPublished ? "default" : "secondary"} className="text-[10px] font-bold">
-                {review.isPublished ? "معتمد ومنشور" : "قيد المراجعة"}
+              <Badge 
+                variant={isApproved ? "default" : "secondary"} 
+                className={`text-[10px] font-bold ${isApproved ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30" : "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"}`}
+              >
+                {isApproved ? tReviews("published") : tReviews("pending")}
               </Badge>
 
               <div className="flex items-center gap-1.5">
-                {!review.isPublished ? (
+                {!isApproved ? (
                   <Button
                     size="sm"
-                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 rounded-lg px-2.5"
+                    className="h-7 text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-bold gap-1 rounded-lg px-2.5 cursor-pointer shadow-xs"
                     onClick={() => publish.mutate(review.id)}
                     disabled={publish.isPending}
                   >
                     <CheckCircle className="h-3.5 w-3.5" />
-                    <span>اعتماد ونشر</span>
+                    <span>{tReviews("publish")}</span>
                   </Button>
                 ) : (
                   <Button
                     size="sm"
                     variant="outline"
-                    className="h-7 text-xs text-rose-500 hover:bg-rose-500/10 gap-1 rounded-lg px-2"
-                    onClick={() => deleteRev.mutate(review.id)}
-                    disabled={deleteRev.isPending}
+                    className="h-7 text-xs text-rose-500 hover:bg-rose-500/10 gap-1 rounded-lg px-2 cursor-pointer border-rose-500/30"
+                    onClick={() => reject.mutate(review.id)}
+                    disabled={reject.isPending}
                   >
                     <XCircle className="h-3.5 w-3.5" />
-                    <span>حذف / إلغاء</span>
+                    <span>{tReviews("reject")}</span>
                   </Button>
                 )}
 
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                  className="h-7 w-7 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
                   onClick={() => {
-                    if (confirm("هل تريد حذف هذا التقييم نهائياً؟")) deleteRev.mutate(review.id);
+                    if (confirm(`${tCommon("confirm")} ${tReviews("delete")}?`)) deleteRev.mutate(review.id);
                   }}
-                  title="حذف"
+                  title={tReviews("delete")}
                 >
                   <Trash2 className="h-3.5 w-3.5" />
                 </Button>

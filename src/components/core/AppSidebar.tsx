@@ -156,36 +156,20 @@ export const AppSidebar = memo(function AppSidebar() {
       <SidebarContent className="bg-card px-2 py-2">
 
         {/* =============================== */}
-        {/* منظومة الإدارة والتحكم          */}
+        {/* 1. OPERATIONS                   */}
         {/* =============================== */}
         <SidebarGroup>
-          <SidebarGroupLabel className="px-3 pt-4 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide">
-            {tNav("overview")}
+          <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider">
+            {tNav("operations") || "Operations"}
           </SidebarGroupLabel>
           <SidebarGroupContent>
-            <SidebarMenu className="space-y-1">
+            <SidebarMenu className="space-y-0.5">
               <NavItem href={adminRoutes.dashboard} icon={LayoutDashboard} label={tNav("dashboard")} exact />
               {canAccessFullOperations && (
                 <>
                   <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("bookings")} />
-                  <NavItem
-                    href={adminRoutes.destinations}
-                    icon={Compass}
-                    label={tNav("destinations")}
-                    badge="8"
-                  />
-                  <NavItem href={adminRoutes.tours} icon={Map} label={tNav("tours")} />
-                  <NavItem href={adminRoutes.packages} icon={Package} label={tNav("packages")} />
-                  <NavItem href={adminRoutes.hotels} icon={Hotel} label={tNav("hotels")} />
-                  <NavItem href={adminRoutes.transportation} icon={Bus} label={tNav("transportation")} />
-                  <NavItem href={adminRoutes.promotions} icon={Tag} label={tNav("promotions")} />
-                  <NavItem href={adminRoutes.media} icon={Film} label={tNav("media")} />
-                  <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
-                  <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
-                  <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />
                   <NavItem href={adminRoutes.inquiries} icon={Star} label={tNav("inquiries")} />
-                  <NavItem href={adminRoutes.reviews} icon={MessageCircle} label={tNav("reviews")} />
-                  <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} />
+                  <NavItem href={adminRoutes.customers} icon={Users} label={tNav("customers")} />
                 </>
               )}
             </SidebarMenu>
@@ -195,11 +179,11 @@ export const AppSidebar = memo(function AppSidebar() {
         {/* B2B SELF SERVICE */}
         {isB2B && !isAdmin && (
           <SidebarGroup>
-            <SidebarGroupLabel className="px-3 pt-5 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide border-t border-border">
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border">
               {tNav("myOperations")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="space-y-1">
+              <SidebarMenu className="space-y-0.5">
                 <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("myBookings")} />
                 <NavItem href={adminRoutes.finance.commissions} icon={Briefcase} label={tNav("myCommissions")} />
                 <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("myWallet")} />
@@ -208,21 +192,92 @@ export const AppSidebar = memo(function AppSidebar() {
           </SidebarGroup>
         )}
 
-        {/* ================================= */}
-        {/* شركاء الأعمال والمالية B2B       */}
-        {/* ================================= */}
+        {/* =============================== */}
+        {/* 2. CATALOG & FLEET              */}
+        {/* =============================== */}
         {canAccessFullOperations && (
           <SidebarGroup>
-            <SidebarGroupLabel className="px-3 pt-5 pb-2 text-[13px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wide border-t border-border">
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border/60">
+              {tNav("destinations") ? (pathname.startsWith('/ar') ? "الكتالوج والأسطول" : "Catalog & Fleet") : "Catalog & Fleet"}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-0.5">
+                <NavItem href={adminRoutes.tours} icon={Map} label={tNav("tours")} />
+                <NavItem href={adminRoutes.packages} icon={Package} label={tNav("packages")} />
+                <NavItem href={adminRoutes.hotels} icon={Hotel} label={tNav("hotels")} />
+                <NavItem href={adminRoutes.transportation} icon={Bus} label={tNav("transportation")} />
+                <NavItem href={adminRoutes.destinations} icon={Compass} label={tNav("destinations")} />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* =============================== */}
+        {/* 3. B2B ENTERPRISE & FINANCE     */}
+        {/* =============================== */}
+        {canAccessFullOperations && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border/60">
               {tNav("b2bEnterprise")}
             </SidebarGroupLabel>
             <SidebarGroupContent>
-              <SidebarMenu className="space-y-1">
-                <NavItem href={adminRoutes.customers} icon={Users} label={tNav("customers")} />
+              <SidebarMenu className="space-y-0.5">
                 <NavItem href={adminRoutes.companies} icon={Building2} label={tNav("companies")} />
                 <NavItem href={adminRoutes.agents} icon={Users} label={tNav("agents")} />
                 <NavItem href={adminRoutes.finance.commissions} icon={DollarSign} label={tNav("commissions")} />
                 <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("wallets")} />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* =============================== */}
+        {/* 4. CONTENT & MARKETING          */}
+        {/* =============================== */}
+        {canAccessFullOperations && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border/60">
+              {tNav("content")}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-0.5">
+                <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
+                <NavItem href={adminRoutes.media} icon={Film} label={tNav("media")} />
+                <NavItem href={adminRoutes.promotions} icon={Tag} label={tNav("promotions")} />
+                <NavItem href={adminRoutes.reviews} icon={MessageCircle} label={tNav("reviews")} />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* =============================== */}
+        {/* 5. COMMUNICATIONS & AI          */}
+        {/* =============================== */}
+        {canAccessFullOperations && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border/60">
+              {tNav("communications")}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-0.5">
+                <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
+                <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />
+                <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} badge="AI" />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+        )}
+
+        {/* =============================== */}
+        {/* 6. GOVERNANCE & SECURITY        */}
+        {/* =============================== */}
+        {canAccessFullOperations && (
+          <SidebarGroup>
+            <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border/60">
+              {tNav("auditLog") ? (pathname.startsWith('/ar') ? "الحوكمة والأمان" : "Governance & Audit") : "Governance"}
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="space-y-0.5">
                 {canManageAdmins && (
                   <NavItem href={adminRoutes.audit} icon={ClipboardList} label={tNav("auditLog")} />
                 )}
@@ -267,7 +322,7 @@ export const AppSidebar = memo(function AppSidebar() {
             <span className="text-xs font-extrabold">Dunas Travel Suite 👑</span>
           </div>
           <p className="text-[11px] font-semibold text-muted-foreground leading-relaxed">
-            Attia Yamany • المدير العام
+            Attia Yamany • {tNav("generalManager") || (pathname.startsWith('/ar') ? "المدير العام" : "General Manager")}
           </p>
         </div>
       </SidebarFooter>

@@ -149,29 +149,42 @@ apiClient.interceptors.response.use(
       body = raw.data;
     }
 
-    // Step 2: Extract items array if present in body.data or body itself
-    const items = Array.isArray(body.data)
-      ? body.data
-      : Array.isArray(body)
-      ? body
-      : Array.isArray(raw.data)
-      ? raw.data
-      : null;
+    // Step 2: Extract items array if present in body.items, body.data, or body itself
+    const items =
+      Array.isArray(body.items)
+        ? body.items
+        : Array.isArray(body.data?.items)
+        ? body.data.items
+        : Array.isArray(body.data)
+        ? body.data
+        : Array.isArray(body)
+        ? body
+        : Array.isArray(raw.data?.items)
+        ? raw.data.items
+        : Array.isArray(raw.data)
+        ? raw.data
+        : null;
 
     // Step 3: Check for explicit pagination metadata from body or raw
     const hasExplicitTotal =
       typeof body.total === 'number' ||
+      typeof body.data?.total === 'number' ||
       typeof body.meta?.total === 'number' ||
       typeof raw.meta?.total === 'number' ||
+      typeof raw.data?.total === 'number' ||
       typeof raw.total === 'number';
 
     const total = hasExplicitTotal
       ? typeof body.total === 'number'
         ? body.total
+        : typeof body.data?.total === 'number'
+        ? body.data.total
         : typeof body.meta?.total === 'number'
         ? body.meta.total
         : typeof raw.meta?.total === 'number'
         ? raw.meta.total
+        : typeof raw.data?.total === 'number'
+        ? raw.data.total
         : raw.total
       : items
       ? items.length
@@ -180,6 +193,8 @@ apiClient.interceptors.response.use(
     const page =
       typeof body.page === 'number'
         ? body.page
+        : typeof body.data?.page === 'number'
+        ? body.data.page
         : typeof body.meta?.page === 'number'
         ? body.meta.page
         : typeof raw.meta?.page === 'number'
@@ -189,6 +204,8 @@ apiClient.interceptors.response.use(
     const limit =
       typeof body.limit === 'number'
         ? body.limit
+        : typeof body.data?.limit === 'number'
+        ? body.data.limit
         : typeof body.meta?.limit === 'number'
         ? body.meta.limit
         : typeof raw.meta?.limit === 'number'
@@ -198,6 +215,8 @@ apiClient.interceptors.response.use(
     const totalPages =
       typeof body.totalPages === 'number'
         ? body.totalPages
+        : typeof body.data?.totalPages === 'number'
+        ? body.data.totalPages
         : typeof body.meta?.totalPages === 'number'
         ? body.meta.totalPages
         : typeof raw.meta?.totalPages === 'number'

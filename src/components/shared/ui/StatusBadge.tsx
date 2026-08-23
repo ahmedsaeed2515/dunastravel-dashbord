@@ -15,18 +15,21 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const upper = status.toUpperCase().trim();
   let variant: "default" | "secondary" | "success" | "warning" | "destructive" | "info" | "outline" = "secondary";
 
-  if (["CONFIRMED", "COMPLETED", "PUBLISHED", "PAID", "ACTIVE", "APPROVED", "RESOLVED"].includes(upper)) {
+  if (["CONFIRMED", "COMPLETED", "PUBLISHED", "PAID", "ACTIVE", "APPROVED", "RESOLVED", "CONVERTED", "HEALTHY"].includes(upper)) {
     variant = "success";
-  } else if (["PENDING", "DRAFT", "NEW", "OPEN", "IN_PROGRESS"].includes(upper)) {
+  } else if (["PENDING", "DRAFT", "NEW", "NEWLY_RECEIVED", "OPEN", "IN_PROGRESS", "IN_REVIEW", "PROCESSING", "QUOTED", "HANDED_OFF"].includes(upper)) {
     variant = "warning";
-  } else if (["CANCELLED", "FAILED", "SUSPENDED", "REJECTED", "EXPIRED"].includes(upper)) {
+  } else if (["CANCELLED", "FAILED", "SUSPENDED", "REJECTED", "EXPIRED", "UNQUALIFIED", "OVERDUE", "RATE_LIMITED"].includes(upper)) {
     variant = "destructive";
-  } else if (["VIP"].includes(upper)) {
+  } else if (["REFUNDED", "CLOSED", "ARCHIVED"].includes(upper)) {
+    variant = "secondary";
+  } else if (["VIP", "QUALIFIED"].includes(upper)) {
     variant = "default";
   }
 
   return (
     <Badge variant={variant} className={className}>
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-current me-1.5 opacity-80 shrink-0" />
       {getStatusLabel(status)}
     </Badge>
   );

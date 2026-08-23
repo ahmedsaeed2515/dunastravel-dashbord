@@ -6,7 +6,7 @@ import { ReviewsTable } from "@/features/reviews/components/ReviewsTable";
 import { ReviewCardGrid } from "@/features/reviews/components/ReviewCardGrid";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, LayoutGrid, Table as TableIcon, Star, CheckCircle2 } from "lucide-react";
+import { Loader2, LayoutGrid, Table as TableIcon, Star, CheckCircle2, MessageSquare } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { Button } from "@/components/ui/button";
 import { useTranslations } from "next-intl";
@@ -15,36 +15,61 @@ export default function ReviewsPage() {
   const tReviews = useTranslations("reviews");
   const tCommon = useTranslations("common");
 
-  const [filterState, setFilterState] = useState<"pending" | "published">("pending");
+  const [filterState, setFilterState] = useState<"pending" | "published" | "all">("pending");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
   
   // Pending reviews
-  const { data: pendingData, isLoading: pendingLoading } = useReviews({ isPublished: false, limit: 100 });
+  const { data: pendingData, isLoading: pendingLoading } = useReviews({ status: "PENDING", limit: 50 });
   
-  // Published reviews
-  const { data: publishedData, isLoading: publishedLoading } = useReviews({ isPublished: true, limit: 100 });
+  // Approved/Published reviews
+  const { data: publishedData, isLoading: publishedLoading } = useReviews({ status: "APPROVED", limit: 50 });
+
+  // All reviews
+  const { data: allData, isLoading: allLoading } = useReviews({ limit: 50 });
+
+  const pendingList = Array.isArray(pendingData) ? pendingData : ((pendingData as any)?.data || (pendingData as any)?.items || []);
+  const publishedList = Array.isArray(publishedData) ? publishedData : ((publishedData as any)?.data || (publishedData as any)?.items || []);
+  const allList = Array.isArray(allData) ? allData : ((allData as any)?.data || (allData as any)?.items || []);
 
   const currentData = filterState === "pending"
-    ? (Array.isArray(pendingData) ? pendingData : (pendingData?.data || []))
-    : (Array.isArray(publishedData) ? publishedData : (publishedData?.data || []));
+    ? pendingList
+    : filterState === "published"
+    ? publishedList
+    : allList;
 
-  const isLoading = filterState === "pending" ? pendingLoading : publishedLoading;
+  const isLoading = filterState === "pending" 
+    ? pendingLoading 
+    : filterState === "published" 
+    ? publishedLoading 
+    : allLoading;
 
   return (
     <div className="space-y-6 pb-16 animate-in fade-in duration-300">
       <PageHeader
-        title={tReviews("title") || "التقييمات وآراء العملاء"}
-        description={tReviews("description") || "إدارة واعتماد ومراجعة تقييمات العملاء لرحلات وتجارب Dunas Travel."}
+        title={tReviews("title")}
+        description={tReviews("description")}
       />
 
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-        <Tabs defaultValue="pending" className="w-full sm:w-auto" onValueChange={(val) => setFilterState(val as any)}>
-          <TabsList className="grid grid-cols-2 w-[280px] bg-muted/60 p-1 border border-border/60">
-            <TabsTrigger value="pending" className="text-xs font-semibold">
-              {tReviews("pending") || "قيد المراجعة"}
+        <Tabs value={filterState} className="w-full sm:w-auto" onValueChange={(val) => setFilterState(val as any)}>
+          <TabsList className="grid grid-cols-3 w-[340px] bg-muted/60 p-1 border border-border/60">
+            <TabsTrigger value="pending" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <span>{tReviews("pending")}</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold font-mono">
+                {pendingList.length}
+              </span>
             </TabsTrigger>
-            <TabsTrigger value="published" className="text-xs font-semibold">
-              {tReviews("approved") || "المعتمدة"}
+            <TabsTrigger value="published" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <span>{tReviews("approved")}</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold font-mono">
+                {publishedList.length}
+              </span>
+            </TabsTrigger>
+            <TabsTrigger value="all" className="text-xs font-semibold gap-1.5 cursor-pointer">
+              <span>{tReviews("all")}</span>
+              <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted text-muted-foreground font-bold font-mono">
+                {allList.length}
+              </span>
             </TabsTrigger>
           </TabsList>
         </Tabs>
@@ -58,20 +83,20 @@ export default function ReviewsPage() {
             <Button
               size="sm"
               variant={viewMode === "grid" ? "default" : "ghost"}
-              className={`h-8 px-3 rounded-lg text-xs gap-1.5 ${viewMode === "grid" ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold" : "text-muted-foreground"}`}
+              className={`h-8 px-3 rounded-lg text-xs gap-1.5 cursor-pointer ${viewMode === "grid" ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold" : "text-muted-foreground"}`}
               onClick={() => setViewMode("grid")}
             >
               <LayoutGrid className="h-3.5 w-3.5" />
-              <span>بطاقات</span>
+              <span>{tReviews("cards")}</span>
             </Button>
             <Button
               size="sm"
               variant={viewMode === "table" ? "default" : "ghost"}
-              className={`h-8 px-3 rounded-lg text-xs gap-1.5 ${viewMode === "table" ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold" : "text-muted-foreground"}`}
+              className={`h-8 px-3 rounded-lg text-xs gap-1.5 cursor-pointer ${viewMode === "table" ? "bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold" : "text-muted-foreground"}`}
               onClick={() => setViewMode("table")}
             >
               <TableIcon className="h-3.5 w-3.5" />
-              <span>جدول</span>
+              <span>{tReviews("table")}</span>
             </Button>
           </div>
         </div>

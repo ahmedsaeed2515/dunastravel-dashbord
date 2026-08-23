@@ -1,11 +1,12 @@
 "use client";
 
+import React, { useState } from "react";
 import { ColumnDef } from "@tanstack/react-table";
 import { Inquiry } from "../../types";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { format } from "date-fns";
-import { MoreHorizontal, UserCheck } from "lucide-react";
+import { MoreHorizontal, UserCheck, Copy, Check } from "lucide-react";
 import { useAssignInquiry } from "../../hooks/useCommunications";
 import { useUsers } from "@/features/users/hooks/useUsers";
 import {
@@ -21,36 +22,66 @@ import {
   DropdownMenuPortal
 } from "@/components/ui/dropdown-menu";
 
+function RefCodeCell({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const handleCopy = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    navigator.clipboard.writeText(code);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  };
+
+  return (
+    <div className="flex items-center gap-1.5 font-mono text-xs font-bold text-foreground">
+      <span className="bg-muted px-2 py-0.5 rounded-md border border-border/60">{code}</span>
+      <button
+        onClick={handleCopy}
+        className="text-muted-foreground hover:text-foreground transition-colors p-1 rounded-md hover:bg-muted"
+        title="Copy reference code"
+      >
+        {copied ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
+      </button>
+    </div>
+  );
+}
+
 export const columns: ColumnDef<Inquiry>[] = [
   {
     accessorKey: "referenceCode",
     header: "Ref Code",
-    cell: ({ row }) => <div className="font-medium">{row.original.referenceCode}</div>,
+    cell: ({ row }) => <RefCodeCell code={row.original.referenceCode} />,
   },
   {
     accessorKey: "name",
-    header: "Client",
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="font-medium">{row.original.name}</span>
-        <span className="text-xs text-muted-foreground">{row.original.email}</span>
-      </div>
-    ),
+    header: "Client & Contact",
+    cell: ({ row }) => {
+      const item = row.original as any;
+      const fullName = item.name || `${item.firstName || ''} ${item.lastName || ''}`.trim() || "Guest Client";
+      return (
+        <div className="flex flex-col gap-0.5">
+          <span className="font-semibold text-foreground text-sm">{fullName}</span>
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {item.email && <span className="dir-ltr">{item.email}</span>}
+            {item.phone && item.phone !== "N/A" && (
+              <span className="text-[11px] font-mono text-muted-foreground/80 dir-ltr">({item.phone})</span>
+            )}
+          </div>
+        </div>
+      );
+    },
   },
   {
-    accessorKey: "destinations",
-    header: "Destinations",
+    accessorKey: "numberOfTravelers",
+    header: "Party Size",
     cell: ({ row }) => {
-      const dests = Array.isArray(row.original.destinations) ? row.original.destinations : [];
+      const item = row.original as any;
+      const count = item.numberOfTravelers || 1;
       return (
-        <div className="flex gap-1 flex-wrap max-w-[200px]">
-          {dests.length > 0 ? (
-            dests.map(d => (
-              <Badge key={d} variant="secondary" className="text-[10px] px-1 py-0">{d}</Badge>
-            ))
-          ) : (
-            <span className="text-xs text-muted-foreground">—</span>
-          )}
+        <div className="flex items-center gap-1">
+          <Badge variant="secondary" className="text-xs font-semibold px-2 py-0.5">
+            👥 {count} {count === 1 ? "Traveler" : "Travelers"}
+          </Badge>
         </div>
       );
     },
@@ -59,25 +90,48 @@ export const columns: ColumnDef<Inquiry>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const status = row.original.status || "NEW";
-      const variants: Record<string, any> = {
-        NEW: "default",
-        IN_PROGRESS: "secondary",
-        PROPOSAL_SENT: "outline",
-        CLOSED: "destructive",
-      };
-      return <Badge variant={variants[status] || "outline"}>{status}</Badge>;
+      const rawStatus = (row.original.status || "NEWLY_RECEIVED").toUpperCase();
+      
+      if (rawStatus === "NEWLY_RECEIVED" || rawStatus === "NEW") {
+        return (
+          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs font-bold">
+            NEWLY RECEIVED
+          </Badge>
+        );
+      }
+      if (rawStatus === "IN_PROGRESS") {
+        return (
+          <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-xs font-bold">
+            IN PROGRESS
+          </Badge>
+        );
+      }
+      if (rawStatus === "PROPOSAL_SENT") {
+        return (
+          <Badge className="bg-purple-500/15 text-purple-600 dark:text-purple-400 border border-purple-500/30 text-xs font-bold">
+            PROPOSAL SENT
+          </Badge>
+        );
+      }
+      if (rawStatus === "CLOSED") {
+        return (
+          <Badge variant="outline" className="text-muted-foreground text-xs font-medium">
+            CLOSED
+          </Badge>
+        );
+      }
+      return <Badge variant="outline">{rawStatus}</Badge>;
     },
   },
   {
     accessorKey: "assigneeId",
-    header: "Assigned To",
+    header: "Assigned Staff",
     cell: ({ row }) => {
       return (
-        <div className="text-sm">
+        <div className="text-xs">
           {row.original.assigneeId ? (
-            <span className="text-primary font-medium flex items-center gap-1">
-              <UserCheck className="h-3 w-3" /> Staff Assigned
+            <span className="text-amber-500 font-semibold flex items-center gap-1">
+              <UserCheck className="h-3.5 w-3.5" /> Assigned
             </span>
           ) : (
             <span className="text-muted-foreground italic">Unassigned</span>
@@ -88,14 +142,14 @@ export const columns: ColumnDef<Inquiry>[] = [
   },
   {
     accessorKey: "createdAt",
-    header: "Received",
+    header: "Received Date",
     cell: ({ row }) => {
       const val = row.original.createdAt;
-      if (!val) return <div className="text-muted-foreground text-sm">—</div>;
+      if (!val) return <div className="text-muted-foreground text-xs">—</div>;
       const d = new Date(val);
       return (
-        <div className="text-muted-foreground text-sm">
-          {isNaN(d.getTime()) ? "—" : format(d, "MMM d, yyyy")}
+        <div className="text-muted-foreground text-xs font-mono">
+          {isNaN(d.getTime()) ? "—" : format(d, "MMM d, yyyy • HH:mm")}
         </div>
       );
     },
