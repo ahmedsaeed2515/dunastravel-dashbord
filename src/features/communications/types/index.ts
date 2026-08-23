@@ -40,11 +40,14 @@ export interface PaginatedResponse<T> {
 }
 
 export interface Inquiry {
+  id?: string;
   referenceCode: string;
-  name: string;
+  name?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string | null;
-  destinations: string[];
+  destinations?: string[];
   departureDate?: string | null;
   returnDate?: string | null;
   numberOfTravelers: number;
@@ -52,7 +55,19 @@ export interface Inquiry {
   status: string;
   assigneeId?: string | null;
   createdAt: string;
-  updatedAt: string;
+  updatedAt?: string;
+  message?: string | null;
+  budget?: string | null;
+  locale?: string | null;
+  internalNote?: string | null;
+  followUpAt?: string | null;
+}
+
+export interface UpdateInquiryPayload {
+  status?: string;
+  assigneeId?: string;
+  followUpAt?: string;
+  internalNote?: string;
 }
 
 export interface InquiryQueryFilters {
@@ -60,6 +75,7 @@ export interface InquiryQueryFilters {
   limit?: number;
   status?: string;
   assigneeId?: string;
+  search?: string;
 }
 
 export interface EmailTemplate {
@@ -80,3 +96,25 @@ export interface CreateEmailTemplatePayload {
 }
 
 export type UpdateEmailTemplatePayload = Partial<CreateEmailTemplatePayload>;
+
+export interface ContactSubmission {
+  id: string;
+  referenceCode: string;
+  name?: string | null;
+  firstName?: string | null;
+  lastName?: string | null;
+  email: string;
+  phone?: string | null;
+  subject?: string | null;
+  message?: string | null;
+  status: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+export interface ContactSubmissionQueryFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}

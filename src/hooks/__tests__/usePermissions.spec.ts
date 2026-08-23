@@ -58,8 +58,28 @@ describe('usePermissions hook', () => {
     expect(result.current.isAgent).toBe(true);
     expect(result.current.canManageTours).toBe(false);
     expect(result.current.hasPermission('read', 'bookings')).toBe(true);
+    expect(result.current.hasPermission('create', 'bookings')).toBe(false);
+    expect(result.current.hasPermission('read', 'inquiries')).toBe(true);
+    expect(result.current.hasPermission('update', 'inquiries')).toBe(true);
+    expect(result.current.hasPermission('read', 'wallet')).toBe(false);
     expect(result.current.hasPermission('delete', 'tours')).toBe(false);
     expect(result.current.canAccessRoute('/admin/bookings')).toBe(true);
+    expect(result.current.canAccessRoute('/admin/inquiries')).toBe(true);
+    expect(result.current.canAccessRoute('/dashboard')).toBe(false);
+    expect(result.current.canAccessRoute('/admin/finance/wallet')).toBe(false);
     expect(result.current.canAccessRoute('/admin/tours')).toBe(false);
+  });
+
+  it('restricts COMPANY role to its authenticated profile', () => {
+    (useAuth as any).mockReturnValue({
+      user: { id: '4', role: 'COMPANY', name: 'Partner Company' },
+      role: 'COMPANY',
+      isLoading: false,
+    });
+
+    const { result } = renderHook(() => usePermissions());
+    expect(result.current.canAccessRoute('/admin/profile')).toBe(true);
+    expect(result.current.canAccessRoute('/admin/bookings')).toBe(false);
+    expect(result.current.canAccessRoute('/dashboard')).toBe(false);
   });
 });

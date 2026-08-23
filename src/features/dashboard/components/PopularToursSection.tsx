@@ -102,7 +102,7 @@ export function PopularToursSection({ filters }: PopularToursSectionProps) {
           const heroImg = tour.heroImage;
 
           return (
-            <Link key={tour.id || idx} href={`${adminRoutes.tours}/${tour.id}`} className="block group">
+            <Link key={tour.id || idx} href={`${adminRoutes.tours}/${tour.slug}`} className="block group">
               <Card className="overflow-hidden bg-card border border-border/80 hover:border-amber-500/40 hover:-translate-y-1 hover:shadow-md transition-all duration-200 rounded-2xl h-full flex flex-col justify-between">
                 <div>
                   {/* Hero Image */}
@@ -118,7 +118,7 @@ export function PopularToursSection({ filters }: PopularToursSectionProps) {
                     {/* Destination Pill */}
                     <div className="absolute bottom-2.5 right-2.5 text-xs font-semibold text-white flex items-center gap-1">
                       <MapPin className="w-3 h-3 text-amber-400" />
-                      <span className="text-[11px] text-slate-200">{tour.country || tour.category || "Egypt"}</span>
+                      <span className="text-[11px] text-slate-200">{tour.country || tour.category || "—"}</span>
                     </div>
                   </div>
 

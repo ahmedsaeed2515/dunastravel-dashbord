@@ -12,11 +12,11 @@ import { useTourAvailability, useTours } from "@/features/tours/hooks/useTours";
 export function CreateBookingDrawer() {
   const [open, setOpen] = useState(false);
   const { mutate: createBooking, isPending } = useCreateManualBooking();
-  const { data: toursPage, isLoading: toursLoading } = useTours({ page: 1, limit: 100, status: "PUBLISHED" });
+  const { data: toursPage, isLoading: toursLoading, isError: toursError, refetch: refetchTours } = useTours({ page: 1, limit: 100, status: "PUBLISHED" });
   const tours = toursPage?.data ?? [];
   const [tourId, setTourId] = useState("");
   const selectedTour = tours.find((tour) => tour.id === tourId);
-  const { data: availabilities = [], isLoading: availabilityLoading } = useTourAvailability(selectedTour?.slug ?? "");
+  const { data: availabilities = [], isLoading: availabilityLoading, isError: availabilityError, refetch: refetchAvailability } = useTourAvailability(selectedTour?.slug ?? "");
   const [availabilityId, setAvailabilityId] = useState("");
   const selectedAvailability = availabilities.find((slot) => slot.id === availabilityId);
   const [userId, setUserId] = useState("");
@@ -26,23 +26,30 @@ export function CreateBookingDrawer() {
   const [adults, setAdults] = useState(1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(0);
+  const [passengerNames, setPassengerNames] = useState<Record<string, string>>({});
 
-  const passengers = useMemo(() => {
-    const rows: Array<{ passengerType: "ADULT" | "CHILD" | "INFANT"; fullName: string }> = [];
-    for (let index = 0; index < adults; index += 1) rows.push({ passengerType: "ADULT", fullName: index === 0 ? fullName : `Adult ${index + 1} - TBD` });
-    for (let index = 0; index < children; index += 1) rows.push({ passengerType: "CHILD", fullName: `Child ${index + 1} - TBD` });
-    for (let index = 0; index < infants; index += 1) rows.push({ passengerType: "INFANT", fullName: `Infant ${index + 1} - TBD` });
+  const passengerSlots = useMemo(() => {
+    const rows: Array<{ key: string; passengerType: "ADULT" | "CHILD" | "INFANT"; label: string }> = [];
+    for (let index = 0; index < adults; index += 1) rows.push({ key: `ADULT-${index}`, passengerType: "ADULT", label: `اسم البالغ ${index + 1}` });
+    for (let index = 0; index < children; index += 1) rows.push({ key: `CHILD-${index}`, passengerType: "CHILD", label: `اسم الطفل ${index + 1}` });
+    for (let index = 0; index < infants; index += 1) rows.push({ key: `INFANT-${index}`, passengerType: "INFANT", label: `اسم الرضيع ${index + 1}` });
     return rows;
-  }, [adults, children, infants, fullName]);
+  }, [adults, children, infants]);
+
+  const passengers = passengerSlots.map((slot, index) => ({
+    passengerType: slot.passengerType,
+    fullName: (passengerNames[slot.key] || (index === 0 ? fullName : "")).trim(),
+  }));
+  const allPassengerNamesPresent = passengers.every((passenger) => passenger.fullName.length > 0);
 
   const reset = () => {
     setTourId(""); setAvailabilityId(""); setUserId(""); setFullName(""); setEmail(""); setPhone("");
-    setAdults(1); setChildren(0); setInfants(0);
+    setAdults(1); setChildren(0); setInfants(0); setPassengerNames({});
   };
 
   const handleSubmit = (event: React.FormEvent) => {
     event.preventDefault();
-    if (!selectedAvailability) return;
+    if (!selectedAvailability || !allPassengerNamesPresent) return;
     createBooking({
       tourId,
       availabilityId: selectedAvailability.id,
@@ -81,6 +88,8 @@ export function CreateBookingDrawer() {
               {availabilities.map((slot) => <option key={slot.id} value={slot.id}>{slot.date.slice(0, 10)} — {slot.remainingSeats} مقعد متاح</option>)}
             </select>
             {selectedTour && !availabilityLoading && availabilities.length === 0 && <p className="text-xs text-destructive">لا توجد مواعيد قابلة للحجز لهذه الرحلة.</p>}
+            {toursError && <p className="text-xs text-destructive">تعذر تحميل الرحلات. <button type="button" className="underline" onClick={() => void refetchTours()}>إعادة المحاولة</button></p>}
+            {selectedTour && availabilityError && <p className="text-xs text-destructive">تعذر تحميل المواعيد المتاحة. <button type="button" className="underline" onClick={() => void refetchAvailability()}>إعادة المحاولة</button></p>}
           </div>
           <div className="space-y-2"><Label htmlFor="fullName">اسم العميل</Label><Input id="fullName" required value={fullName} onChange={(event) => setFullName(event.target.value)} /></div>
           <div className="grid grid-cols-2 gap-3">
@@ -93,7 +102,21 @@ export function CreateBookingDrawer() {
             <div className="space-y-2"><Label htmlFor="children">أطفال</Label><Input id="children" type="number" min="0" max="100" value={children} onChange={(event) => setChildren(Math.max(0, Number(event.target.value) || 0))} /></div>
             <div className="space-y-2"><Label htmlFor="infants">رضع</Label><Input id="infants" type="number" min="0" max="100" value={infants} onChange={(event) => setInfants(Math.max(0, Number(event.target.value) || 0))} /></div>
           </div>
-          <Button type="submit" className="mt-8 w-full" disabled={isPending || !selectedAvailability}>
+          <div className="space-y-3 rounded-lg border p-3">
+            <p className="text-sm font-semibold">أسماء المسافرين كما ستُحفظ في الحجز</p>
+            {passengerSlots.map((slot, index) => (
+              <div className="space-y-1" key={slot.key}>
+                <Label htmlFor={`passenger-${slot.key}`}>{slot.label}</Label>
+                <Input
+                  id={`passenger-${slot.key}`}
+                  required
+                  value={passengerNames[slot.key] ?? (index === 0 ? fullName : "")}
+                  onChange={(event) => setPassengerNames((current) => ({ ...current, [slot.key]: event.target.value }))}
+                />
+              </div>
+            ))}
+          </div>
+          <Button type="submit" className="mt-8 w-full" disabled={isPending || !selectedAvailability || !allPassengerNamesPresent}>
             {isPending ? "جارٍ إنشاء الحجز..." : <><Save className="me-2 h-4 w-4" />حفظ الحجز</>}
           </Button>
         </form>

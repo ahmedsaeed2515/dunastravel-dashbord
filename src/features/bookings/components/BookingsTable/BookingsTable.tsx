@@ -26,16 +26,20 @@ import {
 import { Download, CheckSquare, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
+import { useSearchParams } from "next/navigation";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function BookingsTable() {
   const tBookings = useTranslations("bookings");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
+  const searchParams = useSearchParams();
+  const { isAdmin, isSuperAdmin } = usePermissions();
 
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(() => searchParams.get("search") || "");
   const [statusFilter, setStatusFilter] = useState<string>("");
   
   const queryFilters: BookingQueryFilters = {
@@ -92,7 +96,7 @@ export function BookingsTable() {
     }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete, tBookings, tCommon);
+  const columns = getColumns(handleView, handleEdit, handleDelete, tBookings, tCommon, isAdmin);
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -132,7 +136,7 @@ export function BookingsTable() {
           </SelectContent>
         </Select>
 
-        {referenceCodes.length > 0 && (
+        {isAdmin && referenceCodes.length > 0 && (
           <DropdownMenu>
             <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-8 px-3 gap-1.5">
               <CheckSquare className="h-4 w-4 text-primary" />
@@ -156,16 +160,18 @@ export function BookingsTable() {
           </DropdownMenu>
         )}
 
-        <Button 
-          variant="outline" 
-          size="sm" 
-          className="h-8 shadow-sm flex items-center gap-1.5"
-          onClick={handleExportCsv}
-          disabled={isExporting}
-        >
-          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
-          <span>{tCommon("exportCsv")}</span>
-        </Button>
+        {isSuperAdmin && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="h-8 shadow-sm flex items-center gap-1.5"
+            onClick={handleExportCsv}
+            disabled={isExporting}
+          >
+            {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+            <span>{tCommon("exportCsv")}</span>
+          </Button>
+        )}
       </div>
     );
   };
@@ -192,13 +198,16 @@ export function BookingsTable() {
         booking={selectedBooking}
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
+        canManage={isAdmin}
       />
 
-      <EditBookingDrawer
-        booking={selectedBooking}
-        open={isEditDrawerOpen}
-        onOpenChange={setEditDrawerOpen}
-      />
+      {isAdmin && (
+        <EditBookingDrawer
+          booking={selectedBooking}
+          open={isEditDrawerOpen}
+          onOpenChange={setEditDrawerOpen}
+        />
+      )}
     </div>
   );
 }

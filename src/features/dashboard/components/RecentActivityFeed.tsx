@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity, Clock, ArrowUpRight, ShieldCheck, CalendarCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { adminRoutes } from "@/config/admin-routes";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface RecentActivityFeedProps {
   activities?: RecentActivityItem[];
@@ -20,6 +21,7 @@ export function RecentActivityFeed({ activities, isLoading }: RecentActivityFeed
   const locale = (params?.locale as string) || "ar";
   const isAr = locale === "ar";
   const t = useTranslations("dashboard");
+  const { canAccessAuditLogs } = usePermissions();
 
   if (isLoading || !activities) {
     return (
@@ -62,12 +64,14 @@ export function RecentActivityFeed({ activities, isLoading }: RecentActivityFeed
           </p>
         </div>
 
-        <Link href={adminRoutes.audit}>
-          <Button variant="outline" size="sm" className="text-xs font-bold border-border hover:border-amber-500/40 gap-1">
-            <span>{isAr ? "سجل التدقيق" : "Full Audit"}</span>
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </Button>
-        </Link>
+        {canAccessAuditLogs && (
+          <Link href={adminRoutes.audit}>
+            <Button variant="outline" size="sm" className="text-xs font-bold border-border hover:border-amber-500/40 gap-1">
+              <span>{isAr ? "سجل التدقيق" : "Full Audit"}</span>
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </Button>
+          </Link>
+        )}
       </CardHeader>
 
       <CardContent className="px-3 sm:px-6 pb-5">

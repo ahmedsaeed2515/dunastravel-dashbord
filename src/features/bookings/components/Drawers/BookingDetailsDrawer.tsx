@@ -21,6 +21,7 @@ interface BookingDetailsDrawerProps {
   booking: Booking | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  canManage?: boolean;
 }
 
 const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
@@ -34,14 +35,19 @@ const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
   }
 };
 
-const formatAmountSafe = (val?: string | number) => {
-  const num = typeof val === "number" ? val : parseFloat(val || "0");
-  return isNaN(num)
-    ? "$0.00"
-    : new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(num);
+const formatAmountSafe = (val?: string | number, currency?: string) => {
+  if (val === undefined || val === null || val === "") return "—";
+  const num = typeof val === "number" ? val : Number(val);
+  if (!Number.isFinite(num)) return "—";
+  if (!currency) return num.toLocaleString("en-US");
+  try {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(num);
+  } catch {
+    return `${num.toLocaleString("en-US")} ${currency}`;
+  }
 };
 
-export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDetailsDrawerProps) {
+export function BookingDetailsDrawer({ booking, open, onOpenChange, canManage = true }: BookingDetailsDrawerProps) {
   const tBookings = useTranslations("bookings");
   const tCommon = useTranslations("common");
   const tNav = useTranslations("navigation");
@@ -70,12 +76,12 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </div>
             <div className="text-end flex flex-col items-end gap-2">
               <div className="text-2xl font-bold dir-ltr">
-                {formatAmountSafe(booking.totalAmount)}
+                {formatAmountSafe(booking.totalAmount, booking.currency)}
               </div>
               <div className="text-sm text-muted-foreground">
                 {tCommon("createdAt")}: {formatDateSafe(booking.createdAt)}
               </div>
-              {booking.status === "CANCELLED" && (
+              {canManage && booking.status === "CANCELLED" && (
                 <Button 
                   variant="outline" 
                   size="sm" 
@@ -150,9 +156,9 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="passengers" className="space-y-4">
-               <div className="flex justify-end mb-2">
+               {canManage && <div className="flex justify-end mb-2">
                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setPassengerOpen(true)}>{tCommon("edit")}</Button>
-               </div>
+               </div>}
               {booking.passengers && booking.passengers.length > 0 ? (
                 booking.passengers.map((p, i) => (
                   <div key={p.id || i} className="border rounded-lg p-4 space-y-2">
@@ -176,19 +182,19 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-4">
-               <div className="flex justify-end mb-2">
+               {canManage && <div className="flex justify-end mb-2">
                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setPaymentOpen(true)}><CreditCard className="w-4 h-4"/> {tBookings("paymentDetails")}</Button>
-               </div>
+               </div>}
                {booking.payments && booking.payments.length > 0 ? (
                 booking.payments.map((p: any, i: number) => (
                   <div key={p.id || i} className="border rounded-lg p-4 flex justify-between items-center">
                     <div>
-                      <div className="font-medium">{p.isRefund ? 'Refund' : 'Payment'} via {p.method || 'Card'}</div>
-                      <div className="text-sm text-muted-foreground dir-ltr text-start">{p.transactionId || "No TX ID"}</div>
+                      <div className="font-medium">{p.isRefund ? 'Refund' : 'Payment'} via {p.method || '—'}</div>
+                      <div className="text-sm text-muted-foreground dir-ltr text-start">{p.transactionId || "—"}</div>
                       <div className="text-xs text-muted-foreground mt-1">{formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}</div>
                     </div>
                     <div className={`font-bold dir-ltr ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
-                      {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
+                      {p.isRefund ? '-' : '+'}{formatAmountSafe(p.amount, p.currency)}
                     </div>
                   </div>
                 ))
@@ -200,9 +206,9 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="notes" className="space-y-4">
-               <div className="flex justify-end mb-2">
+               {canManage && <div className="flex justify-end mb-2">
                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setNoteOpen(true)}><Plus className="w-4 h-4"/> {tCommon("create")}</Button>
-               </div>
+               </div>}
                {booking.notes && booking.notes.length > 0 ? (
                 booking.notes.map((n: any, i: number) => (
                   <div key={n.id || i} className="border rounded-lg p-4 flex flex-col gap-2 bg-muted/20">
@@ -224,9 +230,9 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="attachments" className="space-y-4">
-               <div className="flex justify-end mb-2">
+               {canManage && <div className="flex justify-end mb-2">
                  <Button variant="outline" size="sm" className="gap-2" onClick={() => setAttachmentOpen(true)}><Paperclip className="w-4 h-4"/> {tCommon("upload")}</Button>
-               </div>
+               </div>}
                {booking.attachments && booking.attachments.length > 0 ? (
                 <div className="grid grid-cols-2 gap-4">
                   {booking.attachments.map((a: any, i: number) => (
@@ -267,7 +273,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
         </Tabs>
       </SheetContent>
 
-      <AddPaymentDialog 
+      {canManage && <><AddPaymentDialog
         referenceCode={booking.referenceCode} 
         open={paymentOpen} 
         onOpenChange={setPaymentOpen} 
@@ -287,7 +293,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
         initialPassengers={booking.passengers || []}
         open={passengerOpen}
         onOpenChange={setPassengerOpen}
-      />
+      /></>}
     </Sheet>
   );
 }

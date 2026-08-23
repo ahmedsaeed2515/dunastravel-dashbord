@@ -7,9 +7,10 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { ArrowRightLeft, Calculator, Loader2 } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CurrencyConverterWidget() {
-  const { data: ratesData, isLoading } = useExchangeRates();
+  const { data: ratesData, isLoading, isError, refetch } = useExchangeRates();
   
   const [amount, setAmount] = useState<string>("1000");
   const [fromCurrency, setFromCurrency] = useState<string>("USD");
@@ -18,17 +19,17 @@ export function CurrencyConverterWidget() {
   // Calculate locally using the cached rates
   const calculateConversion = () => {
     const ratesMap = ratesData?.rates || (ratesData as any)?.data?.rates?.rates;
-    if (!ratesMap) return "0.00";
+    if (!ratesMap) return "—";
     
     const parsedAmount = parseFloat(amount);
-    if (isNaN(parsedAmount)) return "0.00";
+    if (isNaN(parsedAmount)) return "—";
     
     const rawFrom = ratesMap[fromCurrency];
     const rawTo = ratesMap[toCurrency];
     const rateFrom = typeof rawFrom === "string" ? parseFloat(rawFrom) : Number(rawFrom);
     const rateTo = typeof rawTo === "string" ? parseFloat(rawTo) : Number(rawTo);
     
-    if (!rateFrom || !rateTo || isNaN(rateFrom) || isNaN(rateTo)) return "0.00";
+    if (!rateFrom || !rateTo || isNaN(rateFrom) || isNaN(rateTo)) return "—";
     
     const baseUsd = parsedAmount / rateFrom;
     const converted = baseUsd * rateTo;
@@ -43,7 +44,7 @@ export function CurrencyConverterWidget() {
   };
 
   const ratesMap = ratesData?.rates || (ratesData as any)?.data?.rates?.rates;
-  const availableCurrencies = ratesMap && typeof ratesMap === "object" ? Object.keys(ratesMap) : ["USD", "EUR", "GBP", "AED", "SAR", "EGP"];
+  const availableCurrencies = ratesMap && typeof ratesMap === "object" ? Object.keys(ratesMap) : [];
 
   return (
     <Card className="shadow-lg border-primary/10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md w-full max-w-sm">
@@ -58,6 +59,8 @@ export function CurrencyConverterWidget() {
           <div className="flex justify-center items-center py-6">
             <Loader2 className="h-6 w-6 animate-spin text-primary" />
           </div>
+        ) : isError ? (
+          <QueryErrorState message="تعذر تحميل أسعار الصرف من الخادم." onRetry={() => void refetch()} />
         ) : (
           <>
             <div className="space-y-3">
@@ -124,7 +127,7 @@ export function CurrencyConverterWidget() {
             </div>
 
             <div className="text-[10px] text-center text-muted-foreground">
-              Rates updated {ratesData?.timestamp ? new Date(ratesData.timestamp).toLocaleTimeString() : 'recently'}
+              Rates updated {ratesData?.timestamp ? new Date(ratesData.timestamp).toLocaleTimeString() : '—'}
             </div>
           </>
         )}

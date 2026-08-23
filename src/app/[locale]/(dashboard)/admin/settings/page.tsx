@@ -2,6 +2,7 @@
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Globe, DollarSign, RefreshCw, Lock } from "lucide-react";
@@ -11,14 +12,23 @@ import { useSetting, useUpdateSetting } from "@/features/settings/hooks/useSetti
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function SettingsPage() {
   const tSettings = useTranslations("settings");
   const tCommon = useTranslations("common");
 
-  const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
-  const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
+  const ratesQuery = useExchangeRates();
+  const settingQuery = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
+  const { data: ratesData, isLoading: isLoadingRates, isFetching: isRefreshingRates } = ratesQuery;
+  const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = settingQuery;
   const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
+  const { isSuperAdmin } = usePermissions();
+
+  if (ratesQuery.isError || settingQuery.isError) {
+    return <QueryErrorState message="تعذر تحميل إعدادات النظام من الباك إند." onRetry={() => void Promise.all([ratesQuery.refetch(), settingQuery.refetch()])} />;
+  }
   
   return (
     <RequirePermission action="manage" resource="settings">
@@ -59,7 +69,7 @@ export default function SettingsPage() {
                       <h4 className="font-semibold text-sm">{lang.name}</h4>
                       <p className="text-xs text-muted-foreground">{lang.info}</p>
                     </div>
-                    <Button variant="outline" size="xs">Active</Button>
+                    <Badge variant="outline">Active</Badge>
                   </div>
                 ))}
               </CardContent>
@@ -73,8 +83,8 @@ export default function SettingsPage() {
                   <div>
                     <CardTitle className="text-base font-semibold">Exchange Rates</CardTitle>
                   </div>
-                  <Button variant="outline" size="xs" className="gap-1.5">
-                    <RefreshCw className="h-3.5 w-3.5" /> Sync
+                  <Button variant="outline" size="xs" className="gap-1.5" onClick={() => void ratesQuery.refetch()} disabled={isRefreshingRates}>
+                    <RefreshCw className={`h-3.5 w-3.5 ${isRefreshingRates ? "animate-spin" : ""}`} /> Refresh
                   </Button>
                 </div>
               </CardHeader>
@@ -113,7 +123,7 @@ export default function SettingsPage() {
                   </div>
                   <Switch 
                     checked={requireAuthSetting}
-                    disabled={isLoadingAuthSetting || isUpdatingAuthSetting}
+                    disabled={!isSuperAdmin || isLoadingAuthSetting || isUpdatingAuthSetting}
                     onCheckedChange={(checked) => updateSetting({ key: 'AUTH_REQUIRE_EMAIL_VERIFICATION', value: checked })}
                   />
                 </div>

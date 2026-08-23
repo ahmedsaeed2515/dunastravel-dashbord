@@ -10,9 +10,10 @@ interface UserDialogProps {
   user: User | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  canManageRoles: boolean;
 }
 
-export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
+export function UserDialog({ user, open, onOpenChange, canManageRoles }: UserDialogProps) {
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
 
@@ -20,12 +21,19 @@ export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
   const isPending = isCreating || isUpdating;
 
   const handleSubmit = (values: UserFormValues) => {
+    const { confirmPassword, ...fields } = values;
+    void confirmPassword;
+    const payload = {
+      ...fields,
+      ...(fields.phone?.trim() ? { phone: fields.phone.trim() } : { phone: undefined }),
+      ...(fields.password ? { password: fields.password } : { password: undefined }),
+    };
     if (isEdit && user) {
-      updateUser({ id: user.id, data: values }, {
+      updateUser({ id: user.id, data: payload }, {
         onSuccess: () => onOpenChange(false)
       });
     } else {
-      createUser(values, {
+      createUser(payload as UserFormValues, {
         onSuccess: () => onOpenChange(false)
       });
     }
@@ -48,6 +56,7 @@ export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
             initialData={user || undefined}
             onSubmit={handleSubmit}
             isSubmitting={isPending}
+            canManageRoles={canManageRoles}
           />
         </div>
       </DialogContent>

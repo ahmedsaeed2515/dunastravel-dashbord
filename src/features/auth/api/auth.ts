@@ -6,21 +6,33 @@ export interface LoginPayload {
   password: string;
 }
 
-const defaultAdminUser: UserSession = {
-  id: "usr-admin-1",
-  email: "admin@dunastravel.com",
-  name: "Dunas Admin",
-  role: "SUPER_ADMIN"
-};
+interface LoginResponse extends UserSession {
+  user?: UserSession;
+  csrfToken?: string;
+}
+
+function requireUserSession(value: unknown): UserSession {
+  if (!value || typeof value !== 'object') throw new Error('Invalid user session response');
+  const envelope = value as { user?: unknown };
+  const candidate = envelope.user ?? value;
+  if (!candidate || typeof candidate !== 'object') throw new Error('Invalid user session response');
+  const user = candidate as Partial<UserSession>;
+  if (!user.id || !user.email || !user.name || !user.role) {
+    throw new Error('Invalid user session response');
+  }
+  return user as UserSession;
+}
 
 export const authApi = {
   login: async (credentials: LoginPayload): Promise<{ user: UserSession; csrfToken?: string }> => {
     clearCsrfToken();
-    const res: any = await apiClient.post('/auth/login', credentials);
+    const res = await apiClient.post<unknown, LoginResponse>('/auth/login', credentials);
     if (res && typeof res === 'object' && res.csrfToken && typeof res.csrfToken === 'string') {
       setCsrfToken(res.csrfToken);
     }
-    return res;
+    const { csrfToken, ...sessionResponse } = res;
+    const user = requireUserSession(sessionResponse);
+    return { user, csrfToken };
   },
   logout: async (): Promise<{ message: string }> => {
     try {
@@ -30,8 +42,8 @@ export const authApi = {
     }
   },
   getMe: async (): Promise<UserSession> => {
-    const res: any = await apiClient.get('/auth/me');
-    return res?.user || res;
+    const res = await apiClient.get('/auth/me');
+    return requireUserSession(res);
   },
   getCsrfToken: async (): Promise<{ token: string }> => {
     const res: any = await apiClient.get('/auth/csrf');

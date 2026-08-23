@@ -3,21 +3,19 @@
 import { ColumnDef } from "@tanstack/react-table";
 import { Commission } from "../types";
 import { format } from "date-fns";
-import { MoreHorizontal, CheckCircle, XCircle, HandCoins, FileText, Download } from "lucide-react";
-import { toast } from "sonner";
+import { MoreHorizontal, CheckCircle, XCircle, HandCoins, FileText } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useUpdateCommissionStatus } from "../hooks/useFinance";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
 
-export const columns: ColumnDef<Commission>[] = [
+export function getColumns(canManage: boolean): ColumnDef<Commission>[] { const columns: ColumnDef<Commission>[] = [
   {
     accessorKey: "booking.referenceCode",
     header: "Ref Code",
@@ -88,7 +86,7 @@ export const columns: ColumnDef<Commission>[] = [
       return <ActionCell commission={commission} />;
     },
   },
-];
+]; return canManage ? columns : columns.filter((column) => column.id !== "actions"); }
 
 function ActionCell({ commission }: { commission: Commission }) {
   const updateStatus = useUpdateCommissionStatus();
@@ -136,18 +134,6 @@ function ActionCell({ commission }: { commission: Commission }) {
           </DropdownMenuItem>
         )}
 
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => {
-            if (!commission.booking?.invoiceNumber) {
-              toast.error(tCommon("error"));
-            } else {
-              toast.info(tCommon("info"));
-            }
-          }}
-        >
-          <Download className="me-2 h-4 w-4" /> {tCommon("download")}
-        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

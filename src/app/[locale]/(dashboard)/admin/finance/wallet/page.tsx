@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Search, RefreshCw } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
-import { apiClient } from "@/lib/axios";
+import { useReconcileLedger } from "@/features/finance/hooks/useFinance";
 
 export default function WalletPage() {
   const tFinance = useTranslations("finance");
@@ -21,8 +21,7 @@ export default function WalletPage() {
   const [ownerType, setOwnerType] = useState<"COMPANY" | "USER">("COMPANY");
   const [ownerId, setOwnerId] = useState("");
   const [searchTrigger, setSearchTrigger] = useState("");
-  const [isReconciling, setIsReconciling] = useState(false);
-  const [reconcileResult, setReconcileResult] = useState<string | null>(null);
+  const reconcileLedger = useReconcileLedger();
 
   const handleSearch = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && ownerId.trim()) {
@@ -30,18 +29,7 @@ export default function WalletPage() {
     }
   };
 
-  const handleReconcile = async () => {
-    setIsReconciling(true);
-    setReconcileResult(null);
-    try {
-      const res = await apiClient.post("/admin/wallets/reconcile-ledger");
-      setReconcileResult("Ledger reconciliation completed successfully.");
-    } catch (err: any) {
-      setReconcileResult(err?.message || "Failed to reconcile ledger.");
-    } finally {
-      setIsReconciling(false);
-    }
-  };
+  const handleReconcile = () => reconcileLedger.mutate();
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -86,18 +74,13 @@ export default function WalletPage() {
               <Button 
                 variant="outline" 
                 onClick={handleReconcile} 
-                disabled={isReconciling}
+                disabled={reconcileLedger.isPending}
                 className="gap-2 shrink-0"
               >
-                <RefreshCw className={`h-4 w-4 ${isReconciling ? 'animate-spin' : ''}`} />
-                {isReconciling ? "Reconciling..." : "Reconcile Ledger"}
+                <RefreshCw className={`h-4 w-4 ${reconcileLedger.isPending ? 'animate-spin' : ''}`} />
+                {reconcileLedger.isPending ? "Reconciling..." : "Reconcile Ledger"}
               </Button>
             </div>
-            {reconcileResult && (
-              <p className="mt-3 text-xs font-medium text-emerald-600 dark:text-emerald-400">
-                {reconcileResult}
-              </p>
-            )}
           </CardContent>
         </Card>
 

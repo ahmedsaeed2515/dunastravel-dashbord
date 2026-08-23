@@ -1,22 +1,42 @@
 import { apiClient } from "@/lib/axios";
 import { HotelItem } from "../types";
+import { requireObject } from "@/lib/api-response";
 
 function readCatalog(response: unknown): HotelItem[] {
-  const value = response as { content?: unknown; data?: { content?: unknown } | unknown };
-  const content = Array.isArray(value) ? value : Array.isArray(value?.content) ? value.content : value?.data && typeof value.data === "object" && Array.isArray((value.data as { content?: unknown }).content) ? (value.data as { content: HotelItem[] }).content : null;
+  const value = response as {
+    content?: unknown;
+    data?: { content?: unknown } | unknown;
+  };
+  const content = Array.isArray(value)
+    ? value
+    : Array.isArray(value?.content)
+      ? value.content
+      : value?.data &&
+          typeof value.data === "object" &&
+          Array.isArray((value.data as { content?: unknown }).content)
+        ? (value.data as { content: HotelItem[] }).content
+        : null;
   if (!content) throw new Error("Invalid hotels catalog response");
   return content as HotelItem[];
 }
 export const hotelsApi = {
-  getHotels: async (): Promise<HotelItem[]> => readCatalog(await apiClient.get("/admin/cms-blocks/hotels_catalog")),
+  getHotels: async (): Promise<HotelItem[]> =>
+    readCatalog(await apiClient.get("/admin/cms-blocks/hotels_catalog")),
 
   createHotel: async (hotel: Partial<HotelItem>): Promise<HotelItem> => {
-    if (!hotel.name?.trim() || !hotel.destination?.trim() || !hotel.city?.trim() || hotel.stars == null || hotel.rating == null || hotel.pricePerNight == null) {
-      throw new Error("Hotel name, destination, city, stars, rating and price are required");
+    if (
+      !hotel.name?.trim() ||
+      !hotel.destination?.trim() ||
+      !hotel.city?.trim() ||
+      hotel.stars == null ||
+      hotel.rating == null ||
+      hotel.pricePerNight == null
+    ) {
+      throw new Error(
+        "Hotel name, destination, city, stars, rating and price are required",
+      );
     }
-    const current = await hotelsApi.getHotels();
-    const saved: HotelItem = {
-      id: crypto.randomUUID(),
+    const item = {
       name: hotel.name.trim(),
       destination: hotel.destination.trim(),
       city: hotel.city.trim(),
@@ -28,22 +48,25 @@ export const hotelsApi = {
       amenities: hotel.amenities ?? [],
       isActive: hotel.isActive ?? true,
     };
-    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: [saved, ...current] });
-    return saved;
+    const response = await apiClient.post(
+      "/admin/cms-blocks/hotels_catalog/items",
+      { item },
+    );
+    return requireObject<HotelItem>(response, "created hotel");
   },
 
-  updateHotel: async (id: string, hotel: Partial<HotelItem>): Promise<HotelItem> => {
-    const current = await hotelsApi.getHotels();
-    const existing = current.find((item) => item.id === id);
-    if (!existing) throw new Error("Hotel not found");
-    const saved = { ...existing, ...hotel, id };
-    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: current.map((item) => item.id === id ? saved : item) });
-    return saved;
+  updateHotel: async (
+    id: string,
+    hotel: Partial<HotelItem>,
+  ): Promise<HotelItem> => {
+    const response = await apiClient.patch(
+      `/admin/cms-blocks/hotels_catalog/items/${id}`,
+      { item: hotel },
+    );
+    return requireObject<HotelItem>(response, "updated hotel");
   },
 
   deleteHotel: async (id: string): Promise<void> => {
-    const current = await hotelsApi.getHotels();
-    if (!current.some((item) => item.id === id)) throw new Error("Hotel not found");
-    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: current.filter((item) => item.id !== id) });
+    await apiClient.delete(`/admin/cms-blocks/hotels_catalog/items/${id}`);
   },
 };

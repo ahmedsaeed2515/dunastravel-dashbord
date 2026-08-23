@@ -19,9 +19,9 @@ export function usePermissions() {
   const canAccessFullOperations = isAdmin;
   const canManageTours = isAdmin;
   const canManageUsers = isAdmin;
-  const canManagePromotions = isAdmin;
+  const canManagePromotions = isSuperAdmin;
   const canManageMedia = isAdmin;
-  const canAccessFinance = isAdmin || isB2B;
+  const canAccessFinance = isAdmin;
 
   const hasPermission = (action: string, resource: string): boolean => {
     if (isLoading || !role) return false;
@@ -34,11 +34,14 @@ export function usePermissions() {
     }
 
     if (isB2B) {
-      const allowedB2BResources = ['bookings', 'commissions', 'wallet', 'profile'];
+      const allowedB2BResources = isAgent ? ['bookings', 'inquiries', 'profile'] : ['profile'];
       if (!allowedB2BResources.includes(resource)) return false;
-      // AGENT/B2B can only read or create bookings
+      // Agents can only read bookings assigned to them by the backend.
       if (resource === 'bookings') {
-        return action === 'read' || action === 'create';
+        return isAgent && action === 'read';
+      }
+      if (resource === 'inquiries') {
+        return isAgent && (action === 'read' || action === 'update');
       }
       return action === 'read';
     }
@@ -55,12 +58,9 @@ export function usePermissions() {
     }
 
     if (isB2B) {
-      const allowedPaths = [
-        '/dashboard',
-        '/admin/finance/commissions',
-        '/admin/finance/wallet',
-        '/admin/bookings',
-      ];
+      const allowedPaths = isAgent
+        ? ['/admin/bookings', '/admin/inquiries', '/admin/profile']
+        : ['/admin/profile'];
       return allowedPaths.some((p) => pathname.includes(p));
     }
 

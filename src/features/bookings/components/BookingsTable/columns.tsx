@@ -12,9 +12,10 @@ export function getColumns(
   onEdit: (booking: Booking) => void,
   onDelete: (booking: Booking) => void,
   tBookings: (key: string) => string,
-  tCommon: (key: string) => string
+  tCommon: (key: string) => string,
+  canManage: boolean,
 ): ColumnDef<Booking>[] {
-  return [
+  const columns: ColumnDef<Booking>[] = [
     {
       id: "select",
       header: ({ table }) => (
@@ -61,11 +62,20 @@ export function getColumns(
       header: tCommon("amount"),
       cell: ({ row }) => {
         const rawAmount = row.getValue("totalAmount");
-        const amount = typeof rawAmount === "number" ? rawAmount : parseFloat(String(rawAmount || "0"));
-        const formatted = new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: row.original.currency || "USD",
-        }).format(isNaN(amount) ? 0 : amount);
+        if (rawAmount === undefined || rawAmount === null || rawAmount === "" || !row.original.currency) {
+          return <div className="font-medium">—</div>;
+        }
+        const amount = typeof rawAmount === "number" ? rawAmount : Number(rawAmount);
+        if (!Number.isFinite(amount)) return <div className="font-medium">—</div>;
+        let formatted: string;
+        try {
+          formatted = new Intl.NumberFormat("en-US", {
+            style: "currency",
+            currency: row.original.currency,
+          }).format(amount);
+        } catch {
+          formatted = `${amount.toLocaleString("en-US")} ${row.original.currency}`;
+        }
         return <div className="font-medium dir-ltr inline-block">{formatted}</div>;
       },
     },
@@ -89,9 +99,11 @@ export function getColumns(
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}
+            canManage={canManage}
           />
         );
       },
     },
   ];
+  return canManage ? columns : columns.filter((column) => column.id !== "select");
 }

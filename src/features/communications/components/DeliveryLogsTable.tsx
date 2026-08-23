@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { NotificationDeliveryLog } from "../types";
 import {
   Table,
@@ -21,10 +21,20 @@ interface DeliveryLogsTableProps {
   data: NotificationDeliveryLog[];
   isLoading: boolean;
   pageCount: number;
+  currentPage: number;
   onPageChange: (page: number) => void;
+  canRetry: boolean;
 }
 
-export function DeliveryLogsTable({ data, isLoading, pageCount, onPageChange }: DeliveryLogsTableProps) {
+export function DeliveryLogsTable({
+  data,
+  isLoading,
+  pageCount,
+  currentPage,
+  onPageChange,
+  canRetry,
+}: DeliveryLogsTableProps) {
+  const columns = getColumns(canRetry);
   const table = useReactTable({
     data,
     columns,
@@ -44,7 +54,7 @@ export function DeliveryLogsTable({ data, isLoading, pageCount, onPageChange }: 
                       ? null
                       : flexRender(
                           header.column.columnDef.header,
-                          header.getContext()
+                          header.getContext(),
                         )}
                   </TableHead>
                 );
@@ -82,16 +92,16 @@ export function DeliveryLogsTable({ data, isLoading, pageCount, onPageChange }: 
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(1)} // Simple pagination stub
-          disabled={isLoading}
+          onClick={() => onPageChange(Math.max(1, currentPage - 1))}
+          disabled={isLoading || currentPage <= 1}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(2)}
-          disabled={isLoading}
+          onClick={() => onPageChange(Math.min(pageCount, currentPage + 1))}
+          disabled={isLoading || currentPage >= pageCount}
         >
           Next
         </Button>

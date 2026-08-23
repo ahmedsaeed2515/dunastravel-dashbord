@@ -9,8 +9,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { Loader2, Search } from "lucide-react";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function CommissionsView() {
+  const { isSuperAdmin } = usePermissions();
   const [filters, setFilters] = useState<CommissionQueryFilters>({
     page: 1,
     limit: 10,
@@ -37,7 +39,7 @@ export function CommissionsView() {
             <Input 
               placeholder="Filter by Booking ID..." 
               className="pl-9 bg-background/50"
-              onChange={(e) => setFilters(f => ({ ...f, bookingId: e.target.value || undefined, page: 1 }))}
+              onChange={(e) => setFilters(f => ({ ...f, bookingReference: e.target.value || undefined, page: 1 }))}
             />
           </div>
 
@@ -64,6 +66,8 @@ export function CommissionsView() {
           data={Array.isArray(data) ? data : (data?.data || [])} 
           isLoading={isLoading} 
           pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || 1)}
+          currentPage={filters.page || 1}
+          canManage={isSuperAdmin}
           onPageChange={(p) => setFilters(f => ({ ...f, page: p }))}
         />
       </div>

@@ -16,7 +16,7 @@ export const contentApi = {
   },
   
   updateBlock: async (key: string, payload: UpdateContentBlockDto): Promise<ContentBlock> => {
-    const response: any = await apiClient.patch(`/admin/cms/${key}`, payload);
+    const response: any = await apiClient.put(`/admin/cms/${key}`, payload);
     return (response && typeof response === "object" && "data" in response) ? response.data : response;
   }
 };

@@ -22,6 +22,8 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
   const locale = (params?.locale as string) || "ar";
   const isAr = locale === "ar";
   const t = useTranslations("dashboard");
+  const bookingSearchHref = (referenceCode: string) =>
+    `${adminRoutes.bookings}?search=${encodeURIComponent(referenceCode)}`;
 
   if (isLoading || !bookings) {
     return (
@@ -109,7 +111,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
                 {bookings.map((b) => (
                   <TableRow key={b.id} className="border-border/40 hover:bg-muted/30 transition-colors group">
                     <TableCell className="font-mono text-xs font-bold text-amber-600 dark:text-amber-400">
-                      <Link href={`${adminRoutes.bookings}/${b.referenceCode}`} className="hover:underline">
+                      <Link href={bookingSearchHref(b.referenceCode)} className="hover:underline">
                         {b.referenceCode}
                       </Link>
                     </TableCell>
@@ -133,7 +135,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
                       <StatusBadge status={b.status} />
                     </TableCell>
                     <TableCell className="text-end">
-                      <Link href={`${adminRoutes.bookings}/${b.referenceCode}`}>
+                      <Link href={bookingSearchHref(b.referenceCode)}>
                         <Button size="icon" variant="ghost" className="h-7 w-7 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 cursor-pointer" title={t("viewDetails")}>
                           <Eye className="w-3.5 h-3.5" />
                         </Button>

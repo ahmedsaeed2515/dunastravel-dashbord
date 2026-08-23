@@ -9,6 +9,7 @@ import { format } from "date-fns";
 import { MoreHorizontal, UserCheck, Copy, Check } from "lucide-react";
 import { useAssignInquiry } from "../../hooks/useCommunications";
 import { useUsers } from "@/features/users/hooks/useUsers";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -46,7 +47,7 @@ function RefCodeCell({ code }: { code: string }) {
   );
 }
 
-export const columns: ColumnDef<Inquiry>[] = [
+export function getColumns(onView: (inquiry: Inquiry) => void): ColumnDef<Inquiry>[] { return [
   {
     accessorKey: "referenceCode",
     header: "Ref Code",
@@ -57,7 +58,7 @@ export const columns: ColumnDef<Inquiry>[] = [
     header: "Client & Contact",
     cell: ({ row }) => {
       const item = row.original as any;
-      const fullName = item.name || `${item.firstName || ''} ${item.lastName || ''}`.trim() || "Guest Client";
+      const fullName = item.name || `${item.firstName || ''} ${item.lastName || ''}`.trim() || "—";
       return (
         <div className="flex flex-col gap-0.5">
           <span className="font-semibold text-foreground text-sm">{fullName}</span>
@@ -76,11 +77,11 @@ export const columns: ColumnDef<Inquiry>[] = [
     header: "Party Size",
     cell: ({ row }) => {
       const item = row.original as any;
-      const count = item.numberOfTravelers ?? 0;
+      const count = item.numberOfTravelers;
       return (
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-xs font-semibold px-2 py-0.5">
-            👥 {count} {count === 1 ? "Traveler" : "Travelers"}
+            {count ?? "—"} {count === 1 ? "Traveler" : "Travelers"}
           </Badge>
         </div>
       );
@@ -90,7 +91,8 @@ export const columns: ColumnDef<Inquiry>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => {
-      const rawStatus = (row.original.status || "NEWLY_RECEIVED").toUpperCase();
+      const rawStatus = row.original.status?.toUpperCase();
+      if (!rawStatus) return <span className="text-muted-foreground">—</span>;
       
       if (rawStatus === "NEWLY_RECEIVED" || rawStatus === "NEW") {
         return (
@@ -156,13 +158,14 @@ export const columns: ColumnDef<Inquiry>[] = [
   },
   {
     id: "actions",
-    cell: ({ row }) => <ActionCell inquiry={row.original} />,
+    cell: ({ row }) => <ActionCell inquiry={row.original} onView={onView} />,
   },
-];
+]; }
 
-function ActionCell({ inquiry }: { inquiry: Inquiry }) {
+function ActionCell({ inquiry, onView }: { inquiry: Inquiry; onView: (inquiry: Inquiry) => void }) {
   const assignInquiry = useAssignInquiry();
-  const { data: usersData } = useUsers({ role: "ADMIN", limit: 50 });
+  const { isAdmin } = usePermissions();
+  const { data: usersData, isError: agentsError } = useUsers({ role: "AGENT", limit: 50 });
 
   return (
     <DropdownMenu>
@@ -172,11 +175,11 @@ function ActionCell({ inquiry }: { inquiry: Inquiry }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>Actions</DropdownMenuLabel>
-        <DropdownMenuItem>View Details</DropdownMenuItem>
+        <DropdownMenuItem onClick={() => onView(inquiry)}>View Details</DropdownMenuItem>
         
-        <DropdownMenuSeparator />
+        {isAdmin && <DropdownMenuSeparator />}
         
-        <DropdownMenuSub>
+        {isAdmin && <DropdownMenuSub>
           <DropdownMenuSubTrigger>
             <UserCheck className="mr-2 h-4 w-4" />
             Assign Staff
@@ -193,11 +196,11 @@ function ActionCell({ inquiry }: { inquiry: Inquiry }) {
                 </DropdownMenuItem>
               ))}
               {!usersData?.data?.length && (
-                <DropdownMenuItem disabled>No agents found</DropdownMenuItem>
+                <DropdownMenuItem disabled>{agentsError ? "Failed to load agents" : "No agents found"}</DropdownMenuItem>
               )}
             </DropdownMenuSubContent>
           </DropdownMenuPortal>
-        </DropdownMenuSub>
+        </DropdownMenuSub>}
 
       </DropdownMenuContent>
     </DropdownMenu>

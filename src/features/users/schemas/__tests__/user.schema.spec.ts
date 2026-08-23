@@ -16,7 +16,7 @@ describe("user.schema", () => {
     expect(result.success).toBe(true);
   });
 
-  it("fails validation when password is less than 6 characters", () => {
+  it("fails validation when password is less than 12 characters", () => {
     const invalidData = {
       name: "John Doe",
       email: "john@example.com",
@@ -29,7 +29,9 @@ describe("user.schema", () => {
     const result = userFormSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toContain("Password must be at least 6 characters");
+      expect(result.error.issues[0].message).toContain(
+        "Password must be at least 12 characters",
+      );
     }
   });
 

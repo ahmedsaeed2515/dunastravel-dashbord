@@ -12,10 +12,12 @@ import { Company, CompanyQueryFilters } from "@/features/companies/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CompaniesPage() {
   const tCompanies = useTranslations("companies");
   const tCommon = useTranslations("common");
+  const { isSuperAdmin } = usePermissions();
 
   const [filters, setFilters] = useState<CompanyQueryFilters>({
     page: 1,
@@ -38,11 +40,11 @@ export default function CompaniesPage() {
       <PageHeader
         title={tCompanies("title")}
         description={tCompanies("description")}
-        actions={
+        actions={isSuperAdmin ?
           <Button onClick={() => setIsCreateOpen(true)} size="sm" variant="gold" className="gap-1.5">
             <Plus className="h-4 w-4" />
             <span>{tCommon("create")}</span>
-          </Button>
+          </Button> : undefined
         }
       />
 
@@ -58,6 +60,7 @@ export default function CompaniesPage() {
           filters={filters}
           onFilterChange={setFilters}
           onViewCompany={setSelectedCompany}
+          canManage={isSuperAdmin}
         />
       </div>
 
@@ -68,11 +71,11 @@ export default function CompaniesPage() {
         onClose={() => setSelectedCompany(null)}
       />
 
-      <CreateCompanyDialog 
+      {isSuperAdmin && <CreateCompanyDialog
         isOpen={isCreateOpen} 
         onClose={() => setIsCreateOpen(false)} 
         onSuccess={() => refetch()} 
-      />
+      />}
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { apiClient } from "@/lib/axios";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -50,15 +50,19 @@ export function AdminProfileView() {
   const [newPassword, setNewPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
-  // Sync state if user loads later
-  if (user && name === "" && user.name) {
-    setName(user.name);
-    setPhone(user.phone || "");
-    setNationality(user.nationality || "");
-    setPassportNumber(user.passportNumber || "");
-    setPreferredLanguage(user.preferredLanguage || "en");
-    setPreferredCurrency(user.preferredCurrency || "USD");
-  }
+  // Populate the editable form only after the authenticated session arrives.
+  useEffect(() => {
+    if (!user) return;
+    const timeout = setTimeout(() => {
+      setName(user.name || "");
+      setPhone(user.phone || "");
+      setNationality(user.nationality || "");
+      setPassportNumber(user.passportNumber || "");
+      setPreferredLanguage(user.preferredLanguage || "en");
+      setPreferredCurrency(user.preferredCurrency || "USD");
+    }, 0);
+    return () => clearTimeout(timeout);
+  }, [user]);
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -121,7 +125,7 @@ export function AdminProfileView() {
 
   const initials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "AD";
+    : "—";
 
   return (
     <div className="space-y-6 max-w-5xl mx-auto pb-12 animate-in fade-in duration-300">
@@ -131,11 +135,11 @@ export function AdminProfileView() {
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <Badge variant="outline" className="bg-background/80 backdrop-blur-xs text-primary border-primary/30 font-semibold px-3 py-1">
               <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-primary" />
-              {user?.role || "ADMIN"}
+              {user?.role?.replaceAll("_", " ") || "—"}
             </Badge>
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold px-3 py-1">
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />
-              {user?.status || "ACTIVE"}
+              {user?.status || "—"}
             </Badge>
           </div>
         </div>
@@ -150,14 +154,14 @@ export function AdminProfileView() {
             </Avatar>
             <div className="space-y-1 pb-1">
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                {user?.name || "Super Admin"}
+                {user?.name || "—"}
                 {user?.isVip && (
                   <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500/20" />
                 )}
               </h1>
               <p className="text-sm text-muted-foreground flex items-center gap-2">
                 <Mail className="w-3.5 h-3.5 text-muted-foreground" />
-                {user?.email || "admin@dunastravel.com"}
+                {user?.email || "—"}
               </p>
             </div>
           </div>

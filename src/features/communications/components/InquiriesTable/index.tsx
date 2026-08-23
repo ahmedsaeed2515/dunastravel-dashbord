@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { Inquiry } from "../../types";
 import {
   Table,
@@ -24,6 +24,7 @@ interface InquiriesTableProps {
   currentPage?: number;
   total?: number;
   onPageChange: (page: number) => void;
+  onView: (inquiry: Inquiry) => void;
 }
 
 export function InquiriesTable({ 
@@ -32,8 +33,10 @@ export function InquiriesTable({
   pageCount, 
   currentPage = 1, 
   total,
-  onPageChange 
+  onPageChange,
+  onView,
 }: InquiriesTableProps) {
+  const columns = getColumns(onView);
   const table = useReactTable({
     data,
     columns,

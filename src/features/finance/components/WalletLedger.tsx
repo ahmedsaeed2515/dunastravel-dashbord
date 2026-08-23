@@ -13,6 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface WalletLedgerProps {
   ownerType: 'USER' | 'COMPANY';
@@ -25,6 +26,7 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
   const transactionsQuery = useWalletTransactions(wallet?.id || "", { enabled: !!wallet?.id });
   const { data: transactions, isLoading: txLoading } = transactionsQuery;
   const addTransaction = useAddManualTransaction();
+  const { isSuperAdmin } = usePermissions();
 
   // Dialog state
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -78,10 +80,10 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
       <Card className="border-border/40 shadow-sm">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base">Transaction History</CardTitle>
-          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
+          {isSuperAdmin && <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
             <Plus className="h-3.5 w-3.5" />
             Add Transaction
-          </Button>
+          </Button>}
         </CardHeader>
         <CardContent className="p-0">
           <div className="divide-y">
@@ -146,7 +148,7 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
         </CardContent>
       </Card>
 
-      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+      {isSuperAdmin && <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add Manual Transaction</DialogTitle>
@@ -192,7 +194,7 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
             </Button>
           </DialogFooter>
         </DialogContent>
-      </Dialog>
+      </Dialog>}
     </div>
   );
 }

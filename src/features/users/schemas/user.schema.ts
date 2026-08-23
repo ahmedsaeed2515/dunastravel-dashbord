@@ -7,7 +7,7 @@ export const userFormSchema = z.object({
   role: z.enum(["ADMIN", "USER", "GUEST", "COMPANY", "AGENT"], {
     message: "Please select a role.",
   }),
-  password: z.string().min(6, "Password must be at least 6 characters"),
+  password: z.string().min(12, "Password must be at least 12 characters"),
   confirmPassword: z.string().min(1, "Please confirm your password"),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Passwords do not match",
@@ -21,7 +21,7 @@ export const updateUserFormSchema = z.object({
   role: z.enum(["ADMIN", "USER", "GUEST", "COMPANY", "AGENT"], {
     message: "Please select a role.",
   }),
-  password: z.string().optional(),
+  password: z.string().refine((value) => !value || value.length >= 12, "Password must be at least 12 characters").optional(),
   confirmPassword: z.string().optional(),
 }).refine((data) => {
   if (data.password || data.confirmPassword) {

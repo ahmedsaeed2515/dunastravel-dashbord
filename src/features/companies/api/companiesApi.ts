@@ -24,22 +24,22 @@ export const companiesApi = {
 
   getCompanyById: async (id: string): Promise<CompanyDetail> => {
     const response = await apiClient.get(`/admin/companies/${id}`);
-    return response as any;
+    return requireObject(response, "company detail");
   },
 
   createCompany: async (payload: CreateCompanyPayload): Promise<Company> => {
     const response = await apiClient.post("/admin/companies", payload);
-    return response as any;
+    return requireObject(response, "created company");
   },
 
   updateCompany: async (id: string, payload: UpdateCompanyPayload): Promise<Company> => {
     const response = await apiClient.patch(`/admin/companies/${id}`, payload);
-    return response as any;
+    return requireObject(response, "updated company");
   },
 
   bulkUpdate: async (payload: { companyIds: string[]; status?: string; tags?: string[]; segments?: string[] }): Promise<{ count: number }> => {
     const response = await apiClient.patch("/admin/companies/bulk/update", payload);
-    return response as any;
+    return requireObject(response, "bulk company update");
   },
 
   exportCsvUrl: (filters: CompanyQueryFilters): string => {

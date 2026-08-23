@@ -5,7 +5,7 @@ import {
   CreateAgentPayload,
   UpdateAgentPayload
 } from "../types";
-import { requirePaginated } from "@/lib/api-response";
+import { requireObject, requirePaginated } from "@/lib/api-response";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -25,17 +25,17 @@ export const agentsApi = {
 
   getAgentById: async (id: string): Promise<Agent> => {
     const response = await apiClient.get(`/admin/agents/${id}`);
-    return response as any;
+    return requireObject(response, "agent");
   },
 
   createAgent: async (payload: CreateAgentPayload): Promise<Agent> => {
     const response = await apiClient.post("/admin/agents", payload);
-    return response as any;
+    return requireObject(response, "created agent");
   },
 
   updateAgent: async (id: string, payload: UpdateAgentPayload): Promise<Agent> => {
     const response = await apiClient.patch(`/admin/agents/${id}`, payload);
-    return response as any;
+    return requireObject(response, "updated agent");
   },
 
   deleteAgent: async (id: string): Promise<void> => {

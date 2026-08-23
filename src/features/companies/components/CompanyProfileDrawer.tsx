@@ -3,9 +3,8 @@
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Company } from "../types";
-import { useCompany, useUpdateCompany } from "../hooks/useCompanies";
+import { useCompany } from "../hooks/useCompanies";
 import { WalletLedger } from "@/features/finance/components/WalletLedger";
 import { format } from "date-fns";
 import { 
@@ -26,6 +25,7 @@ import {
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 interface CompanyProfileDrawerProps {
   company: Company | null;
@@ -40,8 +40,7 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
   const tNav = useTranslations("navigation");
   const tAgents = useTranslations("agents");
 
-  const { data: detail, isLoading } = useCompany(company?.id as string, { enabled: !!company?.id && isOpen });
-  const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
+  const { data: detail, isLoading, isError, refetch } = useCompany(company?.id as string, { enabled: !!company?.id && isOpen });
 
   if (!company) return null;
 
@@ -78,10 +77,12 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto bg-gray-50/50 dark:bg-transparent">
-          {isLoading || !detail ? (
+          {isLoading ? (
             <div className="flex items-center justify-center h-64 text-muted-foreground">
               <Loader2 className="h-6 w-6 animate-spin" />
             </div>
+          ) : isError || !detail ? (
+            <div className="p-6"><QueryErrorState message="تعذر تحميل بيانات الشركة من الخادم." onRetry={() => void refetch()} /></div>
           ) : (
             <Tabs defaultValue="overview" className="w-full h-full flex flex-col">
               <div className="px-6 border-b border-gray-200 dark:border-gray-800 bg-white dark:bg-[#0A1628] sticky top-0 z-20">

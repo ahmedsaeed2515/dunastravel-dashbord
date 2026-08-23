@@ -30,7 +30,12 @@ export const financeApi = {
 
   addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string }): Promise<WalletTransaction> => {
     const response = await apiClient.post("/admin/finance/wallets/transactions/manual", payload);
-    return response as any;
+    return requireObject(response, "manual wallet transaction");
+  },
+
+  reconcileLedger: async (): Promise<Record<string, unknown>> => {
+    const response = await apiClient.post("/admin/wallets/reconcile-ledger");
+    return requireObject(response, "wallet reconciliation");
   },
 
   // Commissions
@@ -46,7 +51,7 @@ export const financeApi = {
 
   updateCommissionStatus: async (id: string, status: string): Promise<Commission> => {
     const response = await apiClient.patch(`/admin/finance/commissions/${id}/status`, { status });
-    return response as any;
+    return requireObject(response, "updated commission");
   },
 
   // Refunds

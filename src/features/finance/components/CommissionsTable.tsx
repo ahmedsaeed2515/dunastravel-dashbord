@@ -5,7 +5,7 @@ import {
   getCoreRowModel,
   useReactTable,
 } from "@tanstack/react-table";
-import { columns } from "./columns";
+import { getColumns } from "./columns";
 import { Commission } from "../types";
 import {
   Table,
@@ -22,9 +22,12 @@ interface CommissionsTableProps {
   isLoading: boolean;
   pageCount: number;
   onPageChange: (page: number) => void;
+  currentPage: number;
+  canManage: boolean;
 }
 
-export function CommissionsTable({ data, isLoading, pageCount, onPageChange }: CommissionsTableProps) {
+export function CommissionsTable({ data, isLoading, pageCount, onPageChange, currentPage, canManage }: CommissionsTableProps) {
+  const columns = getColumns(canManage);
   const table = useReactTable({
     data,
     columns,
@@ -82,16 +85,16 @@ export function CommissionsTable({ data, isLoading, pageCount, onPageChange }: C
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(1)} // Basic pagination stub for UI, replace with real state if needed
-          disabled={isLoading}
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={isLoading || currentPage <= 1}
         >
           Previous
         </Button>
         <Button
           variant="outline"
           size="sm"
-          onClick={() => onPageChange(2)}
-          disabled={isLoading}
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={isLoading || currentPage >= pageCount}
         >
           Next
         </Button>

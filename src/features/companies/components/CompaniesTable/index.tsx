@@ -24,15 +24,16 @@ interface CompaniesTableProps {
   filters: CompanyQueryFilters;
   onFilterChange: (newFilters: CompanyQueryFilters) => void;
   onViewCompany: (company: Company) => void;
+  canManage: boolean;
 }
 
-export function CompaniesTable({ data, total, isLoading, filters, onFilterChange, onViewCompany }: CompaniesTableProps) {
+export function CompaniesTable({ data, total, isLoading, filters, onFilterChange, onViewCompany, canManage }: CompaniesTableProps) {
   const tCompanies = useTranslations("companies");
   const tCommon = useTranslations("common");
   const tFinance = useTranslations("finance");
 
   const [rowSelection, setRowSelection] = useState({});
-  const columns = getColumns(onViewCompany, tCompanies, tCommon, tFinance);
+  const columns = getColumns(onViewCompany, tCompanies, tCommon, tFinance, canManage);
   const { mutate: bulkUpdate, isPending: isUpdating } = useBulkUpdateCompanies();
 
   const table = useReactTable({
@@ -75,7 +76,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
         </div>
 
         <div className="flex items-center gap-2 w-full sm:w-auto">
-          {selectedIds.length > 0 ? (
+          {canManage && (selectedIds.length > 0 ? (
             <DropdownMenu>
               <DropdownMenuTrigger type="button" className="h-9 font-medium text-primary inline-flex items-center justify-center rounded-md text-sm px-3 shadow-xs bg-secondary text-secondary-foreground hover:bg-secondary/80 disabled:opacity-50" disabled={isUpdating}>
                 {isUpdating ? <Loader2 className="h-3.5 w-3.5 me-2 animate-spin" /> : null}
@@ -93,7 +94,7 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
               <Download className="h-3.5 w-3.5" />
               <span>{tCommon("exportCsv")}</span>
             </Button>
-          )}
+          ))}
         </div>
       </div>
 

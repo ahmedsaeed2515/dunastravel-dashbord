@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Loader2, Search } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { InquiryDetailsDrawer } from "./InquiryDetailsDrawer";
 
 export function InquiriesView() {
   const tInquiries = useTranslations("inquiries");
@@ -21,6 +22,7 @@ export function InquiriesView() {
     limit: 10,
     status: undefined,
   });
+  const [selectedReferenceCode, setSelectedReferenceCode] = useState<string | null>(null);
 
   const { data, isLoading, isError, refetch } = useInquiries(filters);
 
@@ -49,7 +51,7 @@ export function InquiriesView() {
             <Input 
               placeholder={`${tCommon("search")}...`} 
               className="ps-9 bg-background/50"
-              onChange={(e) => setFilters(f => ({ ...f, referenceCode: e.target.value || undefined, page: 1 } as any))}
+              onChange={(e) => setFilters(f => ({ ...f, search: e.target.value || undefined, page: 1 }))}
             />
           </div>
 
@@ -62,9 +64,11 @@ export function InquiriesView() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="ALL">{tCommon("all")}</SelectItem>
-              <SelectItem value="NEW">{tStatus("NEW")}</SelectItem>
+              <SelectItem value="NEWLY_RECEIVED">{tStatus("NEW", { defaultValue: "New" })}</SelectItem>
               <SelectItem value="IN_PROGRESS">{tStatus("IN_PROGRESS")}</SelectItem>
-              <SelectItem value="PROPOSAL_SENT">{tStatus("PROPOSAL_SENT")}</SelectItem>
+              <SelectItem value="QUOTED">Quoted</SelectItem>
+              <SelectItem value="APPROVED">Approved</SelectItem>
+              <SelectItem value="CONVERTED_TO_BOOKING">Converted to booking</SelectItem>
               <SelectItem value="CLOSED">{tStatus("CLOSED")}</SelectItem>
             </SelectContent>
           </Select>
@@ -79,8 +83,14 @@ export function InquiriesView() {
           total={totalCount}
           pageCount={totalPages}
           onPageChange={(p) => setFilters(f => ({ ...f, page: p }))}
+          onView={(inquiry) => setSelectedReferenceCode(inquiry.referenceCode)}
         />
       </div>
+      <InquiryDetailsDrawer
+        referenceCode={selectedReferenceCode}
+        open={Boolean(selectedReferenceCode)}
+        onOpenChange={(open) => { if (!open) setSelectedReferenceCode(null); }}
+      />
     </Card>
   );
 }

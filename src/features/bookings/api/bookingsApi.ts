@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import { Booking, BookingQueryFilters, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload, CreateManualBookingPayload } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
-import { requirePaginated } from "@/lib/api-response";
+import { requireObject, requirePaginated } from "@/lib/api-response";
 
 export const bookingsApi = {
   getBookings: async (filters: BookingQueryFilters): Promise<PaginatedResponse<Booking>> => {
@@ -11,24 +11,24 @@ export const bookingsApi = {
 
   getBookingByReferenceCode: async (referenceCode: string): Promise<Booking> => {
     const response = await apiClient.get<Booking>(`/admin/bookings/${referenceCode}`);
-    return response as any;
+    return requireObject(response, "booking detail");
   },
 
   createManualBooking: async (data: CreateManualBookingPayload): Promise<Booking> => {
     const response = await apiClient.post<Booking>(`/admin/bookings`, data, {
       headers: { 'Idempotency-Key': crypto.randomUUID() },
     });
-    return response as any;
+    return requireObject(response, "created booking");
   },
 
   updateBooking: async (referenceCode: string, data: UpdateBookingPayload): Promise<Booking> => {
     const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}`, data);
-    return response as any;
+    return requireObject(response, "updated booking");
   },
 
   updateBookingStatus: async (referenceCode: string, data: UpdateBookingStatusPayload): Promise<Booking> => {
     const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}/status`, data);
-    return response as any;
+    return requireObject(response, "updated booking status");
   },
 
   upsertPassengers: async (referenceCode: string, data: UpsertPassengersPayload): Promise<void> => {
@@ -37,7 +37,7 @@ export const bookingsApi = {
 
   assignBooking: async (referenceCode: string, data: AssignBookingPayload): Promise<Booking> => {
     const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}/assign`, data);
-    return response as any;
+    return requireObject(response, "assigned booking");
   },
 
   softDeleteBooking: async (referenceCode: string): Promise<void> => {
@@ -46,7 +46,7 @@ export const bookingsApi = {
 
   bulkUpdateBookings: async (data: BulkUpdateBookingsPayload): Promise<{ count: number }> => {
     const response = await apiClient.patch<{ count: number }>("/admin/bookings/bulk/update", data);
-    return response as any;
+    return requireObject(response, "bulk booking update");
   },
 
   exportBookingsCsv: async (filters: BookingQueryFilters): Promise<Blob> => {
@@ -54,7 +54,7 @@ export const bookingsApi = {
       params: filters,
       responseType: 'blob' 
     });
-    return response as any;
+    return requireObject(response, "restored booking");
   },
 
   restoreBooking: async (referenceCode: string): Promise<Booking> => {

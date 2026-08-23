@@ -3,15 +3,19 @@
 import { useCommunicationMetrics } from "../hooks/useCommunications";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Send, AlertTriangle, Clock, Activity } from "lucide-react";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export function CommunicationsMetricsBanner() {
-  const { data: rawData, isLoading } = useCommunicationMetrics();
-  const data = (rawData as any)?.totalSent !== undefined ? rawData : (rawData as any)?.data || rawData;
+  const { data, isLoading, isError, refetch } = useCommunicationMetrics();
+
+  if (isError) {
+    return <QueryErrorState message="تعذر تحميل مؤشرات إرسال الإشعارات من الخادم." onRetry={() => void refetch()} />;
+  }
 
   const metrics = [
     {
       title: "Total Delivered",
-      value: data?.totalSent || 0,
+      value: data?.totalSent ?? "—",
       icon: Send,
       color: "text-emerald-500 dark:text-emerald-400",
       bg: "bg-emerald-500/10 border-emerald-500/20",
@@ -19,7 +23,7 @@ export function CommunicationsMetricsBanner() {
     },
     {
       title: "Delivery Success Rate",
-      value: data ? `${data.successRate}%` : "0%",
+      value: data ? `${data.successRate}%` : "—",
       icon: Activity,
       color: "text-amber-500 dark:text-amber-400",
       bg: "bg-amber-500/10 border-amber-500/20",
@@ -27,7 +31,7 @@ export function CommunicationsMetricsBanner() {
     },
     {
       title: "In Transit (Pending)",
-      value: data?.totalPending || 0,
+      value: data?.totalPending ?? "—",
       icon: Clock,
       color: "text-sky-500 dark:text-sky-400",
       bg: "bg-sky-500/10 border-sky-500/20",
@@ -35,7 +39,7 @@ export function CommunicationsMetricsBanner() {
     },
     {
       title: "Failed Deliveries",
-      value: data?.totalFailed || 0,
+      value: data?.totalFailed ?? "—",
       icon: AlertTriangle,
       color: "text-rose-500 dark:text-rose-400",
       bg: "bg-rose-500/10 border-rose-500/20",

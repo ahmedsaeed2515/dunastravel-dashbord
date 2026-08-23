@@ -19,6 +19,7 @@ export function HotelsGrid({ hotels, isLoading }: HotelsGridProps) {
   const [selectedDest, setSelectedDest] = useState("all");
   const [hotelToEdit, setHotelToEdit] = useState<HotelItem | null>(null);
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const destinations = Array.from(new Set(hotels.map((hotel) => hotel.destination).filter(Boolean))).sort();
 
   const filtered = hotels.filter(h => {
     const matchSearch = h.name.toLowerCase().includes(search.toLowerCase()) || 
@@ -61,12 +62,9 @@ export function HotelsGrid({ hotels, isLoading }: HotelsGridProps) {
             className="bg-background border border-border rounded-xl px-3 py-2 text-xs sm:text-sm text-foreground focus:outline-none focus:border-amber-500/50 w-full sm:w-auto font-medium"
           >
             <option value="all">كل الوجهات ({hotels.length})</option>
-            <option value="egypt">مصر (Egypt)</option>
-            <option value="turkey">تركيا (Turkey)</option>
-            <option value="jordan">الأردن (Jordan)</option>
-            <option value="morocco">المغرب (Morocco)</option>
-            <option value="greece">اليونان (Greece)</option>
-            <option value="dubai">دبي (Dubai)</option>
+            {destinations.map((destination) => (
+              <option key={destination} value={destination}>{destination}</option>
+            ))}
           </select>
         </div>
       </div>

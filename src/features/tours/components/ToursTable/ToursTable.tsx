@@ -1,12 +1,11 @@
- 
 "use client";
 
-import { useState } from "react";
-import { 
-  useTours, 
-  useSoftDeleteTour, 
+import { useMemo, useState } from "react";
+import {
+  useTours,
+  useSoftDeleteTour,
   useBulkUpdateTours,
-  useTourStats
+  useTourStats,
 } from "../../hooks/useTours";
 import { toursApi } from "../../api/toursApi";
 import { DataTable } from "@/components/shared/data-table/DataTable";
@@ -19,45 +18,45 @@ import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { 
-  Download, 
-  CheckSquare, 
-  Loader2, 
-  Sparkles, 
-  Compass, 
-  Users, 
-  Percent, 
-  LayoutGrid, 
+import {
+  Download,
+  CheckSquare,
+  Loader2,
+  Sparkles,
+  Compass,
+  Users,
+  Percent,
+  LayoutGrid,
   Table as TableIcon,
   MapPin,
   Filter,
   X,
   RotateCcw,
-  Globe,
   ArrowRightLeft,
   AlertTriangle,
-  RefreshCw
+  RefreshCw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
+import { useDestinationsReport } from "@/features/dashboard/hooks/useReports";
 
 export function ToursTable() {
   const tTours = useTranslations("tours");
@@ -74,36 +73,42 @@ export function ToursTable() {
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
-  const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
 
   // Egypt Interface Drawer state
-  
+
   const queryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...(search ? { search } : {}),
     ...(activeTab !== "ALL" ? { status: activeTab } : {}),
-    ...(selectedDestination !== "ALL" ? { destination: selectedDestination } : {}),
-    ...(selectedMarket !== "ALL" ? { market: selectedMarket } : {}),
+    ...(selectedDestination !== "ALL"
+      ? { destination: selectedDestination }
+      : {}),
   };
 
   const hasActiveFilters = Boolean(
-    search || 
-    activeTab !== "ALL" || 
-    selectedDestination !== "ALL" || 
-    selectedMarket !== "ALL"
+    search || activeTab !== "ALL" || selectedDestination !== "ALL",
   );
 
   const resetFilters = () => {
     setSearch("");
     setActiveTab("ALL");
     setSelectedDestination("ALL");
-    setSelectedMarket("ALL");
     setPagination({ pageIndex: 0, pageSize: 12 });
   };
 
   const { data, isLoading, isError, error, refetch } = useTours(queryFilters);
   const statsQuery = useTourStats();
+  const destinationsQuery = useDestinationsReport();
+  const destinationOptions = useMemo(() => {
+    const seen = new Set<string>();
+    return (destinationsQuery.data || []).flatMap((item) => {
+      const value = item.city || item.country;
+      if (!value || seen.has(value)) return [];
+      seen.add(value);
+      return [{ value, label: item.location }];
+    });
+  }, [destinationsQuery.data]);
   const { data: stats } = statsQuery;
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
@@ -113,7 +118,7 @@ export function ToursTable() {
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
-  
+
   // Single & Bulk Move state
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
@@ -125,10 +130,10 @@ export function ToursTable() {
     setSelectedTour(tour);
     setViewDrawerOpen(true);
   };
-  
+
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
-    setEditDrawerOpen(true); 
+    setEditDrawerOpen(true);
   };
 
   const handleMove = (tour: Tour) => {
@@ -142,7 +147,9 @@ export function ToursTable() {
   };
 
   const handleDelete = async (tour: Tour) => {
-    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) {
+    if (
+      window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)
+    ) {
       await deleteTour.mutateAsync(tour.slug);
       toast.success(tCommon("success"));
     }
@@ -168,10 +175,23 @@ export function ToursTable() {
     }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
-  const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
-  const totalCount: number = (data as any)?.meta?.total ?? (data as any)?.total ?? (Array.isArray(data) ? data.length : (data?.data?.length || 0));
-  const overallTotal: number = stats?.totalTours ? Number(stats.totalTours) : totalCount;
+  const columns = getColumns(
+    handleView,
+    handleEdit,
+    handleMove,
+    handleDelete,
+    tTours,
+    tCommon,
+    currentLocale,
+  );
+  const toursList: Tour[] = Array.isArray(data) ? data : data?.data || [];
+  const totalCount: number =
+    (data as any)?.meta?.total ??
+    (data as any)?.total ??
+    (Array.isArray(data) ? data.length : data?.data?.length || 0);
+  const overallTotal: number = stats?.totalTours
+    ? Number(stats.totalTours)
+    : totalCount;
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -194,15 +214,25 @@ export function ToursTable() {
       <div className="flex flex-wrap items-center gap-2">
         {slugs.length > 0 && (
           <DropdownMenu>
-            <DropdownMenuTrigger type="button" className="h-8 shadow-sm inline-flex items-center justify-center rounded-md text-sm font-medium px-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1.5">
+            <DropdownMenuTrigger
+              type="button"
+              className="h-8 shadow-sm inline-flex items-center justify-center rounded-md text-sm font-medium px-3 bg-secondary text-secondary-foreground hover:bg-secondary/80 gap-1.5"
+            >
               <CheckSquare className="h-4 w-4 text-primary" />
-              <span>{tCommon("actions")} ({slugs.length})</span>
+              <span>
+                {tCommon("actions")} ({slugs.length})
+              </span>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="start" className="w-52">
               <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleOpenBulkMove(slugs)} className="font-semibold text-primary focus:text-primary">
+              <DropdownMenuItem
+                onClick={() => handleOpenBulkMove(slugs)}
+                className="font-semibold text-primary focus:text-primary"
+              >
                 <ArrowRightLeft className="h-4 w-4 mr-2 text-primary" />
-                {currentLocale === "ar" ? "نقل الرحلات المحددة" : "Move Selected Tours"}
+                {currentLocale === "ar"
+                  ? "نقل الرحلات المحددة"
+                  : "Move Selected Tours"}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
@@ -212,12 +242,15 @@ export function ToursTable() {
               <DropdownMenuItem onClick={() => handleBulkStatus("DRAFT")}>
                 {tStatus("DRAFT")}
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkStatus("ARCHIVED")} className="text-red-600">
+              <DropdownMenuItem
+                onClick={() => handleBulkStatus("ARCHIVED")}
+                className="text-red-600"
+              >
                 {tStatus("ARCHIVED")}
               </DropdownMenuItem>
-              
+
               <DropdownMenuSeparator />
-              
+
               <DropdownMenuLabel>{tCommon("options")}</DropdownMenuLabel>
               <DropdownMenuItem onClick={() => handleBulkFeatured(true)}>
                 {tCommon("yes")}
@@ -253,14 +286,18 @@ export function ToursTable() {
           </Button>
         </div>
 
-        <Button 
-          variant="outline" 
-          size="sm" 
+        <Button
+          variant="outline"
+          size="sm"
           className="h-8 shadow-sm flex items-center gap-1.5"
           onClick={handleExportCsv}
           disabled={isExporting}
         >
-          {isExporting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Download className="h-4 w-4" />}
+          {isExporting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Download className="h-4 w-4" />
+          )}
           <span>{tCommon("exportCsv")}</span>
         </Button>
 
@@ -275,7 +312,9 @@ export function ToursTable() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-primary/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tDashboard("totalTours")}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {tDashboard("totalTours")}
+            </span>
             <div className="p-2 bg-primary/10 rounded-xl text-primary">
               <Compass className="h-4 w-4" />
             </div>
@@ -297,7 +336,8 @@ export function ToursTable() {
               </span>
             ) : (
               <span className="font-semibold text-foreground">
-                {stats?.publishedTours ?? overallTotal} {tDashboard("publishedTours")}
+                {stats?.publishedTours ?? overallTotal}{" "}
+                {tDashboard("publishedTours")}
               </span>
             )}
           </p>
@@ -306,7 +346,9 @@ export function ToursTable() {
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-amber-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tTours("title")}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {tTours("title")}
+            </span>
             <div className="p-2 bg-amber-500/10 rounded-xl text-amber-500">
               <Sparkles className="h-4 w-4 animate-pulse" />
             </div>
@@ -319,7 +361,9 @@ export function ToursTable() {
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-emerald-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tDashboard("occupancyRate")}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {tDashboard("occupancyRate")}
+            </span>
             <div className="p-2 bg-emerald-500/10 rounded-xl text-emerald-600">
               <Percent className="h-4 w-4" />
             </div>
@@ -332,7 +376,9 @@ export function ToursTable() {
 
         <div className="bg-card border rounded-2xl p-5 shadow-sm relative overflow-hidden group hover:border-blue-500/50 transition-colors">
           <div className="flex items-center justify-between mb-3">
-            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">{tTours("draft")}</span>
+            <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground">
+              {tTours("draft")}
+            </span>
             <div className="p-2 bg-blue-500/10 rounded-xl text-blue-500">
               <Users className="h-4 w-4" />
             </div>
@@ -351,11 +397,11 @@ export function ToursTable() {
           <div className="flex flex-wrap items-center gap-2.5 flex-1">
             {/* Search Input */}
             <div className="relative min-w-55 sm:w-65">
-              <Input 
+              <Input
                 aria-label={tCommon("search")}
-                placeholder={`${tCommon("search")} ${tTours("title")}...`} 
-                value={search} 
-                onChange={(e) => setSearch(e.target.value)} 
+                placeholder={`${tCommon("search")} ${tTours("title")}...`}
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
                 className="h-9 pr-8 text-sm"
               />
               {search && (
@@ -370,7 +416,10 @@ export function ToursTable() {
             </div>
 
             {/* Destination / Country Filter */}
-            <Select value={selectedDestination} onValueChange={(val: any) => setSelectedDestination(val || "ALL")}>
+            <Select
+              value={selectedDestination}
+              onValueChange={(val: any) => setSelectedDestination(val || "ALL")}
+            >
               <SelectTrigger className="h-9 w-42.5 text-xs font-medium">
                 <div className="flex items-center gap-1.5 truncate">
                   <MapPin className="h-3.5 w-3.5 text-primary shrink-0" />
@@ -378,41 +427,34 @@ export function ToursTable() {
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">{tCommon("all")} Destinations</SelectItem>
-                <SelectItem value="Egypt">Egypt (مصر)</SelectItem>
-                <SelectItem value="Turkey">Turkey (تركيا)</SelectItem>
-                <SelectItem value="Jordan">Jordan (الأردن)</SelectItem>
-                <SelectItem value="Morocco">Morocco (المغرب)</SelectItem>
-                <SelectItem value="Dubai">Dubai & UAE (دبي)</SelectItem>
-                <SelectItem value="Tunisia">Tunisia (تونس)</SelectItem>
-                <SelectItem value="Greece">Greece (اليونان)</SelectItem>
-                <SelectItem value="Middle East">Multi-Country (مشترك)</SelectItem>
-              </SelectContent>
-            </Select>
-
-            {/* Market / Category Filter */}
-            <Select value={selectedMarket} onValueChange={(val: any) => setSelectedMarket(val || "ALL")}>
-              <SelectTrigger className="h-9 w-37.5 text-xs font-medium">
-                <div className="flex items-center gap-1.5 truncate">
-                  <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <SelectValue placeholder="Market" />
-                </div>
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ALL">{tCommon("all")} Markets</SelectItem>
-                <SelectItem value="Brasil">Brasil (PT)</SelectItem>
-                <SelectItem value="España">España (ES)</SelectItem>
-                <SelectItem value="Global">Global</SelectItem>
-                <SelectItem value="Multi-Country">Multi-Country</SelectItem>
+                <SelectItem value="ALL">
+                  {tCommon("all")} Destinations
+                </SelectItem>
+                {destinationOptions.map((option) => (
+                  <SelectItem key={option.value} value={option.value}>
+                    {option.label}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
 
             {/* Status Tabs */}
-            <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-auto">
+            <Tabs
+              defaultValue="ALL"
+              value={activeTab}
+              onValueChange={(val: any) => setActiveTab(val || "ALL")}
+              className="w-auto"
+            >
               <TabsList className="h-9">
-                <TabsTrigger value="ALL" className="text-xs h-7">{tCommon("all")}</TabsTrigger>
-                <TabsTrigger value="PUBLISHED" className="text-xs h-7">{tStatus("PUBLISHED")}</TabsTrigger>
-                <TabsTrigger value="DRAFT" className="text-xs h-7">{tStatus("DRAFT")}</TabsTrigger>
+                <TabsTrigger value="ALL" className="text-xs h-7">
+                  {tCommon("all")}
+                </TabsTrigger>
+                <TabsTrigger value="PUBLISHED" className="text-xs h-7">
+                  {tStatus("PUBLISHED")}
+                </TabsTrigger>
+                <TabsTrigger value="DRAFT" className="text-xs h-7">
+                  {tStatus("DRAFT")}
+                </TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -442,30 +484,37 @@ export function ToursTable() {
           <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
             <span className="font-semibold flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
               <Filter className="h-3.5 w-3.5" />
-              <span>{isLoading ? "Loading..." : `${totalCount} ${totalCount === 1 ? "Tour" : "Tours"} Found (${totalCount} رحلة)`}</span>
+              <span>
+                {isLoading
+                  ? "Loading..."
+                  : `${totalCount} ${totalCount === 1 ? "Tour" : "Tours"} Found (${totalCount} رحلة)`}
+              </span>
             </span>
             {search && (
               <Badge variant="secondary" className="gap-1 text-xs font-normal">
                 Search: &quot;{search}&quot;
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSearch("")} />
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-foreground"
+                  onClick={() => setSearch("")}
+                />
               </Badge>
             )}
             {selectedDestination !== "ALL" && (
               <Badge variant="secondary" className="gap-1 text-xs font-normal">
                 Destination: {selectedDestination}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedDestination("ALL")} />
-              </Badge>
-            )}
-            {selectedMarket !== "ALL" && (
-              <Badge variant="secondary" className="gap-1 text-xs font-normal">
-                Market: {selectedMarket}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedMarket("ALL")} />
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-foreground"
+                  onClick={() => setSelectedDestination("ALL")}
+                />
               </Badge>
             )}
             {activeTab !== "ALL" && (
               <Badge variant="secondary" className="gap-1 text-xs font-normal">
                 Status: {tStatus(activeTab)}
-                <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setActiveTab("ALL")} />
+                <X
+                  className="h-3 w-3 cursor-pointer hover:text-foreground"
+                  onClick={() => setActiveTab("ALL")}
+                />
               </Badge>
             )}
           </div>
@@ -482,19 +531,29 @@ export function ToursTable() {
           <AlertTriangle className="h-10 w-10 text-destructive" />
           <div>
             <h3 className="font-bold text-foreground">
-              {currentLocale === "ar" ? "تعذر تحميل الرحلات الحقيقية" : "Unable to load live tours"}
+              {currentLocale === "ar"
+                ? "تعذر تحميل الرحلات الحقيقية"
+                : "Unable to load live tours"}
             </h3>
             <p className="mt-2 text-sm text-muted-foreground">
               {error instanceof Error ? error.message : tCommon("error")}
             </p>
           </div>
-          <Button type="button" variant="outline" onClick={() => void Promise.all([refetch(), statsQuery.refetch()])} className="gap-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => void Promise.all([refetch(), statsQuery.refetch()])}
+            className="gap-2"
+          >
             <RefreshCw className="h-4 w-4" />
             {currentLocale === "ar" ? "إعادة المحاولة" : "Retry"}
           </Button>
         </div>
       ) : isLoading ? (
-        <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
+        <div
+          className="flex items-center justify-center py-24"
+          data-testid="table-skeleton-row"
+        >
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
       ) : viewMode === "grid" ? (
@@ -511,7 +570,7 @@ export function ToursTable() {
           data={toursList}
           isLoading={isLoading}
           renderToolbarActions={renderToolbarActions}
-          pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
+          pageCount={Array.isArray(data) ? 1 : data?.meta?.totalPages || -1}
           pagination={pagination}
           onPaginationChange={setPagination}
           manualPagination={true}
@@ -524,7 +583,7 @@ export function ToursTable() {
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
       />
-      
+
       <EditTourDrawer
         tour={selectedTour}
         open={isEditDrawerOpen}
@@ -542,7 +601,6 @@ export function ToursTable() {
         open={isBulkMoveOpen}
         onOpenChange={setIsBulkMoveOpen}
       />
-
     </div>
   );
 }

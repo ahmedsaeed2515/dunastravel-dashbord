@@ -7,9 +7,11 @@ import { useState } from "react";
 import { useAuditLogs } from "@/features/audit/hooks/useAuditLogs";
 import { format } from "date-fns";
 import { Search } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export default function AuditLogsPage() {
   const tAudit = useTranslations("audit");
@@ -18,14 +20,22 @@ export default function AuditLogsPage() {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [page, setPage] = useState(1);
   
-  const { data, isLoading } = useAuditLogs({
-    page: 1,
-    limit: 100,
+  const query = useAuditLogs({
+    page,
+    limit: 25,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
     search: search || undefined,
   });
+  const { data, isLoading } = query;
+  const logs = data?.data ?? [];
+  const totalPages = data?.meta.totalPages ?? 1;
+
+  if (query.isError) {
+    return <QueryErrorState message="تعذر تحميل سجل التدقيق من الباك إند." onRetry={() => void query.refetch()} />;
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -43,7 +53,7 @@ export default function AuditLogsPage() {
                 placeholder={`${tCommon("searchPlaceholder")}...`} 
                 className="ps-9" 
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={e => { setSearch(e.target.value); setPage(1); }}
               />
             </div>
             <div className="flex items-center gap-2">
@@ -51,14 +61,14 @@ export default function AuditLogsPage() {
                 type="date" 
                 className="w-auto"
                 value={dateFrom}
-                onChange={e => setDateFrom(e.target.value)}
+                onChange={e => { setDateFrom(e.target.value); setPage(1); }}
               />
               <span className="text-xs text-muted-foreground">—</span>
               <Input 
                 type="date" 
                 className="w-auto"
                 value={dateTo}
-                onChange={e => setDateTo(e.target.value)}
+                onChange={e => { setDateTo(e.target.value); setPage(1); }}
               />
             </div>
           </div>
@@ -80,8 +90,8 @@ export default function AuditLogsPage() {
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">{tCommon("loading")}</TableCell>
                   </TableRow>
-                ) : (Array.isArray(data) ? data : (data?.data || [])).length > 0 ? (
-                  (Array.isArray(data) ? data : (data?.data || [])).map((log) => (
+                ) : logs.length > 0 ? (
+                  logs.map((log) => (
                     <TableRow key={log.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-mono text-xs text-muted-foreground dir-ltr text-start">{log.id.slice(0, 8)}</TableCell>
                       <TableCell>
@@ -108,6 +118,15 @@ export default function AuditLogsPage() {
               </TableBody>
             </Table>
           </div>
+          {!isLoading && totalPages > 1 && (
+            <div className="flex items-center justify-between border-t border-border/70 p-4">
+              <span className="text-xs text-muted-foreground">{page} / {totalPages}</span>
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" disabled={page <= 1} onClick={() => setPage(current => current - 1)}>{tCommon("previous")}</Button>
+                <Button variant="outline" size="sm" disabled={page >= totalPages} onClick={() => setPage(current => current + 1)}>{tCommon("next")}</Button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

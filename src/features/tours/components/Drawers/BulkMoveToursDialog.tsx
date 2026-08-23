@@ -1,8 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useBulkUpdateTours } from "../../hooks/useTours";
-import { landingPagesApi, TourLandingPage } from "../../api/landingPagesApi";
 import {
   Dialog,
   DialogContent,
@@ -13,13 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Input } from "@/components/ui/input";
 import {
   ArrowRightLeft,
   Globe,
@@ -27,7 +20,6 @@ import {
   Loader2,
   CheckCircle2,
   CheckSquare,
-  Compass,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations, useLocale } from "next-intl";
@@ -39,28 +31,6 @@ interface BulkMoveToursDialogProps {
   onSuccess?: () => void;
 }
 
-const DESTINATION_OPTIONS = [
-  { value: "Egypt", label: "Egypt (مصر)" },
-  { value: "Turkey", label: "Turkey (تركيا)" },
-  { value: "Jordan", label: "Jordan (الأردن)" },
-  { value: "Morocco", label: "Morocco (المغرب)" },
-  { value: "Dubai", label: "Dubai & UAE (دبي والإمارات)" },
-  { value: "Tunisia", label: "Tunisia (تونس)" },
-  { value: "Greece", label: "Greece (اليونان)" },
-  { value: "Multi-Country", label: "Multi-Country (برامج مشتركة)" },
-];
-
-const CATEGORY_OPTIONS = [
-  "Multi-Country",
-  "Cultural Tours",
-  "Luxury Voyages",
-  "Nile Cruise",
-  "Desert Safari",
-  "Beach & Resorts",
-  "Family Packages",
-  "Custom Itinerary",
-];
-
 export function BulkMoveToursDialog({
   slugs,
   open,
@@ -71,22 +41,9 @@ export function BulkMoveToursDialog({
   const currentLocale = useLocale();
   const bulkUpdateMutation = useBulkUpdateTours();
 
-  const [country, setCountry] = useState<string>("Egypt");
-  const [category, setCategory] = useState<string>("Multi-Country");
-  const [selectedLandingPage, setSelectedLandingPage] = useState<string>("NONE");
-  const [landingPages, setLandingPages] = useState<TourLandingPage[]>([]);
+  const [country, setCountry] = useState<string>("");
+  const [category, setCategory] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-
-  useEffect(() => {
-    if (open) {
-      landingPagesApi
-        .getLandingPages({ limit: 100 })
-        .then((res) => {
-          setLandingPages(res?.data || []);
-        })
-        .catch(() => {});
-    }
-  }, [open]);
 
   if (slugs.length === 0) return null;
 
@@ -104,7 +61,7 @@ export function BulkMoveToursDialog({
       toast.success(
         currentLocale === "ar"
           ? `تم نقل ${slugs.length} رحلة بنجاح إلى ${country} (${category})`
-          : `Successfully moved ${slugs.length} tours to ${country} (${category})`
+          : `Successfully moved ${slugs.length} tours to ${country} (${category})`,
       );
 
       if (onSuccess) onSuccess();
@@ -113,7 +70,7 @@ export function BulkMoveToursDialog({
       toast.error(
         currentLocale === "ar"
           ? "حدث خطأ أثناء نقل الرحلات المحددة."
-          : "Failed to bulk move tours."
+          : "Failed to bulk move tours.",
       );
     } finally {
       setIsSubmitting(false);
@@ -131,7 +88,9 @@ export function BulkMoveToursDialog({
             </div>
             <div>
               <DialogTitle className="text-lg font-bold text-foreground">
-                {currentLocale === "ar" ? "نقل الرحلات المحددة" : "Bulk Move Selected Tours"}
+                {currentLocale === "ar"
+                  ? "نقل الرحلات المحددة"
+                  : "Bulk Move Selected Tours"}
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
                 {currentLocale === "ar"
@@ -147,7 +106,11 @@ export function BulkMoveToursDialog({
           <div className="p-3 rounded-xl border bg-muted/40 flex items-center justify-between">
             <span className="text-xs font-semibold text-muted-foreground flex items-center gap-1.5">
               <ArrowRightLeft className="w-4 h-4 text-primary" />
-              <span>{currentLocale === "ar" ? "الرحلات المحددة للنقل:" : "Selected Tours:"}</span>
+              <span>
+                {currentLocale === "ar"
+                  ? "الرحلات المحددة للنقل:"
+                  : "Selected Tours:"}
+              </span>
             </span>
             <span className="text-xs font-bold font-mono bg-primary/10 text-primary px-2.5 py-1 rounded-md">
               {slugs.length} {currentLocale === "ar" ? "رحلة" : "Tours"}
@@ -158,40 +121,36 @@ export function BulkMoveToursDialog({
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <Globe className="w-4 h-4 text-primary" />
-              <span>{currentLocale === "ar" ? "الوجهة / الدولة الجديدة" : "Target Country / Destination"}</span>
+              <span>
+                {currentLocale === "ar"
+                  ? "الوجهة / الدولة الجديدة"
+                  : "Target Country / Destination"}
+              </span>
             </Label>
-            <Select value={country} onValueChange={(val: any) => setCountry(val || "Egypt")}>
-              <SelectTrigger className="h-10 text-sm font-medium">
-                <SelectValue placeholder="Select Country" />
-              </SelectTrigger>
-              <SelectContent>
-                {DESTINATION_OPTIONS.map((dest) => (
-                  <SelectItem key={dest.value} value={dest.value}>
-                    {dest.label}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              value={country}
+              onChange={(event) => setCountry(event.target.value)}
+              placeholder="Country to store on selected tours"
+              maxLength={100}
+            />
           </div>
 
           {/* Category Selection */}
           <div className="space-y-1.5">
             <Label className="text-xs font-bold text-foreground flex items-center gap-1.5">
               <FolderTree className="w-4 h-4 text-primary" />
-              <span>{currentLocale === "ar" ? "التصنيف / القسم الجديد" : "Target Category"}</span>
+              <span>
+                {currentLocale === "ar"
+                  ? "التصنيف / القسم الجديد"
+                  : "Target Category"}
+              </span>
             </Label>
-            <Select value={category} onValueChange={(val: any) => setCategory(val || "Multi-Country")}>
-              <SelectTrigger className="h-10 text-sm font-medium">
-                <SelectValue placeholder="Select Category" />
-              </SelectTrigger>
-              <SelectContent>
-                {CATEGORY_OPTIONS.map((cat) => (
-                  <SelectItem key={cat} value={cat}>
-                    {cat}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <Input
+              value={category}
+              onChange={(event) => setCategory(event.target.value)}
+              placeholder="Category to store on selected tours"
+              maxLength={100}
+            />
           </div>
         </div>
 
@@ -210,18 +169,24 @@ export function BulkMoveToursDialog({
           <Button
             type="button"
             onClick={handleConfirmBulkMove}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !country.trim() || !category.trim()}
             className="h-10 text-xs font-bold px-6 gap-2 bg-primary hover:bg-primary/90 text-primary-foreground shadow-md"
           >
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>{currentLocale === "ar" ? "جاري النقل..." : "Moving..."}</span>
+                <span>
+                  {currentLocale === "ar" ? "جاري النقل..." : "Moving..."}
+                </span>
               </>
             ) : (
               <>
                 <CheckCircle2 className="w-4 h-4" />
-                <span>{currentLocale === "ar" ? "نقل الرحلات الآن" : "Move Selected Tours"}</span>
+                <span>
+                  {currentLocale === "ar"
+                    ? "نقل الرحلات الآن"
+                    : "Move Selected Tours"}
+                </span>
               </>
             )}
           </Button>

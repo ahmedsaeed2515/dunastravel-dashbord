@@ -51,6 +51,18 @@ export function useAddManualTransaction() {
   });
 }
 
+export function useReconcileLedger() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: financeApi.reconcileLedger,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: financeKeys.all });
+      toast.success("Wallet ledger reconciliation completed.");
+    },
+    onError: () => toast.error("Wallet ledger reconciliation failed."),
+  });
+}
+
 export function useCommissionMetrics() {
   return useQuery({
     queryKey: financeKeys.commissionMetrics(),

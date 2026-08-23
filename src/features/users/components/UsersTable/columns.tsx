@@ -12,7 +12,8 @@ export function getColumns(
   onEdit: (user: User) => void,
   onDelete: (user: User) => void,
   tUsers: (key: string) => string,
-  tCommon: (key: string) => string
+  tCommon: (key: string) => string,
+  canManageUser: (user: User) => boolean,
 ): ColumnDef<User>[] {
   return [
     {
@@ -77,6 +78,7 @@ export function getColumns(
             onView={onView}
             onEdit={onEdit}
             onDelete={onDelete}
+            canManage={canManageUser(row.original)}
           />
         );
       },

@@ -10,9 +10,10 @@ interface UserRowActionsProps {
   onView: (user: User) => void;
   onEdit: (user: User) => void;
   onDelete: (user: User) => void;
+  canManage: boolean;
 }
 
-export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowActionsProps) {
+export function UserRowActions({ user, onView, onEdit, onDelete, canManage }: UserRowActionsProps) {
   const tCommon = useTranslations("common");
   const tAccess = useTranslations("accessibility");
 
@@ -29,15 +30,15 @@ export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowAction
           {tCommon("viewDetails")}
         </DropdownMenuItem>
         
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onEdit(user)}>
+        {canManage && <DropdownMenuSeparator />}
+        {canManage && <DropdownMenuItem onClick={() => onEdit(user)}>
           <Edit className="me-2 h-4 w-4" />
           {tCommon("edit")}
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive focus:text-destructive">
+        </DropdownMenuItem>}
+        {canManage && <DropdownMenuItem onClick={() => onDelete(user)} className="text-destructive focus:text-destructive">
           <Trash className="me-2 h-4 w-4" />
           {tCommon("delete")}
-        </DropdownMenuItem>
+        </DropdownMenuItem>}
       </DropdownMenuContent>
     </DropdownMenu>
   );

@@ -2,7 +2,7 @@
 
 import React, { memo } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, Languages, Moon, Sun, Crown } from "lucide-react";
+import { Search, Languages, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useParams, useSearchParams } from "next/navigation";
@@ -65,7 +65,9 @@ export const Topbar = memo(function Topbar() {
 
   const userInitials = user?.name
     ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
-    : "AD";
+    : "—";
+
+  const displayRole = user?.role?.replaceAll("_", " ") || "—";
 
   return (
     <header
@@ -163,8 +165,8 @@ export const Topbar = memo(function Topbar() {
                 </AvatarFallback>
               </Avatar>
               <div className="text-right hidden sm:block">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block leading-none">{user?.name || "Attia Yamany"}</span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Super Admin</span>
+                <span className="text-xs font-bold text-slate-800 dark:text-white block leading-none">{user?.name || "—"}</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{displayRole}</span>
               </div>
             </button>
           </DropdownMenuTrigger>
@@ -174,9 +176,9 @@ export const Topbar = memo(function Topbar() {
           >
             <DropdownMenuLabel className="font-normal">
               <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold leading-none text-foreground">{user?.name || "Attia Yamany"}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@dunastravel.com"}</p>
-                <p className="text-[10px] text-amber-500 font-semibold mt-0.5">Super Admin</p>
+                <p className="text-sm font-semibold leading-none text-foreground">{user?.name || "—"}</p>
+                <p className="text-xs leading-none text-muted-foreground">{user?.email || "—"}</p>
+                <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{displayRole}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

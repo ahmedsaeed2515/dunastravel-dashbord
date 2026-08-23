@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import { useUsers } from "../../hooks/useUsers";
+import { useDeleteUser, useUsers } from "../../hooks/useUsers";
 import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
 import { User, UserRole } from "../../types";
@@ -13,11 +13,14 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function UsersTable() {
   const tUsers = useTranslations("users");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
+  const { isSuperAdmin, user: currentUser } = usePermissions();
 
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
@@ -31,7 +34,8 @@ export function UsersTable() {
     ...(activeTab !== "ALL" ? { role: activeTab as UserRole } : {})
   };
 
-  const { data, isLoading } = useUsers(queryFilters);
+  const { data, isLoading, isError, refetch } = useUsers(queryFilters);
+  const { mutate: deleteUser } = useDeleteUser();
 
   // Drawer states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
@@ -50,10 +54,13 @@ export function UsersTable() {
   };
 
   const handleDelete = (user: User) => {
-    console.log("Delete:", user);
+    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} "${user.name}"?`)) {
+      deleteUser(user.id);
+    }
   };
 
-  const columns = getColumns(handleView, handleEdit, handleDelete, tUsers, tCommon);
+  const canManageUser = (candidate: User) => isSuperAdmin || (candidate.role === "USER" && candidate.id !== currentUser?.id);
+  const columns = getColumns(handleView, handleEdit, handleDelete, tUsers, tCommon, canManageUser);
 
   const renderToolbarActions = () => {
     return (
@@ -79,10 +86,12 @@ export function UsersTable() {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[500px]">
-          <TabsList className="grid w-full grid-cols-5" aria-label={tCommon("role")}>
+        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="max-w-full overflow-x-auto">
+          <TabsList className="flex w-max min-w-full" aria-label={tCommon("role")}>
             <TabsTrigger value="ALL">{tCommon("all")}</TabsTrigger>
+            <TabsTrigger value="SUPER_ADMIN">Super Admin</TabsTrigger>
             <TabsTrigger value="ADMIN">{tStatus("ADMIN", { defaultValue: "Admin" })}</TabsTrigger>
+            <TabsTrigger value="AGENT">Agent</TabsTrigger>
             <TabsTrigger value="COMPANY">B2B</TabsTrigger>
             <TabsTrigger value="USER">{tUsers("title")}</TabsTrigger>
             <TabsTrigger value="GUEST">Guest</TabsTrigger>
@@ -90,7 +99,7 @@ export function UsersTable() {
         </Tabs>
       </div>
 
-      <DataTable
+      {isError ? <QueryErrorState message="تعذر تحميل سجل المستخدمين من الخادم." onRetry={() => void refetch()} /> : <DataTable
         columns={columns}
         data={Array.isArray(data) ? data : (data?.data || [])}
         isLoading={isLoading}
@@ -99,7 +108,7 @@ export function UsersTable() {
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}
-      />
+      />}
       
       {/* Modals & Drawers Layer */}
       <UserDetailsDrawer
@@ -111,6 +120,7 @@ export function UsersTable() {
         user={selectedUser}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
+        canManageRoles={isSuperAdmin}
       />
     </div>
   );

@@ -1,6 +1,5 @@
 "use client";
 
-import { useMemo } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -22,37 +21,21 @@ interface PromotionsTableProps {
   onFilterChange: (newFilters: PromotionQueryFilters) => void;
   onEdit: (promotion: Promotion) => void;
   onDelete: (promotion: Promotion) => void;
+  canManage: boolean;
 }
 
-export function PromotionsTable({ data, total, isLoading, filters, onFilterChange, onEdit, onDelete }: PromotionsTableProps) {
+export function PromotionsTable({ data, total, isLoading, filters, onFilterChange, onEdit, onDelete, canManage }: PromotionsTableProps) {
   const tPromotions = useTranslations("promotions");
   const tCommon = useTranslations("common");
-  const columns = getColumns(onEdit, onDelete, tPromotions, tCommon);
-
-  const filteredData = useMemo(() => {
-    const list = Array.isArray(data) ? data : [];
-    if (!filters.search?.trim()) return list;
-    const s = filters.search.toLowerCase().trim();
-    return list.filter(item => 
-      item.code?.toLowerCase().includes(s) || 
-      String(item.discountPercent).includes(s)
-    );
-  }, [data, filters.search]);
+  const columns = getColumns(onEdit, onDelete, tPromotions, tCommon, canManage);
 
   const page = filters.page || 1;
   const limit = filters.limit || 10;
-  const effectiveTotal = filteredData.length;
+  const effectiveTotal = total;
   const totalPages = Math.max(1, Math.ceil(effectiveTotal / limit));
 
-  const paginatedData = useMemo(() => {
-    // If server already paginated data to limit size, use directly
-    if (data.length <= limit && total > limit) return filteredData;
-    const start = (page - 1) * limit;
-    return filteredData.slice(start, start + limit);
-  }, [filteredData, page, limit, data.length, total]);
-
   const table = useReactTable({
-    data: paginatedData,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });

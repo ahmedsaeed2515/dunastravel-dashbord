@@ -21,13 +21,14 @@ interface AgentsTableProps {
   onFilterChange: (newFilters: AgentQueryFilters) => void;
   onEdit: (agent: Agent) => void;
   onDelete: (agent: Agent) => void;
+  canManage: boolean;
 }
 
-export function AgentsTable({ data, total, isLoading, filters, onFilterChange, onEdit, onDelete }: AgentsTableProps) {
+export function AgentsTable({ data, total, isLoading, filters, onFilterChange, onEdit, onDelete, canManage }: AgentsTableProps) {
   const tAgents = useTranslations("agents");
   const tCommon = useTranslations("common");
 
-  const columns = getColumns(onEdit, onDelete, tAgents, tCommon);
+  const columns = getColumns(onEdit, onDelete, tAgents, tCommon, canManage);
 
   const table = useReactTable({
     data,

@@ -16,9 +16,10 @@ interface UserFormProps {
   initialData?: User;
   onSubmit: (data: UserFormValues) => void;
   isSubmitting?: boolean;
+  canManageRoles: boolean;
 }
 
-export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps) {
+export function UserForm({ initialData, onSubmit, isSubmitting, canManageRoles }: UserFormProps) {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -90,7 +91,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           render={({ field }) => (
             <FormItem>
               <FormLabel>Role</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select onValueChange={field.onChange} defaultValue={field.value} disabled={!canManageRoles}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select a role" />

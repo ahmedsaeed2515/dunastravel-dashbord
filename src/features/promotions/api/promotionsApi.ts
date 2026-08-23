@@ -5,7 +5,7 @@ import {
   CreatePromotionPayload,
   UpdatePromotionPayload
 } from "../types";
-import { requirePaginated } from "@/lib/api-response";
+import { requireObject, requirePaginated } from "@/lib/api-response";
 
 export interface PaginatedResponse<T> {
   data: T[];
@@ -25,17 +25,17 @@ export const promotionsApi = {
 
   getPromotionById: async (id: string): Promise<Promotion> => {
     const response = await apiClient.get(`/admin/promotions/${id}`);
-    return response as any;
+    return requireObject(response, "promotion");
   },
 
   createPromotion: async (payload: CreatePromotionPayload): Promise<Promotion> => {
     const response = await apiClient.post("/admin/promotions", payload);
-    return response as any;
+    return requireObject(response, "created promotion");
   },
 
   updatePromotion: async (id: string, payload: UpdatePromotionPayload): Promise<Promotion> => {
     const response = await apiClient.patch(`/admin/promotions/${id}`, payload);
-    return response as any;
+    return requireObject(response, "updated promotion");
   },
 
   deletePromotion: async (id: string): Promise<void> => {

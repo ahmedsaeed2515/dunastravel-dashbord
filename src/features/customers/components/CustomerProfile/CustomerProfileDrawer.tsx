@@ -22,6 +22,7 @@ import { Star, FileText, Plus, ExternalLink, Calendar, Shield, MapPin, DollarSig
 import { BookingDetailsDrawer } from "@/features/bookings/components/Drawers/BookingDetailsDrawer";
 import { Booking } from "@/features/bookings/types";
 import { AiCustomerInsightsTab } from "@/features/ai/components/AiCustomerInsightsTab";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 interface CustomerProfileDrawerProps {
   customer: Customer | null;
@@ -41,7 +42,7 @@ const formatDateSafe = (dateStr?: string | null, fmt = "MMM do, yyyy") => {
 };
 
 export function CustomerProfileDrawer({ customer, open, onOpenChange }: CustomerProfileDrawerProps) {
-  const { data: detail, isLoading } = useCustomerDetail(customer?.id || "");
+  const { data: detail, isLoading, isError, refetch } = useCustomerDetail(customer?.id || "");
   const updateCrm = useUpdateCustomerCrm();
   const addNote = useAddCustomerNote();
   const addDocument = useAddCustomerDocument();
@@ -109,10 +110,12 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="w-[400px] sm:w-[540px] md:w-[750px] lg:w-[900px] max-w-4xl overflow-y-auto pr-2 pl-6">
-        {isLoading || !detail ? (
+        {isLoading ? (
           <div className="flex items-center justify-center h-full">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
+        ) : isError || !detail ? (
+          <div className="p-6"><QueryErrorState message="تعذر تحميل ملف العميل من الخادم." onRetry={() => void refetch()} /></div>
         ) : (
           <>
             <SheetHeader className="mb-6 pr-6">

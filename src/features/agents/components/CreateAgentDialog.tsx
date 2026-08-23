@@ -60,7 +60,20 @@ export function CreateAgentDialog({ open, onOpenChange, onSubmit, isSubmitting, 
   }, [initialData, open, form]);
 
   const handleSubmit = (values: z.infer<typeof formSchema>) => {
-    onSubmit(values as any);
+    const common = {
+      name: values.name.trim(),
+      ...(values.phone?.trim() ? { phone: values.phone.trim() } : {}),
+      ...(values.companyId?.trim() ? { companyId: values.companyId.trim() } : {}),
+    };
+    if (isEditing) {
+      onSubmit(common);
+      return;
+    }
+    if (!values.password || values.password.length < 12) {
+      form.setError("password", { message: "Password must be at least 12 characters" });
+      return;
+    }
+    onSubmit({ ...common, email: values.email.trim(), password: values.password });
   };
 
   return (

@@ -22,11 +22,14 @@ import { EmailTemplate, CreateEmailTemplatePayload, UpdateEmailTemplatePayload }
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export default function CommunicationsPage() {
   const tComm = useTranslations("communications");
   const tCommon = useTranslations("common");
   const tNav = useTranslations("navigation");
+  const { isSuperAdmin } = usePermissions();
 
   const [activeTab, setActiveTab] = useState("inquiries");
   
@@ -34,7 +37,7 @@ export default function CommunicationsPage() {
   const [isTemplateDialogOpen, setIsTemplateDialogOpen] = useState(false);
   const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
 
-  const { data: templates, isLoading: isLoadingTemplates } = useTemplates();
+  const { data: templates, isLoading: isLoadingTemplates, isError: isTemplatesError, refetch: refetchTemplates } = useTemplates();
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate();
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate();
   const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteTemplate();
@@ -42,8 +45,8 @@ export default function CommunicationsPage() {
   const [logsPage, setLogsPage] = useState(1);
   const [subsPage, setSubsPage] = useState(1);
 
-  const { data: deliveryLogsData, isLoading: isLoadingLogs } = useDeliveryLogs({ page: logsPage, limit: 10 });
-  const { data: contactSubmissionsData, isLoading: isLoadingSubmissions } = useContactSubmissions({ page: subsPage, limit: 10 });
+  const { data: deliveryLogsData, isLoading: isLoadingLogs, isError: isLogsError, refetch: refetchLogs } = useDeliveryLogs({ page: logsPage, limit: 10 });
+  const { data: contactSubmissionsData, isLoading: isLoadingSubmissions, isError: isSubmissionsError, refetch: refetchSubmissions } = useContactSubmissions({ page: subsPage, limit: 10 });
 
   const subsList = Array.isArray(contactSubmissionsData) ? contactSubmissionsData : ((contactSubmissionsData as any)?.data || []);
   const subsTotal = (contactSubmissionsData as any)?.meta?.total ?? (contactSubmissionsData as any)?.total ?? subsList.length;
@@ -91,11 +94,11 @@ export default function CommunicationsPage() {
       <PageHeader
         title={tComm("title")}
         description={tComm("description")}
-        actions={
+        actions={isSuperAdmin ?
           <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5 cursor-pointer">
             <Plus className="h-4 w-4" />
             <span>{tCommon("create")}</span>
-          </Button>
+          </Button> : undefined
         }
       />
 
@@ -118,7 +121,9 @@ export default function CommunicationsPage() {
         </TabsContent>
 
         <TabsContent value="templates" className="m-0 space-y-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {isTemplatesError ? (
+            <QueryErrorState message="تعذر تحميل قوالب الرسائل من الخادم." onRetry={() => void refetchTemplates()} />
+          ) : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {isLoadingTemplates ? (
               <div className="col-span-full py-8 text-center text-muted-foreground">{tCommon("loading")}</div>
             ) : (Array.isArray(templates) ? templates : ((templates as any)?.data || [])).length ? (
@@ -154,7 +159,7 @@ export default function CommunicationsPage() {
                   </CardContent>
                   
                   {/* Actions footer */}
-                  <div className="px-5 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
+                  {isSuperAdmin && <div className="px-5 py-3 border-t border-border/50 bg-muted/20 flex items-center justify-end gap-2">
                     <Button 
                       variant="ghost" 
                       size="sm" 
@@ -174,14 +179,14 @@ export default function CommunicationsPage() {
                       <Trash2 className="h-3.5 w-3.5" />
                       <span>Delete</span>
                     </Button>
-                  </div>
+                  </div>}
                 </Card>
               ))
             ) : (
               <div className="col-span-full py-8 text-center text-muted-foreground">{tComm("noMessages")}</div>
             )}
 
-            <Card 
+            {isSuperAdmin && <Card
               className="hover:border-amber-500/50 hover:bg-amber-500/5 transition-all cursor-pointer group border-dashed bg-muted/30 flex flex-col items-center justify-center min-h-[220px] rounded-2xl"
               onClick={handleCreateClick}
             >
@@ -190,8 +195,8 @@ export default function CommunicationsPage() {
               </div>
               <h3 className="font-bold text-sm text-foreground">{tCommon("create")} New Template</h3>
               <p className="text-xs text-muted-foreground mt-1">Add a reusable automated email</p>
-            </Card>
-          </div>
+            </Card>}
+          </div>}
         </TabsContent>
 
         <TabsContent value="submissions" className="m-0 space-y-6">
@@ -203,7 +208,9 @@ export default function CommunicationsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
+              {isSubmissionsError ? (
+                <div className="p-6"><QueryErrorState message="تعذر تحميل رسائل نموذج التواصل من الخادم." onRetry={() => void refetchSubmissions()} /></div>
+              ) : <><Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Ref</TableHead>
@@ -218,7 +225,7 @@ export default function CommunicationsPage() {
                     <TableRow><TableCell colSpan={5} className="text-center py-8">{tCommon("loading")}</TableCell></TableRow>
                   ) : subsList.length ? (
                     subsList.map((sub: any) => {
-                      const fullName = sub.name || `${sub.firstName || ''} ${sub.lastName || ''}`.trim() || "Guest Contact";
+                      const fullName = sub.name || `${sub.firstName || ''} ${sub.lastName || ''}`.trim() || "—";
                       return (
                         <TableRow key={sub.id || sub.referenceCode} className="hover:bg-muted/40 transition-colors">
                           <TableCell className="font-mono text-xs font-bold dir-ltr">
@@ -232,11 +239,11 @@ export default function CommunicationsPage() {
                             </div>
                           </TableCell>
                           <TableCell className="max-w-[320px]">
-                            <div className="font-medium text-xs text-foreground line-clamp-1">{sub.subject || "No Subject"}</div>
+                            <div className="font-medium text-xs text-foreground line-clamp-1">{sub.subject || "—"}</div>
                             <div className="text-xs text-muted-foreground line-clamp-2 mt-0.5">{sub.message || "—"}</div>
                           </TableCell>
                           <TableCell>
-                            <StatusBadge status={sub.status || "NEW"} />
+                            {sub.status ? <StatusBadge status={sub.status} /> : "—"}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground font-mono">
                             {new Date(sub.createdAt).toLocaleString()}
@@ -275,7 +282,7 @@ export default function CommunicationsPage() {
                     Next
                   </Button>
                 </div>
-              </div>
+              </div></>}
             </CardContent>
           </Card>
         </TabsContent>
@@ -289,7 +296,9 @@ export default function CommunicationsPage() {
               </div>
             </CardHeader>
             <CardContent className="p-0">
-              <Table>
+              {isLogsError ? (
+                <div className="p-6"><QueryErrorState message="تعذر تحميل سجل إرسال الإشعارات من الخادم." onRetry={() => void refetchLogs()} /></div>
+              ) : <><Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>Channel</TableHead>
@@ -376,13 +385,13 @@ export default function CommunicationsPage() {
                     Next
                   </Button>
                 </div>
-              </div>
+              </div></>}
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
 
-      <CreateTemplateDialog 
+      {isSuperAdmin && <CreateTemplateDialog
         open={isTemplateDialogOpen}
         onOpenChange={(v) => {
           setIsTemplateDialogOpen(v);
@@ -391,7 +400,7 @@ export default function CommunicationsPage() {
         onSubmit={handleTemplateSubmit}
         isSubmitting={isCreating || isUpdating}
         initialData={editingTemplate}
-      />
+      />}
     </div>
   );
 }

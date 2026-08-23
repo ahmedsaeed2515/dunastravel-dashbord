@@ -239,8 +239,8 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
               <p className="text-xs text-slate-300 max-w-md mx-auto">
                 Reserve your spot now or contact our luxury travel specialists to tailor this tour.
               </p>
-              <Button size="lg" className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-8">
-                Book This Tour Now
+              <Button size="lg" disabled className="bg-amber-500 text-slate-950 font-bold px-8">
+                Booking CTA Preview
               </Button>
             </div>
           </div>

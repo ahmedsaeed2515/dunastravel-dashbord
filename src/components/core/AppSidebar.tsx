@@ -53,7 +53,7 @@ export const AppSidebar = memo(function AppSidebar() {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
   const { logout } = useAuth();
-  const { isB2B, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
+  const { isAgent, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
   const { isMobile, setOpenMobile } = useSidebar();
 
   const handleNavClick = () => {
@@ -164,7 +164,7 @@ export const AppSidebar = memo(function AppSidebar() {
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu className="space-y-0.5">
-              <NavItem href={adminRoutes.dashboard} icon={LayoutDashboard} label={tNav("dashboard")} exact />
+              {isAdmin && <NavItem href={adminRoutes.dashboard} icon={LayoutDashboard} label={tNav("dashboard")} exact />}
               {canAccessFullOperations && (
                 <>
                   <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("bookings")} />
@@ -177,7 +177,7 @@ export const AppSidebar = memo(function AppSidebar() {
         </SidebarGroup>
 
         {/* B2B SELF SERVICE */}
-        {isB2B && !isAdmin && (
+        {isAgent && !isAdmin && (
           <SidebarGroup>
             <SidebarGroupLabel className="px-3 pt-3 pb-1.5 text-[12px] font-black text-amber-500 dark:text-amber-400 uppercase tracking-wider border-t border-border">
               {tNav("myOperations")}
@@ -185,8 +185,7 @@ export const AppSidebar = memo(function AppSidebar() {
             <SidebarGroupContent>
               <SidebarMenu className="space-y-0.5">
                 <NavItem href={adminRoutes.bookings} icon={CalendarCheck} label={tNav("myBookings")} />
-                <NavItem href={adminRoutes.finance.commissions} icon={Briefcase} label={tNav("myCommissions")} />
-                <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("myWallet")} />
+                <NavItem href={adminRoutes.inquiries} icon={Star} label={tNav("inquiries")} />
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

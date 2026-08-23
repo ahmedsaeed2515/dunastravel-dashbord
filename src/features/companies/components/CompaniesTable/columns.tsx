@@ -12,8 +12,10 @@ export const getColumns = (
   onView: (company: Company) => void,
   tCompanies: (key: string) => string,
   tCommon: (key: string) => string,
-  tFinance: (key: string) => string
-): ColumnDef<Company>[] => [
+  tFinance: (key: string) => string,
+  canManage: boolean,
+): ColumnDef<Company>[] => {
+ const columns: ColumnDef<Company>[] = [
   {
     id: "select",
     header: ({ table }) => (
@@ -150,3 +152,5 @@ export const getColumns = (
     },
   },
 ];
+ return canManage ? columns : columns.filter((column) => column.id !== "select");
+};

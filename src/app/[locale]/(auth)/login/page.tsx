@@ -26,11 +26,13 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await authApi.login({ email, password });
+      const session = await authApi.login({ email, password });
       const currentPath = window.location.pathname;
+      const role = session?.user?.role;
+      const postLoginPath = role === "AGENT" ? "/admin/bookings" : role === "ADMIN" || role === "SUPER_ADMIN" ? "/dashboard" : "/admin/profile";
       const targetPath = currentPath.includes('/login') 
-        ? currentPath.replace(/\/login.*$/, '/dashboard') 
-        : '/ar/dashboard';
+        ? currentPath.replace(/\/login.*$/, postLoginPath)
+        : `/ar${postLoginPath}`;
       window.location.href = targetPath;
     } catch (err: any) {
       setError(err.message || tAuth("loginError"));

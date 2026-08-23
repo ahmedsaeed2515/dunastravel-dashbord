@@ -1,15 +1,23 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { communicationsApi } from "../api/communicationsApi";
-import { NotificationDeliveryLogQueryFilters } from "../types";
+import {
+  ContactSubmissionQueryFilters,
+  CreateEmailTemplatePayload,
+  InquiryQueryFilters,
+  NotificationDeliveryLogQueryFilters,
+  UpdateEmailTemplatePayload,
+  UpdateInquiryPayload,
+} from "../types";
 import { toast } from "sonner";
 
 export const communicationsKeys = {
   all: ["communications"] as const,
   metrics: () => [...communicationsKeys.all, "metrics"] as const,
   logs: (filters: NotificationDeliveryLogQueryFilters) => [...communicationsKeys.all, "logs", filters] as const,
-  inquiries: (filters: any) => [...communicationsKeys.all, "inquiries", filters] as const,
+  inquiries: (filters: InquiryQueryFilters) => [...communicationsKeys.all, "inquiries", filters] as const,
+  inquiry: (referenceCode: string) => [...communicationsKeys.all, "inquiry", referenceCode] as const,
   templates: () => [...communicationsKeys.all, "templates"] as const,
-  contactSubmissions: (filters: any) => [...communicationsKeys.all, "contactSubmissions", filters] as const,
+  contactSubmissions: (filters: ContactSubmissionQueryFilters) => [...communicationsKeys.all, "contactSubmissions", filters] as const,
 };
 
 export function useCommunicationMetrics() {
@@ -43,11 +51,19 @@ export function useRetryNotification() {
   });
 }
 
-export function useInquiries(filters: any) {
+export function useInquiries(filters: InquiryQueryFilters) {
   return useQuery({
     queryKey: communicationsKeys.inquiries(filters),
     queryFn: () => communicationsApi.getInquiries(filters),
     placeholderData: (prev) => prev,
+  });
+}
+
+export function useInquiry(referenceCode: string, enabled = true) {
+  return useQuery({
+    queryKey: communicationsKeys.inquiry(referenceCode),
+    queryFn: () => communicationsApi.getInquiry(referenceCode),
+    enabled: enabled && Boolean(referenceCode),
   });
 }
 
@@ -66,6 +82,20 @@ export function useAssignInquiry() {
   });
 }
 
+export function useUpdateInquiry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, payload }: { referenceCode: string; payload: UpdateInquiryPayload }) =>
+      communicationsApi.updateInquiry(referenceCode, payload),
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.inquiry(variables.referenceCode) });
+      toast.success("Inquiry updated successfully.");
+    },
+    onError: (error: any) => toast.error(error?.message || "Failed to update inquiry."),
+  });
+}
+
 export function useTemplates() {
   return useQuery({
     queryKey: communicationsKeys.templates(),
@@ -76,7 +106,7 @@ export function useTemplates() {
 export function useCreateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => communicationsApi.createTemplate(data),
+    mutationFn: (data: CreateEmailTemplatePayload) => communicationsApi.createTemplate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
       toast.success("Template created successfully.");
@@ -88,7 +118,7 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => communicationsApi.updateTemplate(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateEmailTemplatePayload }) => communicationsApi.updateTemplate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
       toast.success("Template updated successfully.");
@@ -109,7 +139,7 @@ export function useDeleteTemplate() {
   });
 }
 
-export function useContactSubmissions(filters: any) {
+export function useContactSubmissions(filters: ContactSubmissionQueryFilters) {
   return useQuery({
     queryKey: communicationsKeys.contactSubmissions(filters),
     queryFn: () => communicationsApi.getContactSubmissions(filters),

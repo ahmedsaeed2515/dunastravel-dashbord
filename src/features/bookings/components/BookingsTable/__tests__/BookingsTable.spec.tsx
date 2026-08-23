@@ -14,6 +14,14 @@ vi.mock('../../../hooks/useBookings', () => ({
   useBookings: vi.fn()
 }));
 
+vi.mock('@/hooks/usePermissions', () => ({
+  usePermissions: () => ({ isAdmin: true, isSuperAdmin: true }),
+}));
+
+vi.mock('next/navigation', () => ({
+  useSearchParams: () => new URLSearchParams(),
+}));
+
 describe('BookingsTable', () => {
   const mockData: any[] = [
     {

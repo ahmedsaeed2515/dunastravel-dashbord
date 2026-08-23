@@ -15,6 +15,7 @@ interface BookingRowActionsProps {
   onView: (booking: Booking) => void;
   onEdit: (booking: Booking) => void;
   onDelete: (booking: Booking) => void;
+  canManage: boolean;
 }
 
 export function BookingRowActions({
@@ -22,6 +23,7 @@ export function BookingRowActions({
   onView,
   onEdit,
   onDelete,
+  canManage,
 }: BookingRowActionsProps) {
   const tCommon = useTranslations("common");
   const tAccess = useTranslations("accessibility");
@@ -37,13 +39,17 @@ export function BookingRowActions({
         <DropdownMenuItem onClick={() => onView(booking)}>
           <Eye className="me-2 h-4 w-4" /> {tCommon("viewDetails")}
         </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => onEdit(booking)}>
-          <Edit className="me-2 h-4 w-4" /> {tCommon("edit")}
-        </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => onDelete(booking)} className="text-red-600">
-          <Trash className="me-2 h-4 w-4" /> {tCommon("delete")}
-        </DropdownMenuItem>
+        {canManage && (
+          <>
+            <DropdownMenuItem onClick={() => onEdit(booking)}>
+              <Edit className="me-2 h-4 w-4" /> {tCommon("edit")}
+            </DropdownMenuItem>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem onClick={() => onDelete(booking)} className="text-red-600">
+              <Trash className="me-2 h-4 w-4" /> {tCommon("delete")}
+            </DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

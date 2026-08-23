@@ -10,6 +10,7 @@ import { PlusCircle } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,6 +25,7 @@ import {
 export default function AgentsPage() {
   const tAgents = useTranslations("agents");
   const tCommon = useTranslations("common");
+  const { isSuperAdmin } = usePermissions();
 
   const [filters, setFilters] = useState<AgentQueryFilters>({ page: 1, limit: 10 });
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -83,11 +85,11 @@ export default function AgentsPage() {
       <PageHeader
         title={tAgents("title")}
         description={tAgents("description")}
-        actions={
+        actions={isSuperAdmin ?
           <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />
             <span>{tCommon("create")}</span>
-          </Button>
+          </Button> : undefined
         }
       />
 
@@ -100,10 +102,11 @@ export default function AgentsPage() {
           onFilterChange={setFilters}
           onEdit={handleEdit}
           onDelete={setAgentToDelete}
+          canManage={isSuperAdmin}
         />
       </div>
 
-      <CreateAgentDialog 
+      {isSuperAdmin && <CreateAgentDialog
         open={isDialogOpen} 
         onOpenChange={(open) => {
           setIsDialogOpen(open);
@@ -112,7 +115,7 @@ export default function AgentsPage() {
         onSubmit={handleSubmit}
         isSubmitting={isCreating || isUpdating}
         initialData={editingAgent}
-      />
+      />}
 
       <AlertDialog open={!!agentToDelete} onOpenChange={(open) => !open && setAgentToDelete(null)}>
         <AlertDialogContent>

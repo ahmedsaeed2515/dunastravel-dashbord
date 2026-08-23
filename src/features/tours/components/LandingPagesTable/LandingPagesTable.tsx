@@ -2,21 +2,57 @@
 
 import { useState } from "react";
 import { TourLandingPage } from "../../api/landingPagesApi";
-import { useLandingPages, useDeleteLandingPage, usePublishLandingPage, useUnpublishLandingPage } from "../../hooks/useLandingPages";
+import {
+  useLandingPages,
+  useDeleteLandingPage,
+  usePublishLandingPage,
+  useUnpublishLandingPage,
+} from "../../hooks/useLandingPages";
 import { LandingPageEditorDrawer } from "../Drawers/LandingPageEditorDrawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Loader2, Search, Plus, MoreHorizontal, Edit, Globe, CheckCircle2, AlertCircle, Trash2, Eye, ExternalLink, Package } from "lucide-react";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Loader2,
+  Search,
+  Plus,
+  MoreHorizontal,
+  Edit,
+  Globe,
+  CheckCircle2,
+  AlertCircle,
+  Trash2,
+  Eye,
+  ExternalLink,
+  Package,
+} from "lucide-react";
 import { toast } from "sonner";
 import { QueryErrorState } from "@/components/shared/QueryErrorState";
+import { usePermissions } from "@/hooks/usePermissions";
 
 export function LandingPagesTable() {
+  const { isSuperAdmin } = usePermissions();
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("ALL");
-  const [selectedPage, setSelectedPage] = useState<TourLandingPage | null>(null);
+  const [selectedPage, setSelectedPage] = useState<TourLandingPage | null>(
+    null,
+  );
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useLandingPages({
@@ -34,7 +70,11 @@ export function LandingPagesTable() {
   };
 
   const handleDelete = async (slug: string) => {
-    if (confirm(`Are you sure you want to delete landing page interface '/${slug}'?`)) {
+    if (
+      confirm(
+        `Are you sure you want to delete landing page interface '/${slug}'?`,
+      )
+    ) {
       try {
         await deleteMutation.mutateAsync(slug);
         toast.success("Interface deleted.");
@@ -47,7 +87,12 @@ export function LandingPagesTable() {
   const items = data?.data || [];
 
   if (isError) {
-    return <QueryErrorState message="تعذر تحميل صفحات الرحلات من الباك إند." onRetry={() => void refetch()} />;
+    return (
+      <QueryErrorState
+        message="تعذر تحميل صفحات الرحلات من الباك إند."
+        onRetry={() => void refetch()}
+      />
+    );
   }
 
   return (
@@ -77,26 +122,28 @@ export function LandingPagesTable() {
           </select>
         </div>
 
-        <div className="flex items-center gap-2">
-          <Button
-            onClick={() => {
-              setSelectedPage({
-                id: "",
-                slug: "new-interface-" + Date.now().toString().slice(-4),
-                type: "DESTINATION",
-                titleJsonb: { en: "New Tour Interface" },
-                status: "DRAFT",
-                isActive: true,
-                sortOrder: 0,
-                createdAt: new Date().toISOString(),
-                updatedAt: new Date().toISOString(),
-              } as any);
-              setIsDrawerOpen(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-2" /> Create New Interface
-          </Button>
-        </div>
+        {isSuperAdmin && (
+          <div className="flex items-center gap-2">
+            <Button
+              onClick={() => {
+                setSelectedPage({
+                  id: "",
+                  slug: "new-interface-" + Date.now().toString().slice(-4),
+                  type: "DESTINATION",
+                  titleJsonb: { en: "New Tour Interface" },
+                  status: "DRAFT",
+                  isActive: true,
+                  sortOrder: 0,
+                  createdAt: new Date().toISOString(),
+                  updatedAt: new Date().toISOString(),
+                } as any);
+                setIsDrawerOpen(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" /> Create New Interface
+            </Button>
+          </div>
+        )}
       </div>
 
       {/* Table */}
@@ -110,19 +157,27 @@ export function LandingPagesTable() {
               <TableHead>Status</TableHead>
               <TableHead className="text-center">Assigned Tours</TableHead>
               <TableHead>Locales</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              {isSuperAdmin && (
+                <TableHead className="text-right">Actions</TableHead>
+              )}
             </TableRow>
           </TableHeader>
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell
+                  colSpan={isSuperAdmin ? 7 : 6}
+                  className="h-32 text-center"
+                >
                   <Loader2 className="w-6 h-6 animate-spin mx-auto text-primary" />
                 </TableCell>
               </TableRow>
             ) : items.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
+                <TableCell
+                  colSpan={isSuperAdmin ? 7 : 6}
+                  className="h-32 text-center text-muted-foreground"
+                >
                   No tour landing page interfaces found.
                 </TableCell>
               </TableRow>
@@ -137,7 +192,11 @@ export function LandingPagesTable() {
                     <TableCell>
                       <div className="w-12 h-10 rounded bg-muted overflow-hidden border">
                         {item.heroImageUrl ? (
-                          <img src={item.heroImageUrl} alt="" className="w-full h-full object-cover" />
+                          <img
+                            src={item.heroImageUrl}
+                            alt=""
+                            className="w-full h-full object-cover"
+                          />
                         ) : (
                           <Globe className="w-5 h-5 m-2.5 text-muted-foreground" />
                         )}
@@ -148,7 +207,11 @@ export function LandingPagesTable() {
                       <div>
                         <div className="font-semibold text-sm flex items-center gap-2">
                           {enTitle}
-                          {arTitle && <span className="text-xs text-muted-foreground font-normal">({arTitle})</span>}
+                          {arTitle && (
+                            <span className="text-xs text-muted-foreground font-normal">
+                              ({arTitle})
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs font-mono text-muted-foreground">
                           /{item.slug}
@@ -164,7 +227,13 @@ export function LandingPagesTable() {
 
                     <TableCell>
                       <div className="flex items-center gap-1.5">
-                        <Badge variant={item.status === "PUBLISHED" ? "default" : "secondary"}>
+                        <Badge
+                          variant={
+                            item.status === "PUBLISHED"
+                              ? "default"
+                              : "secondary"
+                          }
+                        >
                           {item.status}
                         </Badge>
                         {!item.isActive && (
@@ -203,37 +272,51 @@ export function LandingPagesTable() {
                       </div>
                     </TableCell>
 
-                    <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Interface Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => handleEdit(item)}>
-                            <Edit className="w-4 h-4 mr-2" /> Full Edit & Manage Tours
-                          </DropdownMenuItem>
-                          {item.status === "PUBLISHED" ? (
-                            <DropdownMenuItem onClick={() => unpublishMutation.mutate(item.slug)}>
-                              Unpublish
+                    {isSuperAdmin && (
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>
+                              Interface Actions
+                            </DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => handleEdit(item)}>
+                              <Edit className="w-4 h-4 mr-2" /> Full Edit &
+                              Manage Tours
                             </DropdownMenuItem>
-                          ) : (
-                            <DropdownMenuItem onClick={() => publishMutation.mutate(item.slug)}>
-                              Publish
+                            {item.status === "PUBLISHED" ? (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  unpublishMutation.mutate(item.slug)
+                                }
+                              >
+                                Unpublish
+                              </DropdownMenuItem>
+                            ) : (
+                              <DropdownMenuItem
+                                onClick={() =>
+                                  publishMutation.mutate(item.slug)
+                                }
+                              >
+                                Publish
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive focus:text-destructive"
+                              onClick={() => handleDelete(item.slug)}
+                            >
+                              <Trash2 className="w-4 h-4 mr-2" /> Delete
+                              Interface
                             </DropdownMenuItem>
-                          )}
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDelete(item.slug)}
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" /> Delete Interface
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    )}
                   </TableRow>
                 );
               })
@@ -243,12 +326,13 @@ export function LandingPagesTable() {
       </div>
 
       {/* Editor Drawer */}
-      <LandingPageEditorDrawer
-        landingPage={selectedPage}
-        open={isDrawerOpen}
-        onOpenChange={setIsDrawerOpen}
-      />
-
+      {isSuperAdmin && (
+        <LandingPageEditorDrawer
+          landingPage={selectedPage}
+          open={isDrawerOpen}
+          onOpenChange={setIsDrawerOpen}
+        />
+      )}
     </div>
   );
 }

@@ -11,9 +11,10 @@ export function getColumns(
   onEdit: (agent: Agent) => void,
   onDelete: (agent: Agent) => void,
   tAgents: (key: string) => string,
-  tCommon: (key: string) => string
+  tCommon: (key: string) => string,
+  canManage: boolean,
 ): ColumnDef<Agent>[] {
-  return [
+  const columns: ColumnDef<Agent>[] = [
     {
       accessorKey: "name",
       header: tCommon("name"),
@@ -85,4 +86,5 @@ export function getColumns(
       },
     },
   ];
+  return canManage ? columns : columns.filter((column) => column.id !== "actions");
 }

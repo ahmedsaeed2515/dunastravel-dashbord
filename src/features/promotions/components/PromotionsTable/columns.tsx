@@ -41,9 +41,10 @@ export function getColumns(
   onEdit: (promotion: Promotion) => void,
   onDelete: (promotion: Promotion) => void,
   tPromotions: (key: string) => string,
-  tCommon: (key: string) => string
+  tCommon: (key: string) => string,
+  canManage: boolean,
 ): ColumnDef<Promotion>[] {
-  return [
+  const columns: ColumnDef<Promotion>[] = [
     {
       accessorKey: "code",
       header: tPromotions("promoCode"),
@@ -133,4 +134,5 @@ export function getColumns(
       },
     },
   ];
+  return canManage ? columns : columns.filter((column) => column.id !== "actions");
 }

@@ -24,7 +24,7 @@ export interface CreateAgentPayload {
   name: string;
   email: string;
   phone?: string;
-  password?: string;
+  password: string;
   companyId?: string;
 }
 
