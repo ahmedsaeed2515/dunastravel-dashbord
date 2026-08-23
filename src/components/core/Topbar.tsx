@@ -64,7 +64,7 @@ export const Topbar = memo(function Topbar() {
   const isDark = theme === "dark";
 
   const userInitials = user?.name
-    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
+    ? user.name.split(" ").map((n: string) => n[0]).join("").toUpperCase().slice(0, 2)
     : "AD";
 
   return (

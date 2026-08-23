@@ -27,7 +27,11 @@ export default function LoginPage() {
 
     try {
       await authApi.login({ email, password });
-      router.push("/dashboard");
+      const currentPath = window.location.pathname;
+      const targetPath = currentPath.includes('/login') 
+        ? currentPath.replace(/\/login.*$/, '/dashboard') 
+        : '/ar/dashboard';
+      window.location.href = targetPath;
     } catch (err: any) {
       setError(err.message || tAuth("loginError"));
     } finally {

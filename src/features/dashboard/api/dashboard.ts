@@ -6,6 +6,19 @@ import {
 } from "../types";
 
 export const dashboardApi = {
+  getOverview: async (filters?: DashboardFilters): Promise<{
+    summary: ExecutiveSummary;
+    revenueTrend: RevenueTrendItem[];
+    bookingsTrend: BookingsTrendItem[];
+    tourPerformance: { all: TourPerformanceItem[]; rankings: TourRankings };
+    actionCenter: ActionAlert[];
+    recentBookings: RecentBookingItem[];
+    recentActivity: RecentActivityItem[];
+  }> => {
+    const res: any = await apiClient.get("/admin/dashboard/overview", { params: filters });
+    return res?.data ?? res;
+  },
+
   getSummary: async (filters?: DashboardFilters): Promise<ExecutiveSummary> => {
     const res: any = await apiClient.get("/admin/dashboard/summary", { params: filters });
     return res?.data ?? res;

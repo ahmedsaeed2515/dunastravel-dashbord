@@ -23,9 +23,10 @@ export function useAuth() {
 
   const loginMutation = useMutation({
     mutationFn: (credentials: LoginPayload) => authApi.login(credentials),
-    onSuccess: (data) => {
-      if (data?.user) {
-        queryClient.setQueryData(queryKeys.auth.me(), data.user);
+    onSuccess: (data: any) => {
+      const userData = data?.user || data;
+      if (userData && userData.id) {
+        queryClient.setQueryData(queryKeys.auth.me(), userData);
       }
       queryClient.invalidateQueries({ queryKey: queryKeys.auth.me() });
     },

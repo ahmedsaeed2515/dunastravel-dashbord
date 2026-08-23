@@ -15,48 +15,30 @@ const defaultAdminUser: UserSession = {
 
 export const authApi = {
   login: async (credentials: LoginPayload): Promise<{ user: UserSession; csrfToken?: string }> => {
-    try {
-      clearCsrfToken();
-      const res: any = await apiClient.post('/auth/login', credentials);
-      if (res && typeof res === 'object' && res.csrfToken && typeof res.csrfToken === 'string') {
-        setCsrfToken(res.csrfToken);
-      }
-      return res;
-    } catch {
-      return {
-        user: defaultAdminUser,
-        csrfToken: "mock-csrf-token-12345"
-      };
+    clearCsrfToken();
+    const res: any = await apiClient.post('/auth/login', credentials);
+    if (res && typeof res === 'object' && res.csrfToken && typeof res.csrfToken === 'string') {
+      setCsrfToken(res.csrfToken);
     }
+    return res;
   },
   logout: async (): Promise<{ message: string }> => {
     try {
       return await apiClient.post('/auth/logout', {});
-    } catch {
-      return { message: "Logged out" };
     } finally {
       clearCsrfToken();
     }
   },
   getMe: async (): Promise<UserSession> => {
-    try {
-      return await apiClient.get('/auth/me');
-    } catch {
-      return defaultAdminUser;
-    }
+    const res: any = await apiClient.get('/auth/me');
+    return res?.user || res;
   },
   getCsrfToken: async (): Promise<{ token: string }> => {
-    try {
-      return await apiClient.get('/auth/csrf');
-    } catch {
-      return { token: "mock-csrf-token-12345" };
-    }
+    const res: any = await apiClient.get('/auth/csrf');
+    return res?.data || res;
   },
   refreshToken: async (): Promise<{ accessToken?: string }> => {
-    try {
-      return await apiClient.post('/auth/refresh', {});
-    } catch {
-      return { accessToken: "mock-access-token" };
-    }
+    const res: any = await apiClient.post('/auth/refresh', {});
+    return res?.data || res;
   },
 };
