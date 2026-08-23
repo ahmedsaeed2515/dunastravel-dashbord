@@ -1,7 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import {
   DashboardFilters, ExecutiveSummary, RevenueTrendItem, BookingsTrendItem,
-  TourPerformanceItem, TourRankings, InterfacePerformanceItem, ConversionFunnelData,
+  TopDestinationItem, TourPerformanceItem, TourRankings, InterfacePerformanceItem, ConversionFunnelData,
   ActionAlert, RecentBookingItem, RecentActivityItem
 } from "../types";
 
