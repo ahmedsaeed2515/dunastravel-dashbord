@@ -338,7 +338,7 @@ export default function CommunicationsPage() {
                           )}
                         </TableCell>
                         <TableCell className="text-xs font-mono">
-                          {log.attempts || 1}
+                          {log.attempts ?? 0}
                         </TableCell>
                         <TableCell className="text-xs text-muted-foreground font-mono">
                           {new Date(log.createdAt).toLocaleString()}

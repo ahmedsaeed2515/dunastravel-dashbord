@@ -157,11 +157,11 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
                       <span className="text-muted-foreground text-xs block">Total Capacity</span>
-                      <span className="font-medium">{tour.capacity || 30} Seats</span>
+                      <span className="font-medium">{tour.capacity ?? "—"} Seats</span>
                     </div>
                     <div>
                       <span className="text-muted-foreground text-xs block">Remaining Seats</span>
-                      <span className="font-medium text-emerald-600 font-semibold">{tour.remainingSeats || 30} Seats</span>
+                      <span className="font-medium text-emerald-600 font-semibold">{tour.remainingSeats ?? "—"} Seats</span>
                     </div>
                   </div>
                 </div>

@@ -16,6 +16,7 @@ import {
   useRecentActivity
 } from "@/features/dashboard/hooks/useDashboardData";
 import { DashboardFilters } from "@/features/dashboard/types";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 
 export default function AdminDashboardPage() {
   const [filters, setFilters] = useState<DashboardFilters>({ preset: "all" });
@@ -24,31 +25,36 @@ export default function AdminDashboardPage() {
     data: summary, 
     isLoading: isLoadingSummary, 
     refetch: refetchSummary, 
-    isRefetching: isRefetchingSummary 
+    isRefetching: isRefetchingSummary,
+    isError: isSummaryError
   } = useDashboardSummary(filters);
 
   const { 
     data: revenueTrend, 
     isLoading: isLoadingRevenue,
-    refetch: refetchRevenue 
+    refetch: refetchRevenue,
+    isError: isRevenueError
   } = useRevenueTrend(filters);
 
   const { 
     data: actionAlerts, 
     isLoading: isLoadingAlerts,
-    refetch: refetchAlerts 
+    refetch: refetchAlerts,
+    isError: isAlertsError
   } = useActionCenter(filters);
 
   const { 
     data: recentBookings, 
     isLoading: isLoadingRecentBookings,
-    refetch: refetchBookings 
+    refetch: refetchBookings,
+    isError: isBookingsError
   } = useRecentBookings();
 
   const { 
     data: recentActivity, 
     isLoading: isLoadingActivity,
-    refetch: refetchActivity 
+    refetch: refetchActivity,
+    isError: isActivityError
   } = useRecentActivity();
 
   const handleRefreshAll = () => {
@@ -58,6 +64,17 @@ export default function AdminDashboardPage() {
     refetchBookings();
     refetchActivity();
   };
+
+  const hasBackendError = isSummaryError || isRevenueError || isAlertsError || isBookingsError || isActivityError;
+
+  if (hasBackendError) {
+    return (
+      <div className="space-y-6 pb-12">
+        <DashboardHeader filters={filters} onFilterChange={setFilters} onRefresh={handleRefreshAll} isRefreshing={isRefetchingSummary} />
+        <QueryErrorState message="تعذر تحميل بيانات لوحة التحكم من الباك إند. لا يتم عرض أرقام بديلة أو وهمية." onRetry={handleRefreshAll} />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-200">

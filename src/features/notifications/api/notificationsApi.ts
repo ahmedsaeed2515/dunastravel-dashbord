@@ -32,17 +32,17 @@ export const notificationsApi = {
   getNotifications: async (params?: { page?: number; limit?: number; category?: string; isRead?: string }): Promise<ListInAppNotificationsResponse> => {
     const response: any = await apiClient.get("/in-app-notifications", { params });
     const data = response?.data || response;
-    return {
-      items: Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [],
-      unreadCount: typeof data?.unreadCount === "number" ? data.unreadCount : 0,
-      meta: data?.meta || { total: 0, page: 1, limit: 20, totalPages: 1 },
-    };
+    if (!data || !Array.isArray(data.items) || typeof data.unreadCount !== "number" || !data.meta) {
+      throw new Error("Invalid notifications response");
+    }
+    return data;
   },
 
   getUnreadCount: async (): Promise<number> => {
     const response: any = await apiClient.get("/in-app-notifications/unread-count");
     const data = response?.data || response;
-    return typeof data?.unreadCount === "number" ? data.unreadCount : 0;
+    if (typeof data?.unreadCount !== "number") throw new Error("Invalid unread count response");
+    return data.unreadCount;
   },
 
   markAsRead: async (id: string): Promise<InAppNotificationItem> => {

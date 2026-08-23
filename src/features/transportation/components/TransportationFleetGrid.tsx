@@ -99,12 +99,7 @@ export function TransportationFleetGrid({ fleet, isLoading }: TransportationFlee
             >
               <div>
                 <div className="h-44 bg-muted relative overflow-hidden bg-slate-900">
-                  <img 
-                    src={item.image || 'https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80'} 
-                    alt={item.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
+                  {item.image ? <img src={item.image} alt={item.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" loading="lazy" /> : <div className="flex h-full items-center justify-center text-muted-foreground"><Bus className="h-10 w-10" /></div>}
                   <div className="absolute top-3 end-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-purple-300 border border-purple-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md uppercase font-mono">
                     {item.category}
                   </div>

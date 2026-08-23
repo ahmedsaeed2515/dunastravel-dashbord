@@ -47,7 +47,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         city: tour.city || "",
         basePriceUsd: tour.basePriceUsd !== undefined && tour.basePriceUsd !== null ? String(tour.basePriceUsd) : "0",
         currency: tour.currency || "USD",
-        capacity: tour.capacity || 30,
+        capacity: tour.capacity ?? 0,
         status: tour.status || "PUBLISHED",
         isActive: tour.isActive ?? true,
         isFeatured: tour.isFeatured ?? false,
@@ -415,8 +415,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                   <Input
                     type="number"
                     min="1"
-                    value={formData.capacity || 30}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 30 })}
+                    value={formData.capacity ?? 0}
+                    onChange={(e) => setFormData({ ...formData, capacity: Number(e.target.value) })}
                   />
                 </div>
               </div>

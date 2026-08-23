@@ -1,29 +1,29 @@
 "use client";
 
-import { usePackages } from "@/features/packages/hooks/usePackages";
+import { useParams } from "next/navigation";
+import { PageHeader } from "@/components/shared/PageHeader";
+import { QueryErrorState } from "@/components/shared/QueryErrorState";
 import { PackagesGrid } from "@/features/packages/components/PackagesGrid";
 import { CreatePackageDialog } from "@/features/packages/components/CreatePackageDialog";
-import { PageHeader } from "@/components/shared/PageHeader";
-import { useParams } from "next/navigation";
+import { usePackages } from "@/features/packages/hooks/usePackages";
 
 export default function PackagesPage() {
   const params = useParams();
   const isAr = params?.locale === "ar";
-  const { data: packages = [], isLoading } = usePackages();
+  const query = usePackages();
 
   return (
     <div className="space-y-6 pb-16 animate-in fade-in duration-300">
       <PageHeader
-        title={isAr ? "إدارة البرامج والباكدجات السياحية" : "Holiday Packages & Bundles Manager"}
-        description={
-          isAr
-            ? "إدارة رحلات الدول المتعددة، برامج شهر العسل والبرامج السياحية الخاصة مع المشتملات والأسعار."
-            : "Manage multi-destination itineraries, seasonal honeymoon programs, and bespoke holiday packages."
-        }
+        title={isAr ? "إدارة البرامج والباقات السياحية" : "Holiday Packages & Bundles"}
+        description={isAr ? "الباقات المحفوظة فعلياً في الباك إند." : "Packages stored in the backend."}
         actions={<CreatePackageDialog />}
       />
-
-      <PackagesGrid packages={packages} isLoading={isLoading} />
+      {query.isError ? (
+        <QueryErrorState message={isAr ? "تعذر تحميل الباقات من الباك إند." : "Packages could not be loaded from the backend."} onRetry={() => void query.refetch()} />
+      ) : (
+        <PackagesGrid packages={query.data ?? []} isLoading={query.isLoading} />
+      )}
     </div>
   );
 }

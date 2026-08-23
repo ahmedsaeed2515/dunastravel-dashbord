@@ -76,7 +76,7 @@ export const columns: ColumnDef<Inquiry>[] = [
     header: "Party Size",
     cell: ({ row }) => {
       const item = row.original as any;
-      const count = item.numberOfTravelers || 1;
+      const count = item.numberOfTravelers ?? 0;
       return (
         <div className="flex items-center gap-1">
           <Badge variant="secondary" className="text-xs font-semibold px-2 py-0.5">

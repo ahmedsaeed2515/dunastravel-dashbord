@@ -94,7 +94,7 @@ export function PopularToursSection({ filters }: PopularToursSectionProps) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {displayTours.map((tour, idx) => {
           const title = getTourTitle(tour);
-          const heroImg = tour.heroImage || "https://images.unsplash.com/photo-1572252821128-4ef864c7ecfa?auto=format&fit=crop&w=600&q=80";
+          const heroImg = tour.heroImage;
 
           return (
             <Link key={tour.id || idx} href={`${adminRoutes.tours}/${tour.id}`} className="block group">
@@ -102,11 +102,7 @@ export function PopularToursSection({ filters }: PopularToursSectionProps) {
                 <div>
                   {/* Hero Image */}
                   <div className="relative h-36 w-full overflow-hidden bg-slate-900">
-                    <img
-                      src={heroImg}
-                      alt={title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90 group-hover:opacity-100"
-                    />
+                    {heroImg ? <img src={heroImg} alt={title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90 group-hover:opacity-100" /> : <div className="h-full w-full bg-muted" />}
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/20" />
                     
                     {/* Rank Badge */}

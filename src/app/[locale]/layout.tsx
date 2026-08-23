@@ -21,8 +21,6 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/providers/query-provider";
 import { Toaster } from "@/components/ui/sonner";
 
-import { DataProvider } from '@/context/DataContext';
-
 export function generateStaticParams() {
   return routing.locales.map((locale) => ({ locale }));
 }
@@ -55,11 +53,9 @@ export default async function LocaleLayout({
               disableTransitionOnChange
             >
               <QueryProvider>
-                <DataProvider>
-                  <TooltipProvider>
-                    {children}
-                  </TooltipProvider>
-                </DataProvider>
+                <TooltipProvider>
+                  {children}
+                </TooltipProvider>
               </QueryProvider>
               <Toaster position={dir === 'rtl' ? 'top-left' : 'top-right'} richColors />
             </ThemeProvider>

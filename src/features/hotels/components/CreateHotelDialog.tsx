@@ -29,14 +29,14 @@ export function CreateHotelDialog({ hotelToEdit, trigger, open: controlledOpen, 
 
   const [form, setForm] = useState<Partial<HotelItem>>(() => ({
     name: hotelToEdit?.name || "",
-    destination: hotelToEdit?.destination || "egypt",
-    city: hotelToEdit?.city || "Cairo",
-    stars: hotelToEdit?.stars || 5,
-    rating: hotelToEdit?.rating || 4.9,
-    pricePerNight: hotelToEdit?.pricePerNight || 250,
-    image: hotelToEdit?.image || "https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80",
+    destination: hotelToEdit?.destination || "",
+    city: hotelToEdit?.city || "",
+    stars: hotelToEdit?.stars ?? 0,
+    rating: hotelToEdit?.rating ?? 0,
+    pricePerNight: hotelToEdit?.pricePerNight ?? 0,
+    image: hotelToEdit?.image || "",
     description: hotelToEdit?.description || "",
-    amenities: hotelToEdit?.amenities || ["Luxury Spa", "Fine Dining", "Concierge"]
+    amenities: hotelToEdit?.amenities || []
   }));
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -117,7 +117,7 @@ export function CreateHotelDialog({ hotelToEdit, trigger, open: controlledOpen, 
           <div className="grid grid-cols-3 gap-3">
             <div className="space-y-1.5">
               <Label className="text-xs font-semibold">النجوم</Label>
-              <Select value={String(form.stars || 5)} onValueChange={(val) => { if (val) setForm(f => ({ ...f, stars: Number(val) })); }}>
+              <Select value={form.stars ? String(form.stars) : undefined} onValueChange={(val) => { if (val) setForm(f => ({ ...f, stars: Number(val) })); }}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="5">5 نجوم ⭐⭐⭐⭐⭐</SelectItem>

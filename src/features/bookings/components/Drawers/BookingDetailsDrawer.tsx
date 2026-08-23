@@ -143,7 +143,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                   </div>
                   <div>
                     <span className="text-muted-foreground block mb-1">{tBookings("guests")}</span>
-                    <span className="font-medium">{booking.passengerCount || 1} ({booking.passengers?.length || 0})</span>
+                    <span className="font-medium">{booking.passengerCount ?? 0} ({booking.passengers?.length ?? 0})</span>
                   </div>
                 </div>
               </div>

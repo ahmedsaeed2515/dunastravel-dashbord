@@ -8,7 +8,7 @@ export const contentApi = {
     if (response && typeof response === "object" && "data" in response && Array.isArray(response.data)) {
       return response.data;
     }
-    return [];
+    throw new Error("Invalid CMS blocks response");
   },
   getBlockByKey: async (key: string): Promise<ContentBlock> => {
     const response: any = await apiClient.get(`/admin/cms/${key}`);

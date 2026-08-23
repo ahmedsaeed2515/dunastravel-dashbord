@@ -71,11 +71,7 @@ export function PackagesGrid({ packages, isLoading }: PackagesGridProps) {
             >
               <div>
                 <div className="h-48 bg-muted relative overflow-hidden">
-                  <img 
-                    src={item.image || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80'} 
-                    alt={item.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {item.image ? <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="flex h-full items-center justify-center text-muted-foreground"><PackageIcon className="h-10 w-10" /></div>}
                   <div className="absolute top-3 right-3 flex items-center gap-1 bg-slate-950/80 backdrop-blur-sm text-blue-300 border border-blue-500/30 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md">
                     <MapPin size={10} />
                     <span>{item.destination}</span>

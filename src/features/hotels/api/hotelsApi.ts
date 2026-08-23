@@ -1,49 +1,49 @@
 import { apiClient } from "@/lib/axios";
 import { HotelItem } from "../types";
 
+function readCatalog(response: unknown): HotelItem[] {
+  const value = response as { content?: unknown; data?: { content?: unknown } | unknown };
+  const content = Array.isArray(value) ? value : Array.isArray(value?.content) ? value.content : value?.data && typeof value.data === "object" && Array.isArray((value.data as { content?: unknown }).content) ? (value.data as { content: HotelItem[] }).content : null;
+  if (!content) throw new Error("Invalid hotels catalog response");
+  return content as HotelItem[];
+}
 export const hotelsApi = {
-  getHotels: async (): Promise<HotelItem[]> => {
-    try {
-      const res: any = await apiClient.get('/admin/cms-blocks/hotels_catalog');
-      if (res?.content && Array.isArray(res.content)) return res.content;
-      if (res?.data?.content && Array.isArray(res.data.content)) return res.data.content;
-      if (res?.data && Array.isArray(res.data)) return res.data;
-      if (Array.isArray(res)) return res;
-    } catch {
-      // Return empty array on error
-    }
-    return [];
-  },
+  getHotels: async (): Promise<HotelItem[]> => readCatalog(await apiClient.get("/admin/cms-blocks/hotels_catalog")),
 
   createHotel: async (hotel: Partial<HotelItem>): Promise<HotelItem> => {
+    if (!hotel.name?.trim() || !hotel.destination?.trim() || !hotel.city?.trim() || hotel.stars == null || hotel.rating == null || hotel.pricePerNight == null) {
+      throw new Error("Hotel name, destination, city, stars, rating and price are required");
+    }
     const current = await hotelsApi.getHotels();
-    const newHotel: HotelItem = {
-      id: `htl-${Date.now()}`,
-      name: hotel.name || 'New Luxury Hotel',
-      destination: hotel.destination || 'egypt',
-      city: hotel.city || 'Cairo',
-      stars: hotel.stars || 5,
-      rating: hotel.rating || 5.0,
-      pricePerNight: hotel.pricePerNight || 200,
-      image: hotel.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80',
-      description: hotel.description || '',
-      amenities: hotel.amenities || []
+    const saved: HotelItem = {
+      id: crypto.randomUUID(),
+      name: hotel.name.trim(),
+      destination: hotel.destination.trim(),
+      city: hotel.city.trim(),
+      stars: hotel.stars,
+      rating: hotel.rating,
+      pricePerNight: hotel.pricePerNight,
+      image: hotel.image?.trim() ?? "",
+      description: hotel.description?.trim() ?? "",
+      amenities: hotel.amenities ?? [],
+      isActive: hotel.isActive ?? true,
     };
-    const updated = [newHotel, ...current];
-    await apiClient.put('/admin/cms-blocks/hotels_catalog', { content: updated });
-    return newHotel;
+    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: [saved, ...current] });
+    return saved;
   },
 
   updateHotel: async (id: string, hotel: Partial<HotelItem>): Promise<HotelItem> => {
     const current = await hotelsApi.getHotels();
-    const updated = current.map(h => h.id === id ? { ...h, ...hotel } : h);
-    await apiClient.put('/admin/cms-blocks/hotels_catalog', { content: updated });
-    return { ...hotel, id } as HotelItem;
+    const existing = current.find((item) => item.id === id);
+    if (!existing) throw new Error("Hotel not found");
+    const saved = { ...existing, ...hotel, id };
+    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: current.map((item) => item.id === id ? saved : item) });
+    return saved;
   },
 
   deleteHotel: async (id: string): Promise<void> => {
     const current = await hotelsApi.getHotels();
-    const updated = current.filter(h => h.id !== id);
-    await apiClient.put('/admin/cms-blocks/hotels_catalog', { content: updated });
-  }
+    if (!current.some((item) => item.id === id)) throw new Error("Hotel not found");
+    await apiClient.put("/admin/cms-blocks/hotels_catalog", { content: current.filter((item) => item.id !== id) });
+  },
 };

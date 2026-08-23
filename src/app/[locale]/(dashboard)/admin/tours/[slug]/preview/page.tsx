@@ -52,8 +52,8 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
   const title = tour.titleJsonb?.[previewLang] || tour.titleJsonb?.en || tour.slug;
   const subtitle = tour.subtitleJsonb?.[previewLang] || tour.subtitleJsonb?.en || "";
   const overview = tour.overviewJsonb?.[previewLang] || tour.overviewJsonb?.en || tour.descriptionJsonb?.[previewLang] || "";
-  const duration = tour.durationJsonb?.[previewLang] || tour.durationJsonb?.en || "8 Days / 7 Nights";
-  const heroImg = tour.heroImage || tour.images?.[0]?.imageUrl || "https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?w=1200";
+  const duration = tour.durationJsonb?.[previewLang] || tour.durationJsonb?.en || "";
+  const heroImg = tour.heroImage || tour.images?.[0]?.imageUrl || "";
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -137,7 +137,7 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
         >
           {/* 1. Hero Banner */}
           <div className="relative h-[360px] md:h-[480px] w-full overflow-hidden">
-            <img src={heroImg} alt={title} className="w-full h-full object-cover" />
+            {heroImg ? <img src={heroImg} alt={title} className="w-full h-full object-cover" /> : <div className="h-full w-full bg-slate-900" />}
             <div className="absolute inset-0 bg-gradient-to-t from-slate-950 via-slate-950/40 to-transparent" />
             <div className="absolute bottom-8 inset-x-8 text-center space-y-3">
               <span className="text-amber-400 text-xs font-semibold uppercase tracking-[0.2em]">

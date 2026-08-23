@@ -91,11 +91,7 @@ export function HotelsGrid({ hotels, isLoading }: HotelsGridProps) {
             >
               <div>
                 <div className="h-44 bg-muted relative overflow-hidden">
-                  <img 
-                    src={hotel.image || 'https://images.unsplash.com/photo-1566073771259-6a8506099945?auto=format&fit=crop&w=800&q=80'} 
-                    alt={hotel.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                  />
+                  {hotel.image ? <img src={hotel.image} alt={hotel.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="flex h-full items-center justify-center text-muted-foreground"><Hotel className="h-10 w-10" /></div>}
                   <div className="absolute top-3 right-3 flex items-center gap-1 bg-amber-500 text-slate-950 text-[10px] font-extrabold px-2.5 py-0.5 rounded-full shadow-md">
                     <Star size={11} className="fill-slate-950" />
                     <span>{hotel.stars} نجوم</span>

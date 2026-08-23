@@ -16,7 +16,6 @@ import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
 import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { EgyptInterfaceDrawer } from "../Drawers/EgyptInterfaceDrawer";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
@@ -44,7 +43,6 @@ import {
   RotateCcw,
   Globe,
   ArrowRightLeft,
-  Folder,
   AlertTriangle,
   RefreshCw
 } from "lucide-react";
@@ -79,7 +77,6 @@ export function ToursTable() {
   const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
 
   // Egypt Interface Drawer state
-  const [isEgyptDrawerOpen, setIsEgyptDrawerOpen] = useState(false);
   
   const queryFilters = {
     page: pagination.pageIndex + 1,
@@ -346,42 +343,6 @@ export function ToursTable() {
         </div>
       </div>
 
-      {/* 🇪🇬 Egypt Interface Folders Banner - ONLY shown when Destination is Egypt */}
-      {selectedDestination === "Egypt" && (
-        <div className="bg-linear-to-r from-amber-500/10 via-primary/10 to-amber-500/5 border border-amber-500/30 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 animate-in fade-in duration-300">
-          <div className="flex items-center gap-3">
-            <div className="p-3 bg-amber-500/20 text-amber-600 rounded-xl shrink-0 text-2xl border border-amber-500/30">
-              🇪🇬
-            </div>
-            <div>
-              <h3 className="font-bold text-base text-foreground flex items-center gap-2">
-                <span>{currentLocale === "ar" ? "واجهة مصر - ملفات الرحلات والباكدجز (Egypt Interface)" : "Egypt Interface & Folder Collections"}</span>
-                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-bold">
-                  {currentLocale === "ar" ? "منظمة في ملفين" : "2 Folders Structured"}
-                </Badge>
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {currentLocale === "ar"
-                  ? "الملف الأول: الرحلات العادية (9 رحلات) | الملف الثاني: الباكدجز والبرامج (5 باكدجز)."
-                  : "Folder 1: Standard Tours (9 tours) | Folder 2: Packages & Programs (5 packages)."}
-              </p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="default"
-              onClick={() => setIsEgyptDrawerOpen(true)}
-              className="h-10 px-4 gap-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
-            >
-              <Folder className="w-4 h-4" />
-              <span>{currentLocale === "ar" ? "استعراض ملفات واجهة مصر (الملفين)" : "Open Egypt Interface Folders"}</span>
-            </Button>
-          </div>
-        </div>
-      )}
-
       {/* Advanced Filter & Toolbar Controls */}
       <div className="bg-card border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
         <div className="flex flex-col lg:flex-row justify-between items-stretch lg:items-center gap-3">
@@ -581,10 +542,6 @@ export function ToursTable() {
         onOpenChange={setIsBulkMoveOpen}
       />
 
-      <EgyptInterfaceDrawer
-        open={isEgyptDrawerOpen}
-        onOpenChange={setIsEgyptDrawerOpen}
-      />
     </div>
   );
 }

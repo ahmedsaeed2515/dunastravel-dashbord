@@ -33,12 +33,12 @@ export function CreateTransportDialog({ vehicleToEdit, trigger, open: controlled
   const [form, setForm] = useState<Partial<TransportVehicle>>(() => ({
     name: vehicleToEdit?.name || "",
     category: vehicleToEdit?.category || "bus",
-    seats: vehicleToEdit?.seats || 48,
-    doors: vehicleToEdit?.doors || 2,
-    rating: vehicleToEdit?.rating || 4.9,
-    pricePerDay: vehicleToEdit?.pricePerDay || 300,
-    image: vehicleToEdit?.image || "https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?auto=format&fit=crop&w=800&q=80",
-    features: vehicleToEdit?.features || ["Full A/C", "Free 5G Wi-Fi", "Professional Driver"]
+    seats: vehicleToEdit?.seats ?? 0,
+    doors: vehicleToEdit?.doors ?? 0,
+    rating: vehicleToEdit?.rating ?? 0,
+    pricePerDay: vehicleToEdit?.pricePerDay ?? 0,
+    image: vehicleToEdit?.image || "",
+    features: vehicleToEdit?.features || []
   }));
 
   const [featuresStr, setFeaturesStr] = useState(() => (form.features || []).join(", "));

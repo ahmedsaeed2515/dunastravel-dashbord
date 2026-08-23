@@ -95,8 +95,8 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
 
         category: tour.category || "Multi-Country",
         basePriceUsd: parseFloat(tour.basePriceUsd || "0"),
-        capacity: tour.capacity || 30,
-        minParticipants: tour.minParticipants || 1,
+        capacity: tour.capacity ?? 0,
+        minParticipants: tour.minParticipants ?? 0,
         status: tour.status || "PUBLISHED",
         isFeatured: tour.isFeatured || false,
         country: tour.country || "",

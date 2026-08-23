@@ -30,13 +30,13 @@ export function CreatePackageDialog({ packageToEdit, trigger, open: controlledOp
   const [form, setForm] = useState<Partial<TravelPackage>>(() => ({
     title: packageToEdit?.title || "",
     slug: packageToEdit?.slug || "",
-    destination: packageToEdit?.destination || "Multi-Country",
-    duration: packageToEdit?.duration || "8 أيام / 7 ليالي",
-    price: packageToEdit?.price || 1500,
-    type: packageToEdit?.type || "Classic Holiday",
-    popular: packageToEdit?.popular ?? true,
+    destination: packageToEdit?.destination || "",
+    duration: packageToEdit?.duration || "",
+    price: packageToEdit?.price ?? 0,
+    type: packageToEdit?.type || "",
+    popular: packageToEdit?.popular ?? false,
     description: packageToEdit?.description || "",
-    image: packageToEdit?.image || "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?auto=format&fit=crop&w=800&q=80"
+    image: packageToEdit?.image || ""
   }));
 
   const handleSubmit = async (e: React.FormEvent) => {

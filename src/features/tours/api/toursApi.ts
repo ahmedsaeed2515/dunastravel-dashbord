@@ -46,7 +46,8 @@ export const toursApi = {
       `/tours/${encodeURIComponent(slug)}/availability`,
     );
     const payload = response as unknown as { availabilities?: TourAvailability[] };
-    return Array.isArray(payload.availabilities) ? payload.availabilities : [];
+    if (!Array.isArray(payload.availabilities)) throw new Error("Invalid tour availability response");
+    return payload.availabilities;
   },
 
   createTour: async (data: CreateTourPayload): Promise<{ success: boolean; slug: string }> => {

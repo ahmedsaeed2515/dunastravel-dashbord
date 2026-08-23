@@ -177,7 +177,7 @@ export default function AiAgentsPage() {
 
   // Feedback State
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
-  const [feedbackSummary, setFeedbackSummary] = useState({ total: 0, positive: 0, negative: 0, satisfactionRate: 100 });
+  const [feedbackSummary, setFeedbackSummary] = useState({ total: 0, positive: 0, negative: 0, satisfactionRate: 0 });
   const [loadingFeedback, setLoadingFeedback] = useState(false);
 
   // Load Initial Data
@@ -1384,8 +1384,8 @@ export default function AiAgentsPage() {
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Traveler Satisfaction</p>
-                  <h3 className="text-2xl font-bold mt-1 text-gold-400">{analyticsData?.summary?.satisfactionRate || 100}%</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.feedbackSummary?.positive || 0} positive ratings</p>
+                  <h3 className="text-2xl font-bold mt-1 text-gold-400">{analyticsData?.summary?.satisfactionRate ?? "—"}%</h3>
+                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.feedbackSummary?.positive ?? 0} positive ratings</p>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-400">
                   <ThumbsUp className="h-5 w-5" />
