@@ -291,9 +291,9 @@ export const AppSidebar = memo(function AppSidebar() {
 
       </SidebarContent>
 
-      {/* Footer — Dunas Travel Suite Info Box & Profile */}
+      {/* Footer — Profile, Settings & Logout */}
       <SidebarFooter className="border-t border-border p-3 bg-card">
-        <SidebarMenu className="space-y-1 mb-2">
+        <SidebarMenu className="space-y-1">
           {/* Profile */}
           <NavItem href={adminRoutes.profile} icon={User} label={tNav("profile")} badge="Admin" />
 
@@ -314,17 +314,6 @@ export const AppSidebar = memo(function AppSidebar() {
             </SidebarMenuButton>
           </SidebarMenuItem>
         </SidebarMenu>
-
-        {/* Dunas Travel Suite Info Box */}
-        <div className="p-3.5 bg-muted/70 border border-border rounded-2xl space-y-1.5">
-          <div className="flex items-center gap-2 text-amber-500 dark:text-amber-400">
-            <Sparkles size={16} />
-            <span className="text-xs font-extrabold">Dunas Travel Suite 👑</span>
-          </div>
-          <p className="text-[11px] font-semibold text-muted-foreground leading-relaxed">
-            Attia Yamany • {tNav("generalManager") || (pathname.startsWith('/ar') ? "المدير العام" : "General Manager")}
-          </p>
-        </div>
       </SidebarFooter>
     </Sidebar>
   );
