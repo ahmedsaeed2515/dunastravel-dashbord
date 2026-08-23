@@ -155,3 +155,12 @@ export interface TourStats {
   seatsSold: number;
   occupancyRate: string;
 }
+
+export interface TourAvailability {
+  id: string;
+  tourId: string;
+  date: string;
+  totalCapacity: number;
+  remainingSeats: number;
+  status: 'AVAILABLE' | 'LIMITED' | 'SOLD_OUT' | string;
+}

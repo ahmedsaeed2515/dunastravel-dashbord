@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/axios";
-import { Booking, BookingQueryFilters, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload } from "../types";
+import { Booking, BookingQueryFilters, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload, CreateManualBookingPayload } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
 
 export const bookingsApi = {
@@ -13,8 +13,10 @@ export const bookingsApi = {
     return response as any;
   },
 
-  createManualBooking: async (data: { tourId: string, userId: string, passengers: any[], manualAmountUsd?: number }): Promise<Booking> => {
-    const response = await apiClient.post<Booking>(`/admin/bookings`, data);
+  createManualBooking: async (data: CreateManualBookingPayload): Promise<Booking> => {
+    const response = await apiClient.post<Booking>(`/admin/bookings`, data, {
+      headers: { 'Idempotency-Key': crypto.randomUUID() },
+    });
     return response as any;
   },
 

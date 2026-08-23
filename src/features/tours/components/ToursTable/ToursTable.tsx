@@ -44,7 +44,9 @@ import {
   RotateCcw,
   Globe,
   ArrowRightLeft,
-  Folder
+  Folder,
+  AlertTriangle,
+  RefreshCw
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -103,7 +105,7 @@ export function ToursTable() {
     setPagination({ pageIndex: 0, pageSize: 12 });
   };
 
-  const { data, isLoading } = useTours(queryFilters);
+  const { data, isLoading, isError, error, refetch } = useTours(queryFilters);
   const { data: stats } = useTourStats();
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
@@ -312,7 +314,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.featuredTours ?? "8"}
+            {stats?.featuredTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -325,7 +327,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-emerald-600">
-            {stats?.occupancyRate ? `${stats.occupancyRate}%` : "68%"}
+            {stats?.occupancyRate ? `${stats.occupancyRate}%` : "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -338,7 +340,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.draftTours ?? "3"}
+            {stats?.draftTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -513,7 +515,23 @@ export function ToursTable() {
       </div>
 
       {/* Body View Rendering */}
-      {isLoading ? (
+      {isError ? (
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl border border-destructive/40 bg-destructive/10 px-6 py-16 text-center">
+          <AlertTriangle className="h-10 w-10 text-destructive" />
+          <div>
+            <h3 className="font-bold text-foreground">
+              {currentLocale === "ar" ? "تعذر تحميل الرحلات الحقيقية" : "Unable to load live tours"}
+            </h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              {error instanceof Error ? error.message : tCommon("error")}
+            </p>
+          </div>
+          <Button type="button" variant="outline" onClick={() => refetch()} className="gap-2">
+            <RefreshCw className="h-4 w-4" />
+            {currentLocale === "ar" ? "إعادة المحاولة" : "Retry"}
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>

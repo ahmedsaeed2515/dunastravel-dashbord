@@ -107,3 +107,21 @@ export interface AddAttachmentPayload {
   file: File;
   documentType: string;
 }
+
+export interface CreateManualBookingPayload {
+  tourId: string;
+  availabilityId: string;
+  arrivalDate: string;
+  departureDate?: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  userId?: string;
+  adults: number;
+  children: number;
+  infants: number;
+  passengers: Array<{
+    passengerType: 'ADULT' | 'CHILD' | 'INFANT';
+    fullName: string;
+  }>;
+}

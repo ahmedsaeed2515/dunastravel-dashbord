@@ -7,6 +7,7 @@ import {
   UpsertPassengersPayload,
   AssignBookingPayload,
   BulkUpdateBookingsPayload,
+  CreateManualBookingPayload,
 } from "../types";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
@@ -47,12 +48,7 @@ export function useUpdateBooking() {
 export function useCreateManualBooking() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      tourId: string;
-      userId: string;
-      passengers: unknown[];
-      manualAmountUsd?: number;
-    }) => bookingsApi.createManualBooking(data),
+    mutationFn: (data: CreateManualBookingPayload) => bookingsApi.createManualBooking(data),
     onSuccess: () => {
       toast.success("Manual booking created successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });

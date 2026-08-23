@@ -29,6 +29,14 @@ export function useTour(slug: string) {
 
 export const useTourBySlug = useTour;
 
+export function useTourAvailability(slug: string) {
+  return useQuery({
+    queryKey: [...queryKeys.tours.detail(slug), 'availability'],
+    queryFn: () => toursApi.getAvailability(slug),
+    enabled: Boolean(slug),
+  });
+}
+
 export function useCreateTour() {
   const queryClient = useQueryClient();
   return useMutation({
