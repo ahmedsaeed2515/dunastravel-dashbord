@@ -71,15 +71,15 @@ function convertTourToTripModel(tour: Tour): TripModel {
 
   if (destId === 'egypt') {
     if (cat.includes('nile') || slug.includes('nile') || title.includes('نيل') || title.includes('كروز')) {
-      packageId = 'eg-nile-cruises';
-    } else if (cat.includes('beach') || slug.includes('sharm') || slug.includes('hurghada') || title.includes('شرم') || title.includes('غردقة')) {
-      packageId = 'eg-red-sea';
+      packageId = 'egypt-nile-cruise';
+    } else if (cat.includes('honeymoon') || slug.includes('honeymoon') || title.includes('عسل')) {
+      packageId = 'egypt-honeymoon';
     } else if (cat.includes('luxury') || cat.includes('vip') || slug.includes('luxury') || title.includes('فاخر')) {
-      packageId = 'eg-luxury';
-    } else if (cat.includes('short') || cat.includes('day') || slug.includes('4d') || slug.includes('express') || title.includes('سريعة') || title.includes('يوم')) {
-      packageId = 'eg-short-breaks';
+      packageId = 'egypt-luxury-vip';
+    } else if (cat.includes('desert') || cat.includes('adventure') || slug.includes('desert') || title.includes('صحراء') || title.includes('مغامرة')) {
+      packageId = 'egypt-desert-adventure';
     } else {
-      packageId = 'eg-classic';
+      packageId = 'egypt-classic';
     }
   }
 
