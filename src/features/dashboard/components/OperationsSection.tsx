@@ -3,7 +3,6 @@
 import { useDashboardMetrics } from "../hooks/useDashboardMetrics";
 import { Timeline, TimelineItem } from "@/components/shared/ui/Timeline";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { formatDistanceToNow } from "date-fns";
 import { AlertOctagon, MailWarning } from "lucide-react";
 import { BeautifulEmptyState } from "@/components/shared/ui/BeautifulEmptyState";
 import { useTranslations } from "next-intl";
@@ -11,6 +10,7 @@ import { useTranslations } from "next-intl";
 export function OperationsSection() {
   const { data } = useDashboardMetrics();
   const tDashboard = useTranslations("dashboard");
+  const failedNotificationsCount = data?.general.operational.failedNotificationsCount ?? 0;
 
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -34,17 +34,14 @@ export function OperationsSection() {
           <CardTitle>{tDashboard("systemActivity")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {data?.general?.recentFailedNotifications?.length ? (
+          {failedNotificationsCount > 0 ? (
             <Timeline>
-              {data.general.recentFailedNotifications.map((log: any, idx: number) => (
-                <TimelineItem
-                  key={log.id || idx}
-                  icon={<AlertOctagon className="w-4 h-4 text-destructive" />}
-                  title={`Failed: ${log.subject}`}
-                  description={`Recipient: ${log.recipient}`}
-                  time={formatDistanceToNow(new Date(log.createdAt), { addSuffix: true })}
-                />
-              ))}
+              <TimelineItem
+                icon={<AlertOctagon className="w-4 h-4 text-destructive" />}
+                title="Failed notifications"
+                description={`${failedNotificationsCount} notification delivery failure${failedNotificationsCount === 1 ? "" : "s"} require attention.`}
+                time="Current"
+              />
             </Timeline>
           ) : (
             <BeautifulEmptyState

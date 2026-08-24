@@ -16,7 +16,6 @@ import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
 import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { EgyptInterfaceDrawer } from "../Drawers/EgyptInterfaceDrawer";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
@@ -43,8 +42,7 @@ import {
   X,
   RotateCcw,
   Globe,
-  ArrowRightLeft,
-  Folder
+  ArrowRightLeft
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +56,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
+import Link from "next/link";
 
 export function ToursTable() {
   const tTours = useTranslations("tours");
@@ -76,9 +75,6 @@ export function ToursTable() {
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
   const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
 
-  // Egypt Interface Drawer state
-  const [isEgyptDrawerOpen, setIsEgyptDrawerOpen] = useState(false);
-  
   const queryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
@@ -169,9 +165,9 @@ export function ToursTable() {
   };
 
   const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
-  const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
-  const totalCount: number = (data as any)?.meta?.total ?? (data as any)?.total ?? (Array.isArray(data) ? data.length : (data?.data?.length || 0));
-  const overallTotal: number = stats?.totalTours ? Number(stats.totalTours) : totalCount;
+  const toursList: Tour[] = data?.data ?? [];
+  const totalCount: number = data?.meta?.total ?? 0;
+  const overallTotal: number | null = stats?.totalTours ?? null;
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -282,11 +278,11 @@ export function ToursTable() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold font-mono text-foreground">
-              {hasActiveFilters ? totalCount : overallTotal}
+              {hasActiveFilters ? totalCount : (overallTotal ?? "—")}
             </span>
             {hasActiveFilters && (
               <span className="text-xs text-muted-foreground font-medium">
-                / {overallTotal} total
+                / {overallTotal ?? "—"} total
               </span>
             )}
           </div>
@@ -297,7 +293,7 @@ export function ToursTable() {
               </span>
             ) : (
               <span className="font-semibold text-foreground">
-                {stats?.publishedTours ?? overallTotal} {tDashboard("publishedTours")}
+                {(stats?.publishedTours ?? "—")} {tDashboard("publishedTours")}
               </span>
             )}
           </p>
@@ -312,7 +308,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.featuredTours ?? "8"}
+            {stats?.featuredTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -325,7 +321,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-emerald-600">
-            {stats?.occupancyRate ? `${stats.occupancyRate}%` : "68%"}
+            {stats?.occupancyRate === undefined || stats.occupancyRate === null ? "—" : `${stats.occupancyRate}%`}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -338,7 +334,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.draftTours ?? "3"}
+            {stats?.draftTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -353,29 +349,27 @@ export function ToursTable() {
             </div>
             <div>
               <h3 className="font-bold text-base text-foreground flex items-center gap-2">
-                <span>{currentLocale === "ar" ? "واجهة مصر - ملفات الرحلات والباكدجز (Egypt Interface)" : "Egypt Interface & Folder Collections"}</span>
+                <span>{currentLocale === "ar" ? "واجهة مصر والبرامج المرتبطة" : "Egypt destination & related programs"}</span>
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-bold">
-                  {currentLocale === "ar" ? "منظمة في ملفين" : "2 Folders Structured"}
+                  {currentLocale === "ar" ? "مصدر بيانات حقيقي" : "Persisted data"}
                 </Badge>
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {currentLocale === "ar"
-                  ? "الملف الأول: الرحلات العادية (9 رحلات) | الملف الثاني: الباكدجز والبرامج (5 باكدجز)."
-                  : "Folder 1: Standard Tours (9 tours) | Folder 2: Packages & Programs (5 packages)."}
+                  ? "أدر المحتوى، ترتيب الرحلات، الظهور، والترجمات من واجهات الوجهات المحفوظة."
+                  : "Manage content, tour order, visibility, and translations from persisted destination interfaces."}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="default"
-              onClick={() => setIsEgyptDrawerOpen(true)}
-              className="h-10 px-4 gap-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+            <Link
+              href={`/${currentLocale}/admin/destinations`}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-600 px-4 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700"
             >
-              <Folder className="w-4 h-4" />
-              <span>{currentLocale === "ar" ? "استعراض ملفات واجهة مصر (الملفين)" : "Open Egypt Interface Folders"}</span>
-            </Button>
+              <Globe className="w-4 h-4" />
+              <span>{currentLocale === "ar" ? "فتح إدارة الوجهات" : "Open destination management"}</span>
+            </Link>
           </div>
         </div>
       )}
@@ -531,7 +525,7 @@ export function ToursTable() {
           data={toursList}
           isLoading={isLoading}
           renderToolbarActions={renderToolbarActions}
-          pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
+          pageCount={data?.meta?.totalPages ?? 0}
           pagination={pagination}
           onPaginationChange={setPagination}
           manualPagination={true}
@@ -563,10 +557,6 @@ export function ToursTable() {
         onOpenChange={setIsBulkMoveOpen}
       />
 
-      <EgyptInterfaceDrawer
-        open={isEgyptDrawerOpen}
-        onOpenChange={setIsEgyptDrawerOpen}
-      />
     </div>
   );
 }

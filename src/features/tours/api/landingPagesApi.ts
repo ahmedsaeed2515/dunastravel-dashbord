@@ -2,6 +2,8 @@
 import { apiClient } from "@/lib/axios";
 import { PaginatedResponse } from "@/lib/api-types";
 
+export type LandingPageJsonValue = string | number | boolean | null | LandingPageJsonValue[] | { [key: string]: LandingPageJsonValue };
+
 export interface TourLandingPage {
   id: string;
   slug: string;
@@ -15,7 +17,7 @@ export interface TourLandingPage {
   seoTitleJsonb?: Record<string, string> | null;
   seoDescriptionJsonb?: Record<string, string> | null;
   seoKeywordsJsonb?: Record<string, string> | null;
-  sectionsJsonb?: any;
+  sectionsJsonb?: LandingPageJsonValue | null;
   status: string;
   isActive: boolean;
   sortOrder: number;
@@ -55,77 +57,87 @@ export interface LandingPageFilters {
   isActive?: boolean;
 }
 
+export type LandingPageStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | "INACTIVE";
+export type LandingPageType = "DESTINATION" | "THEME" | "COLLECTION";
+
+export interface LandingPageMutationPayload {
+  /** Version captured when the editor opened; rejected when stale. */
+  expectedUpdatedAt?: string;
+  slug?: string;
+  type?: LandingPageType;
+  titleJsonb?: Record<string, string>;
+  subtitleJsonb?: Record<string, string> | null;
+  descriptionJsonb?: Record<string, string> | null;
+  briefJsonb?: Record<string, string> | null;
+  heroImageUrl?: string | null;
+  heroVideoUrl?: string | null;
+  seoTitleJsonb?: Record<string, string> | null;
+  seoDescriptionJsonb?: Record<string, string> | null;
+  seoKeywordsJsonb?: Record<string, string> | null;
+  sectionsJsonb?: LandingPageJsonValue | null;
+  status?: LandingPageStatus;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
 export const landingPagesApi = {
   getLandingPages: async (filters?: LandingPageFilters): Promise<PaginatedResponse<TourLandingPage>> => {
-    const response = await apiClient.get<PaginatedResponse<TourLandingPage>>("/admin/tour-landing-pages", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<TourLandingPage>, PaginatedResponse<TourLandingPage>>("/admin/tour-landing-pages", { params: filters });
   },
 
   getLandingPageBySlug: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.get<TourLandingPage>(`/admin/tour-landing-pages/${slug}`);
-    return response as any;
+    return apiClient.get<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}`);
   },
 
-  createLandingPage: async (data: Partial<TourLandingPage>): Promise<TourLandingPage> => {
-    const response = await apiClient.post<TourLandingPage>("/admin/tour-landing-pages", data);
-    return response as any;
+  createLandingPage: async (data: LandingPageMutationPayload): Promise<TourLandingPage> => {
+    return apiClient.post<TourLandingPage, TourLandingPage>("/admin/tour-landing-pages", data);
   },
 
-  updateLandingPage: async (slug: string, data: Partial<TourLandingPage>): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}`, data);
-    return response as any;
+  updateLandingPage: async (slug: string, data: LandingPageMutationPayload): Promise<TourLandingPage> => {
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}`, data);
   },
 
   publishLandingPage: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/publish`);
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/publish`);
   },
 
   unpublishLandingPage: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/unpublish`);
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/unpublish`);
   },
 
   activateLandingPage: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/activate`);
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/activate`);
   },
 
   deactivateLandingPage: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/deactivate`);
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/deactivate`);
   },
 
   archiveLandingPage: async (slug: string): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/archive`);
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/archive`);
   },
 
   deleteLandingPage: async (slug: string): Promise<void> => {
     await apiClient.delete(`/admin/tour-landing-pages/${slug}`);
   },
 
-  reorderLandingPages: async (items: { id: string; sortOrder: number }[]): Promise<any> => {
-    const response = await apiClient.patch("/admin/tour-landing-pages/reorder", { items });
-    return response as any;
+  reorderLandingPages: async (items: { id: string; sortOrder: number }[]): Promise<{ success: true; count: number }> => {
+    return apiClient.patch<{ success: true; count: number }, { success: true; count: number }>("/admin/tour-landing-pages/reorder", { items });
   },
 
   attachTours: async (slug: string, payload: { tourIds: string[]; isFeatured?: boolean; isVisible?: boolean }): Promise<TourLandingPage> => {
-    const response = await apiClient.post<TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours`, payload);
-    return response as any;
+    return apiClient.post<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours`, payload);
   },
 
   detachTour: async (slug: string, tourId: string): Promise<void> => {
     await apiClient.delete(`/admin/tour-landing-pages/${slug}/tours/${tourId}`);
   },
 
-  updateTourRelation: async (slug: string, tourId: string, payload: { sortOrder?: number; isFeatured?: boolean; isVisible?: boolean }): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/${tourId}`, payload);
-    return response as any;
+  updateTourRelation: async (slug: string, tourId: string, payload: { sortOrder?: number; isFeatured?: boolean; isVisible?: boolean; customBadge?: Record<string, string> }): Promise<TourLandingPage> => {
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/${tourId}`, payload);
   },
 
   reorderToursInLandingPage: async (slug: string, items: { tourId: string; sortOrder: number }[]): Promise<TourLandingPage> => {
-    const response = await apiClient.patch<TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/reorder`, { items });
-    return response as any;
+    return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/reorder`, { items });
   },
 };

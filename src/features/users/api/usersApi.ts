@@ -6,23 +6,19 @@ import { UserFormValues } from "../schemas/user.schema";
 
 export const usersApi = {
   getUsers: async (filters: UserQueryFilters): Promise<PaginatedResponse<User>> => {
-    const response = await apiClient.get<PaginatedResponse<User>>("/admin/users", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<User>, PaginatedResponse<User>>("/admin/users", { params: filters });
   },
 
   getUserById: async (id: string): Promise<User> => {
-    const response = await apiClient.get<User>(`/admin/users/${id}`);
-    return response as any;
+    return apiClient.get<User, User>(`/admin/users/${id}`);
   },
 
   createUser: async (data: UserFormValues): Promise<User> => {
-    const response = await apiClient.post<User>("/admin/users", data);
-    return response as any;
+    return apiClient.post<User, User>("/admin/users", data);
   },
 
   updateUser: async (id: string, data: Partial<UserFormValues>): Promise<User> => {
-    const response = await apiClient.patch<User>(`/admin/users/${id}`, data);
-    return response as any;
+    return apiClient.patch<User, User>(`/admin/users/${id}`, data);
   },
 
   deleteUser: async (id: string): Promise<void> => {
@@ -30,12 +26,10 @@ export const usersApi = {
   },
 
   suspendUser: async (id: string, reason: string): Promise<User> => {
-    const response = await apiClient.post<User>(`/admin/users/${id}/suspend`, { reason });
-    return response as any;
+    return apiClient.post<User, User>(`/admin/users/${id}/suspend`, { reason });
   },
 
   activateUser: async (id: string): Promise<User> => {
-    const response = await apiClient.post<User>(`/admin/users/${id}/activate`);
-    return response as any;
+    return apiClient.post<User, User>(`/admin/users/${id}/activate`);
   },
 };

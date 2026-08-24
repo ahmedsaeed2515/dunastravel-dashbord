@@ -11,7 +11,7 @@ interface DashboardHeaderProps {
   isRefreshing?: boolean;
 }
 
-export function DashboardHeader({}: DashboardHeaderProps) {
+export function DashboardHeader({ filters, onFilterChange, onRefresh, isRefreshing }: DashboardHeaderProps) {
   const params = useParams();
   const isAr = params?.locale === "ar";
 
@@ -55,6 +55,12 @@ export function DashboardHeader({}: DashboardHeaderProps) {
             <Sparkles className="w-5 h-5 text-indigo-500 shrink-0 stroke-[2.2]" />
             <span>{isAr ? "نظام الإدارة المركزية" : "Centralized Enterprise Operations"}</span>
           </span>
+        </div>
+        <div className="flex items-center gap-2 pt-2">
+          <select aria-label="Dashboard period" value={filters?.preset ?? 'all'} onChange={(event) => onFilterChange?.({ ...filters, preset: event.target.value as DashboardFilters['preset'] })} className="rounded-md border bg-background px-2 py-1 text-xs">
+            <option value="all">Last 12 months</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="12m">Last 12 months</option>
+          </select>
+          <button type="button" onClick={onRefresh} disabled={isRefreshing} className="rounded-md border px-2 py-1 text-xs disabled:opacity-50">{isRefreshing ? 'Refreshing…' : 'Refresh'}</button>
         </div>
       </div>
     </div>

@@ -33,8 +33,6 @@ const formSchema = z.object({
 
   category: z.string().min(1),
   basePriceUsd: z.coerce.number().min(0, "Base price must be 0 or greater"),
-  capacity: z.coerce.number().min(1),
-  minParticipants: z.coerce.number().min(1),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   isFeatured: z.boolean(),
   country: z.string().optional(),
@@ -64,11 +62,9 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
       overviewEs: "",
       overviewPt: "",
       overviewIt: "",
-      category: "Multi-Country",
-      basePriceUsd: 0,
-      capacity: 30,
-      minParticipants: 1,
-      status: "PUBLISHED",
+      category: "",
+      basePriceUsd: undefined,
+      status: undefined,
       isFeatured: false,
       country: "",
       city: "",
@@ -78,7 +74,7 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
   useEffect(() => {
     if (tour && open) {
       const titles = tour.titleJsonb || {};
-      const overviews = tour.overviewJsonb || tour.descriptionJsonb || {};
+      const overviews = tour.overviewJsonb ?? {};
 
       form.reset({
         titleEn: titles.en || "",
@@ -93,12 +89,10 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
         overviewPt: overviews.pt || "",
         overviewIt: overviews.it || "",
 
-        category: tour.category || "Multi-Country",
-        basePriceUsd: parseFloat(tour.basePriceUsd || "0"),
-        capacity: tour.capacity || 30,
-        minParticipants: tour.minParticipants || 1,
-        status: tour.status || "PUBLISHED",
-        isFeatured: tour.isFeatured || false,
+        category: tour.category ?? "",
+        basePriceUsd: Number(tour.basePriceUsd),
+        status: tour.status,
+        isFeatured: tour.isFeatured,
         country: tour.country || "",
         city: tour.city || "",
       });
@@ -111,27 +105,26 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
     const payload: UpdateTourPayload = {
       titleJsonb: {
         en: values.titleEn,
-        ar: values.titleAr || values.titleEn,
-        es: values.titleEs || values.titleEn,
-        pt: values.titlePt || values.titleEn,
-        it: values.titleIt || values.titleEn,
+        ar: values.titleAr,
+        es: values.titleEs,
+        pt: values.titlePt,
+        it: values.titleIt,
       },
       overviewJsonb: {
         en: values.overviewEn || "",
-        ar: values.overviewAr || values.overviewEn || "",
-        es: values.overviewEs || values.overviewEn || "",
-        pt: values.overviewPt || values.overviewEn || "",
-        it: values.overviewIt || values.overviewEn || "",
+        ar: values.overviewAr,
+        es: values.overviewEs,
+        pt: values.overviewPt,
+        it: values.overviewIt,
       },
       category: values.category,
       basePriceUsd: values.basePriceUsd,
-      capacity: values.capacity,
-      minParticipants: values.minParticipants,
       status: values.status,
       isActive: values.status === "PUBLISHED",
       isFeatured: values.isFeatured,
       country: values.country,
       city: values.city,
+      expectedUpdatedAt: tour.updatedAt,
     };
 
     updateTour({ slug: tour.slug, data: payload }, {
@@ -362,28 +355,16 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control as any}
-                    name="capacity"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Capacity (Seats)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control as any}
-                    name="minParticipants"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Min Participants</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Capacity (Seats)</FormLabel>
+                    <Input type="number" value={tour.capacity ?? ""} disabled />
+                    <FormDescription>Capacity is managed per departure in Availability.</FormDescription>
+                  </FormItem>
+                  <FormItem>
+                    <FormLabel className="text-xs font-semibold">Min Participants</FormLabel>
+                    <Input type="number" value={tour.minParticipants ?? ""} disabled />
+                    <FormDescription>Departure rules are managed in Availability.</FormDescription>
+                  </FormItem>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">

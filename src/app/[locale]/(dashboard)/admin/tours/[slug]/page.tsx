@@ -60,8 +60,12 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
     }
   };
 
-  const occupiedSeats = (tour.capacity || 30) - (tour.remainingSeats ?? 30);
-  const occupancyRate = (tour.capacity || 30) > 0 ? Math.round((occupiedSeats / (tour.capacity || 30)) * 100) : 0;
+  const capacity = tour.capacity ?? null;
+  const remainingSeats = tour.remainingSeats ?? null;
+  const occupiedSeats = capacity !== null && remainingSeats !== null ? capacity - remainingSeats : null;
+  const occupancyRate = capacity !== null && capacity > 0 && occupiedSeats !== null
+    ? Math.round((occupiedSeats / capacity) * 100)
+    : null;
 
   return (
     <div className="space-y-6 pb-16 animate-in fade-in duration-300">
@@ -113,7 +117,7 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
         <Card className="p-4 bg-card">
           <div className="text-xs text-muted-foreground">Capacity & Occupancy</div>
           <div className="text-2xl font-bold mt-1">
-            {occupiedSeats} / {tour.capacity} <span className="text-xs font-normal text-muted-foreground">({occupancyRate}%)</span>
+            {occupiedSeats ?? "—"} / {capacity ?? "—"} <span className="text-xs font-normal text-muted-foreground">({occupancyRate === null ? "—" : `${occupancyRate}%`})</span>
           </div>
         </Card>
         <Card className="p-4 bg-card">

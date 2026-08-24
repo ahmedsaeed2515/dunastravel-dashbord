@@ -1,31 +1,28 @@
 import { apiClient } from "@/lib/axios";
-import { Booking, BookingQueryFilters, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload } from "../types";
+import { AddAttachmentPayload, AddNotePayload, AddPaymentPayload, Booking, BookingAttachment, BookingNote, BookingQueryFilters, ManualBookingPayload, Payment, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
 
 export const bookingsApi = {
   getBookings: async (filters: BookingQueryFilters): Promise<PaginatedResponse<Booking>> => {
-    const response = await apiClient.get<PaginatedResponse<Booking>>("/admin/bookings", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<Booking>, PaginatedResponse<Booking>>("/admin/bookings", { params: filters });
   },
 
   getBookingByReferenceCode: async (referenceCode: string): Promise<Booking> => {
-    const response = await apiClient.get<Booking>(`/admin/bookings/${referenceCode}`);
-    return response as any;
+    return apiClient.get<Booking, Booking>(`/admin/bookings/${referenceCode}`);
   },
 
-  createManualBooking: async (data: { tourId: string, userId: string, passengers: any[], manualAmountUsd?: number }): Promise<Booking> => {
-    const response = await apiClient.post<Booking>(`/admin/bookings`, data);
-    return response as any;
+  createManualBooking: async (data: ManualBookingPayload, idempotencyKey: string): Promise<Booking> => {
+    return apiClient.post<Booking, Booking>(`/admin/bookings`, data, {
+      headers: { 'Idempotency-Key': idempotencyKey },
+    });
   },
 
   updateBooking: async (referenceCode: string, data: UpdateBookingPayload): Promise<Booking> => {
-    const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}`, data);
-    return response as any;
+    return apiClient.patch<Booking, Booking>(`/admin/bookings/${referenceCode}`, data);
   },
 
   updateBookingStatus: async (referenceCode: string, data: UpdateBookingStatusPayload): Promise<Booking> => {
-    const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}/status`, data);
-    return response as any;
+    return apiClient.patch<Booking, Booking>(`/admin/bookings/${referenceCode}/status`, data);
   },
 
   upsertPassengers: async (referenceCode: string, data: UpsertPassengersPayload): Promise<void> => {
@@ -33,8 +30,7 @@ export const bookingsApi = {
   },
 
   assignBooking: async (referenceCode: string, data: AssignBookingPayload): Promise<Booking> => {
-    const response = await apiClient.patch<Booking>(`/admin/bookings/${referenceCode}/assign`, data);
-    return response as any;
+    return apiClient.patch<Booking, Booking>(`/admin/bookings/${referenceCode}/assign`, data);
   },
 
   softDeleteBooking: async (referenceCode: string): Promise<void> => {
@@ -42,43 +38,27 @@ export const bookingsApi = {
   },
 
   bulkUpdateBookings: async (data: BulkUpdateBookingsPayload): Promise<{ count: number }> => {
-    const response = await apiClient.patch<{ count: number }>("/admin/bookings/bulk/update", data);
-    return response as any;
+    return apiClient.patch<{ count: number }, { count: number }>("/admin/bookings/bulk/update", data);
   },
 
   exportBookingsCsv: async (filters: BookingQueryFilters): Promise<Blob> => {
-    const response = await apiClient.get("/admin/bookings/export/csv", { 
-      params: filters,
-      responseType: 'blob' 
-    });
-    return response as any;
+    const csv = await apiClient.get<string, string>("/admin/bookings/export/csv", { params: filters });
+    return new Blob([csv], { type: 'text/csv;charset=utf-8' });
   },
 
   restoreBooking: async (referenceCode: string): Promise<Booking> => {
-    const response = await apiClient.post<Booking>(`/admin/bookings/${referenceCode}/restore`);
-    return response as any;
+    return apiClient.post<Booking, Booking>(`/admin/bookings/${referenceCode}/restore`);
   },
 
-  addPayment: async (referenceCode: string, data: any): Promise<any> => {
-    const response = await apiClient.post(`/admin/bookings/${referenceCode}/payments`, data);
-    return response as any;
+  addPayment: async (referenceCode: string, data: AddPaymentPayload): Promise<Payment> => {
+    return apiClient.post<Payment, Payment>(`/admin/bookings/${referenceCode}/payments`, data);
   },
 
-  addNote: async (referenceCode: string, data: any): Promise<any> => {
-    const response = await apiClient.post(`/admin/bookings/${referenceCode}/notes`, data);
-    return response as any;
+  addNote: async (referenceCode: string, data: AddNotePayload): Promise<BookingNote> => {
+    return apiClient.post<BookingNote, BookingNote>(`/admin/bookings/${referenceCode}/notes`, data);
   },
 
-  addAttachment: async (referenceCode: string, data: any): Promise<any> => {
-    const formData = new FormData();
-    formData.append("file", data.file);
-    if (data.documentType) formData.append("documentType", data.documentType);
-
-    const response = await apiClient.post(`/admin/bookings/${referenceCode}/attachments`, formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
-    });
-    return response as any;
+  addAttachment: async (referenceCode: string, data: AddAttachmentPayload): Promise<BookingAttachment> => {
+    return apiClient.post<BookingAttachment, BookingAttachment>(`/admin/bookings/${referenceCode}/attachments`, data);
   }
 };

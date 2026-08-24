@@ -2,23 +2,23 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { useTour, useUpdateTour } from "@/features/tours/hooks/useTours";
-import { Tour } from "@/features/tours/types";
+import { Tour, TourItinerary, UpdateTourPayload } from "@/features/tours/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Loader2, ArrowLeft, Save, Eye, Globe, Image as ImageIcon, Plus, Trash2,
-  DollarSign, MapPin, Layers, CheckCircle2, AlertCircle, Sparkles
+  Loader2, ArrowLeft, Save, Eye, Globe, Plus, Trash2, DollarSign
 } from "lucide-react";
 import { toast } from "sonner";
+import { AvailabilityManager } from "@/features/tours/components/AvailabilityManager";
+import { MediaManager } from "@/features/tours/components/MediaManager";
 
-const LOCALES = [
+export const TOUR_EDITOR_LOCALES = [
   { code: "en", name: "English", dir: "ltr" },
   { code: "ar", name: "العربية (Arabic)", dir: "rtl" },
   { code: "es", name: "Español (Spanish)", dir: "ltr" },
@@ -28,15 +28,12 @@ const LOCALES = [
 
 export default function EditTourPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = use(params);
-  const router = useRouter();
   const { data: tour, isLoading, error } = useTour(slug);
   const updateMutation = useUpdateTour();
 
   const [activeLang, setActiveLang] = useState("en");
   const [formData, setFormData] = useState<Partial<Tour>>({});
-  const [itineraries, setItineraries] = useState<any[]>([]);
-  const [images, setImages] = useState<any[]>([]);
-  const [newImageUrl, setNewImageUrl] = useState("");
+  const [itineraries, setItineraries] = useState<TourItinerary[]>([]);
 
   useEffect(() => {
     if (tour) {
@@ -45,14 +42,13 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         category: tour.category || "",
         country: tour.country || "",
         city: tour.city || "",
-        basePriceUsd: tour.basePriceUsd !== undefined && tour.basePriceUsd !== null ? String(tour.basePriceUsd) : "0",
-        currency: tour.currency || "USD",
-        capacity: tour.capacity || 30,
-        status: tour.status || "PUBLISHED",
-        isActive: tour.isActive ?? true,
+        basePriceUsd: tour.basePriceUsd ?? "",
+        currency: tour.currency ?? "",
+        status: tour.status,
+        isActive: tour.isActive,
         isFeatured: tour.isFeatured ?? false,
         titleJsonb: tour.titleJsonb || {},
-        overviewJsonb: tour.overviewJsonb || tour.descriptionJsonb || {},
+        overviewJsonb: tour.overviewJsonb ?? {},
         durationJsonb: tour.durationJsonb || {},
         includedServicesJsonb: tour.includedServicesJsonb || {},
         excludedServicesJsonb: tour.excludedServicesJsonb || {},
@@ -62,7 +58,6 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         seoDescription: tour.seoDescription || "",
       });
       setItineraries(tour.itineraries || []);
-      setImages(tour.images || []);
     }
   }, [tour]);
 
@@ -116,11 +111,12 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
   const handleSave = async (statusOverride?: string) => {
     try {
-      const price = parseFloat(String(formData.basePriceUsd));
-      if (isNaN(price) || price < 0) {
-        toast.error("Base Price must be 0 or greater (USD)");
+      const priceText = String(formData.basePriceUsd ?? "").trim();
+      if (!/^\d+(?:\.\d{1,2})?$/.test(priceText)) {
+        toast.error("Base price is required and must have no more than two decimal places.");
         return;
       }
+      const price = Number(priceText);
 
       // Ensure title has at least English title
       const titleJson = formData.titleJsonb || {};
@@ -130,8 +126,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
       }
 
       const cleanItineraries = itineraries.map((it, idx) => ({
-        dayLabel: it.dayLabel || `Day ${idx + 1}`,
-        descriptionJsonb: it.descriptionJsonb || { en: `Day ${idx + 1} itinerary` },
+        dayLabel: it.dayLabel?.trim() || undefined,
+        descriptionJsonb: it.descriptionJsonb,
         mealsJsonb: it.mealsJsonb && Object.keys(it.mealsJsonb).length > 0 ? it.mealsJsonb : undefined,
         activitiesJsonb: it.activitiesJsonb && Object.keys(it.activitiesJsonb).length > 0 ? it.activitiesJsonb : undefined,
         hotelsJsonb: it.hotelsJsonb && Object.keys(it.hotelsJsonb).length > 0 ? it.hotelsJsonb : undefined,
@@ -140,23 +136,19 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         sortOrder: idx + 1,
       }));
 
-      const cleanImages = images.map((img, idx) => ({
-        imageUrl: img.imageUrl || img.url,
-        isHero: Boolean(img.isHero),
-        isVideo: Boolean(img.isVideo),
-        videoUrl: img.videoUrl && String(img.videoUrl).trim().length > 0 ? String(img.videoUrl).trim() : undefined,
-        altText: img.altText || undefined,
-        sortOrder: idx + 1,
-      }));
+      if (cleanItineraries.some((it) => Object.values(it.descriptionJsonb ?? {}).every((value) => !String(value).trim()))) {
+        toast.error("Every itinerary day needs a description in at least one locale.");
+        return;
+      }
 
-      const payload: any = {
+      const payload: UpdateTourPayload = {
         category: formData.category?.trim() || undefined,
         country: formData.country?.trim() || undefined,
         city: formData.city?.trim() || undefined,
         basePriceUsd: price,
-        currency: "USD",
-        status: statusOverride || formData.status || "PUBLISHED",
-        isActive: formData.isActive ?? true,
+        currency: formData.currency || undefined,
+        status: (statusOverride ?? formData.status) as UpdateTourPayload["status"],
+        isActive: formData.isActive,
         isFeatured: formData.isFeatured ?? false,
         titleJsonb: formData.titleJsonb || {},
         overviewJsonb: formData.overviewJsonb || {},
@@ -168,7 +160,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         seoTitle: formData.seoTitle?.trim() || undefined,
         seoDescription: formData.seoDescription?.trim() || undefined,
         itineraries: cleanItineraries,
-        images: cleanImages,
+        expectedUpdatedAt: tour.updatedAt,
       };
 
       await updateMutation.mutateAsync({
@@ -187,9 +179,8 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
     setItineraries([
       ...itineraries,
       {
-        dayLabel: `Day ${nextDayNum}`,
-        descriptionJsonb: { [activeLang]: `Day ${nextDayNum} itinerary details` },
-        mealsJsonb: { [activeLang]: "Breakfast, Lunch" },
+        dayLabel: "",
+        descriptionJsonb: {},
         sortOrder: nextDayNum,
       },
     ]);
@@ -199,28 +190,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
     setItineraries(itineraries.filter((_, i) => i !== index));
   };
 
-  const handleAddImage = () => {
-    if (!newImageUrl || !newImageUrl.trim()) return;
-    setImages([
-      ...images,
-      {
-        imageUrl: newImageUrl.trim(),
-        isHero: images.length === 0,
-        sortOrder: images.length + 1,
-      },
-    ]);
-    setNewImageUrl("");
-  };
-
-  const handleRemoveImage = (index: number) => {
-    setImages(images.filter((_, i) => i !== index));
-  };
-
-  const handleSetHeroImage = (index: number) => {
-    setImages(images.map((img, i) => ({ ...img, isHero: i === index })));
-  };
-
-  const activeLangConfig = LOCALES.find((l) => l.code === activeLang) || LOCALES[0];
+  const activeLangConfig = TOUR_EDITOR_LOCALES.find((l) => l.code === activeLang) || TOUR_EDITOR_LOCALES[0];
 
   return (
     <div className="space-y-6 pb-20 animate-in fade-in duration-300">
@@ -265,7 +235,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
             <DollarSign className="w-3.5 h-3.5" /> Pricing & Seats
           </TabsTrigger>
           <TabsTrigger value="itinerary">Itinerary ({itineraries.length})</TabsTrigger>
-          <TabsTrigger value="media">Gallery ({images.length})</TabsTrigger>
+          <TabsTrigger value="media">Gallery ({tour.images?.length ?? 0})</TabsTrigger>
           <TabsTrigger value="seo">SEO</TabsTrigger>
           <TabsTrigger value="publishing">Publishing</TabsTrigger>
         </TabsList>
@@ -314,7 +284,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
         {/* 2. TRANSLATIONS */}
         <TabsContent value="translations" className="space-y-4">
           <div className="flex gap-2 border-b pb-3 overflow-x-auto">
-            {LOCALES.map((loc) => (
+            {TOUR_EDITOR_LOCALES.map((loc) => (
               <Button
                 key={loc.code}
                 variant={activeLang === loc.code ? "default" : "outline"}
@@ -393,14 +363,14 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <CardTitle className="text-base">Pricing & Seat Capacity</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Base Price (USD)</label>
                   <Input
                     type="number"
                     min="0"
                     step="any"
-                    value={formData.basePriceUsd ?? 0}
+                    value={formData.basePriceUsd ?? ""}
                     onChange={(e) => setFormData({ ...formData, basePriceUsd: e.target.value as any })}
                     placeholder="e.g. 0.00 or 450.00"
                   />
@@ -408,18 +378,10 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                 </div>
                 <div>
                   <label className="text-sm font-medium">Currency</label>
-                  <Input value={formData.currency || "USD"} disabled className="bg-muted" />
-                </div>
-                <div>
-                  <label className="text-sm font-medium">Total Capacity (Max Seats)</label>
-                  <Input
-                    type="number"
-                    min="1"
-                    value={formData.capacity || 30}
-                    onChange={(e) => setFormData({ ...formData, capacity: parseInt(e.target.value) || 30 })}
-                  />
+                  <Input value={formData.currency ?? ""} disabled className="bg-muted" />
                 </div>
               </div>
+              <AvailabilityManager tour={tour} locale={locale} />
             </CardContent>
           </Card>
         </TabsContent>
@@ -482,41 +444,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
             <CardHeader>
               <CardTitle className="text-base">Photo Gallery</CardTitle>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <Input
-                  placeholder="Paste image URL (https://...)"
-                  value={newImageUrl}
-                  onChange={(e) => setNewImageUrl(e.target.value)}
-                />
-                <Button size="sm" onClick={handleAddImage} disabled={!newImageUrl.trim()}>
-                  <Plus className="w-4 h-4 mr-1" /> Add Image
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                {images.map((img, idx) => (
-                  <div key={idx} className="relative h-40 rounded-lg overflow-hidden border bg-muted group">
-                    <img src={img.imageUrl || img.url} alt="" className="w-full h-full object-cover" />
-                    <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity p-2 flex flex-col justify-between">
-                      <div className="flex justify-between items-center">
-                        <Button
-                          size="xs"
-                          variant={img.isHero ? "default" : "secondary"}
-                          onClick={() => handleSetHeroImage(idx)}
-                          className="text-[10px]"
-                        >
-                          {img.isHero ? "Hero" : "Make Hero"}
-                        </Button>
-                        <Button size="icon" variant="destructive" className="w-6 h-6" onClick={() => handleRemoveImage(idx)}>
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
+            <CardContent><MediaManager tour={tour} /></CardContent>
           </Card>
         </TabsContent>
 
@@ -551,9 +479,10 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                   <label className="text-sm font-medium">Status</label>
                   <select
                     className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-                    value={formData.status || "PUBLISHED"}
+                    value={formData.status ?? ""}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value as any })}
                   >
+                    <option value="" disabled>Select status</option>
                     <option value="PUBLISHED">Published</option>
                     <option value="DRAFT">Draft</option>
                     <option value="ARCHIVED">Archived</option>
@@ -565,7 +494,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                     <div className="text-sm font-medium">Is Active</div>
                     <div className="text-xs text-muted-foreground">Allows tour to be queried</div>
                   </div>
-                  <Switch checked={formData.isActive ?? true} onCheckedChange={(val) => setFormData({ ...formData, isActive: val })} />
+                  <Switch checked={formData.isActive ?? false} onCheckedChange={(val) => setFormData({ ...formData, isActive: val })} />
                 </div>
               </div>
             </CardContent>

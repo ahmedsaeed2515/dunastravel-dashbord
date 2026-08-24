@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,34 +11,60 @@ import { useContentBlocks, useUpdateContentBlock } from "@/features/content/hook
 import { ContentBlock } from "@/features/content/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 export default function ContentPage() {
   const tContent = useTranslations("content");
   const tCommon = useTranslations("common");
 
   const { data: rawBlocks, isLoading } = useContentBlocks();
-  const blocks: ContentBlock[] = Array.isArray(rawBlocks) 
-    ? rawBlocks 
-    : (rawBlocks as any)?.data && Array.isArray((rawBlocks as any).data) 
-    ? (rawBlocks as any).data 
-    : [];
+  const blocks: ContentBlock[] = rawBlocks?.data ?? [];
 
   const updateBlock = useUpdateContentBlock();
 
   const [seoForm, setSeoForm] = useState({
-    titleSuffix: " | Dunas Travel - Luxury Experiences",
-    metaDescription: "Discover the world's most exclusive luxury travel destinations, bespoke itineraries, and premium B2B travel agency services with Dunas Travel.",
-    ogImageUrl: "https://dunas.travel/og-default.jpg"
+    titleSuffix: "",
+    metaDescription: "",
+    ogImageUrl: ""
   });
+  const [editingBlock, setEditingBlock] = useState<ContentBlock | null>(null);
+  const [editingContent, setEditingContent] = useState("");
 
   const handleSaveSeo = () => {
     updateBlock.mutate({
       key: "global_seo",
-      payload: { content: seoForm }
+      payload: { content: seoForm, status: seoBlock?.status, expectedVersion: seoBlock?.version }
     });
   };
 
   const seoBlock = blocks.find(b => b?.key === "global_seo");
+
+  useEffect(() => {
+    if (seoBlock?.content && typeof seoBlock.content === 'object') {
+      setSeoForm({ titleSuffix: String(seoBlock.content.titleSuffix ?? ''), metaDescription: String(seoBlock.content.metaDescription ?? ''), ogImageUrl: String(seoBlock.content.ogImageUrl ?? '') });
+    }
+  }, [seoBlock?.updatedAt]);
+
+  const beginEdit = (block: ContentBlock) => {
+    setEditingBlock(block);
+    setEditingContent(JSON.stringify(block.content, null, 2));
+  };
+
+  const saveBlockJson = () => {
+    if (!editingBlock) return;
+    try {
+      updateBlock.mutate({
+        key: editingBlock.key,
+        payload: {
+          content: JSON.parse(editingContent),
+          status: editingBlock.status,
+          expectedVersion: editingBlock.version,
+        },
+      }, { onSuccess: () => setEditingBlock(null) });
+    } catch {
+      toast.error("Content must be valid JSON before it can be saved.");
+    }
+  };
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -87,13 +113,14 @@ export default function ContentPage() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="flex gap-2">
-                    <Button variant="outline" size="sm" className="flex-1">{tCommon("edit")}</Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => beginEdit(block)}>{tCommon("edit")}</Button>
                     <Button variant="ghost" size="icon-sm"><ExternalLink className="h-3.5 w-3.5 text-muted-foreground" /></Button>
                   </CardContent>
                 </Card>
               ))}
             </div>
           )}
+          {editingBlock && <Card className="mt-6"><CardHeader><CardTitle className="text-base">Edit {editingBlock.key}</CardTitle><CardDescription>JSON is validated and sanitized on the server. Saving requires the current version.</CardDescription></CardHeader><CardContent className="space-y-3"><Textarea value={editingContent} onChange={(event) => setEditingContent(event.target.value)} className="min-h-64 font-mono text-xs" /><div className="flex gap-2"><Button variant="outline" onClick={() => setEditingBlock(null)}>Cancel</Button><Button onClick={saveBlockJson} disabled={updateBlock.isPending}>Save block</Button></div></CardContent></Card>}
         </TabsContent>
 
         <TabsContent value="seo" className="m-0">
@@ -108,7 +135,7 @@ export default function ContentPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Default Title Suffix</label>
                 <Input 
-                  value={seoBlock?.content?.titleSuffix || seoForm.titleSuffix}
+                  value={seoForm.titleSuffix}
                   onChange={(e) => setSeoForm({ ...seoForm, titleSuffix: e.target.value })}
                   className="dir-ltr text-start"
                 />
@@ -116,7 +143,7 @@ export default function ContentPage() {
               <div className="space-y-1.5">
                 <label className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Global Meta Description</label>
                 <Textarea 
-                  value={seoBlock?.content?.metaDescription || seoForm.metaDescription}
+                  value={seoForm.metaDescription}
                   onChange={(e) => setSeoForm({ ...seoForm, metaDescription: e.target.value })}
                   className="h-24"
                 />

@@ -15,45 +15,37 @@ import { PaginatedResponse } from "@/lib/api-types";
 
 export const customersApi = {
   getMetrics: async (): Promise<CustomerCrmMetrics> => {
-    const res: any = await apiClient.get<CustomerCrmMetrics>("/admin/users/crm/metrics");
-    return res?.totalCustomers !== undefined ? res : res?.data || res;
+    return apiClient.get<CustomerCrmMetrics, CustomerCrmMetrics>("/admin/users/crm/metrics");
   },
 
   getCustomers: async (params: ListCustomersParams): Promise<PaginatedResponse<Customer>> => {
-    const response = await apiClient.get<PaginatedResponse<Customer>>("/admin/users/crm/list", { params });
-    return response as any;
+    return apiClient.get<PaginatedResponse<Customer>, PaginatedResponse<Customer>>("/admin/users/crm/list", { params });
   },
 
   getCustomerDetail: async (id: string): Promise<CustomerDetail> => {
-    const response = await apiClient.get<CustomerDetail>(`/admin/users/crm/${id}`);
-    return response as any;
+    return apiClient.get<CustomerDetail, CustomerDetail>(`/admin/users/crm/${id}`);
   },
 
   updateCustomerCrm: async (id: string, data: UpdateCustomerCrmPayload): Promise<CustomerDetail> => {
-    const response = await apiClient.patch<CustomerDetail>(`/admin/users/crm/${id}`, data);
-    return response as any;
+    return apiClient.patch<CustomerDetail, CustomerDetail>(`/admin/users/crm/${id}`, data);
   },
 
   bulkUpdateCustomers: async (data: BulkUpdateCustomersPayload): Promise<{ count: number }> => {
-    const response = await apiClient.patch<{ count: number }>("/admin/users/crm/bulk/update", data);
-    return response as any;
+    return apiClient.patch<{ count: number }, { count: number }>("/admin/users/crm/bulk/update", data);
   },
 
   addCustomerNote: async (id: string, data: AddCustomerNotePayload): Promise<CustomerNote> => {
-    const response = await apiClient.post<CustomerNote>(`/admin/users/crm/${id}/notes`, data);
-    return response as any;
+    return apiClient.post<CustomerNote, CustomerNote>(`/admin/users/crm/${id}/notes`, data);
   },
 
   addCustomerDocument: async (id: string, data: AddCustomerDocumentPayload): Promise<CustomerDocument> => {
-    const response = await apiClient.post<CustomerDocument>(`/admin/users/crm/${id}/documents`, data);
-    return response as any;
+    return apiClient.post<CustomerDocument, CustomerDocument>(`/admin/users/crm/${id}/documents`, data);
   },
 
   exportCustomersCsv: async (params: ListCustomersParams): Promise<Blob> => {
-    const response = await apiClient.get("/admin/users/crm/export/csv", { 
+    return apiClient.get<Blob, Blob>("/admin/users/crm/export/csv", { 
       params,
       responseType: 'blob' 
     });
-    return response as any;
   }
 };

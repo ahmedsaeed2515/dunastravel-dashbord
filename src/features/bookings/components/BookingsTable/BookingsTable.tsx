@@ -3,27 +3,18 @@
 import { useState } from "react";
 import { 
   useBookings, 
-  useSoftDeleteBooking, 
-  useBulkUpdateBookings 
+  useSoftDeleteBooking
 } from "../../hooks/useBookings";
 import { bookingsApi } from "../../api/bookingsApi";
 import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
-import { Booking, BookingStatus, BookingQueryFilters } from "../../types";
+import { Booking, BookingQueryFilters } from "../../types";
 import { BookingDetailsDrawer } from "../Drawers/BookingDetailsDrawer";
 import { EditBookingDrawer } from "../Drawers/EditBookingDrawer";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
-} from "@/components/ui/dropdown-menu";
-import { Download, CheckSquare, Loader2 } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
@@ -46,7 +37,6 @@ export function BookingsTable() {
   
   const { data, isLoading } = useBookings(queryFilters);
   const deleteBooking = useSoftDeleteBooking();
-  const bulkUpdate = useBulkUpdateBookings();
   const [isExporting, setIsExporting] = useState(false);
 
   // Drawer states
@@ -95,19 +85,6 @@ export function BookingsTable() {
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
-    const selectedRows = table.getFilteredSelectedRowModel().rows;
-    const referenceCodes = selectedRows.map((row: any) => row.original.referenceCode);
-
-    const handleBulkStatus = async (status: BookingStatus) => {
-      await bulkUpdate.mutateAsync({ referenceCodes, status });
-      table.toggleAllRowsSelected(false);
-    };
-
-    const handleBulkPriority = async (priority: string) => {
-      await bulkUpdate.mutateAsync({ referenceCodes, priority });
-      table.toggleAllRowsSelected(false);
-    };
-
     return (
       <div className="flex items-center gap-2 flex-wrap">
         <Input 
@@ -131,29 +108,6 @@ export function BookingsTable() {
           </SelectContent>
         </Select>
 
-        {referenceCodes.length > 0 && (
-          <DropdownMenu>
-            <DropdownMenuTrigger className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-8 px-3 gap-1.5">
-              <CheckSquare className="h-4 w-4 text-primary" />
-              <span>{tCommon("actions")} ({referenceCodes.length})</span>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-48">
-              <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
-              <DropdownMenuItem onClick={() => handleBulkStatus("CONFIRMED")}>
-                {tStatus("CONFIRMED")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkStatus("PENDING")}>
-                {tStatus("PENDING")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkStatus("COMPLETED")}>
-                {tStatus("COMPLETED")}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleBulkStatus("CANCELLED")} className="text-red-600">
-                {tStatus("CANCELLED")}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
-        )}
 
         <Button 
           variant="outline" 
@@ -173,10 +127,10 @@ export function BookingsTable() {
     <div className="space-y-4">
       <DataTable
         columns={columns}
-        data={Array.isArray(data) ? data : (data?.data || [])}
+        data={data?.data ?? []}
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
-        pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
+        pageCount={data?.meta?.totalPages ?? -1}
         pagination={pagination}
         onPaginationChange={setPagination}
         manualPagination={true}

@@ -7,6 +7,10 @@ import {
   UpsertPassengersPayload,
   AssignBookingPayload,
   BulkUpdateBookingsPayload,
+  AddPaymentPayload,
+  AddNotePayload,
+  AddAttachmentPayload,
+  ManualBookingPayload,
 } from "../types";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
@@ -47,12 +51,8 @@ export function useUpdateBooking() {
 export function useCreateManualBooking() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: {
-      tourId: string;
-      userId: string;
-      passengers: unknown[];
-      manualAmountUsd?: number;
-    }) => bookingsApi.createManualBooking(data),
+    mutationFn: (data: ManualBookingPayload) =>
+      bookingsApi.createManualBooking(data, crypto.randomUUID()),
     onSuccess: () => {
       toast.success("Manual booking created successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
@@ -172,7 +172,7 @@ export function useRestoreBooking() {
 export function useAddPayment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: unknown }) =>
+    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: AddPaymentPayload }) =>
       bookingsApi.addPayment(referenceCode, data),
     onSuccess: (_, variables) => {
       toast.success("Payment added successfully");
@@ -187,7 +187,7 @@ export function useAddPayment() {
 export function useAddNote() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: unknown }) =>
+    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: AddNotePayload }) =>
       bookingsApi.addNote(referenceCode, data),
     onSuccess: (_, variables) => {
       toast.success("Note added successfully");
@@ -202,7 +202,7 @@ export function useAddNote() {
 export function useAddAttachment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: { file: File; documentType?: string } }) =>
+    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: AddAttachmentPayload }) =>
       bookingsApi.addAttachment(referenceCode, data),
     onSuccess: (_, variables) => {
       toast.success("Attachment uploaded successfully");

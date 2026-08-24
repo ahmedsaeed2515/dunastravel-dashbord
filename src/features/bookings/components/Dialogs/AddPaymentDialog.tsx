@@ -17,15 +17,15 @@ interface AddPaymentDialogProps {
 
 export function AddPaymentDialog({ referenceCode, open, onOpenChange }: AddPaymentDialogProps) {
   const [amount, setAmount] = useState("");
-  const [currency, setCurrency] = useState("USD");
-  const [method, setMethod] = useState("CREDIT_CARD");
+  const currency = "USD" as const;
+  const [method, setMethod] = useState<"CASH" | "BANK_TRANSFER" | "POS" | "OTHER_MANUAL">("BANK_TRANSFER");
   const [transactionId, setTransactionId] = useState("");
   
   const { mutate: addPayment, isPending } = useAddPayment();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!amount || isNaN(Number(amount))) {
+    if (!amount || !Number.isFinite(Number(amount)) || Number(amount) <= 0 || !transactionId.trim()) {
       toast.error("Please enter a valid amount");
       return;
     }
@@ -37,7 +37,7 @@ export function AddPaymentDialog({ referenceCode, open, onOpenChange }: AddPayme
           amount: Number(amount),
           currency,
           method,
-          transactionId: transactionId || undefined,
+          transactionId: transactionId.trim(),
         },
       },
       {
@@ -69,39 +69,30 @@ export function AddPaymentDialog({ referenceCode, open, onOpenChange }: AddPayme
               required
             />
           </div>
-          <div className="grid gap-2">
-            <Label htmlFor="currency">Currency</Label>
-            <Select value={currency} onValueChange={(val: any) => setCurrency(val || "USD")}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select currency" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="USD">USD</SelectItem>
-                <SelectItem value="EUR">EUR</SelectItem>
-                <SelectItem value="EGP">EGP</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <p className="text-sm text-muted-foreground">Manual payments are recorded in USD.</p>
           <div className="grid gap-2">
             <Label htmlFor="method">Payment Method</Label>
-            <Select value={method} onValueChange={(val: any) => setMethod(val || "CREDIT_CARD")}>
+            <Select value={method} onValueChange={(val) => setMethod(val as typeof method)}>
               <SelectTrigger>
                 <SelectValue placeholder="Select method" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="CREDIT_CARD">Credit Card</SelectItem>
                 <SelectItem value="BANK_TRANSFER">Bank Transfer</SelectItem>
                 <SelectItem value="CASH">Cash</SelectItem>
+                <SelectItem value="POS">POS</SelectItem>
+                <SelectItem value="OTHER_MANUAL">Other manual method</SelectItem>
               </SelectContent>
             </Select>
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="transactionId">Transaction ID (Optional)</Label>
+            <Label htmlFor="transactionId">Transaction ID</Label>
             <Input
               id="transactionId"
               value={transactionId}
               onChange={(e) => setTransactionId(e.target.value)}
               placeholder="e.g. TXN-12345"
+              minLength={6}
+              required
             />
           </div>
           <DialogFooter>

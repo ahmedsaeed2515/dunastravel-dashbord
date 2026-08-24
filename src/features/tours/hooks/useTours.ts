@@ -1,6 +1,13 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { toursApi } from "../api/toursApi";
-import { TourQueryFilters, CreateTourPayload, UpdateTourPayload, BulkUpdateToursPayload } from "../types";
+import { TourImagePayload, TourItineraryPayload, toursApi } from "../api/toursApi";
+import {
+  TourQueryFilters,
+  CreateTourPayload,
+  UpdateTourPayload,
+  BulkUpdateToursPayload,
+  CreateTourAvailabilityPayload,
+  UpdateTourAvailabilityPayload,
+} from "../types";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-types";
@@ -24,6 +31,24 @@ export function useTour(slug: string) {
     queryKey: queryKeys.tours.detail(slug),
     queryFn: () => toursApi.getTourBySlug(slug),
     enabled: Boolean(slug),
+  });
+}
+
+export function useTourPreview(slug: string, lang: string) {
+  return useQuery({
+    queryKey: [...queryKeys.tours.detail(slug), 'preview', lang],
+    queryFn: () => toursApi.getTourPreview(slug, lang),
+    enabled: Boolean(slug && lang),
+  });
+}
+
+const availabilityKey = (tourId: string) => [...queryKeys.tours.detail(tourId), 'availabilities'] as const;
+
+export function useTourAvailabilities(tourId: string) {
+  return useQuery({
+    queryKey: availabilityKey(tourId),
+    queryFn: () => toursApi.getTourAvailabilities(tourId),
+    enabled: Boolean(tourId),
   });
 }
 
@@ -90,7 +115,7 @@ export function useSoftDeleteTour() {
 export function useAddTourItinerary() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: unknown }) =>
+    mutationFn: ({ slug, data }: { slug: string; data: TourItineraryPayload }) =>
       toursApi.addTourItinerary(slug, data),
     onSuccess: (_, variables) => {
       toast.success("Itinerary day added successfully");
@@ -104,7 +129,7 @@ export function useAddTourItinerary() {
 export function useUpdateTourItinerary() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slug, dayId, data }: { slug: string; dayId: string; data: unknown }) =>
+    mutationFn: ({ slug, dayId, data }: { slug: string; dayId: string; data: Partial<TourItineraryPayload> }) =>
       toursApi.updateTourItinerary(slug, dayId, data),
     onSuccess: (_, variables) => {
       toast.success("Itinerary day updated successfully");
@@ -132,7 +157,7 @@ export function useRemoveTourItinerary() {
 export function useAddTourImage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: unknown }) =>
+    mutationFn: ({ slug, data }: { slug: string; data: TourImagePayload }) =>
       toursApi.addTourImage(slug, data),
     onSuccess: (_, variables) => {
       toast.success("Image added successfully");
@@ -165,11 +190,66 @@ export function useReorderTourImage() {
     }: {
       slug: string;
       imageId: string;
-      data: { newOrder: number };
+      data: { sortOrder: number };
     }) => toursApi.reorderTourImage(slug, imageId, data),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(variables.slug) });
     },
     onError: (error: ApiError) => toast.error(error?.message || "Failed to reorder image"),
+  });
+}
+
+export function useSetTourHeroImage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, imageId }: { slug: string; imageId: string }) =>
+      toursApi.setTourHeroImage(slug, imageId),
+    onSuccess: (_, variables) => {
+      toast.success("Hero image updated successfully");
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(variables.slug) });
+    },
+    onError: (error: ApiError) => toast.error(error?.message || "Failed to update hero image"),
+  });
+}
+
+export function useCreateTourAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tourId, data }: { tourId: string; data: CreateTourAvailabilityPayload }) =>
+      toursApi.createTourAvailability(tourId, data),
+    onSuccess: (_, variables) => {
+      toast.success("Departure availability created successfully");
+      queryClient.invalidateQueries({ queryKey: availabilityKey(variables.tourId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.stats() });
+    },
+    onError: (error: ApiError) => toast.error(error?.message || "Failed to create departure availability"),
+  });
+}
+
+export function useUpdateTourAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tourId, id, data }: { tourId: string; id: string; data: UpdateTourAvailabilityPayload }) =>
+      toursApi.updateTourAvailability(id, data),
+    onSuccess: (_, variables) => {
+      toast.success("Departure availability updated successfully");
+      queryClient.invalidateQueries({ queryKey: availabilityKey(variables.tourId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.stats() });
+    },
+    onError: (error: ApiError) => toast.error(error?.message || "Failed to update departure availability"),
+  });
+}
+
+export function useDeleteTourAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ tourId, id }: { tourId: string; id: string }) =>
+      toursApi.deleteTourAvailability(id),
+    onSuccess: (_, variables) => {
+      toast.success("Departure availability removed successfully");
+      queryClient.invalidateQueries({ queryKey: availabilityKey(variables.tourId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.stats() });
+    },
+    onError: (error: ApiError) => toast.error(error?.message || "Failed to remove departure availability"),
   });
 }

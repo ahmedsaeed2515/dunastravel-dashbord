@@ -19,6 +19,9 @@ export default function SettingsPage() {
   const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
   const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
   const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
+  const requireEmailVerification = typeof requireAuthSetting === 'boolean'
+    ? requireAuthSetting
+    : true;
   
   return (
     <RequirePermission action="manage" resource="settings">
@@ -112,7 +115,7 @@ export default function SettingsPage() {
                     <h4 className="font-semibold text-sm">Require Email Verification</h4>
                   </div>
                   <Switch 
-                    checked={requireAuthSetting}
+                    checked={requireEmailVerification}
                     disabled={isLoadingAuthSetting || isUpdatingAuthSetting}
                     onCheckedChange={(checked) => updateSetting({ key: 'AUTH_REQUIRE_EMAIL_VERIFICATION', value: checked })}
                   />

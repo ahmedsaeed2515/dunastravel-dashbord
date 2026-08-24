@@ -1,6 +1,34 @@
 import { apiClient } from "@/lib/axios";
 import { GenerateItineraryPayload, AiItineraryResponse, AiCustomerInsights } from "../types";
 
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+export interface MutationAcknowledgement { success: boolean; message?: string; id?: string; }
+
+/** Response returned by the public chat orchestrator and the admin simulator. */
+export interface AiSimulatorResponse {
+  conversationId: string;
+  message: {
+    id: string;
+    role: string;
+    content: string;
+    structuredContent?: JsonValue;
+    createdAt: string;
+  };
+  recommendations: {
+    tours: JsonValue[];
+    destinations: JsonValue[];
+    proposal?: JsonValue | null;
+    comparison?: JsonValue | null;
+  };
+  suggestedReplies: string[];
+  actions: JsonValue[];
+  handoff: JsonValue;
+  leadCapture: JsonValue;
+  sources: JsonValue[];
+  telemetry?: JsonValue;
+}
+
 export interface AiOverviewMetrics {
   totalConversations: number;
   activeConversations: number;
@@ -78,7 +106,7 @@ export interface ConversationItemData {
   assignedStaffId?: string;
   createdAt: string;
   updatedAt: string;
-  messages?: any[];
+  messages?: JsonValue[];
 }
 
 export interface MultiLangTranslations {
@@ -165,61 +193,50 @@ export interface AiAnalyticsData {
 export const aiApi = {
   // Legacy
   generateItinerary: async (payload: GenerateItineraryPayload): Promise<AiItineraryResponse> => {
-    const response = await apiClient.post("/admin/ai/itinerary/generate", payload);
-    return response as any;
+    return apiClient.post<unknown, AiItineraryResponse>("/admin/ai/itinerary/generate", payload);
   },
 
   analyzeCustomer: async (customerId: string): Promise<AiCustomerInsights> => {
-    const response = await apiClient.post(`/admin/ai/customer/${customerId}/analyze`);
-    return response as any;
+    return apiClient.post<unknown, AiCustomerInsights>(`/admin/ai/customer/${customerId}/analyze`);
   },
 
   // Overview & Analytics
   getOverview: async (): Promise<{ metrics: AiOverviewMetrics }> => {
-    const response = await apiClient.get("/admin/ai/overview");
-    return response as any;
+    return apiClient.get<unknown, { metrics: AiOverviewMetrics }>("/admin/ai/overview");
   },
 
   getDetailedAnalytics: async (): Promise<AiAnalyticsData> => {
-    const response = await apiClient.get("/admin/ai/analytics");
-    return response as any;
+    return apiClient.get<unknown, AiAnalyticsData>("/admin/ai/analytics");
   },
 
   // Configuration & Testing
   getConfig: async (): Promise<AiConfigData> => {
-    const response = await apiClient.get("/admin/ai/config");
-    return response as any;
+    return apiClient.get<unknown, AiConfigData>("/admin/ai/config");
   },
 
   updateConfig: async (payload: Partial<AiConfigData>): Promise<AiConfigData> => {
-    const response = await apiClient.put("/admin/ai/config", payload);
-    return response as any;
+    return apiClient.put<unknown, AiConfigData>("/admin/ai/config", payload);
   },
 
-  testConnection: async (payload: { provider?: string; model?: string; apiKey?: string }): Promise<any> => {
-    const response = await apiClient.post("/admin/ai/config/test", payload);
-    return response as any;
+  testConnection: (payload: { provider?: string; model?: string; apiKey?: string }): Promise<MutationAcknowledgement & { provider?: string; model?: string; latencyMs?: number; error?: string }> => {
+    return apiClient.post<unknown, MutationAcknowledgement & { provider?: string; model?: string; latencyMs?: number; error?: string }>("/admin/ai/config/test", payload);
   },
 
   // Prompt Management
   getPromptVersions: async (): Promise<PromptVersionItem[]> => {
-    const response = await apiClient.get("/admin/ai/prompts");
-    return response as any;
+    return apiClient.get<unknown, PromptVersionItem[]>("/admin/ai/prompts");
   },
 
   createPromptDraft: async (payload: { name: string; systemPrompt: string; changeNote?: string }): Promise<PromptVersionItem> => {
-    const response = await apiClient.post("/admin/ai/prompts", payload);
-    return response as any;
+    return apiClient.post<unknown, PromptVersionItem>("/admin/ai/prompts", payload);
   },
 
   publishPromptVersion: async (id: string): Promise<{ success: boolean; version: PromptVersionItem }> => {
-    const response = await apiClient.post(`/admin/ai/prompts/${id}/publish`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; version: PromptVersionItem }>(`/admin/ai/prompts/${id}/publish`);
   },
 
   rollbackPromptVersion: async (id: string): Promise<{ success: boolean; version: PromptVersionItem }> => {
-    const response = await apiClient.post(`/admin/ai/prompts/${id}/rollback`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; version: PromptVersionItem }>(`/admin/ai/prompts/${id}/rollback`);
   },
 
   // Feedback
@@ -232,14 +249,14 @@ export const aiApi = {
     page: number;
     totalPages: number;
   }> => {
-    const response = await apiClient.get("/admin/ai/feedback", { params });
-    return response as any;
+    return apiClient.get<unknown, {
+      items: FeedbackItem[]; total: number; positiveCount: number; negativeCount: number; satisfactionRate: number; page: number; totalPages: number;
+    }>("/admin/ai/feedback", { params });
   },
 
   // Multi-API Key Pool
   getKeyPool: async (): Promise<ApiKeyPoolEntry[]> => {
-    const response = await apiClient.get("/admin/ai/keys");
-    return response as any;
+    return apiClient.get<unknown, ApiKeyPoolEntry[]>("/admin/ai/keys");
   },
 
   addKeyToPool: async (payload: {
@@ -251,23 +268,19 @@ export const aiApi = {
     priority?: number;
     isActive?: boolean;
   }): Promise<ApiKeyPoolEntry> => {
-    const response = await apiClient.post("/admin/ai/keys", payload);
-    return response as any;
+    return apiClient.post<unknown, ApiKeyPoolEntry>("/admin/ai/keys", payload);
   },
 
   updateKeyInPool: async (id: string, payload: Partial<ApiKeyPoolEntry> & { apiKey?: string }): Promise<ApiKeyPoolEntry> => {
-    const response = await apiClient.put(`/admin/ai/keys/${id}`, payload);
-    return response as any;
+    return apiClient.put<unknown, ApiKeyPoolEntry>(`/admin/ai/keys/${id}`, payload);
   },
 
   deleteKeyFromPool: async (id: string): Promise<{ success: boolean; id: string }> => {
-    const response = await apiClient.delete(`/admin/ai/keys/${id}`);
-    return response as any;
+    return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/keys/${id}`);
   },
 
   testKeyInPool: async (id: string): Promise<{ success: boolean; latencyMs?: number; message?: string; error?: string }> => {
-    const response = await apiClient.post(`/admin/ai/keys/${id}/test`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; latencyMs?: number; message?: string; error?: string }>(`/admin/ai/keys/${id}/test`);
   },
 
   // 5-Language RAG Auto-Generator
@@ -277,8 +290,7 @@ export const aiApi = {
     sourceLocale?: string;
     category?: string;
   }): Promise<{ success: boolean; translations: MultiLangTranslations }> => {
-    const response = await apiClient.post("/admin/ai/knowledge/auto-translate", payload);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; translations: MultiLangTranslations }>("/admin/ai/knowledge/auto-translate", payload);
   },
 
   saveBatchMultiLangKnowledge: async (payload: {
@@ -291,86 +303,70 @@ export const aiApi = {
       tags?: string[];
     }>;
   }): Promise<{ success: boolean; savedCount: number; items: KnowledgeItemData[] }> => {
-    const response = await apiClient.post("/admin/ai/knowledge/batch-multi-lang", payload);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; savedCount: number; items: KnowledgeItemData[] }>("/admin/ai/knowledge/batch-multi-lang", payload);
   },
 
   // Conversations & Live Human Takeover
   getConversations: async (params?: { page?: number; limit?: number; status?: string; leadStatus?: string; search?: string }): Promise<{ items: ConversationItemData[]; total: number; page: number; totalPages: number }> => {
-    const response = await apiClient.get("/admin/ai/conversations", { params });
-    return response as any;
+    return apiClient.get<unknown, { items: ConversationItemData[]; total: number; page: number; totalPages: number }>("/admin/ai/conversations", { params });
   },
 
   getConversationDetail: async (id: string): Promise<ConversationItemData> => {
-    const response = await apiClient.get(`/admin/ai/conversations/${id}`);
-    return response as any;
+    return apiClient.get<unknown, ConversationItemData>(`/admin/ai/conversations/${id}`);
   },
 
   takeoverConversation: async (id: string): Promise<{ success: boolean; conversation: ConversationItemData }> => {
-    const response = await apiClient.post(`/admin/ai/conversations/${id}/takeover`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; conversation: ConversationItemData }>(`/admin/ai/conversations/${id}/takeover`);
   },
 
-  staffReply: async (id: string, text: string): Promise<{ success: boolean; message: any }> => {
-    const response = await apiClient.post(`/admin/ai/conversations/${id}/reply`, { text });
-    return response as any;
+  staffReply: (id: string, text: string): Promise<{ success: boolean; message: JsonValue }> => {
+    return apiClient.post<unknown, { success: boolean; message: JsonValue }>(`/admin/ai/conversations/${id}/reply`, { text });
   },
 
   returnToAi: async (id: string): Promise<{ success: boolean; status: string }> => {
-    const response = await apiClient.post(`/admin/ai/conversations/${id}/return-to-ai`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; status: string }>(`/admin/ai/conversations/${id}/return-to-ai`);
   },
 
   resolveConversation: async (id: string): Promise<{ success: boolean; status: string }> => {
-    const response = await apiClient.post(`/admin/ai/conversations/${id}/resolve`);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; status: string }>(`/admin/ai/conversations/${id}/resolve`);
   },
 
   // Security & Safety Events
   getSafetyEvents: async (params?: { page?: number; limit?: number }): Promise<{ events: AiSafetyEventItem[]; total: number; page: number; totalPages: number }> => {
-    const response = await apiClient.get("/admin/ai/safety-events", { params });
-    return response as any;
+    return apiClient.get<unknown, { events: AiSafetyEventItem[]; total: number; page: number; totalPages: number }>("/admin/ai/safety-events", { params });
   },
 
   // Testing Playground Simulator
-  runSimulator: async (payload: { message: string; sessionId: string; locale?: string }): Promise<any> => {
-    const response = await apiClient.post("/admin/ai/simulator", payload);
-    return response as any;
+  runSimulator: (payload: { message: string; sessionId: string; locale?: string }): Promise<AiSimulatorResponse> => {
+    return apiClient.post<unknown, AiSimulatorResponse>("/admin/ai/simulator", payload);
   },
 
   // Knowledge Base CRUD
   getKnowledge: async (params?: { page?: number; limit?: number; category?: string; locale?: string; status?: string; search?: string }): Promise<{ items: KnowledgeItemData[]; total: number; page: number; totalPages: number }> => {
-    const response = await apiClient.get("/admin/ai/knowledge", { params });
-    return response as any;
+    return apiClient.get<unknown, { items: KnowledgeItemData[]; total: number; page: number; totalPages: number }>("/admin/ai/knowledge", { params });
   },
 
   createKnowledge: async (payload: Partial<KnowledgeItemData>): Promise<KnowledgeItemData> => {
-    const response = await apiClient.post("/admin/ai/knowledge", payload);
-    return response as any;
+    return apiClient.post<unknown, KnowledgeItemData>("/admin/ai/knowledge", payload);
   },
 
   updateKnowledge: async (id: string, payload: Partial<KnowledgeItemData>): Promise<KnowledgeItemData> => {
-    const response = await apiClient.put(`/admin/ai/knowledge/${id}`, payload);
-    return response as any;
+    return apiClient.put<unknown, KnowledgeItemData>(`/admin/ai/knowledge/${id}`, payload);
   },
 
   deleteKnowledge: async (id: string): Promise<{ success: boolean }> => {
-    const response = await apiClient.delete(`/admin/ai/knowledge/${id}`);
-    return response as any;
+    return apiClient.delete<unknown, { success: boolean }>(`/admin/ai/knowledge/${id}`);
   },
 
   reindexKnowledge: async (): Promise<{ success: boolean; reindexedCount: number }> => {
-    const response = await apiClient.post("/admin/ai/knowledge/index");
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; reindexedCount: number }>("/admin/ai/knowledge/index");
   },
 
   syncCatalogKnowledge: async (): Promise<{ success: boolean; syncedTours: number; syncedDestinations: number }> => {
-    const response = await apiClient.post("/admin/ai/knowledge/sync-catalog");
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; syncedTours: number; syncedDestinations: number }>("/admin/ai/knowledge/sync-catalog");
   },
 
   uploadKnowledgeDocument: async (payload: { title: string; content: string; category?: string; locale?: string; tags?: string[] }): Promise<{ success: boolean; item: KnowledgeItemData }> => {
-    const response = await apiClient.post("/admin/ai/knowledge/upload", payload);
-    return response as any;
+    return apiClient.post<unknown, { success: boolean; item: KnowledgeItemData }>("/admin/ai/knowledge/upload", payload);
   },
 };

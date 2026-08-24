@@ -163,7 +163,7 @@ export function CustomersTable() {
     <div className="space-y-4">
       <DataTable
         columns={columns}
-        data={Array.isArray(data) ? data : (data?.data || [])}
+        data={data?.data ?? []}
         isLoading={isLoading}
         searchKey="name"
         renderToolbarActions={renderToolbarActions}

@@ -3,13 +3,11 @@ import { Review, ReviewQueryFilters, PaginatedResponse } from "../types";
 
 export const reviewsApi = {
   getReviews: async (filters: ReviewQueryFilters): Promise<PaginatedResponse<Review>> => {
-    const response = await apiClient.get("/admin/reviews", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<Review>, PaginatedResponse<Review>>("/admin/reviews", { params: filters });
   },
 
   publishReview: async (id: string): Promise<Review> => {
-    const response = await apiClient.patch(`/admin/reviews/${id}/publish`);
-    return response as any;
+    return apiClient.patch<Review, Review>(`/admin/reviews/${id}/status`, { status: "APPROVED", isPublished: true });
   },
 
   deleteReview: async (id: string): Promise<void> => {
@@ -17,7 +15,6 @@ export const reviewsApi = {
   },
 
   replyToReview: async (id: string, reply: string): Promise<Review> => {
-    const response = await apiClient.patch(`/admin/reviews/${id}/reply`, { reply });
-    return response as any;
+    return apiClient.post<Review, Review>(`/admin/reviews/${id}/reply`, { adminReply: reply });
   }
 };

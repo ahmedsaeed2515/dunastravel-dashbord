@@ -82,7 +82,7 @@ export function BulkMoveToursDialog({
       landingPagesApi
         .getLandingPages({ limit: 100 })
         .then((res) => {
-          setLandingPages(res?.data || []);
+          setLandingPages(res.data);
         })
         .catch(() => {});
     }

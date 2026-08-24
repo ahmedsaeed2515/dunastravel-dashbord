@@ -5,6 +5,9 @@ export interface DashboardFilters {
   interfaceSlug?: string;
   tourSlug?: string;
   currency?: string;
+  locale?: 'en' | 'ar' | 'es' | 'pt' | 'it';
+  timezone?: 'UTC' | 'Africa/Cairo';
+  preset?: 'all' | '30d' | '90d' | '12m';
 }
 
 export interface ExecutiveSummary {

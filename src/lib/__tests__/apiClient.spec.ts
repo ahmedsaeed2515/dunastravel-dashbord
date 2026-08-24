@@ -27,7 +27,7 @@ describe('apiClient Interceptors', () => {
     }
   });
 
-  it('unwraps confirmed Bookings raw response structure into clean { data, meta } contract', () => {
+  it('rejects a legacy double-wrapped response instead of guessing its shape', () => {
     const successInterceptor = (apiClient.interceptors.response as any).handlers[0].fulfilled;
     const rawResponse = {
       data: {
@@ -60,25 +60,7 @@ describe('apiClient Interceptors', () => {
         }
       }
     };
-    const result = successInterceptor(rawResponse);
-    expect(result).toEqual({
-      data: [
-        {
-          id: "2763530b-eb78-4287-9a8f-4c54449a3c08",
-          referenceCode: "BKG-COMP-NKA94T",
-          status: "CANCELLED",
-          totalAmount: "1780",
-          currency: "USD",
-          passengerCount: 2,
-          tourId: "98cb34f1-ec69-4ecf-9ebc-c98d72fd66c8",
-          tourSlug: "cairo-express-4d",
-          tourNameEn: "Cairo Express",
-          invoiceNumber: null,
-          createdAt: "2026-07-13T20:59:28.654Z"
-        }
-      ],
-      meta: { total: 60, page: 1, limit: 10, totalPages: 6 }
-    });
+    expect(() => successInterceptor(rawResponse)).toThrow('Invalid API success envelope');
   });
 
   it('unwraps paginated NestJS response while preserving meta metadata', () => {
@@ -96,6 +78,20 @@ describe('apiClient Interceptors', () => {
       data: [{ id: '1', name: 'Tour' }],
       meta: { total: 1, page: 1, limit: 10, totalPages: 1 }
     });
+  });
+
+  it('rejects HTTP-success envelopes whose business operation failed', () => {
+    const successInterceptor = (apiClient.interceptors.response as any).handlers[0].fulfilled;
+    expect(() => successInterceptor({ data: { success: true, statusCode: 200, data: { success: false, code: 'CONFLICT', message: 'Conflict' } } }))
+      .toThrow('Conflict');
+  });
+
+  it('preserves zero, false, null, and an empty collection without fallback coercion', () => {
+    const successInterceptor = (apiClient.interceptors.response as any).handlers[0].fulfilled;
+    expect(successInterceptor({ data: { success: true, statusCode: 200, data: { zero: 0, enabled: false, optional: null } } }))
+      .toEqual({ zero: 0, enabled: false, optional: null });
+    expect(successInterceptor({ data: { success: true, statusCode: 200, data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } } }))
+      .toEqual({ data: [], meta: { total: 0, page: 1, limit: 20, totalPages: 0 } });
   });
 
   it('unwraps non-paginated NestJS response data payload directly', () => {

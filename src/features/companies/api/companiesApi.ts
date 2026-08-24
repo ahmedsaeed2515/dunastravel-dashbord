@@ -12,33 +12,27 @@ import { PaginatedResponse } from "@/lib/api-types";
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
-    const res: any = await apiClient.get("/admin/companies/metrics");
-    return res?.totalCompanies !== undefined ? res : res?.data || res;
+    return apiClient.get<CompanyMetrics, CompanyMetrics>("/admin/companies/metrics");
   },
 
   getCompanies: async (filters: CompanyQueryFilters): Promise<PaginatedResponse<Company>> => {
-    const response = await apiClient.get("/admin/companies", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<Company>, PaginatedResponse<Company>>("/admin/companies", { params: filters });
   },
 
   getCompanyById: async (id: string): Promise<CompanyDetail> => {
-    const response = await apiClient.get(`/admin/companies/${id}`);
-    return response as any;
+    return apiClient.get<CompanyDetail, CompanyDetail>(`/admin/companies/${id}`);
   },
 
   createCompany: async (payload: CreateCompanyPayload): Promise<Company> => {
-    const response = await apiClient.post("/admin/companies", payload);
-    return response as any;
+    return apiClient.post<Company, Company>("/admin/companies", payload);
   },
 
   updateCompany: async (id: string, payload: UpdateCompanyPayload): Promise<Company> => {
-    const response = await apiClient.patch(`/admin/companies/${id}`, payload);
-    return response as any;
+    return apiClient.patch<Company, Company>(`/admin/companies/${id}`, payload);
   },
 
   bulkUpdate: async (payload: { companyIds: string[]; status?: string; tags?: string[]; segments?: string[] }): Promise<{ count: number }> => {
-    const response = await apiClient.patch("/admin/companies/bulk/update", payload);
-    return response as any;
+    return apiClient.patch<{ count: number }, { count: number }>("/admin/companies/bulk/update", payload);
   },
 
   exportCsvUrl: (filters: CompanyQueryFilters): string => {

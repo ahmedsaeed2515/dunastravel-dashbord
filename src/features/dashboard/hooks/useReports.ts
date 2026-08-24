@@ -1,14 +1,14 @@
 import { useQuery } from "@tanstack/react-query";
-import { reportsApi } from "../api/reportsApi";
+import { ReportPeriod, reportsApi } from "../api/reportsApi";
 
-export function useBookingsTrend(period: string = 'monthly') {
+export function useBookingsTrend(period: ReportPeriod = 'monthly') {
   return useQuery({
     queryKey: ["reports", "bookings-trend", period],
     queryFn: () => reportsApi.getBookingsTrend(period),
   });
 }
 
-export function useRevenueReport(period: string = 'monthly') {
+export function useRevenueReport(period: ReportPeriod = 'monthly') {
   return useQuery({
     queryKey: ["reports", "revenue", period],
     queryFn: () => reportsApi.getRevenue(period),

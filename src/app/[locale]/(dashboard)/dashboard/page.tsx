@@ -9,7 +9,7 @@ import { RecentBookingsTable } from "@/features/dashboard/components/RecentBooki
 import { RecentActivityFeed } from "@/features/dashboard/components/RecentActivityFeed";
 import { PopularToursSection } from "@/features/dashboard/components/PopularToursSection";
 import {
-  useDashboardSummary, useRevenueTrend,
+  useDashboardSummary, useRevenueTrend, useTourPerformance,
   useRecentBookings, useRecentActivity
 } from "@/features/dashboard/hooks/useDashboardData";
 import { DashboardFilters } from "@/features/dashboard/types";
@@ -21,6 +21,7 @@ export default function DashboardPage() {
   const { data: revenueTrend, isLoading: isLoadingRevenue } = useRevenueTrend(filters);
   const { data: recentBookings, isLoading: isLoadingRecentBookings } = useRecentBookings();
   const { data: recentActivity, isLoading: isLoadingActivity } = useRecentActivity();
+  const { data: tourPerformance, isLoading: isLoadingTours, isError: isToursError } = useTourPerformance(filters);
 
   const handleRefreshAll = () => {
     refetchSummary();
@@ -59,7 +60,7 @@ export default function DashboardPage() {
       </div>
 
       {/* 5. Most Popular & High-Demand Tours Section */}
-      <PopularToursSection />
+      <PopularToursSection tours={tourPerformance?.rankings?.mostBooked} isLoading={isLoadingTours} isError={isToursError} />
     </div>
   );
 }

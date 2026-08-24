@@ -23,6 +23,33 @@ export interface TourImage {
   sortOrder: number;
 }
 
+export type TourAvailabilityStatus = 'AVAILABLE' | 'LIMITED' | 'SOLD_OUT' | 'CLOSED';
+
+/** A departure-level inventory record. Tour itself has no capacity columns. */
+export interface TourAvailability {
+  id: string;
+  tourId: string;
+  date: string;
+  totalCapacity: number;
+  remainingSeats: number;
+  status: TourAvailabilityStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateTourAvailabilityPayload {
+  date: string;
+  totalCapacity: number;
+  status?: TourAvailabilityStatus;
+}
+
+export interface UpdateTourAvailabilityPayload {
+  totalCapacity?: number;
+  remainingSeats?: number;
+  status?: TourAvailabilityStatus;
+  expectedUpdatedAt: string;
+}
+
 export interface Tour {
   id: string;
   slug: string;
@@ -73,6 +100,48 @@ export interface Tour {
   bookingCount?: number;
   reviewCount?: number;
   heroImage?: string | null;
+}
+
+/** The admin preview's intentionally narrow, public-facing presentation DTO. */
+export interface TourPreview {
+  id: string;
+  slug: string;
+  title: string;
+  category: string | null;
+  basePriceUsd: string;
+  currency: string;
+  duration: string;
+  overview: string;
+  cancellationPolicy: string | null;
+  includedServices: string[];
+  excludedServices: string[];
+  hotelInfo: string | null;
+  seasonPricing: string | null;
+  tags: string[];
+  difficultyLevel: string | null;
+  meetingPoint: string | null;
+  country: string | null;
+  languages: string[];
+  isFeatured: boolean;
+  itinerary: Array<{
+    id: string;
+    dayLabel: string | null;
+    description: string;
+    meals: string | null;
+    sortOrder: number;
+  }>;
+  images: Array<{
+    id: string;
+    imageUrl: string;
+    isHero: boolean;
+    altText: string | null;
+    sortOrder: number;
+  }>;
+  preview: {
+    status: TourStatus;
+    isActive: boolean;
+    isPublic: boolean;
+  };
 }
 
 export type TourDetail = Tour;
@@ -134,7 +203,10 @@ export interface CreateTourPayload {
   images?: TourImage[];
 }
 
-export type UpdateTourPayload = Partial<CreateTourPayload>;
+export type UpdateTourPayload = Partial<CreateTourPayload> & {
+  /** Optimistic-concurrency token from the most recent admin tour read. */
+  expectedUpdatedAt?: string;
+};
 
 export interface BulkUpdateToursPayload {
   slugs: string[];

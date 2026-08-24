@@ -7,8 +7,7 @@ export function useBookingDetail(referenceCode: string | undefined) {
     queryKey: ['admin-booking', referenceCode],
     queryFn: async () => {
       if (!referenceCode) return null;
-      const data = await apiClient.get<any, BookingDetail>(`/admin/bookings/${referenceCode}`);
-      return data;
+      return apiClient.get<unknown, BookingDetail>(`/admin/bookings/${referenceCode}`);
     },
     enabled: !!referenceCode,
   });
