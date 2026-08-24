@@ -150,6 +150,8 @@ export interface RecentActivityItem {
   id: string;
   actor: string;
   action: string;
+  actionAr?: string;
+  rawAction?: string;
   entity: string;
   timestamp: string;
   type: string;
