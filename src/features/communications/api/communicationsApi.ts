@@ -3,68 +3,63 @@ import {
   NotificationDeliveryLog, 
   CommunicationMetrics, 
   NotificationDeliveryLogQueryFilters, 
-  PaginatedResponse 
+  PaginatedResponse,
+  Inquiry,
+  InquiryQueryFilters,
+  ContactSubmission,
+  ContactSubmissionQueryFilters,
+  EmailTemplate,
+  CreateEmailTemplatePayload,
+  UpdateEmailTemplatePayload,
 } from "../types";
 
 export const communicationsApi = {
   getMetrics: async (): Promise<CommunicationMetrics> => {
-    const res: any = await apiClient.get("/admin/communications/logs/metrics");
-    return res?.totalSent !== undefined ? res : res?.data || res;
+    return apiClient.get<CommunicationMetrics, CommunicationMetrics>("/admin/communications/logs/metrics");
   },
 
   getLogs: async (filters: NotificationDeliveryLogQueryFilters): Promise<PaginatedResponse<NotificationDeliveryLog>> => {
-    const response = await apiClient.get("/admin/notification-logs", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<NotificationDeliveryLog>, PaginatedResponse<NotificationDeliveryLog>>("/admin/notification-logs", { params: filters });
   },
 
   retryNotification: async (id: string): Promise<{ success: boolean; message: string }> => {
-    const response = await apiClient.post(`/admin/communications/logs/${id}/retry`);
-    return response as any;
+    return apiClient.post<{ success: boolean; message: string }, { success: boolean; message: string }>(`/admin/communications/logs/${id}/retry`);
   },
 
-  getInquiries: async (filters: any): Promise<PaginatedResponse<any>> => {
-    const response = await apiClient.get("/admin/inquiries", { params: filters });
-    return response as any;
+  getInquiries: async (filters: InquiryQueryFilters): Promise<PaginatedResponse<Inquiry>> => {
+    return apiClient.get<unknown, PaginatedResponse<Inquiry>>("/admin/inquiries", { params: filters });
   },
 
-  updateInquiry: async (referenceCode: string, payload: { assigneeId?: string; status?: string }): Promise<any> => {
-    const response = await apiClient.patch(`/admin/inquiries/${referenceCode}`, payload);
-    return response as any;
+  updateInquiry: async (referenceCode: string, payload: { assigneeId?: string; status?: string }): Promise<Inquiry> => {
+    return apiClient.patch<unknown, Inquiry>(`/admin/inquiries/${referenceCode}`, payload);
   },
 
-  getContactSubmissions: async (filters: any): Promise<PaginatedResponse<any>> => {
-    const response = await apiClient.get("/admin/contact-submissions", { params: filters });
-    return response as any;
+  getContactSubmissions: async (filters: ContactSubmissionQueryFilters): Promise<PaginatedResponse<ContactSubmission>> => {
+    return apiClient.get<unknown, PaginatedResponse<ContactSubmission>>("/admin/contact-submissions", { params: filters });
   },
 
-  getContactSubmissionByCode: async (referenceCode: string): Promise<any> => {
-    const response = await apiClient.get(`/admin/contact-submissions/${referenceCode}`);
-    return response as any;
+  getContactSubmissionByCode: async (referenceCode: string): Promise<ContactSubmission> => {
+    return apiClient.get<unknown, ContactSubmission>(`/admin/contact-submissions/${referenceCode}`);
   },
 
-  updateContactSubmissionStatus: async (referenceCode: string, status: string): Promise<any> => {
-    const response = await apiClient.patch(`/admin/contact-submissions/${referenceCode}/status`, { status });
-    return response as any;
+  updateContactSubmissionStatus: async (referenceCode: string, status: string): Promise<ContactSubmission> => {
+    return apiClient.patch<unknown, ContactSubmission>(`/admin/contact-submissions/${referenceCode}/status`, { status });
   },
 
-  getTemplates: async (): Promise<any[]> => {
-    const response = await apiClient.get("/admin/communications/templates");
-    return response as any;
+  getTemplates: async (): Promise<EmailTemplate[]> => {
+    return apiClient.get<unknown, EmailTemplate[]>("/admin/communications/templates");
   },
 
-  getTemplateById: async (id: string): Promise<any> => {
-    const response = await apiClient.get(`/admin/communications/templates/${id}`);
-    return response as any;
+  getTemplateById: async (id: string): Promise<EmailTemplate> => {
+    return apiClient.get<unknown, EmailTemplate>(`/admin/communications/templates/${id}`);
   },
 
-  createTemplate: async (payload: any): Promise<any> => {
-    const response = await apiClient.post("/admin/communications/templates", payload);
-    return response as any;
+  createTemplate: async (payload: CreateEmailTemplatePayload): Promise<EmailTemplate> => {
+    return apiClient.post<unknown, EmailTemplate>("/admin/communications/templates", payload);
   },
 
-  updateTemplate: async (id: string, payload: any): Promise<any> => {
-    const response = await apiClient.patch(`/admin/communications/templates/${id}`, payload);
-    return response as any;
+  updateTemplate: async (id: string, payload: UpdateEmailTemplatePayload): Promise<EmailTemplate> => {
+    return apiClient.patch<unknown, EmailTemplate>(`/admin/communications/templates/${id}`, payload);
   },
 
   deleteTemplate: async (id: string): Promise<void> => {

@@ -94,9 +94,9 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
     if (open) {
       setIsLoadingLandingPages(true);
       landingPagesApi
-        .getLandingPages({ limit: 100 })
+        .getLandingPages({ limit: 50 })
         .then((res) => {
-          setLandingPages(res?.data || []);
+          setLandingPages(res.data);
         })
         .catch(() => {})
         .finally(() => setIsLoadingLandingPages(false));

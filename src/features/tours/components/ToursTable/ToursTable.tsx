@@ -1,5 +1,4 @@
- 
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { 
@@ -13,11 +12,10 @@ import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
 import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
-import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { EgyptInterfaceDrawer } from "../Drawers/EgyptInterfaceDrawer";
-import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
+import type { TripModel } from "@/types/dunas-suite";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
 import { 
@@ -44,7 +42,7 @@ import {
   RotateCcw,
   Globe,
   ArrowRightLeft,
-  Folder
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -58,6 +56,83 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
+import Link from "next/link";
+
+function tourToTripModel(tour: Tour): TripModel {
+  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
+  const enTitle = tour.titleJsonb?.en || tour.slug;
+  const esTitle = tour.titleJsonb?.es || enTitle;
+  const ptTitle = tour.titleJsonb?.pt || enTitle;
+  const itTitle = tour.titleJsonb?.it || enTitle;
+
+  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || '';
+  const enOverview = tour.overviewJsonb?.en || arOverview;
+  const esOverview = tour.overviewJsonb?.es || enOverview;
+  const ptOverview = tour.overviewJsonb?.pt || enOverview;
+  const itOverview = tour.overviewJsonb?.it || enOverview;
+
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
+  const price = Number(tour.basePriceUsd || 650);
+
+  const images = (tour.images && tour.images.length > 0)
+    ? tour.images.map(img => img.imageUrl)
+    : [tour.heroImage || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'];
+
+  const itinerary = (tour.itineraries && tour.itineraries.length > 0)
+    ? tour.itineraries.map((itin, idx) => ({
+        day: idx + 1,
+        title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
+        description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
+        meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
+      }))
+    : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }];
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: arTitle,
+    subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
+    destination: (tour.country?.toLowerCase() || 'egypt'),
+    market: 'Global',
+    language: 'ar',
+    type: (tour.category || 'Classic') as any,
+    duration,
+    departures: 'Daily / Diário',
+    price,
+    hotelCategory: '5-Star Luxury',
+    rating: 4.9,
+    reviewCount: tour.reviewCount || 48,
+    popular: !!tour.isFeatured,
+    familyFriendly: true,
+    honeymoon: false,
+    luxury: true,
+    cultural: true,
+    adventure: false,
+    overview: arOverview,
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [''],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [''],
+    images,
+    hotels: '5-Star Luxury Hotels',
+    accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
+    itinerary,
+    translations: {
+      ar: { title: arTitle, overview: arOverview, highlights: (tour.highlightJsonb?.ar as string[]) || [''], included: (tour.includedServicesJsonb?.ar as string[]) || [''], excluded: (tour.excludedServicesJsonb?.ar as string[]) || [''] },
+      en: { title: enTitle, overview: enOverview, highlights: (tour.highlightJsonb?.en as string[]) || [''], included: (tour.includedServicesJsonb?.en as string[]) || [''], excluded: (tour.excludedServicesJsonb?.en as string[]) || [''] },
+      es: { title: esTitle, overview: esOverview, highlights: (tour.highlightJsonb?.es as string[]) || [''], included: (tour.includedServicesJsonb?.es as string[]) || [''], excluded: (tour.excludedServicesJsonb?.es as string[]) || [''] },
+      pt: { title: ptTitle, overview: ptOverview, highlights: (tour.highlightJsonb?.pt as string[]) || [''], included: (tour.includedServicesJsonb?.pt as string[]) || [''], excluded: (tour.excludedServicesJsonb?.pt as string[]) || [''] },
+      it: { title: itTitle, overview: itOverview, highlights: (tour.highlightJsonb?.it as string[]) || [''], included: (tour.includedServicesJsonb?.it as string[]) || [''], excluded: (tour.excludedServicesJsonb?.it as string[]) || [''] },
+    },
+  };
+}
+
+function queryErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return "Tours could not be loaded from the backend.";
+}
 
 export function ToursTable() {
   const tTours = useTranslations("tours");
@@ -76,9 +151,6 @@ export function ToursTable() {
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
   const [selectedMarket, setSelectedMarket] = useState<string>("ALL");
 
-  // Egypt Interface Drawer state
-  const [isEgyptDrawerOpen, setIsEgyptDrawerOpen] = useState(false);
-  
   const queryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
@@ -103,32 +175,34 @@ export function ToursTable() {
     setPagination({ pageIndex: 0, pageSize: 12 });
   };
 
-  const { data, isLoading } = useTours(queryFilters);
+  const { data, isLoading, error, refetch } = useTours(queryFilters);
   const { data: stats } = useTourStats();
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Drawer & Modal states
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
-  
-  // Single & Bulk Move state
+  const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [bulkMoveSlugs, setBulkMoveSlugs] = useState<string[]>([]);
   const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Handlers
   const handleView = (tour: Tour) => {
     setSelectedTour(tour);
     setViewDrawerOpen(true);
   };
-  
+
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
-    setEditDrawerOpen(true); 
+    setSelectedTripForModal(tourToTripModel(tour));
+    setIsTripModalOpen(true);
+  };
+
+  const handleOpenAddTrip = () => {
+    setSelectedTripForModal(null);
+    setIsTripModalOpen(true);
   };
 
   const handleMove = (tour: Tour) => {
@@ -142,10 +216,9 @@ export function ToursTable() {
   };
 
   const handleDelete = async (tour: Tour) => {
-    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) {
-      await deleteTour.mutateAsync(tour.slug);
-      toast.success(tCommon("success"));
-    }
+    if (!window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) return;
+    await deleteTour.mutateAsync(tour.slug);
+    toast.success(tCommon("success"));
   };
 
   const handleExportCsv = async () => {
@@ -153,15 +226,15 @@ export function ToursTable() {
       setIsExporting(true);
       const blob = await toursApi.exportToursCsv(queryFilters);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `tours_export_${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tours_export_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      document.body.removeChild(link);
       toast.success(tCommon("success"));
-    } catch (error: any) {
+    } catch {
       toast.error(tCommon("error"));
     } finally {
       setIsExporting(false);
@@ -169,9 +242,9 @@ export function ToursTable() {
   };
 
   const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
-  const toursList: Tour[] = Array.isArray(data) ? data : (data?.data || []);
-  const totalCount: number = (data as any)?.meta?.total ?? (data as any)?.total ?? (Array.isArray(data) ? data.length : (data?.data?.length || 0));
-  const overallTotal: number = stats?.totalTours ? Number(stats.totalTours) : totalCount;
+  const toursList: Tour[] = data?.data ?? [];
+  const totalCount: number = data?.meta?.total ?? 0;
+  const overallTotal: number | null = stats?.totalTours ?? null;
 
   // Custom Toolbar Actions for Bulk Management & Export
   const renderToolbarActions = (table: any) => {
@@ -264,7 +337,13 @@ export function ToursTable() {
           <span>{tCommon("exportCsv")}</span>
         </Button>
 
-        <CreateTourWizard />
+        <Button
+          onClick={handleOpenAddTrip}
+          className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 px-4 h-8 shadow-sm cursor-pointer"
+        >
+          <Plus className="h-4 w-4 stroke-[3]" />
+          <span>{currentLocale === "ar" ? "إضافة رحلة جديدة +" : "Create Tour +"}</span>
+        </Button>
       </div>
     );
   };
@@ -282,11 +361,11 @@ export function ToursTable() {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="text-3xl font-extrabold font-mono text-foreground">
-              {hasActiveFilters ? totalCount : overallTotal}
+              {hasActiveFilters ? totalCount : (overallTotal ?? "—")}
             </span>
             {hasActiveFilters && (
               <span className="text-xs text-muted-foreground font-medium">
-                / {overallTotal} total
+                / {overallTotal ?? "—"} total
               </span>
             )}
           </div>
@@ -297,7 +376,7 @@ export function ToursTable() {
               </span>
             ) : (
               <span className="font-semibold text-foreground">
-                {stats?.publishedTours ?? overallTotal} {tDashboard("publishedTours")}
+                {(stats?.publishedTours ?? "—")} {tDashboard("publishedTours")}
               </span>
             )}
           </p>
@@ -312,7 +391,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.featuredTours ?? "8"}
+            {stats?.featuredTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-amber-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -325,7 +404,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-emerald-600">
-            {stats?.occupancyRate ? `${stats.occupancyRate}%` : "68%"}
+            {stats?.occupancyRate === undefined || stats.occupancyRate === null ? "—" : `${stats.occupancyRate}%`}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-emerald-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -338,7 +417,7 @@ export function ToursTable() {
             </div>
           </div>
           <div className="text-3xl font-extrabold font-mono text-foreground">
-            {stats?.draftTours ?? "3"}
+            {stats?.draftTours ?? "—"}
           </div>
           <div className="absolute -bottom-6 -right-6 w-16 h-16 bg-blue-500/5 rounded-full group-hover:scale-150 transition-transform duration-500 pointer-events-none" />
         </div>
@@ -353,29 +432,27 @@ export function ToursTable() {
             </div>
             <div>
               <h3 className="font-bold text-base text-foreground flex items-center gap-2">
-                <span>{currentLocale === "ar" ? "واجهة مصر - ملفات الرحلات والباكدجز (Egypt Interface)" : "Egypt Interface & Folder Collections"}</span>
+                <span>{currentLocale === "ar" ? "واجهة مصر والبرامج المرتبطة" : "Egypt destination & related programs"}</span>
                 <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/30 text-xs font-bold">
-                  {currentLocale === "ar" ? "منظمة في ملفين" : "2 Folders Structured"}
+                  {currentLocale === "ar" ? "مصدر بيانات حقيقي" : "Persisted data"}
                 </Badge>
               </h3>
               <p className="text-xs text-muted-foreground mt-0.5">
                 {currentLocale === "ar"
-                  ? "الملف الأول: الرحلات العادية (9 رحلات) | الملف الثاني: الباكدجز والبرامج (5 باكدجز)."
-                  : "Folder 1: Standard Tours (9 tours) | Folder 2: Packages & Programs (5 packages)."}
+                  ? "أدر المحتوى، ترتيب الرحلات، الظهور، والترجمات من واجهات الوجهات المحفوظة."
+                  : "Manage content, tour order, visibility, and translations from persisted destination interfaces."}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2 shrink-0">
-            <Button
-              type="button"
-              variant="default"
-              onClick={() => setIsEgyptDrawerOpen(true)}
-              className="h-10 px-4 gap-2 text-xs font-bold bg-amber-600 hover:bg-amber-700 text-white shadow-sm"
+            <Link
+              href={`/${currentLocale}/admin/destinations`}
+              className="inline-flex h-10 items-center gap-2 rounded-lg bg-amber-600 px-4 text-xs font-bold text-white shadow-sm transition-colors hover:bg-amber-700"
             >
-              <Folder className="w-4 h-4" />
-              <span>{currentLocale === "ar" ? "استعراض ملفات واجهة مصر (الملفين)" : "Open Egypt Interface Folders"}</span>
-            </Button>
+              <Globe className="w-4 h-4" />
+              <span>{currentLocale === "ar" ? "فتح إدارة الوجهات" : "Open destination management"}</span>
+            </Link>
           </div>
         </div>
       )}
@@ -513,7 +590,15 @@ export function ToursTable() {
       </div>
 
       {/* Body View Rendering */}
-      {isLoading ? (
+      {error ? (
+        <div data-testid="tours-load-error" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+          <p className="font-semibold">Tours could not be loaded.</p>
+          <p className="mt-1 text-destructive/90">{queryErrorMessage(error)}</p>
+          <Button variant="outline" className="mt-4" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
@@ -531,7 +616,7 @@ export function ToursTable() {
           data={toursList}
           isLoading={isLoading}
           renderToolbarActions={renderToolbarActions}
-          pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || -1)}
+          pageCount={data?.meta?.totalPages ?? 0}
           pagination={pagination}
           onPaginationChange={setPagination}
           manualPagination={true}
@@ -544,11 +629,15 @@ export function ToursTable() {
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
       />
-      
-      <EditTourDrawer
-        tour={selectedTour}
-        open={isEditDrawerOpen}
-        onOpenChange={setEditDrawerOpen}
+
+      {/* 6-Tab Trip & 5-Lang Editor Modal (Commit 8a9ab4f) */}
+      <TripEditorModal
+        trip={selectedTripForModal}
+        isOpen={isTripModalOpen}
+        onClose={() => {
+          setIsTripModalOpen(false);
+          setSelectedTripForModal(null);
+        }}
       />
 
       <MoveTourDialog
@@ -563,10 +652,6 @@ export function ToursTable() {
         onOpenChange={setIsBulkMoveOpen}
       />
 
-      <EgyptInterfaceDrawer
-        open={isEgyptDrawerOpen}
-        onOpenChange={setIsEgyptDrawerOpen}
-      />
     </div>
   );
 }

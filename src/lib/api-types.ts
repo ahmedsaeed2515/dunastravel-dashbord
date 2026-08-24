@@ -47,11 +47,60 @@ export interface ApiResponse<T> {
   meta?: PaginatedMeta;
 }
 
+export interface ApiEnvelope<T> extends ApiResponse<T> {
+  statusCode: number;
+  timestamp: string;
+}
+
 export interface ApiError {
   message: string;
   status?: number;
   code?: string;
   errors?: Record<string, string[] | string>;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** Strictly unwraps the one global Nest envelope. No legacy or fallback shapes. */
+export function unwrapApiEnvelope<T>(value: unknown): T {
+  if (!isRecord(value) || value.success !== true || !('data' in value)) {
+    const error = new Error('Invalid API success envelope') as Error & ApiError;
+    error.code = 'INVALID_SUCCESS_ENVELOPE';
+    throw error;
+  }
+
+  const data = value.data as T;
+  if (isRecord(data) && data.success === false) {
+    const error = new Error(typeof data.message === 'string' ? data.message : 'The operation was not completed') as Error & ApiError;
+    error.code = typeof data.code === 'string' ? data.code : 'BUSINESS_OPERATION_FAILED';
+    throw error;
+  }
+
+  if ('meta' in value && value.meta !== undefined) {
+    return { data, meta: value.meta } as T;
+  }
+  return data;
+}
+
+export function normalizeApiError(value: unknown): ApiError {
+  if (isRecord(value)) {
+    const status = typeof value.status === 'number' ? value.status : undefined;
+    const body = isRecord(value.data) ? value.data : value;
+    const message = Array.isArray(body.message)
+      ? body.message.join(', ')
+      : typeof body.message === 'string'
+        ? body.message
+        : 'An unexpected error occurred';
+    return {
+      message,
+      status,
+      code: typeof body.code === 'string' ? body.code : status ? `HTTP_${status}` : undefined,
+      errors: isRecord(body.errors) ? body.errors as Record<string, string[] | string> : undefined,
+    };
+  }
+  return { message: value instanceof Error ? value.message : 'An unexpected error occurred' };
 }
 
 export interface PermissionDefinition {

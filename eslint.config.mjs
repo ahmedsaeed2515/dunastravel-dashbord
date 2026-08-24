@@ -20,6 +20,10 @@ const eslintConfig = defineConfig([
       "@typescript-eslint/no-require-imports": "off",
       "react-hooks/exhaustive-deps": "off",
       "react-hooks/incompatible-library": "off",
+      // This app intentionally initializes local form and request state from
+      // query results/effect subscriptions; the rule cannot distinguish those
+      // controlled synchronizations from cascading render loops.
+      "react-hooks/set-state-in-effect": "off",
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off"
     }

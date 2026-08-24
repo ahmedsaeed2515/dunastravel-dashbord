@@ -3,13 +3,10 @@
 import { ExecutiveSummary } from "../types";
 import { Card } from "@/components/ui/card";
 import { 
-  DollarSign, 
-  CalendarCheck, 
-  Map, 
-  Package, 
-  MessageSquare, 
-  Building2, 
-  Hotel, 
+  DollarSign,
+  CalendarCheck,
+  Map,
+  MessageSquare,
   Bell
 } from "lucide-react";
 import { CardSkeleton } from "@/components/shared/ui/Skeletons";
@@ -36,15 +33,16 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     );
   }
 
-  const summaryData = (data as any)?.revenue ? data : (data as any)?.data || data;
+  const summaryData = data;
   const revenue = summaryData?.revenue;
   const bookings = summaryData?.bookings;
+  const capacity = summaryData?.capacity;
   const operational = summaryData?.operational;
 
   const kpiCards = [
     {
       title: isAr ? "إجمالي الحجوزات" : "Total Bookings",
-      value: bookings?.total ?? 1,
+      value: bookings?.total ?? 0,
       badge: isAr ? "+12% هذا الشهر" : "+12% this month",
       badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
       icon: CalendarCheck,
@@ -54,7 +52,7 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     },
     {
       title: isAr ? "إجمالي إيرادات الحجوزات" : "Gross Revenue",
-      value: `$${revenue?.grossRevenue?.toLocaleString() ?? "2,670"}`,
+      value: revenue?.grossRevenue == null ? '—' : `$${revenue.grossRevenue.toLocaleString()}`,
       badge: isAr ? "نمو متصاعد 📈" : "Upward Growth 📈",
       badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
       icon: DollarSign,
@@ -64,7 +62,7 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     },
     {
       title: isAr ? "إجمالي الرحلات النشطة" : "Active Tours",
-      value: operational?.activeToursCount ?? 1,
+      value: operational?.activeToursCount ?? 0,
       badge: isAr ? "مترجمة للغات الـ 5 🌐" : "Translated in 5 Languages 🌐",
       badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
       icon: Map,
@@ -73,18 +71,18 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       href: adminRoutes.tours,
     },
     {
-      title: isAr ? "الباكدجز والبرامج الخاصة" : "Special Packages",
-      value: 1,
-      badge: isAr ? "برامج مصر VIP 👑" : "Egypt VIP Packages 👑",
+      title: isAr ? "إشغال الرحلات" : "Tour Occupancy",
+      value: capacity?.occupancyRate == null ? "—" : `${capacity.occupancyRate}%`,
+      badge: isAr ? "المقاعد المباعة من السعة" : "Sold seats / total capacity",
       badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
-      icon: Package,
+      icon: Map,
       iconColor: "text-indigo-500 dark:text-indigo-400",
       iconBg: "bg-indigo-500/10 border-indigo-500/20",
-      href: adminRoutes.promotions,
+      href: adminRoutes.tours,
     },
     {
       title: isAr ? "استفسارات العملاء" : "Customer Inquiries",
-      value: operational?.openInquiriesCount ?? 31,
+      value: operational?.openInquiriesCount ?? 0,
       badge: isAr ? "غير مقروء 📩" : "Unread Messages 📩",
       badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
       icon: MessageSquare,
@@ -93,29 +91,9 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       href: adminRoutes.communications,
     },
     {
-      title: isAr ? "شركاء الأعمال والمالية B2B" : "B2B Partners Network",
-      value: 4,
-      badge: isAr ? "شبكة الشركاء الدولية 🤝" : "Global Partner Network 🤝",
-      badgeColor: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20",
-      icon: Building2,
-      iconColor: "text-sky-500 dark:text-sky-400",
-      iconBg: "bg-sky-500/10 border-sky-500/20",
-      href: adminRoutes.companies,
-    },
-    {
-      title: isAr ? "الفنادق المعتمدة" : "Approved Hotels",
-      value: 2,
-      badge: isAr ? "فنادق 5 و 4 نجوم ⭐" : "5 & 4 Star Hotels ⭐",
-      badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
-      icon: Hotel,
-      iconColor: "text-amber-500 dark:text-amber-400",
-      iconBg: "bg-amber-500/10 border-amber-500/20",
-      href: adminRoutes.hotels,
-    },
-    {
       title: isAr ? "الإشعارات والتنبيهات" : "Notifications",
-      value: 31,
-      badge: isAr ? "تنبيه جديد 🔔" : "New Alerts 🔔",
+      value: operational?.failedNotificationsCount ?? 0,
+      badge: isAr ? "فشل التسليم يحتاج متابعة" : "Delivery failures need review",
       badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
       icon: Bell,
       iconColor: "text-purple-500 dark:text-purple-400",

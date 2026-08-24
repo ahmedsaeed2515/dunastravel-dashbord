@@ -28,9 +28,14 @@ export function BookingRowActions({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
-        <span className="sr-only">{tAccess("openMenu")}</span>
-        <MoreHorizontal className="h-4 w-4" />
+      <DropdownMenuTrigger asChild>
+        <button
+          type="button"
+          className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground cursor-pointer focus:outline-none"
+        >
+          <span className="sr-only">{tAccess("openMenu")}</span>
+          <MoreHorizontal className="h-4 w-4" />
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>

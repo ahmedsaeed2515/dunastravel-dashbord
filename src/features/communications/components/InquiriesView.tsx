@@ -61,9 +61,9 @@ export function InquiriesView() {
 
       <div className="rounded-md border bg-card/50 overflow-hidden">
         <InquiriesTable 
-          data={Array.isArray(data) ? data : (data?.data || [])} 
+          data={data?.data ?? []} 
           isLoading={isLoading} 
-          pageCount={Array.isArray(data) ? 1 : (data?.meta?.totalPages || 1)}
+          pageCount={data?.meta?.totalPages ?? 0}
           onPageChange={(p) => setFilters(f => ({ ...f, page: p }))}
         />
       </div>

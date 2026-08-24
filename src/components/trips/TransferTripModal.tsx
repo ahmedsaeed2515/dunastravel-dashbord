@@ -3,6 +3,8 @@
 import React, { useState, memo } from 'react';
 import { TripModel } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { toursApi } from '@/features/tours/api/toursApi';
 import {
   Dialog,
   DialogContent,
@@ -26,7 +28,8 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   isOpen,
   onClose,
 }) => {
-  const { destinations, egyptPackages, transferTrip } = useDataContext();
+  const queryClient = useQueryClient();
+  const { destinations, egyptPackages } = useDataContext();
   const [selectedDestination, setSelectedDestination] = useState<string>(
     trip?.destination || 'egypt'
   );
@@ -47,11 +50,40 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
     d => d.id === trip.destination
   );
 
-  const handleConfirmTransfer = () => {
-    transferTrip(trip.id, selectedDestination, selectedPackage || undefined);
+  const handleConfirmTransfer = async () => {
+    const countryName =
+      selectedDestination === 'egypt'
+        ? 'Egypt'
+        : selectedDestination === 'turkey'
+        ? 'Turkey'
+        : selectedDestination === 'jordan'
+        ? 'Jordan'
+        : selectedDestination === 'morocco'
+        ? 'Morocco'
+        : selectedDestination === 'dubai'
+        ? 'United Arab Emirates'
+        : selectedDestination === 'tunisia'
+        ? 'Tunisia'
+        : selectedDestination === 'greece'
+        ? 'Greece'
+        : 'Multi-Country';
+
+    try {
+      if (trip.slug) {
+        await toursApi.updateTour(trip.slug, {
+          country: countryName,
+          category: selectedPackage || countryName,
+        } as any);
+        queryClient.invalidateQueries({ queryKey: ['tours'] });
+      }
+    } catch {
+      toast.error('تعذر نقل الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+      return;
+    }
+
     const destObj = destinations.find(d => d.id === selectedDestination);
     toast.success(
-      `تم نقل الرحلة "${trip.title}" بنجاح إلى ${destObj?.nameAr || selectedDestination}!`
+      `تم نقل الرحلة "${trip.title}" بنجاح إلى ${destObj?.nameAr || selectedDestination} وحفظها في قاعدة البيانات!`
     );
     onClose();
   };

@@ -25,9 +25,16 @@ export function DataTableViewOptions<TData>({
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger type="button" className="ms-auto hidden h-8 lg:flex items-center justify-center rounded-md border border-input bg-background px-3 text-xs font-medium shadow-xs hover:bg-accent hover:text-accent-foreground">
-        <Settings2 className="me-2 h-4 w-4" />
-        {tCommon("view")}
+      <DropdownMenuTrigger asChild>
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          className="ms-auto hidden h-8 lg:flex items-center justify-center gap-1.5 px-3 text-xs font-medium cursor-pointer shadow-xs hover:bg-accent hover:text-accent-foreground"
+        >
+          <Settings2 className="h-4 w-4" />
+          <span>{tCommon("view")}</span>
+        </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-[150px]">
         <DropdownMenuLabel>{tCommon("toggleColumns")}</DropdownMenuLabel>

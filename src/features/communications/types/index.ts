@@ -40,8 +40,10 @@ export interface PaginatedResponse<T> {
 }
 
 export interface Inquiry {
+  id: string;
   referenceCode: string;
-  name: string;
+  firstName: string;
+  lastName: string;
   email: string;
   phone?: string | null;
   destinations: string[];
@@ -53,6 +55,32 @@ export interface Inquiry {
   assigneeId?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ContactSubmission {
+  id: number;
+  referenceCode: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string | null;
+  subject: string;
+  message: string;
+  locale: string;
+  status: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContactSubmissionQueryFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  email?: string;
+  dateFrom?: string;
+  dateTo?: string;
+  sortBy?: 'createdAt' | 'email' | 'status';
+  sortOrder?: 'asc' | 'desc';
 }
 
 export interface InquiryQueryFilters {

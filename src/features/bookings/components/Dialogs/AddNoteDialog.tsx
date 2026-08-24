@@ -7,7 +7,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { useAddNote } from "../../hooks/useBookings";
 import { toast } from "sonner";
-import { Switch } from "@/components/ui/switch";
 
 interface AddNoteDialogProps {
   referenceCode: string;
@@ -17,7 +16,6 @@ interface AddNoteDialogProps {
 
 export function AddNoteDialog({ referenceCode, open, onOpenChange }: AddNoteDialogProps) {
   const [content, setContent] = useState("");
-  const [isInternal, setIsInternal] = useState(true);
   
   const { mutate: addNote, isPending } = useAddNote();
 
@@ -33,7 +31,6 @@ export function AddNoteDialog({ referenceCode, open, onOpenChange }: AddNoteDial
         referenceCode,
         data: {
           content,
-          isInternal,
         },
       },
       {
@@ -62,14 +59,6 @@ export function AddNoteDialog({ referenceCode, open, onOpenChange }: AddNoteDial
               className="min-h-[100px]"
               required
             />
-          </div>
-          <div className="flex items-center space-x-2">
-            <Switch
-              id="internal"
-              checked={isInternal}
-              onCheckedChange={setIsInternal}
-            />
-            <Label htmlFor="internal">Internal Note (Hidden from customer)</Label>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>

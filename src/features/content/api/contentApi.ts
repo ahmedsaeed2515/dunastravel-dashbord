@@ -1,22 +1,15 @@
 import { apiClient } from "@/lib/axios";
-import { ContentBlock, UpdateContentBlockDto } from "../types";
+import { ContentBlock, ContentBlocksPage, UpdateContentBlockDto } from "../types";
 
 export const contentApi = {
-  getBlocks: async (): Promise<ContentBlock[]> => {
-    const response: any = await apiClient.get("/admin/cms");
-    if (Array.isArray(response)) return response;
-    if (response && typeof response === "object" && "data" in response && Array.isArray(response.data)) {
-      return response.data;
-    }
-    return [];
+  getBlocks: async (): Promise<ContentBlocksPage> => {
+    return apiClient.get<ContentBlocksPage, ContentBlocksPage>('/admin/cms');
   },
   getBlockByKey: async (key: string): Promise<ContentBlock> => {
-    const response: any = await apiClient.get(`/admin/cms/${key}`);
-    return (response && typeof response === "object" && "data" in response) ? response.data : response;
+    return apiClient.get<ContentBlock, ContentBlock>(`/admin/cms/${key}`);
   },
   
   updateBlock: async (key: string, payload: UpdateContentBlockDto): Promise<ContentBlock> => {
-    const response: any = await apiClient.patch(`/admin/cms/${key}`, payload);
-    return (response && typeof response === "object" && "data" in response) ? response.data : response;
+    return apiClient.patch<ContentBlock, ContentBlock>(`/admin/cms/${key}`, payload);
   }
 };

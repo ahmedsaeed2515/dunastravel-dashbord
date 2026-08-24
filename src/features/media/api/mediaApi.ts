@@ -1,6 +1,7 @@
 import { apiClient } from "@/lib/axios";
 import { 
   MediaAsset,
+  MediaSummary,
   MediaQueryFilters,
   UploadMediaPayload
 } from "../types";
@@ -17,8 +18,11 @@ export interface PaginatedResponse<T> {
 
 export const mediaApi = {
   getMediaAssets: async (filters: MediaQueryFilters = {}): Promise<PaginatedResponse<MediaAsset>> => {
-    const response = await apiClient.get("/admin/media", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<MediaAsset>, PaginatedResponse<MediaAsset>>("/admin/media", { params: filters });
+  },
+
+  getSummary: async (): Promise<MediaSummary> => {
+    return apiClient.get<MediaSummary, MediaSummary>('/admin/media/summary');
   },
 
   uploadMedia: async (payload: UploadMediaPayload): Promise<MediaAsset> => {
@@ -29,12 +33,11 @@ export const mediaApi = {
     if (payload.entityId) formData.append("entityId", payload.entityId);
     if (payload.altText) formData.append("altText", payload.altText);
 
-    const response = await apiClient.post("/admin/media/upload", formData, {
+    return apiClient.post<MediaAsset, MediaAsset>("/admin/media/upload", formData, {
       headers: {
         "Content-Type": "multipart/form-data",
       },
     });
-    return response as any;
   },
 
   deleteMedia: async (id: string): Promise<void> => {

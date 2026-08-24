@@ -1,6 +1,6 @@
 import axios from 'axios';
 import { env } from '@/config/env';
-import { ApiError } from './api-types';
+import { ApiError, normalizeApiError, unwrapApiEnvelope } from './api-types';
 
 const isServer = typeof window === 'undefined';
 
@@ -66,13 +66,8 @@ export async function initCsrfToken(forceRefresh = false): Promise<string | null
       const response = await axios.get(`${baseUrl}/auth/csrf`, {
         withCredentials: true,
       });
-      const raw = response.data;
-      const extractedToken =
-        raw?.data?.csrfToken ||
-        raw?.data?.token ||
-        raw?.csrfToken ||
-        raw?.token ||
-        (typeof raw === 'string' ? raw : null);
+      const csrfPayload = unwrapApiEnvelope<{ csrfToken?: string }>(response.data);
+      const extractedToken = csrfPayload.csrfToken ?? null;
 
       if (typeof extractedToken === 'string' && extractedToken.trim().length >= 16) {
         csrfToken = extractedToken.trim();
@@ -132,117 +127,16 @@ function addRefreshSubscriber(callback: (success: boolean) => void) {
 
 // Response Interceptor for global unwrapping, error mapping, silent refresh, and CSRF retry
 apiClient.interceptors.response.use(
-  (response) => {
-    const raw = response.data;
-    if (!raw || typeof raw !== 'object') {
-      return raw;
-    }
-
-    // Step 1: Unwrap outer NestJS envelope if raw is { data: { ... }, meta: ... } or { data: { success: true, data: ... } }
-    let body = raw;
-    if (
-      raw.data &&
-      typeof raw.data === 'object' &&
-      !Array.isArray(raw.data) &&
-      ('data' in raw.data || 'success' in raw.data)
-    ) {
-      body = raw.data;
-    }
-
-    // Step 2: Extract items array if present in body.data or body itself
-    const items = Array.isArray(body.data)
-      ? body.data
-      : Array.isArray(body)
-      ? body
-      : Array.isArray(raw.data)
-      ? raw.data
-      : null;
-
-    // Step 3: Check for explicit pagination metadata from body or raw
-    const hasExplicitTotal =
-      typeof body.total === 'number' ||
-      typeof body.meta?.total === 'number' ||
-      typeof raw.meta?.total === 'number' ||
-      typeof raw.total === 'number';
-
-    const total = hasExplicitTotal
-      ? typeof body.total === 'number'
-        ? body.total
-        : typeof body.meta?.total === 'number'
-        ? body.meta.total
-        : typeof raw.meta?.total === 'number'
-        ? raw.meta.total
-        : raw.total
-      : items
-      ? items.length
-      : undefined;
-
-    const page =
-      typeof body.page === 'number'
-        ? body.page
-        : typeof body.meta?.page === 'number'
-        ? body.meta.page
-        : typeof raw.meta?.page === 'number'
-        ? raw.meta.page
-        : 1;
-
-    const limit =
-      typeof body.limit === 'number'
-        ? body.limit
-        : typeof body.meta?.limit === 'number'
-        ? body.meta.limit
-        : typeof raw.meta?.limit === 'number'
-        ? raw.meta.limit
-        : 10;
-
-    const totalPages =
-      typeof body.totalPages === 'number'
-        ? body.totalPages
-        : typeof body.meta?.totalPages === 'number'
-        ? body.meta.totalPages
-        : typeof raw.meta?.totalPages === 'number'
-        ? raw.meta.totalPages
-        : total !== undefined && limit > 0
-        ? Math.ceil(total / limit)
-        : 1;
-
-    // Step 4: If items is an array and endpoint has explicit pagination, return { data: items, meta: {...} }
-    if (items !== null && hasExplicitTotal) {
-      return {
-        data: items,
-        meta: {
-          total,
-          page,
-          limit,
-          totalPages: totalPages > 0 ? totalPages : 1,
-        },
-      };
-    }
-
-    // Step 5: If items is a non-paginated array, return items array directly
-    if (items !== null) {
-      return items;
-    }
-
-    // Step 6: If body has a single item / object payload in body.data, return body.data
-    if ('data' in body && body.data !== undefined) {
-      return body.data;
-    }
-
-    return body;
-  },
+  (response) => unwrapApiEnvelope(response.data),
   async (error) => {
     const originalRequest = error.config || {};
 
-    const customError: ApiError = {
-      message:
-        error.response?.data?.message ||
-        error.message ||
-        'An unexpected error occurred',
+    const customError: ApiError = normalizeApiError({
       status: error.response?.status,
+      data: error.response?.data,
+      message: error.message,
       code: error.code,
-      errors: error.response?.data?.errors,
-    };
+    });
 
     // If 403 Invalid CSRF token, auto-heal by fetching fresh token and retrying once
     const isCsrfError =

@@ -131,7 +131,7 @@ export function AdminProfileView() {
           <div className="absolute top-4 right-4 flex items-center gap-2">
             <Badge variant="outline" className="bg-background/80 backdrop-blur-xs text-primary border-primary/30 font-semibold px-3 py-1">
               <ShieldCheck className="w-3.5 h-3.5 mr-1.5 text-primary" />
-              {user?.role || "ADMIN"}
+              {user?.role ?? "—"}
             </Badge>
             <Badge variant="outline" className="bg-emerald-500/10 text-emerald-600 border-emerald-500/30 font-semibold px-3 py-1">
               <CheckCircle2 className="w-3.5 h-3.5 mr-1.5 text-emerald-500" />

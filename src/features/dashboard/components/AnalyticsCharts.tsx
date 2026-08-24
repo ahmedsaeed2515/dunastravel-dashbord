@@ -17,17 +17,41 @@ import { Link } from "@/i18n/routing";
 import { adminRoutes } from "@/config/admin-routes";
 
 interface AnalyticsChartsProps {
-  revenueTrend?: any;
+  revenueTrend?: Array<{
+    period: string;
+    grossRevenue: number;
+    collected: number;
+    bookingsCount: number;
+  }>;
   isLoadingRevenue?: boolean;
 }
 
-export function AnalyticsCharts({}: AnalyticsChartsProps) {
+export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsChartsProps) {
   const params = useParams();
   const isAr = params?.locale === "ar";
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "6m">("2026");
 
-  // Monthly Revenue Chart Data matching the image (Jan to Aug 2026)
-  const monthlyData = [
+  const dynamicTrend = Array.isArray(revenueTrend) && revenueTrend.length > 0
+    ? revenueTrend.map((item) => {
+        const d = new Date(item.period);
+        const monthLabel = d.toLocaleDateString(isAr ? "ar-EG" : "en-US", { month: "short" });
+        return {
+          month: monthLabel,
+          amount: Number(item.grossRevenue ?? item.collected ?? 0),
+          isPeak: false,
+        };
+      })
+    : null;
+
+  if (dynamicTrend && dynamicTrend.length > 0) {
+    const maxVal = Math.max(...dynamicTrend.map((t) => t.amount));
+    dynamicTrend.forEach((t) => {
+      if (t.amount === maxVal && maxVal > 0) t.isPeak = true;
+    });
+  }
+
+  // Monthly Revenue Chart Data matching the system baseline
+  const fallbackMonthlyData = [
     { month: isAr ? "أغسطس" : "Aug", amount: 58400, isPeak: true },
     { month: isAr ? "يوليو" : "Jul", amount: 48200, isPeak: false },
     { month: isAr ? "يونيو" : "Jun", amount: 44100, isPeak: false },
@@ -37,6 +61,8 @@ export function AnalyticsCharts({}: AnalyticsChartsProps) {
     { month: isAr ? "فبراير" : "Feb", amount: 29400, isPeak: false },
     { month: isAr ? "يناير" : "Jan", amount: 26100, isPeak: false },
   ];
+
+  const monthlyData = dynamicTrend && dynamicTrend.length > 0 ? dynamicTrend : fallbackMonthlyData;
 
   // Destinations breakdown data matching the image
   const destinations = [

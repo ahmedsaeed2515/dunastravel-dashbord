@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { TourLandingPage } from "../../api/landingPagesApi";
-import { useUpdateLandingPage, usePublishLandingPage, useUnpublishLandingPage, useAttachToursToLandingPage, useDetachTourFromLandingPage } from "../../hooks/useLandingPages";
+import { LandingPageMutationPayload, LandingPageStatus, LandingPageType, TourLandingPage } from "../../api/landingPagesApi";
+import { useCreateLandingPage, useUpdateLandingPage, usePublishLandingPage, useUnpublishLandingPage, useAttachToursToLandingPage, useDetachTourFromLandingPage, useReorderLandingPageTours, useUpdateLandingPageTourRelation } from "../../hooks/useLandingPages";
 import { useTours } from "../../hooks/useTours";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Globe, Image as ImageIcon, Layers, Package, SearchCheck, CheckCircle2, AlertCircle, Trash2, Plus, Eye, Star } from "lucide-react";
+import { ArrowDown, ArrowUp, Eye, EyeOff, Loader2, Globe, Image as ImageIcon, Layers, Package, SearchCheck, CheckCircle2, AlertCircle, Trash2, Plus, Star } from "lucide-react";
 import { toast } from "sonner";
 
 interface LandingPageEditorDrawerProps {
@@ -31,24 +31,28 @@ const LOCALES = [
 
 export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: LandingPageEditorDrawerProps) {
   const updateMutation = useUpdateLandingPage();
+  const createMutation = useCreateLandingPage();
   const publishMutation = usePublishLandingPage();
   const unpublishMutation = useUnpublishLandingPage();
   const attachMutation = useAttachToursToLandingPage();
   const detachMutation = useDetachTourFromLandingPage();
+  const relationMutation = useUpdateLandingPageTourRelation();
+  const reorderToursMutation = useReorderLandingPageTours();
 
   const { data: allToursData } = useTours({ limit: 100 });
 
   const [activeLang, setActiveLang] = useState("en");
-  const [formData, setFormData] = useState<Partial<TourLandingPage>>({});
+  const [formData, setFormData] = useState<LandingPageMutationPayload>({});
   const [selectedTourToAdd, setSelectedTourToAdd] = useState("");
+  const [tourRelations, setTourRelations] = useState<NonNullable<TourLandingPage["tours"]>>([]);
 
   useEffect(() => {
     if (landingPage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         slug: landingPage.slug,
-        type: landingPage.type || "DESTINATION",
-        status: landingPage.status || "PUBLISHED",
+        expectedUpdatedAt: landingPage.updatedAt || undefined,
+        type: (landingPage.type || "DESTINATION") as LandingPageType,
+        status: (landingPage.status || "PUBLISHED") as LandingPageStatus,
         isActive: landingPage.isActive ?? true,
         sortOrder: landingPage.sortOrder ?? 0,
         titleJsonb: landingPage.titleJsonb || {},
@@ -61,6 +65,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
         seoDescriptionJsonb: landingPage.seoDescriptionJsonb || {},
         seoKeywordsJsonb: landingPage.seoKeywordsJsonb || {},
       });
+      setTourRelations(landingPage.tours || []);
     }
   }, [landingPage]);
 
@@ -81,11 +86,22 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
 
   const handleSave = async () => {
     try {
-      await updateMutation.mutateAsync({
-        slug: landingPage.slug,
-        data: formData,
-      });
-      toast.success("Interface updated successfully");
+      const payload: LandingPageMutationPayload = {
+        ...formData,
+        heroImageUrl: formData.heroImageUrl?.trim() || null,
+        heroVideoUrl: formData.heroVideoUrl?.trim() || null,
+      };
+      if (landingPage.id) {
+        await updateMutation.mutateAsync({ slug: landingPage.slug, data: payload });
+        toast.success("Interface updated successfully");
+      } else {
+        if (!formData.slug || !formData.titleJsonb?.en?.trim()) {
+          toast.error("A slug and English title are required to create an interface.");
+          return;
+        }
+        await createMutation.mutateAsync({ ...payload, type: payload.type ?? "DESTINATION" });
+        toast.success("Interface created successfully");
+      }
       onOpenChange(false);
     } catch (err: any) {
       toast.error(err.message || "Failed to update interface");
@@ -113,10 +129,11 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
   const handleAttachTour = async () => {
     if (!selectedTourToAdd) return;
     try {
-      await attachMutation.mutateAsync({
+      const updated = await attachMutation.mutateAsync({
         slug: landingPage.slug,
         tourIds: [selectedTourToAdd],
       });
+      setTourRelations(updated.tours || []);
       toast.success("Tour attached to interface");
       setSelectedTourToAdd("");
     } catch (err: any) {
@@ -130,13 +147,41 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
         slug: landingPage.slug,
         tourId,
       });
+      setTourRelations((current) => current.filter((relation) => relation.tourId !== tourId));
       toast.success("Tour removed from this interface (global tour remains untouched)");
     } catch (err: any) {
       toast.error(err.message || "Failed to remove tour");
     }
   };
 
-  const attachedTourIds = landingPage.tours?.map((t) => t.tourId) || [];
+  const updateRelation = async (tourId: string, data: { isFeatured?: boolean; isVisible?: boolean; customBadge?: Record<string, string> }) => {
+    try {
+      await relationMutation.mutateAsync({ slug: landingPage.slug, tourId, data });
+      setTourRelations((current) => current.map((relation) => relation.tourId === tourId ? { ...relation, ...data } : relation));
+      toast.success("Tour placement updated.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update tour placement.");
+    }
+  };
+
+  const moveTour = async (index: number, direction: -1 | 1) => {
+    const relations = [...tourRelations].sort((a, b) => a.sortOrder - b.sortOrder);
+    const swapIndex = index + direction;
+    if (swapIndex < 0 || swapIndex >= relations.length) return;
+    [relations[index], relations[swapIndex]] = [relations[swapIndex], relations[index]];
+    try {
+      const updated = await reorderToursMutation.mutateAsync({
+        slug: landingPage.slug,
+        items: relations.map((relation, sortOrder) => ({ tourId: relation.tourId, sortOrder })),
+      });
+      setTourRelations(updated.tours || []);
+      toast.success("Tour order updated.");
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reorder tours.");
+    }
+  };
+
+  const attachedTourIds = tourRelations.map((t) => t.tourId);
   const availableTours = allToursData?.data?.filter((t) => !attachedTourIds.includes(t.id)) || [];
 
   return (
@@ -159,15 +204,15 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
           </div>
 
           <div className="flex items-center gap-2">
-            {landingPage.status === "PUBLISHED" ? (
+            {landingPage.id && landingPage.status === "PUBLISHED" ? (
               <Button size="sm" variant="outline" onClick={handleUnpublish} disabled={unpublishMutation.isPending}>
                 Unpublish
               </Button>
-            ) : (
+            ) : landingPage.id ? (
               <Button size="sm" variant="default" onClick={handlePublish} disabled={publishMutation.isPending}>
                 Publish
               </Button>
-            )}
+            ) : null}
           </div>
         </SheetHeader>
 
@@ -185,7 +230,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                 <Layers className="w-3 h-3" /> Sections
               </TabsTrigger>
               <TabsTrigger value="tours" className="flex items-center gap-1">
-                <Package className="w-3 h-3" /> Tours ({landingPage.tours?.length || 0})
+                <Package className="w-3 h-3" /> Tours ({tourRelations.length})
               </TabsTrigger>
               <TabsTrigger value="seo" className="flex items-center gap-1">
                 <SearchCheck className="w-3 h-3" /> SEO
@@ -208,7 +253,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                   <select
                     className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
                     value={formData.type || "DESTINATION"}
-                    onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                    onChange={(e) => setFormData({ ...formData, type: e.target.value as LandingPageType })}
                   >
                     <option value="DESTINATION">Destination Page</option>
                     <option value="THEME">Theme Collection</option>
@@ -366,8 +411,8 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
               </div>
 
               <div className="border rounded-md divide-y mt-4">
-                {landingPage.tours && landingPage.tours.length > 0 ? (
-                  landingPage.tours.map((rel) => (
+                {tourRelations.length > 0 ? (
+                  [...tourRelations].sort((a, b) => a.sortOrder - b.sortOrder).map((rel, index, relations) => (
                     <div key={rel.id} className="p-3 flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded bg-muted overflow-hidden flex-shrink-0">
@@ -385,10 +430,30 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                           <div className="text-xs text-muted-foreground font-mono">
                             /{rel.tour.slug} • Order: {rel.sortOrder}
                           </div>
+                          <Input
+                            aria-label={`Custom badge for ${rel.tour.slug}`}
+                            className="mt-2 h-8 w-48 text-xs"
+                            defaultValue={rel.customBadge?.en || ""}
+                            placeholder="Custom badge (English)"
+                            onBlur={(event) => {
+                              const value = event.target.value.trim();
+                              if (value !== (rel.customBadge?.en || "")) {
+                                void updateRelation(rel.tourId, { customBadge: value ? { en: value } : {} });
+                              }
+                            }}
+                          />
                         </div>
                       </div>
 
                       <div className="flex items-center gap-2">
+                        <Button size="icon" variant="ghost" title={rel.isVisible ? "Hide from public page" : "Show on public page"} onClick={() => updateRelation(rel.tourId, { isVisible: !rel.isVisible })} disabled={relationMutation.isPending}>
+                          {rel.isVisible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+                        </Button>
+                        <Button size="icon" variant="ghost" title={rel.isFeatured ? "Remove featured placement" : "Mark as featured"} onClick={() => updateRelation(rel.tourId, { isFeatured: !rel.isFeatured })} disabled={relationMutation.isPending}>
+                          <Star className={`w-4 h-4 ${rel.isFeatured ? "fill-gold-500 text-gold-500" : ""}`} />
+                        </Button>
+                        <Button size="icon" variant="ghost" title="Move tour up" onClick={() => moveTour(index, -1)} disabled={index === 0 || reorderToursMutation.isPending}><ArrowUp className="w-4 h-4" /></Button>
+                        <Button size="icon" variant="ghost" title="Move tour down" onClick={() => moveTour(index, 1)} disabled={index === relations.length - 1 || reorderToursMutation.isPending}><ArrowDown className="w-4 h-4" /></Button>
                         <Button
                           size="icon"
                           variant="ghost"
@@ -449,7 +514,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                     <select
                       className="w-full h-10 px-3 rounded-md border bg-background text-sm"
                       value={formData.status || "PUBLISHED"}
-                      onChange={(e) => setFormData({ ...formData, status: e.target.value })}
+                      onChange={(e) => setFormData({ ...formData, status: e.target.value as LandingPageStatus })}
                     >
                       <option value="PUBLISHED">Published</option>
                       <option value="DRAFT">Draft</option>
@@ -467,8 +532,8 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             Cancel
           </Button>
-          <Button onClick={handleSave} disabled={updateMutation.isPending}>
-            {updateMutation.isPending && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+          <Button onClick={handleSave} disabled={updateMutation.isPending || createMutation.isPending}>
+            {(updateMutation.isPending || createMutation.isPending) && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
             Save Changes
           </Button>
         </div>

@@ -17,12 +17,20 @@ export function useMediaAssets(filters: MediaQueryFilters) {
   });
 }
 
+export function useMediaSummary() {
+  return useQuery({
+    queryKey: [...mediaKeys.all, 'summary'],
+    queryFn: () => mediaApi.getSummary(),
+  });
+}
+
 export function useUploadMedia() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (data: UploadMediaPayload) => mediaApi.uploadMedia(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: [...mediaKeys.all, 'summary'] });
       toast.success("Media uploaded successfully.");
     },
     onError: () => toast.error("Failed to upload media."),
@@ -35,6 +43,7 @@ export function useDeleteMedia() {
     mutationFn: (id: string) => mediaApi.deleteMedia(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+      queryClient.invalidateQueries({ queryKey: [...mediaKeys.all, 'summary'] });
       toast.success("Media deleted successfully.");
     },
     onError: () => toast.error("Failed to delete media."),

@@ -74,7 +74,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
                   </TableCell>
                   <TableCell>
                     <div className="text-xs font-medium truncate max-w-[200px]">
-                      {b.tourTitleJsonb?.en || b.tourSlug}
+                      {b.tourTitleJsonb?.[locale] || b.tourTitleJsonb?.en || b.tourSlug}
                     </div>
                   </TableCell>
                   <TableCell className="text-xs font-mono">

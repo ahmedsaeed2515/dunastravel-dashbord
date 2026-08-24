@@ -13,26 +13,32 @@ export function CreateBookingDrawer() {
   const { mutate: createBooking, isPending } = useCreateManualBooking();
 
   const [tourId, setTourId] = useState("");
-  const [userId, setUserId] = useState("");
-  const [passengers, setPassengers] = useState<number>(1);
-  const [manualAmountUsd, setManualAmountUsd] = useState<string>("");
+  const [fullName, setFullName] = useState("");
+  const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [arrivalDate, setArrivalDate] = useState("");
+  const [adults, setAdults] = useState(1);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     createBooking(
       {
         tourId,
-        userId,
-        passengers: Array(Number(passengers)).fill({ passengerType: "ADULT", fullName: "TBD" }),
-        manualAmountUsd: manualAmountUsd ? Number(manualAmountUsd) : undefined,
+        fullName,
+        email,
+        phone,
+        arrivalDate,
+        adults,
       },
       {
         onSuccess: () => {
           setOpen(false);
           setTourId("");
-          setUserId("");
-          setPassengers(1);
-          setManualAmountUsd("");
+          setFullName("");
+          setEmail("");
+          setPhone("");
+          setArrivalDate("");
+          setAdults(1);
         },
       }
     );
@@ -50,7 +56,7 @@ export function CreateBookingDrawer() {
         <SheetHeader className="mb-6">
           <SheetTitle className="text-2xl font-playfair text-primary">New Booking (Manual)</SheetTitle>
           <SheetDescription>
-            Override standard flows to manually create a booking for a user.
+            Pricing and capacity are calculated and reserved by the server.
           </SheetDescription>
         </SheetHeader>
         
@@ -67,41 +73,44 @@ export function CreateBookingDrawer() {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="userId">User ID or Email</Label>
+            <Label htmlFor="fullName">Customer name</Label>
             <Input
-              id="userId"
-              placeholder="user@example.com or uuid"
+              id="fullName"
               required
-              value={userId}
-              onChange={(e) => setUserId(e.target.value)}
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="passengers">Number of Passengers</Label>
+            <Label htmlFor="email">Customer email</Label>
             <Input
-              id="passengers"
-              type="number"
-              min="1"
+              id="email"
+              type="email"
               required
-              value={passengers}
-              onChange={(e) => setPassengers(parseInt(e.target.value) || 1)}
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
             />
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="manualAmountUsd">Manual Override Amount (USD)</Label>
+            <Label htmlFor="phone">Customer phone</Label>
             <Input
-              id="manualAmountUsd"
-              type="number"
-              step="0.01"
-              placeholder="Leave blank for automatic pricing"
-              value={manualAmountUsd}
-              onChange={(e) => setManualAmountUsd(e.target.value)}
+              id="phone"
+              required
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
             />
-            <p className="text-xs text-muted-foreground mt-1">
-              If set, this will ignore standard pricing logic.
-            </p>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="arrivalDate">Arrival date</Label>
+            <Input id="arrivalDate" type="date" required value={arrivalDate} onChange={(e) => setArrivalDate(e.target.value)} />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="adults">Adults</Label>
+            <Input id="adults" type="number" min="1" required value={adults} onChange={(e) => setAdults(Number(e.target.value))} />
           </div>
 
           <Button type="submit" className="w-full mt-8" disabled={isPending}>

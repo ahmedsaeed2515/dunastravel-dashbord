@@ -80,9 +80,9 @@ export function BulkMoveToursDialog({
   useEffect(() => {
     if (open) {
       landingPagesApi
-        .getLandingPages({ limit: 100 })
+        .getLandingPages({ limit: 50 })
         .then((res) => {
-          setLandingPages(res?.data || []);
+          setLandingPages(res.data);
         })
         .catch(() => {});
     }

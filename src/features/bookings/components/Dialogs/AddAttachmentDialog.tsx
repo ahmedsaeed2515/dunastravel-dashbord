@@ -5,7 +5,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAddAttachment } from "../../hooks/useBookings";
 import { toast } from "sonner";
 
@@ -16,15 +15,14 @@ interface AddAttachmentDialogProps {
 }
 
 export function AddAttachmentDialog({ referenceCode, open, onOpenChange }: AddAttachmentDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
-  const [documentType, setDocumentType] = useState("DOCUMENT");
+  const [mediaAssetId, setMediaAssetId] = useState("");
   
   const { mutate: addAttachment, isPending } = useAddAttachment();
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!file) {
-      toast.error("Please select a file");
+    if (!mediaAssetId.trim()) {
+      toast.error("Please provide the uploaded media asset ID");
       return;
     }
 
@@ -32,14 +30,13 @@ export function AddAttachmentDialog({ referenceCode, open, onOpenChange }: AddAt
       {
         referenceCode,
         data: {
-          file,
-          documentType,
+          mediaAssetId: mediaAssetId.trim(),
         },
       },
       {
         onSuccess: () => {
           onOpenChange(false);
-          setFile(null);
+          setMediaAssetId("");
         },
       }
     );
@@ -49,44 +46,25 @@ export function AddAttachmentDialog({ referenceCode, open, onOpenChange }: AddAt
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Upload Attachment</DialogTitle>
+          <DialogTitle>Link Uploaded Attachment</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="grid gap-2">
-            <Label htmlFor="file">File</Label>
+            <Label htmlFor="mediaAssetId">Media asset ID</Label>
             <Input
-              id="file"
-              type="file"
-              onChange={(e) => {
-                if (e.target.files?.[0]) {
-                  setFile(e.target.files[0]);
-                }
-              }}
+              id="mediaAssetId"
+              value={mediaAssetId}
+              onChange={(e) => setMediaAssetId(e.target.value)}
+              placeholder="UUID returned by the media upload"
               required
             />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="documentType">Document Type</Label>
-            <Select value={documentType} onValueChange={(val: any) => setDocumentType(val || "DOCUMENT")}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="PASSPORT">Passport</SelectItem>
-                <SelectItem value="VISA">Visa</SelectItem>
-                <SelectItem value="TICKET">Ticket</SelectItem>
-                <SelectItem value="VOUCHER">Voucher</SelectItem>
-                <SelectItem value="INVOICE">Invoice</SelectItem>
-                <SelectItem value="DOCUMENT">Other Document</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
           <DialogFooter>
             <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
               Cancel
             </Button>
-            <Button type="submit" disabled={isPending || !file}>
-              {isPending ? "Uploading..." : "Upload File"}
+            <Button type="submit" disabled={isPending || !mediaAssetId.trim()}>
+              {isPending ? "Linking..." : "Link Attachment"}
             </Button>
           </DialogFooter>
         </form>

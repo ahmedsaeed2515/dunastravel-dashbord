@@ -28,11 +28,11 @@ export const columns: ColumnDef<Inquiry>[] = [
     cell: ({ row }) => <div className="font-medium">{row.original.referenceCode}</div>,
   },
   {
-    accessorKey: "name",
+    id: "client",
     header: "Client",
     cell: ({ row }) => (
       <div className="flex flex-col">
-        <span className="font-medium">{row.original.name}</span>
+        <span className="font-medium">{`${row.original.firstName} ${row.original.lastName}`.trim()}</span>
         <span className="text-xs text-muted-foreground">{row.original.email}</span>
       </div>
     ),

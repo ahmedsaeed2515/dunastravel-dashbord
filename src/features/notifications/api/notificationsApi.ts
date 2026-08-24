@@ -1,5 +1,8 @@
 import { apiClient } from "@/lib/axios";
 
+export type JsonPrimitive = string | number | boolean | null;
+export type JsonValue = JsonPrimitive | JsonValue[] | { [key: string]: JsonValue };
+
 export interface InAppNotificationItem {
   id: string;
   userId: string;
@@ -11,7 +14,7 @@ export interface InAppNotificationItem {
   entityType?: string;
   entityId?: string;
   deepLink?: string;
-  metadata?: any;
+  metadata?: JsonValue | null;
   isRead: boolean;
   readAt?: string;
   createdAt: string;
@@ -28,30 +31,29 @@ export interface ListInAppNotificationsResponse {
   };
 }
 
+export interface UnreadNotificationCountResponse {
+  unreadCount: number;
+}
+
+export interface MarkAllNotificationsReadResponse {
+  count: number;
+}
+
 export const notificationsApi = {
   getNotifications: async (params?: { page?: number; limit?: number; category?: string; isRead?: string }): Promise<ListInAppNotificationsResponse> => {
-    const response: any = await apiClient.get("/in-app-notifications", { params });
-    const data = response?.data || response;
-    return {
-      items: Array.isArray(data?.items) ? data.items : Array.isArray(data) ? data : [],
-      unreadCount: typeof data?.unreadCount === "number" ? data.unreadCount : 0,
-      meta: data?.meta || { total: 0, page: 1, limit: 20, totalPages: 1 },
-    };
+    return apiClient.get<ListInAppNotificationsResponse, ListInAppNotificationsResponse>("/in-app-notifications", { params });
   },
 
   getUnreadCount: async (): Promise<number> => {
-    const response: any = await apiClient.get("/in-app-notifications/unread-count");
-    const data = response?.data || response;
-    return typeof data?.unreadCount === "number" ? data.unreadCount : 0;
+    const result = await apiClient.get<UnreadNotificationCountResponse, UnreadNotificationCountResponse>("/in-app-notifications/unread-count");
+    return result.unreadCount;
   },
 
   markAsRead: async (id: string): Promise<InAppNotificationItem> => {
-    const response: any = await apiClient.patch(`/in-app-notifications/${id}/read`);
-    return response?.data || response;
+    return apiClient.patch<InAppNotificationItem, InAppNotificationItem>(`/in-app-notifications/${id}/read`);
   },
 
-  markAllAsRead: async (): Promise<{ count: number }> => {
-    const response: any = await apiClient.patch("/in-app-notifications/read-all");
-    return response?.data || response;
+  markAllAsRead: async (): Promise<MarkAllNotificationsReadResponse> => {
+    return apiClient.patch<MarkAllNotificationsReadResponse, MarkAllNotificationsReadResponse>("/in-app-notifications/read-all");
   },
 };

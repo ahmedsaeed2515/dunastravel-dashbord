@@ -487,8 +487,8 @@ export default function AiAgentsPage() {
         locale: simLocale,
       });
 
-      const replyText = res?.message?.content || res?.text || "Response generated.";
-      const tours = res?.recommendations?.tours || [];
+      const replyText = res.message.content || "Response generated.";
+      const tours = res.recommendations.tours;
       setSimLog((prev) => [...prev, { role: 'agent', text: replyText, tours }]);
     } catch (err: any) {
       setSimLog((prev) => [...prev, { role: 'agent', text: `Error: ${err.message || "Simulator call failed."}` }]);

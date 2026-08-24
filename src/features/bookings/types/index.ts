@@ -1,4 +1,12 @@
-export type BookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+export type BookingStatus =
+  | 'PENDING'
+  | 'CONFIRMED'
+  | 'PARTIALLY_PAID'
+  | 'PAID'
+  | 'CANCELLED'
+  | 'REFUNDED'
+  | 'COMPLETED'
+  | 'ARCHIVED';
 
 export interface Passenger {
   id?: string;
@@ -42,10 +50,10 @@ export interface Booking {
     invoiceNumber: string;
     createdAt: string;
   } | null;
-  payments?: any[];
-  activityLogs?: any[];
-  notes?: any[];
-  attachments?: any[];
+  payments?: Payment[];
+  activityLogs?: BookingActivity[];
+  notes?: BookingNote[];
+  attachments?: BookingAttachment[];
 }
 
 export type BookingDetail = Booking;
@@ -85,25 +93,64 @@ export interface AssignBookingPayload {
 
 export interface BulkUpdateBookingsPayload {
   referenceCodes: string[];
-  status?: BookingStatus;
   assigneeId?: string | null;
   priority?: string;
 }
 
 export interface AddPaymentPayload {
   amount: number;
+  currency: 'USD';
+  method: 'CASH' | 'BANK_TRANSFER' | 'POS' | 'OTHER_MANUAL';
+  transactionId: string;
+}
+
+export interface Payment {
+  id: string;
+  amount: string;
   currency: string;
-  paymentMethod: string;
-  referenceNumber?: string;
-  notes?: string;
+  method: string;
+  transactionId: string | null;
+  status: string;
+  isRefund: boolean;
+  createdAt: string;
+}
+
+export interface BookingActivity {
+  id: string;
+  action: string;
+  createdAt: string;
+}
+
+export interface BookingNote {
+  id: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface BookingAttachment {
+  id: string;
+  fileName?: string;
+  documentType?: string;
+}
+
+export interface ManualBookingPayload {
+  tourId: string;
+  arrivalDate: string;
+  fullName: string;
+  email: string;
+  phone: string;
+  adults: number;
+  children?: number;
+  infants?: number;
+  userId?: string;
+  availabilityId?: string;
+  promoCode?: string;
 }
 
 export interface AddNotePayload {
   content: string;
-  isInternal: boolean;
 }
 
 export interface AddAttachmentPayload {
-  file: File;
-  documentType: string;
+  mediaAssetId: string;
 }

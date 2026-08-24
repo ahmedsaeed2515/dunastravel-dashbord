@@ -1,5 +1,5 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { landingPagesApi, LandingPageFilters, TourLandingPage } from "../api/landingPagesApi";
+import { landingPagesApi, LandingPageFilters, LandingPageMutationPayload } from "../api/landingPagesApi";
 
 export const LANDING_PAGES_QUERY_KEY = ["admin", "tour-landing-pages"];
 
@@ -21,7 +21,7 @@ export function useLandingPage(slug: string) {
 export function useCreateLandingPage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: Partial<TourLandingPage>) => landingPagesApi.createLandingPage(data),
+    mutationFn: (data: LandingPageMutationPayload) => landingPagesApi.createLandingPage(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
     },
@@ -31,7 +31,7 @@ export function useCreateLandingPage() {
 export function useUpdateLandingPage() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slug, data }: { slug: string; data: Partial<TourLandingPage> }) =>
+    mutationFn: ({ slug, data }: { slug: string; data: LandingPageMutationPayload }) =>
       landingPagesApi.updateLandingPage(slug, data),
     onSuccess: (_, { slug }) => {
       queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
@@ -55,6 +55,17 @@ export function useUnpublishLandingPage() {
   const queryClient = useQueryClient();
   return useMutation({
     mutationFn: (slug: string) => landingPagesApi.unpublishLandingPage(slug),
+    onSuccess: (_, slug) => {
+      queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
+    },
+  });
+}
+
+export function useArchiveLandingPage() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (slug: string) => landingPagesApi.archiveLandingPage(slug),
     onSuccess: (_, slug) => {
       queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
@@ -93,5 +104,37 @@ export function useDetachTourFromLandingPage() {
       queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
     },
+  });
+}
+
+export function useUpdateLandingPageTourRelation() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, tourId, data }: { slug: string; tourId: string; data: { sortOrder?: number; isFeatured?: boolean; isVisible?: boolean; customBadge?: Record<string, string> } }) =>
+      landingPagesApi.updateTourRelation(slug, tourId, data),
+    onSuccess: (_, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
+    },
+  });
+}
+
+export function useReorderLandingPageTours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, items }: { slug: string; items: { tourId: string; sortOrder: number }[] }) =>
+      landingPagesApi.reorderToursInLandingPage(slug, items),
+    onSuccess: (_, { slug }) => {
+      queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
+      queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
+    },
+  });
+}
+
+export function useReorderLandingPages() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (items: { id: string; sortOrder: number }[]) => landingPagesApi.reorderLandingPages(items),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY }),
   });
 }

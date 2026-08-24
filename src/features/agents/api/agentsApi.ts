@@ -18,23 +18,19 @@ export interface PaginatedResponse<T> {
 
 export const agentsApi = {
   getAgents: async (filters: AgentQueryFilters = {}): Promise<PaginatedResponse<Agent>> => {
-    const response = await apiClient.get("/admin/agents", { params: filters });
-    return response as any;
+    return apiClient.get<PaginatedResponse<Agent>, PaginatedResponse<Agent>>("/admin/agents", { params: filters });
   },
 
   getAgentById: async (id: string): Promise<Agent> => {
-    const response = await apiClient.get(`/admin/agents/${id}`);
-    return response as any;
+    return apiClient.get<Agent, Agent>(`/admin/agents/${id}`);
   },
 
   createAgent: async (payload: CreateAgentPayload): Promise<Agent> => {
-    const response = await apiClient.post("/admin/agents", payload);
-    return response as any;
+    return apiClient.post<Agent, Agent>("/admin/agents", payload);
   },
 
   updateAgent: async (id: string, payload: UpdateAgentPayload): Promise<Agent> => {
-    const response = await apiClient.patch(`/admin/agents/${id}`, payload);
-    return response as any;
+    return apiClient.patch<Agent, Agent>(`/admin/agents/${id}`, payload);
   },
 
   deleteAgent: async (id: string): Promise<void> => {

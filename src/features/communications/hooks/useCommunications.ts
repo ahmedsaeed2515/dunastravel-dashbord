@@ -1,15 +1,16 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { communicationsApi } from "../api/communicationsApi";
-import { NotificationDeliveryLogQueryFilters } from "../types";
+import { ContactSubmissionQueryFilters, CreateEmailTemplatePayload, InquiryQueryFilters, NotificationDeliveryLogQueryFilters, UpdateEmailTemplatePayload } from "../types";
+import { normalizeApiError } from "@/lib/api-types";
 import { toast } from "sonner";
 
 export const communicationsKeys = {
   all: ["communications"] as const,
   metrics: () => [...communicationsKeys.all, "metrics"] as const,
   logs: (filters: NotificationDeliveryLogQueryFilters) => [...communicationsKeys.all, "logs", filters] as const,
-  inquiries: (filters: any) => [...communicationsKeys.all, "inquiries", filters] as const,
+  inquiries: (filters: InquiryQueryFilters) => [...communicationsKeys.all, "inquiries", filters] as const,
   templates: () => [...communicationsKeys.all, "templates"] as const,
-  contactSubmissions: (filters: any) => [...communicationsKeys.all, "contactSubmissions", filters] as const,
+  contactSubmissions: (filters: ContactSubmissionQueryFilters) => [...communicationsKeys.all, "contactSubmissions", filters] as const,
 };
 
 export function useCommunicationMetrics() {
@@ -37,13 +38,13 @@ export function useRetryNotification() {
       queryClient.invalidateQueries({ queryKey: communicationsKeys.all });
       toast.success("Retry initiated. A new delivery attempt has started.");
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to initiate retry.");
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message);
     },
   });
 }
 
-export function useInquiries(filters: any) {
+export function useInquiries(filters: InquiryQueryFilters) {
   return useQuery({
     queryKey: communicationsKeys.inquiries(filters),
     queryFn: () => communicationsApi.getInquiries(filters),
@@ -60,8 +61,8 @@ export function useAssignInquiry() {
       queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
       toast.success("Inquiry assigned successfully.");
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to assign inquiry.");
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message);
     },
   });
 }
@@ -76,7 +77,7 @@ export function useTemplates() {
 export function useCreateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: any) => communicationsApi.createTemplate(data),
+    mutationFn: (data: CreateEmailTemplatePayload) => communicationsApi.createTemplate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
       toast.success("Template created successfully.");
@@ -88,7 +89,7 @@ export function useCreateTemplate() {
 export function useUpdateTemplate() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: any }) => communicationsApi.updateTemplate(id, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateEmailTemplatePayload }) => communicationsApi.updateTemplate(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: communicationsKeys.templates() });
       toast.success("Template updated successfully.");
@@ -109,7 +110,7 @@ export function useDeleteTemplate() {
   });
 }
 
-export function useContactSubmissions(filters: any) {
+export function useContactSubmissions(filters: ContactSubmissionQueryFilters) {
   return useQuery({
     queryKey: communicationsKeys.contactSubmissions(filters),
     queryFn: () => communicationsApi.getContactSubmissions(filters),
@@ -126,8 +127,8 @@ export function useUpdateContactSubmissionStatus() {
       queryClient.invalidateQueries({ queryKey: ["communications", "contactSubmissions"] });
       toast.success("Submission status updated successfully.");
     },
-    onError: (error: any) => {
-      toast.error(error?.response?.data?.message || "Failed to update submission status.");
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message);
     },
   });
 }

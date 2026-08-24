@@ -26,6 +26,7 @@ export default function AuditLogsPage() {
     dateTo: dateTo || undefined,
     search: search || undefined,
   });
+  const logs = data?.data ?? [];
 
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
@@ -80,8 +81,8 @@ export default function AuditLogsPage() {
                   <TableRow>
                     <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">{tCommon("loading")}</TableCell>
                   </TableRow>
-                ) : (Array.isArray(data) ? data : (data?.data || [])).length > 0 ? (
-                  (Array.isArray(data) ? data : (data?.data || [])).map((log) => (
+                ) : logs.length > 0 ? (
+                  logs.map((log) => (
                     <TableRow key={log.id} className="hover:bg-muted/30 transition-colors">
                       <TableCell className="font-mono text-xs text-muted-foreground dir-ltr text-start">{log.id.slice(0, 8)}</TableCell>
                       <TableCell>

@@ -5,6 +5,9 @@ export interface DashboardFilters {
   interfaceSlug?: string;
   tourSlug?: string;
   currency?: string;
+  locale?: 'en' | 'ar' | 'es' | 'pt' | 'it';
+  timezone?: 'UTC' | 'Africa/Cairo';
+  preset?: 'all' | '30d' | '90d' | '12m';
 }
 
 export interface ExecutiveSummary {
@@ -147,6 +150,8 @@ export interface RecentActivityItem {
   id: string;
   actor: string;
   action: string;
+  actionAr?: string;
+  rawAction?: string;
   entity: string;
   timestamp: string;
   type: string;

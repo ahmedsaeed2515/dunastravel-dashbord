@@ -88,8 +88,8 @@ export default function AgentsPage() {
 
       <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
         <AgentsTable 
-          data={Array.isArray(data) ? data : (data?.data || [])}
-          total={Array.isArray(data) ? data.length : (data?.meta?.total || 0)}
+          data={data?.data ?? []}
+          total={data?.meta?.total ?? 0}
           isLoading={isLoading}
           filters={filters}
           onFilterChange={setFilters}
