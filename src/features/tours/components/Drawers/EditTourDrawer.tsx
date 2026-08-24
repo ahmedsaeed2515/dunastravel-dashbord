@@ -105,6 +105,15 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
     }
   }, [tour, open, form]);
 
+  const selectedCountry = form.watch("country");
+  const isEgyptTour = selectedCountry?.trim().toLowerCase() === "egypt";
+
+  useEffect(() => {
+    if (isEgyptTour && form.getValues("basePriceUsd") !== 0) {
+      form.setValue("basePriceUsd", 0, { shouldDirty: true });
+    }
+  }, [form, isEgyptTour]);
+
   if (!tour) return null;
 
   const onSubmit = (values: z.infer<typeof formSchema>) => {
@@ -124,7 +133,7 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
         it: values.overviewIt || values.overviewEn || "",
       },
       category: values.category,
-      basePriceUsd: values.basePriceUsd,
+      basePriceUsd: values.country?.trim().toLowerCase() === "egypt" ? 0 : values.basePriceUsd,
       capacity: values.capacity,
       minParticipants: values.minParticipants,
       status: values.status,
@@ -329,7 +338,8 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
                     render={({ field }) => (
                       <FormItem>
                         <FormLabel className="text-xs font-semibold">Base Price (USD)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
+                        <FormControl><Input type="number" min="0" disabled={isEgyptTour} {...field} /></FormControl>
+                        {isEgyptTour && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Egypt tours are fixed at $0 by the backend pricing policy.</p>}
                         <FormMessage />
                       </FormItem>
                     )}

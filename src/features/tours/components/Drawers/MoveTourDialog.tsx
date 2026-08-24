@@ -146,7 +146,7 @@ export function MoveTourDialog({
               </div>
             </div>
             <span className="text-xs px-2.5 py-1 bg-primary/10 text-primary rounded-md font-semibold shrink-0">
-              {Number(tour.basePriceUsd) > 0 ? `$${tour.basePriceUsd}` : currentLocale === "ar" ? "السعر غير محدد" : "Price not set"}
+              {Number.isFinite(Number(tour.basePriceUsd)) ? `$${Number(tour.basePriceUsd).toFixed(2)}` : currentLocale === "ar" ? "السعر غير محدد" : "Price not set"}
             </span>
           </div>
 

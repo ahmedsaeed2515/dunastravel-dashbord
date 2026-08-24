@@ -31,6 +31,7 @@ export function CreateTourWizard() {
   const [country, setCountry] = useState("");
   const [city, setCity] = useState("");
   const [basePriceUsd, setBasePriceUsd] = useState("");
+  const isEgyptTour = country.trim().toLowerCase() === "egypt";
 
   // Step 3: Itinerary
   const [itineraryDays, setItineraryDays] = useState([{ dayLabel: "", description: "" }]);
@@ -89,13 +90,13 @@ export function CreateTourWizard() {
   };
 
   const handleSave = async () => {
-    const price = Number(basePriceUsd);
+    const price = isEgyptTour ? 0 : Number(basePriceUsd);
     if (!slug.trim() || !titleEn.trim() || !descriptionEn.trim() || !category || !country.trim()) {
       toast.error("Slug, title, description, category, and country are required.");
       return;
     }
-    if (!Number.isFinite(price) || price <= 0) {
-      toast.error("Enter a valid positive base price.");
+    if (!Number.isFinite(price) || price < 0) {
+      toast.error("Enter a valid base price of 0 or greater.");
       return;
     }
 
@@ -226,7 +227,11 @@ export function CreateTourWizard() {
                 <div className="grid grid-cols-2 gap-6">
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">Country</Label>
-                    <Input value={country} onChange={(e) => setCountry(e.target.value)} placeholder="e.g. Egypt" />
+                    <Input value={country} onChange={(e) => {
+                      const nextCountry = e.target.value;
+                      setCountry(nextCountry);
+                      if (nextCountry.trim().toLowerCase() === "egypt") setBasePriceUsd("0");
+                    }} placeholder="e.g. Egypt" />
                   </div>
                   <div className="space-y-1.5">
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">City / Region</Label>
@@ -237,8 +242,9 @@ export function CreateTourWizard() {
                     <Label className="text-xs font-semibold text-muted-foreground uppercase">Base Price (USD)</Label>
                     <div className="relative">
                       <span className="absolute left-3 top-2.5 text-muted-foreground">$</span>
-                      <Input type="number" value={basePriceUsd} onChange={(e) => setBasePriceUsd(e.target.value)} className="pl-7" />
+                      <Input type="number" min="0" value={isEgyptTour ? "0" : basePriceUsd} onChange={(e) => setBasePriceUsd(e.target.value)} className="pl-7" disabled={isEgyptTour} />
                     </div>
+                    {isEgyptTour && <p className="text-[11px] text-emerald-600 dark:text-emerald-400">Egypt tours are fixed at $0 by the backend pricing policy.</p>}
                   </div>
                   
                   <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
