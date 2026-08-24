@@ -37,6 +37,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
   const [itineraries, setItineraries] = useState<any[]>([]);
   const [images, setImages] = useState<any[]>([]);
   const [newImageUrl, setNewImageUrl] = useState("");
+  const isEgyptTour = formData.country?.trim().toLowerCase() === "egypt";
 
   useEffect(() => {
     if (!tour) return;
@@ -118,7 +119,7 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
 
   const handleSave = async (statusOverride?: string) => {
     try {
-      const price = parseFloat(String(formData.basePriceUsd));
+      const price = isEgyptTour ? 0 : parseFloat(String(formData.basePriceUsd));
       if (isNaN(price) || price < 0) {
         toast.error("Base Price must be 0 or greater (USD)");
         return;
@@ -294,7 +295,10 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="text-sm font-medium">Country</label>
-                  <Input value={formData.country || ""} onChange={(e) => setFormData({ ...formData, country: e.target.value })} placeholder="e.g. Egypt" />
+                  <Input value={formData.country || ""} onChange={(e) => {
+                    const country = e.target.value;
+                    setFormData({ ...formData, country, ...(country.trim().toLowerCase() === "egypt" ? { basePriceUsd: "0" } : {}) });
+                  }} placeholder="e.g. Egypt" />
                 </div>
                 <div>
                   <label className="text-sm font-medium">City</label>
@@ -402,11 +406,14 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
                     type="number"
                     min="0"
                     step="any"
-                    value={formData.basePriceUsd ?? 0}
+                    value={isEgyptTour ? "0" : formData.basePriceUsd ?? 0}
                     onChange={(e) => setFormData({ ...formData, basePriceUsd: e.target.value as any })}
                     placeholder="e.g. 0.00 or 450.00"
+                    disabled={isEgyptTour}
                   />
-                  <p className="text-[11px] text-muted-foreground mt-1">Starting price per adult in USD (enter 0 for free / on request)</p>
+                  <p className={`text-[11px] mt-1 ${isEgyptTour ? "text-emerald-600 dark:text-emerald-400" : "text-muted-foreground"}`}>
+                    {isEgyptTour ? "Egypt tours are fixed at $0 by the backend pricing policy." : "Starting price per adult in USD (enter 0 for free / on request)"}
+                  </p>
                 </div>
                 <div>
                   <label className="text-sm font-medium">Currency</label>
