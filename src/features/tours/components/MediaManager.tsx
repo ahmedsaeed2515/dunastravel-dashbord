@@ -68,7 +68,7 @@ export function MediaManager({ tour }: MediaManagerProps) {
           
           <div className="space-y-1">
             <label className="text-xs font-medium">Image URL</label>
-            <Input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://source.unsplash.com/random/800x600/?travel" />
+            <Input required value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://your-cdn.example/tour-image.webp" />
           </div>
           
           <div className="grid grid-cols-2 gap-4">

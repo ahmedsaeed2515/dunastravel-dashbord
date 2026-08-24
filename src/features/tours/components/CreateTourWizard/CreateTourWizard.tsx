@@ -25,17 +25,15 @@ export function CreateTourWizard() {
   const [slug, setSlug] = useState("");
   const [titleEn, setTitleEn] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
-  const [category, setCategory] = useState("ADVENTURE");
+  const [category, setCategory] = useState("");
 
   // Step 2: Logistics & Pricing
-  const [country, setCountry] = useState("Egypt");
-  const [city, setCity] = useState("Cairo");
-  const [basePriceUsd, setBasePriceUsd] = useState("1200");
-  const [capacity, setCapacity] = useState("12");
-  const [minParticipants, setMinParticipants] = useState("2");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [basePriceUsd, setBasePriceUsd] = useState("");
 
   // Step 3: Itinerary
-  const [itineraryDays, setItineraryDays] = useState([{ dayLabel: "Day 1", description: "" }]);
+  const [itineraryDays, setItineraryDays] = useState([{ dayLabel: "", description: "" }]);
 
   // Step 4: Includes / Excludes
   const [includesEn, setIncludesEn] = useState("");
@@ -91,26 +89,30 @@ export function CreateTourWizard() {
   };
 
   const handleSave = async () => {
-    if (!slug || !titleEn) {
-      toast.error("Please provide a valid slug and title.");
+    const price = Number(basePriceUsd);
+    if (!slug.trim() || !titleEn.trim() || !descriptionEn.trim() || !category || !country.trim()) {
+      toast.error("Slug, title, description, category, and country are required.");
+      return;
+    }
+    if (!Number.isFinite(price) || price <= 0) {
+      toast.error("Enter a valid positive base price.");
       return;
     }
 
     try {
       setIsLoading(true);
-      const price = Math.max(0.01, parseFloat(basePriceUsd) || 0.01);
       await createTour.mutateAsync({
         slug: slug.trim().toLowerCase(),
         titleJsonb: { en: titleEn.trim() },
-        overviewJsonb: descriptionEn.trim() ? { en: descriptionEn.trim() } : { en: titleEn.trim() },
-        category: category || "ADVENTURE",
+        overviewJsonb: { en: descriptionEn.trim() },
+        category,
         basePriceUsd: price,
         currency: "USD",
         isActive: status === "PUBLISHED",
         status,
         isFeatured,
-        country: country || undefined,
-        city: city || undefined,
+        country: country.trim(),
+        city: city.trim() || undefined,
         includedServicesJsonb: includesEn ? { en: includesEn } : undefined,
         excludedServicesJsonb: excludesEn ? { en: excludesEn } : undefined,
         termsJsonb: importantNotesEn ? { en: importantNotesEn } : undefined,
@@ -118,11 +120,13 @@ export function CreateTourWizard() {
         seoTitle: seoTitle || undefined,
         seoDescription: seoDescription || undefined,
         tags: tagsString.split(',').map(t => t.trim()).filter(Boolean),
-        itineraries: itineraryDays.map((it, idx) => ({
-          dayLabel: it.dayLabel || `Day ${idx + 1}`,
-          descriptionJsonb: { en: it.description || `Day ${idx + 1} plan` },
-          sortOrder: idx + 1,
-        })),
+        itineraries: itineraryDays
+          .filter((it) => it.dayLabel.trim() && it.description.trim())
+          .map((it, idx) => ({
+            dayLabel: it.dayLabel.trim(),
+            descriptionJsonb: { en: it.description.trim() },
+            sortOrder: idx + 1,
+          })),
         images: images.filter(img => img.url && img.url.trim()).map((img, idx) => ({
           imageUrl: img.url.trim(),
           isHero: Boolean(img.isHero),
@@ -237,15 +241,8 @@ export function CreateTourWizard() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase">Min Pax</Label>
-                      <Input type="number" value={minParticipants} onChange={(e) => setMinParticipants(e.target.value)} />
-                    </div>
-                    <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-muted-foreground uppercase">Max Capacity</Label>
-                      <Input type="number" value={capacity} onChange={(e) => setCapacity(e.target.value)} />
-                    </div>
+                  <div className="rounded-lg border border-amber-500/20 bg-amber-500/5 p-3 text-xs text-muted-foreground">
+                    Departure dates and seat capacity are managed from the tour availability controls after the tour is created.
                   </div>
                 </div>
               </div>
