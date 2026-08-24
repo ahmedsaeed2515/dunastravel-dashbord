@@ -258,23 +258,26 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v1';
+const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v2';
 const LOCAL_STORAGE_HOTELS_KEY = 'dunas_admin_hotels_v1';
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [trips, setTrips] = useState<TripModel[]>(() => {
     if (typeof window !== 'undefined') {
+      try {
+        localStorage.removeItem('dunas_admin_trips_v1');
+      } catch {}
       const saved = localStorage.getItem(LOCAL_STORAGE_TRIPS_KEY);
       if (saved && saved !== 'undefined' && saved.trim() !== '') {
         try {
           return JSON.parse(saved);
         } catch (e) {
           console.error('Failed to parse saved trips', e);
-          return INITIAL_TRIPS;
+          return [];
         }
       }
     }
-    return INITIAL_TRIPS;
+    return [];
   });
 
   const [hotels, setHotels] = useState<HotelModel[]>(() => {
