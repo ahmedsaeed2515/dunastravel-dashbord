@@ -14,15 +14,17 @@ export function RecentActivityFeed({ activities, isLoading }: RecentActivityFeed
   const params = useParams();
   const isAr = params?.locale === "ar";
 
-  if (isLoading || !activities) {
+  if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
+      <Card className="shadow-sm p-6">
+        <CardHeader className="p-0">
           <CardTitle className="text-base">{isAr ? "جاري تحميل سجل النشاطات..." : "Audit Log Feed Loading..."}</CardTitle>
         </CardHeader>
       </Card>
     );
   }
+
+  const activityList = activities ?? [];
 
   return (
     <Card className="shadow-sm">
@@ -33,11 +35,11 @@ export function RecentActivityFeed({ activities, isLoading }: RecentActivityFeed
       </CardHeader>
 
       <CardContent>
-        {activities.length === 0 ? (
+        {activityList.length === 0 ? (
           <div className="p-8 text-center text-xs text-muted-foreground">{isAr ? "لا توجد نشاطات مسجلة حديثاً." : "No recent audit log entries recorded."}</div>
         ) : (
           <div className="space-y-3">
-            {activities.map((act) => {
+            {activityList.map((act) => {
               const displayAction = (isAr && act.actionAr) ? act.actionAr : act.action;
               return (
                 <div key={act.id} className="p-3 rounded-lg border bg-muted/40 text-xs flex justify-between items-start gap-3">

@@ -12,6 +12,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
         queryCache: new QueryCache({
           onError: (error) => {
             const apiError = error as ApiError;
+            // Auth errors (401/403) are handled gracefully by redirection logic
+            if (apiError?.status === 401 || apiError?.status === 403) {
+              return;
+            }
             toast.error(apiError?.message || "Could not load the requested data.");
           },
         }),

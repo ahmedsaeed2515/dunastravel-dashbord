@@ -38,8 +38,8 @@ export function NotificationBellDropdown() {
     try {
       setLoading(true);
       const res = await notificationsApi.getNotifications({ limit: 10 });
-      setNotifications(res.items);
-      setUnreadCount(res.unreadCount);
+      setNotifications(res?.items ?? []);
+      setUnreadCount(res?.unreadCount ?? 0);
     } catch (error) {
       console.error("Failed to fetch notifications:", error);
     } finally {

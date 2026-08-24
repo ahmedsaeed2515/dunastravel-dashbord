@@ -34,6 +34,7 @@ import { adminRoutes } from "@/config/admin-routes";
 
 export const Topbar = memo(function Topbar() {
   const { setTheme, theme } = useTheme();
+  const [mounted, setMounted] = React.useState(false);
   const { user, logout } = useAuth();
   const pathname = usePathname();
   const router = useRouter();
@@ -42,6 +43,10 @@ export const Topbar = memo(function Topbar() {
   const tCommon = useTranslations("common");
   const tAccess = useTranslations("accessibility");
   const tNav = useTranslations("navigation");
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const currentLocale = (params?.locale as string) || "ar";
 
@@ -61,7 +66,7 @@ export const Topbar = memo(function Topbar() {
     }
   };
 
-  const isDark = theme === "dark";
+  const isDark = mounted && theme === "dark";
 
   const userInitials = user?.name
     ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)

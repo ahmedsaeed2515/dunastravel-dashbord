@@ -114,6 +114,7 @@ apiClient.interceptors.request.use(
 
 // --- Auth Refresh Management ---
 let isRefreshing = false;
+let isRedirecting = false;
 let refreshSubscribers: ((success: boolean) => void)[] = [];
 
 function onRefreshed(success: boolean) {
@@ -125,9 +126,11 @@ function addRefreshSubscriber(callback: (success: boolean) => void) {
   refreshSubscribers.push(callback);
 }
 
-// Response Interceptor for global unwrapping, error mapping, silent refresh, and CSRF retry
 apiClient.interceptors.response.use(
-  (response) => unwrapApiEnvelope(response.data),
+  (response) => {
+    isRedirecting = false;
+    return unwrapApiEnvelope(response.data);
+  },
   async (error) => {
     const originalRequest = error.config || {};
 
@@ -159,7 +162,9 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 401 && !originalRequest._retry) {
       const requestUrl = originalRequest.url || '';
       const redirectToLogin = async () => {
+        if (isRedirecting) return;
         if (typeof window !== 'undefined' && !window.location.pathname.includes('/login')) {
+          isRedirecting = true;
           const baseUrl = originalRequest.baseURL || '/api';
           try {
             await axios.post(`${baseUrl}/auth/logout`, {}, { withCredentials: true });

@@ -18,15 +18,19 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
   const params = useParams();
   const locale = (params?.locale as string) || "en";
 
-  if (isLoading || !bookings) {
+  const isAr = locale === "ar";
+
+  if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-base">Recent Operations Bookings Loading...</CardTitle>
+      <Card className="shadow-sm p-6">
+        <CardHeader className="p-0">
+          <CardTitle className="text-base">{isAr ? "جاري تحميل الحجوزات الأخيرة..." : "Recent Operations Bookings Loading..."}</CardTitle>
         </CardHeader>
       </Card>
     );
   }
+
+  const bookingList = bookings ?? [];
 
   return (
     <Card className="shadow-sm">
@@ -44,24 +48,24 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
       </CardHeader>
 
       <CardContent>
-        {bookings.length === 0 ? (
-          <div className="p-8 text-center text-xs text-muted-foreground">No recent bookings recorded.</div>
+        {bookingList.length === 0 ? (
+          <div className="p-8 text-center text-xs text-muted-foreground">{isAr ? "لا توجد حجوزات مسجلة حديثاً." : "No recent bookings recorded."}</div>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Reference</TableHead>
-                <TableHead>Customer</TableHead>
-                <TableHead>Tour</TableHead>
-                <TableHead>Travel Date</TableHead>
-                <TableHead>Travelers</TableHead>
-                <TableHead>Total (USD)</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead className="text-right">Action</TableHead>
+                <TableHead>{isAr ? "المرجع" : "Reference"}</TableHead>
+                <TableHead>{isAr ? "العميل" : "Customer"}</TableHead>
+                <TableHead>{isAr ? "الرحلة" : "Tour"}</TableHead>
+                <TableHead>{isAr ? "تاريخ السفر" : "Travel Date"}</TableHead>
+                <TableHead>{isAr ? "المسافرون" : "Travelers"}</TableHead>
+                <TableHead>{isAr ? "الإجمالي" : "Total (USD)"}</TableHead>
+                <TableHead>{isAr ? "الحالة" : "Status"}</TableHead>
+                <TableHead className="text-right">{isAr ? "الإجراء" : "Action"}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {bookings.map((b) => (
+              {bookingList.map((b) => (
                 <TableRow key={b.id}>
                   <TableCell className="font-mono text-xs font-bold text-primary">
                     <Link href={`/${locale}/admin/bookings/${b.referenceCode}`} className="hover:underline">
@@ -73,7 +77,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
                     <div className="text-[10px] text-muted-foreground">{b.customerEmail}</div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-xs font-medium truncate max-w-[200px]">
+                    <div className="text-xs font-medium truncate max-w-50">
                       {b.tourTitleJsonb?.[locale] || b.tourTitleJsonb?.en || b.tourSlug}
                     </div>
                   </TableCell>

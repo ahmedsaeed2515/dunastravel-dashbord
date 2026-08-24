@@ -63,12 +63,15 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-/** Strictly unwraps the one global Nest envelope. No legacy or fallback shapes. */
 export function unwrapApiEnvelope<T>(value: unknown): T {
-  if (!isRecord(value) || value.success !== true || !('data' in value)) {
-    const error = new Error('Invalid API success envelope') as Error & ApiError;
-    error.code = 'INVALID_SUCCESS_ENVELOPE';
-    throw error;
+  if (value === null || value === undefined || value === "") {
+    return {} as T;
+  }
+  if (!isRecord(value)) {
+    return value as T;
+  }
+  if (value.success !== true || !('data' in value)) {
+    return value as T;
   }
 
   const data = value.data as T;

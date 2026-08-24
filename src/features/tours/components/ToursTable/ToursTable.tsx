@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { 
@@ -341,7 +341,7 @@ export function ToursTable() {
           onClick={handleOpenAddTrip}
           className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 px-4 h-8 shadow-sm cursor-pointer"
         >
-          <Plus className="h-4 w-4 stroke-[3]" />
+          <Plus className="h-4 w-4 stroke-3" />
           <span>{currentLocale === "ar" ? "إضافة رحلة جديدة +" : "Create Tour +"}</span>
         </Button>
       </div>

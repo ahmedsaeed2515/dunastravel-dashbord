@@ -19,17 +19,17 @@ export function ToursPerformanceSection({ rankings, isLoading }: ToursPerformanc
   const locale = (params?.locale as string) || "en";
   const [activeTab, setActiveTab] = useState<"topRevenue" | "mostBooked" | "lowConversion" | "capacityAlerts">("topRevenue");
 
-  if (isLoading || !rankings) {
+  if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
+      <Card className="shadow-sm p-6">
+        <CardHeader className="p-0">
           <CardTitle className="text-base">Tours Performance Rankings Loading...</CardTitle>
         </CardHeader>
       </Card>
     );
   }
 
-  const currentList: TourPerformanceItem[] = rankings[activeTab] || [];
+  const currentList: TourPerformanceItem[] = rankings?.[activeTab] || [];
 
   return (
     <Card className="shadow-sm">

@@ -9,22 +9,41 @@ interface TrafficAnalyticsCardProps {
 }
 
 export function TrafficAnalyticsCard({ data, isLoading }: TrafficAnalyticsCardProps) {
-  if (isLoading || !data) {
+  if (isLoading) {
     return (
-      <Card className="shadow-sm">
-        <CardHeader>
+      <Card className="shadow-sm p-6">
+        <CardHeader className="p-0">
           <CardTitle className="text-base">Traffic & Devices Loading...</CardTitle>
         </CardHeader>
       </Card>
     );
   }
 
-  const devices = data.devices || { desktop: 0, mobile: 0, tablet: 0 };
-  const totalDevs = (devices.desktop || 0) + (devices.mobile || 0) + (devices.tablet || 0) || 1;
+  const rawDevices = data?.devices;
+  let desktopVal = 0;
+  let mobileVal = 0;
+  let tabletVal = 0;
 
-  const desktopPct = Math.round(((devices.desktop || 0) / totalDevs) * 100);
-  const mobilePct = Math.round(((devices.mobile || 0) / totalDevs) * 100);
-  const tabletPct = Math.round(((devices.tablet || 0) / totalDevs) * 100);
+  if (Array.isArray(rawDevices)) {
+    rawDevices.forEach((item: any) => {
+      const devName = String(item.device || '').toLowerCase();
+      const cnt = Number(item.count || 0);
+      if (devName.includes('desktop')) desktopVal += cnt;
+      else if (devName.includes('mobile')) mobileVal += cnt;
+      else if (devName.includes('tablet')) tabletVal += cnt;
+    });
+  } else if (rawDevices && typeof rawDevices === 'object') {
+    desktopVal = Number(rawDevices.desktop || 0);
+    mobileVal = Number(rawDevices.mobile || 0);
+    tabletVal = Number(rawDevices.tablet || 0);
+  }
+
+  const totalDevs = desktopVal + mobileVal + tabletVal || 1;
+  const desktopPct = Math.round((desktopVal / totalDevs) * 100);
+  const mobilePct = Math.round((mobileVal / totalDevs) * 100);
+  const tabletPct = Math.round((tabletVal / totalDevs) * 100);
+
+  const localesObj: Record<string, number> = data?.locales ?? {};
 
   return (
     <Card className="shadow-sm">
@@ -55,11 +74,15 @@ export function TrafficAnalyticsCard({ data, isLoading }: TrafficAnalyticsCardPr
         <div className="space-y-2">
           <div className="text-xs font-semibold text-muted-foreground">Top Visitor Locales</div>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(data.locales || {}).map(([loc, count]: [string, any]) => (
-              <span key={loc} className="text-xs px-2.5 py-1 rounded bg-muted font-mono uppercase font-semibold">
-                {loc}: {count}
-              </span>
-            ))}
+            {Object.entries(localesObj).length === 0 ? (
+              <span className="text-xs text-muted-foreground font-medium">No locale stats available</span>
+            ) : (
+              Object.entries(localesObj).map(([loc, count]) => (
+                <span key={loc} className="text-xs px-2.5 py-1 rounded bg-muted font-mono uppercase font-semibold">
+                  {loc}: {count}
+                </span>
+              ))
+            )}
           </div>
         </div>
       </CardContent>

@@ -514,11 +514,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [trips, setTrips] = useState<TripModel[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(LOCAL_STORAGE_TRIPS_KEY);
-      if (saved) {
+      if (saved && saved !== 'undefined' && saved.trim() !== '') {
         try {
           return JSON.parse(saved);
         } catch (e) {
           console.error('Failed to parse saved trips', e);
+          return INITIAL_TRIPS;
         }
       }
     }
@@ -528,11 +529,12 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [hotels, setHotels] = useState<HotelModel[]>(() => {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem(LOCAL_STORAGE_HOTELS_KEY);
-      if (saved) {
+      if (saved && saved !== 'undefined' && saved.trim() !== '') {
         try {
           return JSON.parse(saved);
         } catch (e) {
           console.error('Failed to parse saved hotels', e);
+          return INITIAL_HOTELS;
         }
       }
     }

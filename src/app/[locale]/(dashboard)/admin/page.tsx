@@ -18,13 +18,17 @@ export default function DashboardPage() {
   const [filters, setFilters] = useState<DashboardFilters>({});
 
   const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary, isRefetching: isRefetchingSummary } = useDashboardSummary(filters);
-  const { data: revenueTrend, isLoading: isLoadingRevenue } = useRevenueTrend(filters);
-  const { data: recentBookings, isLoading: isLoadingRecentBookings } = useRecentBookings();
-  const { data: recentActivity, isLoading: isLoadingActivity } = useRecentActivity();
-  const { data: tourPerformance, isLoading: isLoadingTours, isError: isToursError } = useTourPerformance(filters);
+  const { data: revenueTrend, isLoading: isLoadingRevenue, refetch: refetchRevenue } = useRevenueTrend(filters);
+  const { data: recentBookings, isLoading: isLoadingRecentBookings, refetch: refetchBookings } = useRecentBookings();
+  const { data: recentActivity, isLoading: isLoadingActivity, refetch: refetchActivity } = useRecentActivity();
+  const { data: tourPerformance, isLoading: isLoadingTours, isError: isToursError, refetch: refetchTours } = useTourPerformance(filters);
 
   const handleRefreshAll = () => {
     refetchSummary();
+    refetchRevenue();
+    refetchBookings();
+    refetchActivity();
+    refetchTours();
   };
 
   return (

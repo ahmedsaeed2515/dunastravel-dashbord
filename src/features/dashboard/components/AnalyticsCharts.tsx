@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card } from "@/components/ui/card";
 import { 
   BarChart3, 
@@ -30,6 +30,11 @@ export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsCha
   const params = useParams();
   const isAr = params?.locale === "ar";
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "6m">("2026");
+  const [isMounted, setIsMounted] = useState(false);
+
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   const dynamicTrend = Array.isArray(revenueTrend) && revenueTrend.length > 0
     ? revenueTrend.map((item) => {
@@ -242,8 +247,9 @@ export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsCha
 
           {/* Bar Chart Container */}
           <div className="relative h-64 sm:h-72 w-full pt-4">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={monthlyData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
+            {isMounted ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={monthlyData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>
                 <XAxis 
                   dataKey="month" 
                   fontSize={12} 
@@ -280,6 +286,7 @@ export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsCha
                 </Bar>
               </BarChart>
             </ResponsiveContainer>
+            ) : null}
 
             {/* Peak Month Badge on top of August */}
             <div className="absolute top-0 right-8 sm:right-10 flex items-center gap-1 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-md animate-bounce">

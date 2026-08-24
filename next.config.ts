@@ -9,11 +9,11 @@ const destinationApiUrl = rawApiUrl.endsWith('/api') ? `${rawApiUrl}/:path*` : `
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  turbopack: {
+    root: __dirname,
+  },
   experimental: {
     optimizePackageImports: ['lucide-react', 'recharts', 'framer-motion', 'date-fns', '@tanstack/react-table', 'sonner'],
-  },
-  turbopack: {
-    root: path.resolve(__dirname),
   },
   images: {
     remotePatterns: [
