@@ -29,6 +29,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateTourWizard } from "@/features/tours/components/CreateTourWizard/CreateTourWizard";
 import { EditTourDrawer } from "@/features/tours/components/Drawers/EditTourDrawer";
 import { MoveTourDialog } from "@/features/tours/components/Drawers/MoveTourDialog";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
+import type { TripModel } from "@/types/dunas-suite";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
 import { DestinationsManager } from "@/components/destinations/DestinationsManager";
 import { useSoftDeleteTour, useTour, useTours, useTourStats } from "@/features/tours/hooks/useTours";
@@ -38,6 +40,104 @@ import Link from "next/link";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800";
+
+function tourToTripModel(tour: Tour): TripModel {
+  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
+  const enTitle = tour.titleJsonb?.en || tour.slug;
+  const esTitle = tour.titleJsonb?.es || enTitle;
+  const ptTitle = tour.titleJsonb?.pt || enTitle;
+  const itTitle = tour.titleJsonb?.it || enTitle;
+
+  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || '';
+  const enOverview = tour.overviewJsonb?.en || arOverview;
+  const esOverview = tour.overviewJsonb?.es || enOverview;
+  const ptOverview = tour.overviewJsonb?.pt || enOverview;
+  const itOverview = tour.overviewJsonb?.it || enOverview;
+
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
+  const price = Number(tour.basePriceUsd || 650);
+
+  const images = (tour.images && tour.images.length > 0)
+    ? tour.images.map(img => img.imageUrl)
+    : [tour.heroImage || FALLBACK_IMAGE];
+
+  const itinerary = (tour.itineraries && tour.itineraries.length > 0)
+    ? tour.itineraries.map((itin, idx) => ({
+        day: idx + 1,
+        title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
+        description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
+        meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
+      }))
+    : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }];
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: arTitle,
+    subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
+    destination: (tour.country?.toLowerCase() || 'egypt'),
+    market: 'Global',
+    language: 'ar',
+    type: (tour.category || 'Classic') as any,
+    duration,
+    departures: 'Daily / Diário',
+    price,
+    hotelCategory: '5-Star Luxury',
+    rating: 4.9,
+    reviewCount: tour.reviewCount || 48,
+    popular: !!tour.isFeatured,
+    familyFriendly: true,
+    honeymoon: false,
+    luxury: true,
+    cultural: true,
+    adventure: false,
+    overview: arOverview,
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || (tour.inclusionJsonb?.ar as string[]) || [''],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || (tour.exclusionJsonb?.ar as string[]) || [''],
+    images,
+    hotels: '5-Star Luxury Hotels',
+    accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
+    itinerary,
+    translations: {
+      ar: {
+        title: arTitle,
+        overview: arOverview,
+        highlights: (tour.highlightJsonb?.ar as string[]) || [''],
+        included: (tour.includedServicesJsonb?.ar as string[]) || [''],
+        excluded: (tour.excludedServicesJsonb?.ar as string[]) || [''],
+      },
+      en: {
+        title: enTitle,
+        overview: enOverview,
+        highlights: (tour.highlightJsonb?.en as string[]) || [''],
+        included: (tour.includedServicesJsonb?.en as string[]) || [''],
+        excluded: (tour.excludedServicesJsonb?.en as string[]) || [''],
+      },
+      es: {
+        title: esTitle,
+        overview: esOverview,
+        highlights: (tour.highlightJsonb?.es as string[]) || [''],
+        included: (tour.includedServicesJsonb?.es as string[]) || [''],
+        excluded: (tour.excludedServicesJsonb?.es as string[]) || [''],
+      },
+      pt: {
+        title: ptTitle,
+        overview: ptOverview,
+        highlights: (tour.highlightJsonb?.pt as string[]) || [''],
+        included: (tour.includedServicesJsonb?.pt as string[]) || [''],
+        excluded: (tour.excludedServicesJsonb?.pt as string[]) || [''],
+      },
+      it: {
+        title: itTitle,
+        overview: itOverview,
+        highlights: (tour.highlightJsonb?.it as string[]) || [''],
+        included: (tour.includedServicesJsonb?.it as string[]) || [''],
+        excluded: (tour.excludedServicesJsonb?.it as string[]) || [''],
+      },
+    },
+  };
+}
 
 function textFor(value: Record<string, unknown> | null | undefined, locale: string) {
   if (!value) return "";
@@ -251,18 +351,28 @@ export default function ToursPage() {
 
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
   const [search, setSearch] = useState("");
+  const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false);
 
-  const [editingSlug, setEditingSlug] = useState<string | null>(null);
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
 
   const filters = useMemo(() => ({ limit: 100, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
   const { data, isLoading, error, refetch } = useTours(filters);
   const { data: stats } = useTourStats();
-  const { data: detailedTour } = useTour(editingSlug || "");
   const removeTour = useSoftDeleteTour();
 
   const tours = data?.data ?? [];
+
+  const handleOpenEditTrip = (tour: Tour) => {
+    setSelectedTripForModal(tourToTripModel(tour));
+    setIsTripModalOpen(true);
+  };
+
+  const handleOpenAddTrip = () => {
+    setSelectedTripForModal(null);
+    setIsTripModalOpen(true);
+  };
 
   // Categorize tours by destination
   const destinationCounts = useMemo(() => {
@@ -334,7 +444,13 @@ export default function ToursPage() {
           </div>
 
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
-            <CreateTourWizard />
+            <Button
+              onClick={handleOpenAddTrip}
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 px-6 shadow-md shadow-amber-500/20 cursor-pointer"
+            >
+              <Plus className="w-4 h-4 stroke-[3]" />
+              <span>{isAr ? "إضافة رحلة جديدة +" : "Add New Trip +"}</span>
+            </Button>
             <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 dark:bg-slate-800 text-amber-400 border border-amber-500/30 text-xs font-bold shadow-xs">
               <Globe2 className="w-4 h-4 text-amber-400" />
               <span>{isAr ? "دعم 5 لغات 🌐" : "5 Languages 🌐"}</span>
@@ -632,7 +748,7 @@ export default function ToursPage() {
                         <Button
                           size="icon-sm"
                           variant="ghost"
-                          onClick={() => setEditingSlug(tour.slug)}
+                          onClick={() => handleOpenEditTrip(tour)}
                           className="hover:bg-amber-500/10 hover:text-amber-500 rounded-xl cursor-pointer"
                           title={isAr ? "تعديل الرحلة والترجمات" : "Edit Trip & Translations"}
                         >
@@ -670,11 +786,14 @@ export default function ToursPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Edit Tour Drawer */}
-      <EditTourDrawer
-        tour={detailedTour ?? tours.find((tour) => tour.slug === editingSlug) ?? null}
-        open={Boolean(editingSlug)}
-        onOpenChange={(open) => !open && setEditingSlug(null)}
+      {/* Complete Trip & 5-Lang Editor Modal (Commit 8a9ab4f) */}
+      <TripEditorModal
+        trip={selectedTripForModal}
+        isOpen={isTripModalOpen}
+        onClose={() => {
+          setIsTripModalOpen(false);
+          setSelectedTripForModal(null);
+        }}
       />
 
       {/* Move Tour Dialog */}

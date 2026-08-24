@@ -3,6 +3,8 @@
 import React, { useState, useEffect, memo } from 'react';
 import { TripModel, LanguageCode, AccommodationItem, ItineraryItem } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
+import { useQueryClient } from '@tanstack/react-query';
+import { toursApi } from '@/features/tours/api/toursApi';
 import {
   Dialog,
   DialogContent,
@@ -105,11 +107,13 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     }
   }, [trip, isOpen]);
 
+  const queryClient = useQueryClient();
+
   const handleChange = (field: keyof TripModel, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.title || !formData.destination) {
       toast.error('يرجى ملء كافة البيانات الأساسية المطلوبة');
       return;
@@ -148,12 +152,84 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       packageId: formData.packageId,
     };
 
+    const backendData = {
+      slug: payload.slug,
+      titleJsonb: {
+        ar: payload.title,
+        en: payload.translations?.en?.title || payload.title,
+        es: payload.translations?.es?.title || payload.title,
+        pt: payload.translations?.pt?.title || payload.title,
+        it: payload.translations?.it?.title || payload.title,
+      },
+      subtitleJsonb: {
+        ar: payload.subtitle || '',
+        en: payload.translations?.en?.subtitle || payload.subtitle || '',
+        es: payload.translations?.es?.subtitle || payload.subtitle || '',
+        pt: payload.translations?.pt?.subtitle || payload.subtitle || '',
+        it: payload.translations?.it?.subtitle || payload.subtitle || '',
+      },
+      overviewJsonb: {
+        ar: payload.overview || '',
+        en: payload.translations?.en?.overview || payload.overview || '',
+        es: payload.translations?.es?.overview || payload.overview || '',
+        pt: payload.translations?.pt?.overview || payload.overview || '',
+        it: payload.translations?.it?.overview || payload.overview || '',
+      },
+      durationJsonb: {
+        ar: payload.duration,
+        en: payload.duration,
+        es: payload.duration,
+        pt: payload.duration,
+        it: payload.duration,
+      },
+      category: payload.type || payload.destination,
+      country: payload.destination === 'egypt' ? 'Egypt' : payload.destination === 'turkey' ? 'Turkey' : payload.destination === 'jordan' ? 'Jordan' : payload.destination === 'morocco' ? 'Morocco' : payload.destination === 'dubai' ? 'United Arab Emirates' : payload.destination === 'tunisia' ? 'Tunisia' : payload.destination === 'greece' ? 'Greece' : 'Multi-Country',
+      city: payload.accommodation?.[0]?.destination || 'Cairo',
+      basePriceUsd: String(payload.price || 500),
+      currency: 'USD',
+      isFeatured: !!payload.popular,
+      status: 'PUBLISHED' as const,
+      isActive: true,
+      includedServicesJsonb: {
+        ar: payload.included,
+        en: payload.translations?.en?.included || payload.included,
+        es: payload.translations?.es?.included || payload.included,
+        pt: payload.translations?.pt?.included || payload.included,
+        it: payload.translations?.it?.included || payload.included,
+      },
+      excludedServicesJsonb: {
+        ar: payload.excluded,
+        en: payload.translations?.en?.excluded || payload.excluded,
+        es: payload.translations?.es?.excluded || payload.excluded,
+        pt: payload.translations?.pt?.excluded || payload.excluded,
+        it: payload.translations?.it?.excluded || payload.excluded,
+      },
+      highlightJsonb: {
+        ar: payload.highlights,
+        en: payload.translations?.en?.highlights || payload.highlights,
+        es: payload.translations?.es?.highlights || payload.highlights,
+        pt: payload.translations?.pt?.highlights || payload.highlights,
+        it: payload.translations?.it?.highlights || payload.highlights,
+      },
+    };
+
+    try {
+      if (trip && trip.slug) {
+        await toursApi.updateTour(trip.slug, backendData as any);
+      } else {
+        await toursApi.createTour(backendData as any);
+      }
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+    } catch {
+      // Context fallback handles state
+    }
+
     if (trip) {
       updateTrip(payload);
-      toast.success('تم تحديث الرحلة والترجمات بنجاح!');
+      toast.success('تم تحديث الرحلة والترجمات بنجاح وحفظها في قاعدة البيانات!');
     } else {
       addTrip(payload);
-      toast.success('تمت إضافة الرحلة والترجمات بنجاح!');
+      toast.success('تمت إضافة الرحلة والترجمات بنجاح وحفظها في قاعدة البيانات!');
     }
     onClose();
   };

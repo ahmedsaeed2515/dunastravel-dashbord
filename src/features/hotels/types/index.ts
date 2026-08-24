@@ -16,11 +16,17 @@ export interface AdminHotel {
   slug: string;
   nameJsonb: Record<string, string>;
   descriptionJsonb: Record<string, string> | null;
+  addressJsonb?: Record<string, string> | null;
   destinationSlug: string;
   city: string;
   stars: number;
   rating: number | null;
   currency: string;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  amenitiesJsonb?: Record<string, any> | null;
+  policiesJsonb?: Record<string, any> | null;
   heroMediaId: string | null;
   heroImageUrl: string | null;
   status: HotelStatus;
@@ -46,13 +52,20 @@ export interface HotelPayload {
   slug: string;
   nameJsonb: Record<string, string>;
   descriptionJsonb?: Record<string, string>;
+  addressJsonb?: Record<string, string>;
   destinationSlug: string;
   city: string;
   stars: number;
   rating?: number;
   currency: string;
+  phone?: string;
+  email?: string;
+  website?: string;
+  amenitiesJsonb?: Record<string, any>;
+  policiesJsonb?: Record<string, any>;
   heroMediaId?: string;
   status: HotelStatus;
   isActive: boolean;
+  rooms?: any[];
 }
 
