@@ -10,7 +10,7 @@ import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
  * array, package list, or tour mutations.
  */
 export function DestinationsManager() {
-  const { data, isLoading, error } = useLandingPages({ type: "DESTINATION", limit: 100 });
+  const { data, isLoading, error } = useLandingPages({ type: "DESTINATION", limit: 50 });
   const destinations = data?.data ?? [];
   const published = destinations.filter((destination) => destination.status === "PUBLISHED" && destination.isActive).length;
   const attachedTours = destinations.reduce((total, destination) => total + (destination.totalToursCount ?? 0), 0);

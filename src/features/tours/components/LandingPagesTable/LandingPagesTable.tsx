@@ -23,7 +23,7 @@ export function LandingPagesTable({ fixedType }: { fixedType?: LandingPageType }
     type: fixedType,
     search: search.trim() || undefined,
     status: status === "ALL" ? undefined : status,
-    limit: 100,
+    limit: 50,
   });
   const publish = usePublishLandingPage();
   const unpublish = useUnpublishLandingPage();
