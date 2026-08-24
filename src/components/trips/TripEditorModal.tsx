@@ -185,7 +185,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       category: payload.type || payload.destination,
       country: payload.destination === 'egypt' ? 'Egypt' : payload.destination === 'turkey' ? 'Turkey' : payload.destination === 'jordan' ? 'Jordan' : payload.destination === 'morocco' ? 'Morocco' : payload.destination === 'dubai' ? 'United Arab Emirates' : payload.destination === 'tunisia' ? 'Tunisia' : payload.destination === 'greece' ? 'Greece' : 'Multi-Country',
       city: payload.accommodation?.[0]?.destination || 'Cairo',
-      basePriceUsd: String(payload.price || 500),
+      basePriceUsd: Number(payload.price || 500),
       currency: 'USD',
       isFeatured: !!payload.popular,
       status: 'PUBLISHED' as const,
@@ -250,8 +250,8 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         await toursApi.createTour(backendData as any);
       }
       queryClient.invalidateQueries({ queryKey: ['tours'] });
-    } catch {
-      toast.error('تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+    } catch (err: any) {
+      toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
       return;
     }
 
