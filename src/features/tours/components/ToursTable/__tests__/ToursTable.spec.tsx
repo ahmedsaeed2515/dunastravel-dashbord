@@ -58,4 +58,20 @@ describe('ToursTable', () => {
 
     expect(screen.getByTestId('table-skeleton-row')).toBeInTheDocument();
   });
+
+  it('shows the backend error instead of an empty tours view', () => {
+    const refetch = vi.fn();
+    (useTours as any).mockReturnValue({
+      data: undefined,
+      isLoading: false,
+      error: new Error('Unauthorized'),
+      refetch,
+    });
+    (useTourStats as any).mockReturnValue({ data: undefined, isLoading: false });
+
+    render(<ToursTable />);
+
+    expect(screen.getByTestId('tours-load-error')).toHaveTextContent('Unauthorized');
+    expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
+  });
 });

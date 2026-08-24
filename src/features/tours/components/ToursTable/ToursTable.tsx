@@ -58,6 +58,14 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 
+function queryErrorMessage(error: unknown): string {
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim()) return message;
+  }
+  return "Tours could not be loaded from the backend.";
+}
+
 export function ToursTable() {
   const tTours = useTranslations("tours");
   const tCommon = useTranslations("common");
@@ -99,7 +107,7 @@ export function ToursTable() {
     setPagination({ pageIndex: 0, pageSize: 12 });
   };
 
-  const { data, isLoading } = useTours(queryFilters);
+  const { data, isLoading, error, refetch } = useTours(queryFilters);
   const { data: stats } = useTourStats();
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
@@ -507,7 +515,15 @@ export function ToursTable() {
       </div>
 
       {/* Body View Rendering */}
-      {isLoading ? (
+      {error ? (
+        <div data-testid="tours-load-error" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
+          <p className="font-semibold">Tours could not be loaded.</p>
+          <p className="mt-1 text-destructive/90">{queryErrorMessage(error)}</p>
+          <Button variant="outline" className="mt-4" onClick={() => void refetch()}>
+            Retry
+          </Button>
+        </div>
+      ) : isLoading ? (
         <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
