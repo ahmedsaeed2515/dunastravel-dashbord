@@ -1,5 +1,4 @@
- 
-"use client";
+﻿"use client";
 
 import { useState } from "react";
 import { 
@@ -13,10 +12,10 @@ import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
 import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
-import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
+import type { TripModel } from "@/types/dunas-suite";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
 import { Button } from "@/components/ui/button";
 import { 
@@ -42,7 +41,8 @@ import {
   X,
   RotateCcw,
   Globe,
-  ArrowRightLeft
+  ArrowRightLeft,
+  Plus
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -57,6 +57,74 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
+
+function tourToTripModel(tour: Tour): TripModel {
+  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
+  const enTitle = tour.titleJsonb?.en || tour.slug;
+  const esTitle = tour.titleJsonb?.es || enTitle;
+  const ptTitle = tour.titleJsonb?.pt || enTitle;
+  const itTitle = tour.titleJsonb?.it || enTitle;
+
+  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || '';
+  const enOverview = tour.overviewJsonb?.en || arOverview;
+  const esOverview = tour.overviewJsonb?.es || enOverview;
+  const ptOverview = tour.overviewJsonb?.pt || enOverview;
+  const itOverview = tour.overviewJsonb?.it || enOverview;
+
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
+  const price = Number(tour.basePriceUsd || 650);
+
+  const images = (tour.images && tour.images.length > 0)
+    ? tour.images.map(img => img.imageUrl)
+    : [tour.heroImage || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'];
+
+  const itinerary = (tour.itineraries && tour.itineraries.length > 0)
+    ? tour.itineraries.map((itin, idx) => ({
+        day: idx + 1,
+        title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
+        description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
+        meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
+      }))
+    : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }];
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: arTitle,
+    subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
+    destination: (tour.country?.toLowerCase() || 'egypt'),
+    market: 'Global',
+    language: 'ar',
+    type: (tour.category || 'Classic') as any,
+    duration,
+    departures: 'Daily / Diário',
+    price,
+    hotelCategory: '5-Star Luxury',
+    rating: 4.9,
+    reviewCount: tour.reviewCount || 48,
+    popular: !!tour.isFeatured,
+    familyFriendly: true,
+    honeymoon: false,
+    luxury: true,
+    cultural: true,
+    adventure: false,
+    overview: arOverview,
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [''],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [''],
+    images,
+    hotels: '5-Star Luxury Hotels',
+    accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
+    itinerary,
+    translations: {
+      ar: { title: arTitle, overview: arOverview, highlights: (tour.highlightJsonb?.ar as string[]) || [''], included: (tour.includedServicesJsonb?.ar as string[]) || [''], excluded: (tour.excludedServicesJsonb?.ar as string[]) || [''] },
+      en: { title: enTitle, overview: enOverview, highlights: (tour.highlightJsonb?.en as string[]) || [''], included: (tour.includedServicesJsonb?.en as string[]) || [''], excluded: (tour.excludedServicesJsonb?.en as string[]) || [''] },
+      es: { title: esTitle, overview: esOverview, highlights: (tour.highlightJsonb?.es as string[]) || [''], included: (tour.includedServicesJsonb?.es as string[]) || [''], excluded: (tour.excludedServicesJsonb?.es as string[]) || [''] },
+      pt: { title: ptTitle, overview: ptOverview, highlights: (tour.highlightJsonb?.pt as string[]) || [''], included: (tour.includedServicesJsonb?.pt as string[]) || [''], excluded: (tour.excludedServicesJsonb?.pt as string[]) || [''] },
+      it: { title: itTitle, overview: itOverview, highlights: (tour.highlightJsonb?.it as string[]) || [''], included: (tour.includedServicesJsonb?.it as string[]) || [''], excluded: (tour.excludedServicesJsonb?.it as string[]) || [''] },
+    },
+  };
+}
 
 function queryErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) {
@@ -111,28 +179,30 @@ export function ToursTable() {
   const { data: stats } = useTourStats();
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
-  const [isExporting, setIsExporting] = useState(false);
-
-  // Drawer & Modal states
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
-  
-  // Single & Bulk Move state
+  const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
+  const [isTripModalOpen, setIsTripModalOpen] = useState(false);
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [bulkMoveSlugs, setBulkMoveSlugs] = useState<string[]>([]);
   const [isBulkMoveOpen, setIsBulkMoveOpen] = useState(false);
+  const [isExporting, setIsExporting] = useState(false);
 
-  // Handlers
   const handleView = (tour: Tour) => {
     setSelectedTour(tour);
     setViewDrawerOpen(true);
   };
-  
+
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
-    setEditDrawerOpen(true); 
+    setSelectedTripForModal(tourToTripModel(tour));
+    setIsTripModalOpen(true);
+  };
+
+  const handleOpenAddTrip = () => {
+    setSelectedTripForModal(null);
+    setIsTripModalOpen(true);
   };
 
   const handleMove = (tour: Tour) => {
@@ -146,10 +216,9 @@ export function ToursTable() {
   };
 
   const handleDelete = async (tour: Tour) => {
-    if (window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) {
-      await deleteTour.mutateAsync(tour.slug);
-      toast.success(tCommon("success"));
-    }
+    if (!window.confirm(`${tCommon("confirm")} ${tCommon("delete")} ${tour.slug}?`)) return;
+    await deleteTour.mutateAsync(tour.slug);
+    toast.success(tCommon("success"));
   };
 
   const handleExportCsv = async () => {
@@ -157,15 +226,15 @@ export function ToursTable() {
       setIsExporting(true);
       const blob = await toursApi.exportToursCsv(queryFilters);
       const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `tours_export_${new Date().toISOString().split("T")[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `tours_export_${new Date().toISOString().split("T")[0]}.csv`;
+      document.body.appendChild(link);
+      link.click();
       window.URL.revokeObjectURL(url);
-      document.body.removeChild(a);
+      document.body.removeChild(link);
       toast.success(tCommon("success"));
-    } catch (error: any) {
+    } catch {
       toast.error(tCommon("error"));
     } finally {
       setIsExporting(false);
@@ -268,7 +337,13 @@ export function ToursTable() {
           <span>{tCommon("exportCsv")}</span>
         </Button>
 
-        <CreateTourWizard />
+        <Button
+          onClick={handleOpenAddTrip}
+          className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 px-4 h-8 shadow-sm cursor-pointer"
+        >
+          <Plus className="h-4 w-4 stroke-[3]" />
+          <span>{currentLocale === "ar" ? "إضافة رحلة جديدة +" : "Create Tour +"}</span>
+        </Button>
       </div>
     );
   };
@@ -554,11 +629,15 @@ export function ToursTable() {
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
       />
-      
-      <EditTourDrawer
-        tour={selectedTour}
-        open={isEditDrawerOpen}
-        onOpenChange={setEditDrawerOpen}
+
+      {/* 6-Tab Trip & 5-Lang Editor Modal (Commit 8a9ab4f) */}
+      <TripEditorModal
+        trip={selectedTripForModal}
+        isOpen={isTripModalOpen}
+        onClose={() => {
+          setIsTripModalOpen(false);
+          setSelectedTripForModal(null);
+        }}
       />
 
       <MoveTourDialog

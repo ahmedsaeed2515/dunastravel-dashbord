@@ -132,17 +132,14 @@ function convertTourToTripModel(tour: Tour): TripModel {
 }
 
 export const DestinationsManager: React.FC = React.memo(() => {
-  const { destinations, egyptPackages, trips, deleteTrip } = useDataContext();
+  const { destinations, egyptPackages } = useDataContext();
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 100 });
   const removeTourMutation = useSoftDeleteTour();
 
   const realTrips = useMemo(() => {
     const rawTours = toursData?.data ?? [];
-    if (rawTours.length > 0) {
-      return rawTours.map(convertTourToTripModel);
-    }
-    return trips;
-  }, [toursData, trips]);
+    return rawTours.map(convertTourToTripModel);
+  }, [toursData]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
@@ -178,16 +175,20 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const handleDeleteTrip = useCallback(
     async (tripId: string, tripTitle: string, tripSlug?: string) => {
       if (confirm(`هل أنت متأكد من حذف الرحلة "${tripTitle}"؟`)) {
-        if (tripSlug) {
-          try {
-            await removeTourMutation.mutateAsync(tripSlug);
-          } catch {}
+        if (!tripSlug) {
+          toast.error('لا يمكن حذف رحلة بدون معرّف backend صالح.');
+          return;
         }
-        deleteTrip(tripId);
+        try {
+          await removeTourMutation.mutateAsync(tripSlug);
+        } catch {
+          toast.error('تعذر حذف الرحلة من قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+          return;
+        }
         toast.success('تم حذف الرحلة بنجاح.');
       }
     },
-    [deleteTrip, removeTourMutation]
+    [removeTourMutation]
   );
 
   const handleOpenTransfer = useCallback((trip: TripModel) => {

@@ -29,7 +29,7 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   onClose,
 }) => {
   const queryClient = useQueryClient();
-  const { destinations, egyptPackages, transferTrip } = useDataContext();
+  const { destinations, egyptPackages } = useDataContext();
   const [selectedDestination, setSelectedDestination] = useState<string>(
     trip?.destination || 'egypt'
   );
@@ -77,10 +77,10 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
         queryClient.invalidateQueries({ queryKey: ['tours'] });
       }
     } catch {
-      // Fallback to state
+      toast.error('تعذر نقل الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+      return;
     }
 
-    transferTrip(trip.id, selectedDestination, selectedPackage || undefined);
     const destObj = destinations.find(d => d.id === selectedDestination);
     toast.success(
       `تم نقل الرحلة "${trip.title}" بنجاح إلى ${destObj?.nameAr || selectedDestination} وحفظها في قاعدة البيانات!`

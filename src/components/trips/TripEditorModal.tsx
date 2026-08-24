@@ -94,7 +94,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   isOpen,
   onClose,
 }) => {
-  const { destinations, egyptPackages, addTrip, updateTrip } = useDataContext();
+  const { destinations, egyptPackages } = useDataContext();
   const [formData, setFormData] = useState<Partial<TripModel>>(DEFAULT_TRIP);
   const [activeTab, setActiveTab] = useState<string>('basic');
   const [translationLang, setTranslationLang] = useState<LanguageCode>('en');
@@ -211,6 +211,36 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         pt: payload.translations?.pt?.highlights || payload.highlights,
         it: payload.translations?.it?.highlights || payload.highlights,
       },
+      itineraries: payload.itinerary.map((day, index) => {
+        const translated = (language: LanguageCode) =>
+          payload.translations?.[language]?.itinerary?.[index] as
+            | { title?: string; description?: string; meals?: string }
+            | undefined;
+
+        return {
+          dayLabel: `Day ${day.day}`,
+          descriptionJsonb: {
+            ar: day.description,
+            en: translated('en')?.description || day.description,
+            es: translated('es')?.description || day.description,
+            pt: translated('pt')?.description || day.description,
+            it: translated('it')?.description || day.description,
+          },
+          mealsJsonb: {
+            ar: day.meals,
+            en: translated('en')?.meals || day.meals,
+            es: translated('es')?.meals || day.meals,
+            pt: translated('pt')?.meals || day.meals,
+            it: translated('it')?.meals || day.meals,
+          },
+          sortOrder: index,
+        };
+      }),
+      images: payload.images.map((imageUrl, index) => ({
+        imageUrl,
+        isHero: index === 0,
+        sortOrder: index,
+      })),
     };
 
     try {
@@ -221,14 +251,13 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       }
       queryClient.invalidateQueries({ queryKey: ['tours'] });
     } catch {
-      // Context fallback handles state
+      toast.error('تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+      return;
     }
 
     if (trip) {
-      updateTrip(payload);
       toast.success('تم تحديث الرحلة والترجمات بنجاح وحفظها في قاعدة البيانات!');
     } else {
-      addTrip(payload);
       toast.success('تمت إضافة الرحلة والترجمات بنجاح وحفظها في قاعدة البيانات!');
     }
     onClose();
