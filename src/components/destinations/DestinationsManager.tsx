@@ -5,6 +5,9 @@ import { useDataContext } from '@/context/DataContext';
 import { TripModel } from '@/types/dunas-suite';
 import { TripEditorModal } from '@/components/trips/TripEditorModal';
 import { TransferTripModal } from '@/components/trips/TransferTripModal';
+import { useTours, useSoftDeleteTour } from '@/features/tours/hooks/useTours';
+import type { Tour } from '@/features/tours/types';
+import { resolveTourDestination } from '@/app/[locale]/(dashboard)/admin/tours/page';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -25,11 +28,122 @@ import {
   PackageCheck,
   CheckCircle2,
   Filter,
+  Loader2,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
+function convertTourToTripModel(tour: Tour): TripModel {
+  const destResolved = resolveTourDestination(tour);
+  const destId =
+    destResolved === 'Egypt'
+      ? 'egypt'
+      : destResolved === 'Turkey'
+      ? 'turkey'
+      : destResolved === 'Jordan'
+      ? 'jordan'
+      : destResolved === 'Morocco'
+      ? 'morocco'
+      : destResolved === 'Dubai'
+      ? 'dubai'
+      : destResolved === 'Tunisia'
+      ? 'tunisia'
+      : destResolved === 'Greece'
+      ? 'greece'
+      : 'holyland';
+
+  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
+  const enTitle = tour.titleJsonb?.en || tour.slug;
+  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || 'برنامج سياحي فاخر متكامل مع إقامة وجولات مرشد سياحي.';
+  const enOverview = tour.overviewJsonb?.en || arOverview;
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
+  const price = Number(tour.basePriceUsd || 650);
+
+  const images =
+    tour.images && tour.images.length > 0
+      ? tour.images.map((img) => img.imageUrl)
+      : [tour.heroImage || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'];
+
+  // Assign Egypt Package Id based on category & title
+  let packageId: string | undefined = undefined;
+  const cat = (tour.category || '').toLowerCase();
+  const slug = (tour.slug || '').toLowerCase();
+  const title = (arTitle + ' ' + enTitle).toLowerCase();
+
+  if (destId === 'egypt') {
+    if (cat.includes('nile') || slug.includes('nile') || title.includes('نيل') || title.includes('كروز')) {
+      packageId = 'eg-nile-cruises';
+    } else if (cat.includes('beach') || slug.includes('sharm') || slug.includes('hurghada') || title.includes('شرم') || title.includes('غردقة')) {
+      packageId = 'eg-red-sea';
+    } else if (cat.includes('luxury') || cat.includes('vip') || slug.includes('luxury') || title.includes('فاخر')) {
+      packageId = 'eg-luxury';
+    } else if (cat.includes('short') || cat.includes('day') || slug.includes('4d') || slug.includes('express') || title.includes('سريعة') || title.includes('يوم')) {
+      packageId = 'eg-short-breaks';
+    } else {
+      packageId = 'eg-classic';
+    }
+  }
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: arTitle,
+    subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
+    destination: destId,
+    market: 'Global',
+    language: 'ar',
+    type: (tour.category || 'Classic') as any,
+    duration,
+    departures: 'Daily / Diário',
+    price,
+    hotelCategory: '5-Star Luxury',
+    rating: 4.9,
+    reviewCount: tour.reviewCount || 48,
+    popular: !!tour.isFeatured,
+    familyFriendly: true,
+    honeymoon: false,
+    luxury: true,
+    cultural: true,
+    adventure: false,
+    overview: arOverview,
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [''],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [''],
+    images,
+    hotels: '5-Star Luxury Hotels',
+    accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
+    itinerary:
+      tour.itineraries && tour.itineraries.length > 0
+        ? tour.itineraries.map((itin, idx) => ({
+            day: idx + 1,
+            title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
+            description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
+            meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
+          }))
+        : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }],
+    translations: {
+      ar: { title: arTitle, overview: arOverview },
+      en: { title: enTitle, overview: enOverview },
+      es: { title: tour.titleJsonb?.es || enTitle, overview: tour.overviewJsonb?.es || enOverview },
+      pt: { title: tour.titleJsonb?.pt || enTitle, overview: tour.overviewJsonb?.pt || enOverview },
+      it: { title: tour.titleJsonb?.it || enTitle, overview: tour.overviewJsonb?.it || enOverview },
+    },
+    packageId,
+  };
+}
+
 export const DestinationsManager: React.FC = React.memo(() => {
   const { destinations, egyptPackages, trips, deleteTrip } = useDataContext();
+  const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 100 });
+  const removeTourMutation = useSoftDeleteTour();
+
+  const realTrips = useMemo(() => {
+    const rawTours = toursData?.data ?? [];
+    if (rawTours.length > 0) {
+      return rawTours.map(convertTourToTripModel);
+    }
+    return trips;
+  }, [toursData, trips]);
+
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
 
@@ -40,33 +154,41 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const [isTransferOpen, setIsTransferOpen] = useState<boolean>(false);
 
   const activeDestination = useMemo(() => {
-    return destinations.find(d => d.id === activeDestId) || destinations[0];
+    return destinations.find((d) => d.id === activeDestId) || destinations[0];
   }, [destinations, activeDestId]);
 
-  // Pre-calculate trip count map per destination for 60fps instant switching
+  // Pre-calculate trip count map per destination for instant switching
   const tripCountMap = useMemo(() => {
     const map: Record<string, number> = {};
-    for (const t of trips) {
+    for (const t of realTrips) {
       map[t.destination] = (map[t.destination] || 0) + 1;
     }
     return map;
-  }, [trips]);
+  }, [realTrips]);
 
   // Filter trips by active destination and optional package filter
   const filteredTrips = useMemo(() => {
-    return trips.filter(t => {
+    return realTrips.filter((t) => {
       if (t.destination !== activeDestId) return false;
       if (activePackageId && t.packageId !== activePackageId) return false;
       return true;
     });
-  }, [trips, activeDestId, activePackageId]);
+  }, [realTrips, activeDestId, activePackageId]);
 
-  const handleDeleteTrip = useCallback((tripId: string, tripTitle: string) => {
-    if (confirm(`هل أنت تأكد من حذف الرحلة "${tripTitle}"؟`)) {
-      deleteTrip(tripId);
-      toast.success('تم حذف الرحلة بنجاح.');
-    }
-  }, [deleteTrip]);
+  const handleDeleteTrip = useCallback(
+    async (tripId: string, tripTitle: string, tripSlug?: string) => {
+      if (confirm(`هل أنت متأكد من حذف الرحلة "${tripTitle}"؟`)) {
+        if (tripSlug) {
+          try {
+            await removeTourMutation.mutateAsync(tripSlug);
+          } catch {}
+        }
+        deleteTrip(tripId);
+        toast.success('تم حذف الرحلة بنجاح.');
+      }
+    },
+    [deleteTrip, removeTourMutation]
+  );
 
   const handleOpenTransfer = useCallback((trip: TripModel) => {
     setTransferringTrip(trip);
@@ -263,7 +385,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
                     <Button
                       size="icon-sm"
                       variant="ghost"
-                      onClick={() => handleDeleteTrip(trip.id, trip.title)}
+                      onClick={() => handleDeleteTrip(trip.id, trip.title, trip.slug)}
                       className="hover:bg-destructive/10 text-destructive rounded-xl"
                       title="حذف"
                     >
@@ -308,7 +430,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {egyptPackages.map(pkg => {
               const isSelected = activePackageId === pkg.id;
-              const pkgTrips = trips.filter(t => t.destination === 'egypt' && t.packageId === pkg.id);
+              const pkgTrips = realTrips.filter(t => t.destination === 'egypt' && t.packageId === pkg.id);
               return (
                 <Card
                   key={pkg.id}
