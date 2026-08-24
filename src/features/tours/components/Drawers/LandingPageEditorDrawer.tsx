@@ -48,7 +48,6 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
 
   useEffect(() => {
     if (landingPage) {
-      // eslint-disable-next-line react-hooks/set-state-in-effect
       setFormData({
         slug: landingPage.slug,
         expectedUpdatedAt: landingPage.updatedAt || undefined,
