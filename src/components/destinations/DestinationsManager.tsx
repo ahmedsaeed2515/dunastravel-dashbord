@@ -132,14 +132,17 @@ function convertTourToTripModel(tour: Tour): TripModel {
 }
 
 export const DestinationsManager: React.FC = React.memo(() => {
-  const { destinations, egyptPackages } = useDataContext();
+  const { destinations, egyptPackages, trips: contextTrips } = useDataContext();
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 100 });
   const removeTourMutation = useSoftDeleteTour();
 
   const realTrips = useMemo(() => {
     const rawTours = toursData?.data ?? [];
-    return rawTours.map(convertTourToTripModel);
-  }, [toursData]);
+    if (rawTours.length > 0) {
+      return rawTours.map(convertTourToTripModel);
+    }
+    return contextTrips;
+  }, [toursData, contextTrips]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
@@ -295,7 +298,14 @@ export const DestinationsManager: React.FC = React.memo(() => {
         </div>
 
         {/* Trips Grid */}
-        {filteredTrips.length === 0 ? (
+        {isLoadingTours && realTrips.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-20 gap-3">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+            <p className="text-xs text-muted-foreground font-semibold">
+              جاري تحميل رحلات الوجهة من قاعدة البيانات...
+            </p>
+          </div>
+        ) : filteredTrips.length === 0 ? (
           <div className="p-12 text-center rounded-3xl border border-dashed border-border/80 bg-card space-y-3">
             <Compass className="w-10 h-10 text-muted-foreground mx-auto" />
             <p className="text-sm font-semibold text-muted-foreground">لا توجد رحلات مسجلة في هذه الوجهة حالياً.</p>
