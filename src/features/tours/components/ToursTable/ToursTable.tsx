@@ -60,6 +60,7 @@ import Link from "next/link";
 
 import { useDataContext } from "@/context/DataContext";
 import { useMemo } from "react";
+import { extractToursList } from "@/lib/extract-tours";
 
 function tourToTripModel(tour: Tour): TripModel {
   const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
@@ -284,11 +285,7 @@ export function ToursTable() {
 
   const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
 
-  const rawTours: Tour[] = useMemo(() => {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray((data as any)?.data)) return (data as any).data;
-    return [];
-  }, [data]);
+  const rawTours: Tour[] = useMemo(() => extractToursList(data), [data]);
 
   const toursList: Tour[] = useMemo(() => {
     const apiSlugs = new Set(rawTours.map((t) => t.slug.toLowerCase()));

@@ -131,6 +131,8 @@ function convertTourToTripModel(tour: Tour): TripModel {
   };
 }
 
+import { extractToursList } from '@/lib/extract-tours';
+
 export const DestinationsManager: React.FC = React.memo(() => {
   const { destinations, egyptPackages, trips: contextTrips } = useDataContext();
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 500 });
@@ -138,11 +140,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const clearAllToursMutation = useClearAllTours();
 
   const realTrips = useMemo(() => {
-    const rawTours: Tour[] = Array.isArray(toursData)
-      ? toursData
-      : Array.isArray((toursData as any)?.data)
-      ? (toursData as any).data
-      : [];
+    const rawTours: Tour[] = extractToursList(toursData);
     const apiMapped = rawTours.map(convertTourToTripModel);
 
     const apiSlugs = new Set(apiMapped.map((t) => t.slug.toLowerCase()));

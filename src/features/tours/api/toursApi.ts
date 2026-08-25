@@ -29,40 +29,29 @@ export interface TourImagePayload {
   sortOrder: number;
 }
 
+import { extractToursList } from '@/lib/extract-tours';
+
 export const toursApi = {
   getTours: async (filters: TourQueryFilters): Promise<PaginatedResponse<Tour>> => {
     try {
       const res = await apiClient.get<PaginatedResponse<Tour>, PaginatedResponse<Tour>>('/admin/tours', { params: filters });
+      const list = extractToursList(res);
       const raw = res as any;
-      const list = Array.isArray(raw)
-        ? raw
-        : Array.isArray(raw?.data)
-        ? raw.data
-        : Array.isArray(raw?.items)
-        ? raw.items
-        : Array.isArray(raw?.data?.items)
-        ? raw.data.items
-        : [];
+      const total = raw?.meta?.total ?? raw?.total ?? list.length;
       return {
         data: list,
-        meta: raw?.meta || { total: list.length, page: 1, limit: 100, totalPages: 1 },
+        meta: { total, page: raw?.page || 1, limit: raw?.limit || 100, totalPages: raw?.totalPages || 1 },
       } as PaginatedResponse<Tour>;
     } catch {
       try {
-        const publicRes: any = await apiClient.get('/tours', { params: { ...filters, limit: 100 } });
-        const items = Array.isArray(publicRes)
-          ? publicRes
-          : Array.isArray(publicRes?.items)
-          ? publicRes.items
-          : Array.isArray(publicRes?.data)
-          ? publicRes.data
-          : Array.isArray(publicRes?.data?.items)
-          ? publicRes.data.items
-          : [];
+        const publicRes = await apiClient.get('/tours', { params: { ...filters, limit: 100 } });
+        const list = extractToursList(publicRes);
+        const raw = publicRes as any;
+        const total = raw?.total ?? raw?.meta?.total ?? list.length;
         return {
-          data: items,
+          data: list,
           meta: {
-            total: items.length,
+            total,
             page: 1,
             limit: 100,
             totalPages: 1,

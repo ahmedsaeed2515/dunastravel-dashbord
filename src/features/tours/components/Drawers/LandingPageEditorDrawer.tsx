@@ -5,6 +5,7 @@ import { LandingPageMutationPayload, LandingPageStatus, LandingPageType, TourLan
 import { Tour } from "../../types";
 import { useCreateLandingPage, useUpdateLandingPage, usePublishLandingPage, useUnpublishLandingPage, useAttachToursToLandingPage, useDetachTourFromLandingPage, useReorderLandingPageTours, useUpdateLandingPageTourRelation } from "../../hooks/useLandingPages";
 import { useTours } from "../../hooks/useTours";
+import { extractToursList } from "@/lib/extract-tours";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -183,11 +184,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
   };
 
   const attachedTourIds = tourRelations.map((t) => t.tourId);
-  const allToursList: Tour[] = Array.isArray(allToursData)
-    ? allToursData
-    : Array.isArray((allToursData as any)?.data)
-    ? (allToursData as any).data
-    : [];
+  const allToursList: Tour[] = extractToursList(allToursData);
   const availableTours = allToursList.filter((t) => !attachedTourIds.includes(t.id));
 
   return (

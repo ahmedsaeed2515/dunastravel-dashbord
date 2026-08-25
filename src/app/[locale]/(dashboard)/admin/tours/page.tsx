@@ -38,6 +38,7 @@ import type { Tour } from "@/features/tours/types";
 import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
 import { useDataContext } from "@/context/DataContext";
+import { extractToursList } from "@/lib/extract-tours";
 
 function tripModelToTour(trip: TripModel): Tour {
   return {
@@ -437,11 +438,7 @@ export default function ToursPage() {
   const { data: stats } = useTourStats();
   const { trips: contextTrips } = useDataContext();
 
-  const rawTours: Tour[] = useMemo(() => {
-    if (Array.isArray(data)) return data;
-    if (Array.isArray((data as any)?.data)) return (data as any).data;
-    return [];
-  }, [data]);
+  const rawTours: Tour[] = useMemo(() => extractToursList(data), [data]);
 
   const tours = useMemo(() => {
     const apiSlugs = new Set(rawTours.map((t) => t.slug.toLowerCase()));
