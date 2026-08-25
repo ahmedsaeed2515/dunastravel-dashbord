@@ -541,7 +541,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v3';
+const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v4';
 const LOCAL_STORAGE_HOTELS_KEY = 'dunas_admin_hotels_v1';
 
 export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
@@ -550,6 +550,7 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         localStorage.removeItem('dunas_admin_trips_v1');
         localStorage.removeItem('dunas_admin_trips_v2');
+        localStorage.removeItem('dunas_admin_trips_v3');
       } catch {}
       const saved = localStorage.getItem(LOCAL_STORAGE_TRIPS_KEY);
       if (saved && saved !== 'undefined' && saved.trim() !== '') {
