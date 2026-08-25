@@ -37,6 +37,81 @@ import { useSoftDeleteTour, useTour, useTours, useTourStats } from "@/features/t
 import type { Tour } from "@/features/tours/types";
 import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
+import { useDataContext } from "@/context/DataContext";
+
+function tripModelToTour(trip: TripModel): Tour {
+  return {
+    id: trip.id,
+    slug: trip.slug,
+    titleJsonb: {
+      ar: trip.translations?.ar?.title || trip.title,
+      en: trip.translations?.en?.title || trip.title,
+      pt: trip.translations?.pt?.title || trip.title,
+      es: trip.title,
+      it: trip.title,
+    },
+    overviewJsonb: {
+      ar: trip.translations?.ar?.overview || trip.overview,
+      en: trip.translations?.en?.overview || trip.overview,
+      pt: trip.translations?.pt?.overview || trip.overview,
+      es: trip.overview,
+      it: trip.overview,
+    },
+    durationJsonb: {
+      ar: trip.duration,
+      en: trip.duration,
+      pt: trip.duration,
+    },
+    category: trip.destination || 'egypt',
+    country: trip.destination || 'egypt',
+    city: 'Cairo',
+    basePriceUsd: String(trip.price || 450) as any,
+    currency: 'USD',
+    isActive: true,
+    isFeatured: trip.popular || false,
+    status: 'PUBLISHED',
+    highlightJsonb: {
+      ar: trip.translations?.ar?.highlights || trip.highlights,
+      en: trip.translations?.en?.highlights || trip.highlights,
+      pt: trip.highlights,
+    },
+    includedServicesJsonb: {
+      ar: trip.included,
+      en: trip.included,
+      pt: trip.included,
+    },
+    excludedServicesJsonb: {
+      ar: trip.excluded,
+      en: trip.excluded,
+      pt: trip.excluded,
+    },
+    images: (trip.images || []).map((url, idx) => ({
+      id: `img-${idx}`,
+      tourId: trip.id,
+      imageUrl: url,
+      sortOrder: idx,
+      isHero: idx === 0,
+    })),
+    itineraries: (trip.itinerary || []).map((item, idx) => ({
+      id: `itin-${idx}`,
+      tourId: trip.id,
+      dayLabel: item.title,
+      sortOrder: idx,
+      descriptionJsonb: {
+        ar: item.description,
+        en: item.description,
+        pt: item.description,
+      },
+      mealsJsonb: {
+        ar: item.meals,
+        en: item.meals,
+        pt: item.meals,
+      },
+    })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as Tour;
+}
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800";
@@ -360,9 +435,16 @@ export default function ToursPage() {
   const filters = useMemo(() => ({ limit: 100, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
   const { data, isLoading, error, refetch } = useTours(filters);
   const { data: stats } = useTourStats();
-  const removeTour = useSoftDeleteTour();
+  const { trips: contextTrips } = useDataContext();
+  const rawTours = data?.data ?? [];
 
-  const tours = data?.data ?? [];
+  const tours = useMemo(() => {
+    const apiSlugs = new Set(rawTours.map((t) => t.slug.toLowerCase()));
+    const missingContextTours = (contextTrips || [])
+      .filter((ct) => !apiSlugs.has(ct.slug.toLowerCase()))
+      .map(tripModelToTour);
+    return [...rawTours, ...missingContextTours];
+  }, [rawTours, contextTrips]);
 
   const handleOpenEditTrip = (tour: Tour) => {
     setSelectedTripForModal(tourToTripModel(tour));
