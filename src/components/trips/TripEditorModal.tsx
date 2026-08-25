@@ -113,15 +113,32 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const formatSlug = (input: string): string => {
+    if (!input) return '';
+    return input
+      .toLowerCase()
+      .trim()
+      .replace(/^https?:\/\/[^\/]+/, '')
+      .replace(/^\/?tours\//, '')
+      .replace(/^\//, '')
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/[\s_]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  };
+
   const handleSave = async () => {
     if (!formData.title || !formData.destination) {
       toast.error('يرجى ملء كافة البيانات الأساسية المطلوبة');
       return;
     }
 
+    const rawSlug = formData.slug || formData.title;
+    const cleanSlug = formatSlug(rawSlug) || `tour-${Date.now()}`;
+
     const payload: TripModel = {
       id: formData.id || `trip-${Date.now()}`,
-      slug: formData.slug || formData.title.toLowerCase().replace(/\s+/g, '-'),
+      slug: cleanSlug,
       title: formData.title,
       subtitle: formData.subtitle || '',
       destination: formData.destination || 'egypt',
@@ -442,6 +459,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   <Input
                     value={formData.slug || ''}
                     onChange={e => handleChange('slug', e.target.value)}
+                    onBlur={e => handleChange('slug', formatSlug(e.target.value))}
                     placeholder="cairo-express-4d"
                     className="rounded-xl font-mono text-xs"
                   />

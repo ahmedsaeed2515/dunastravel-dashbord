@@ -131,7 +131,117 @@ export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [
   },
 ];
 
-const INITIAL_TRIPS: TripModel[] = [];
+const INITIAL_TRIPS: TripModel[] = [
+  {
+    id: 'eg-br-001',
+    slug: 'cairo-express-4d',
+    title: 'القاهرة اكسبرس (Cairo Express)',
+    subtitle: 'Roteiro intenso de quatro dias explorando o coração do Egito Antigo',
+    destination: 'egypt',
+    market: 'Brasil / Global',
+    language: 'pt',
+    type: 'Classic',
+    duration: '4 Dias / 3 Noites',
+    departures: 'Diário / Daily',
+    price: 450,
+    hotelCategory: 'Category Chosen',
+    rating: 4.9,
+    reviewCount: 24,
+    popular: true,
+    views: 1500,
+    inquiries: 120,
+    familyFriendly: true,
+    honeymoon: false,
+    luxury: true,
+    cultural: true,
+    adventure: false,
+    overview: 'Roteiro intenso de quatro dias explorando o coração do Egito Antigo. Visite as Pirâmides de Giza, a Esfinge, Memphis, Sakkara, o Grand Egyptian Museum, a Mesquita de Alabastro e o vibrante Mercado Khan El Khalili. Pacote completo com traslados, hospedagem e visto inclusos.',
+    highlights: [
+      'Pirâmides de Giza e Esfinge',
+      'Memphis e Sakkara',
+      'Grand Egyptian Museum (GEM)',
+      'Mercado Khan El Khalili'
+    ],
+    included: [
+      '03 noites de hospedagem no Cairo em hotel de categoria escolhida com café da manhã e taxas',
+      'Traslados: Aeroporto / Hotel / Aeroporto em serviço regular.',
+      'Assistência no Aeroporto conforme roteiro',
+      'Passeio no Cairo às Pirâmides e Esfinge, Memphis e Sakkara, Mastabas e Pirâmide de Teti',
+      'Passeio e entrada ao Grand Egyptian Museum, Mesquita, Bairro Copta e Mercado Khan El Khalili'
+    ],
+    excluded: [
+      'Todas as bebidas durante o almoço e jantar nos passeios não estão inclusas',
+      'Gorjetas aos maleteiros e carregadores obrigatórias',
+      'Visto obrigatório 35$ pp, um representante lhe aguardando no desembarque para lhe entregar o visto e lhe auxiliar na imigração'
+    ],
+    images: [
+      'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1200',
+      'https://images.unsplash.com/photo-1572252821143-035a0f6700c2?q=80&w=1200',
+      'https://images.unsplash.com/photo-1539650116574-75c0c6d73c0e?q=80&w=1200'
+    ],
+    accommodation: [
+      { destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' }
+    ],
+    itinerary: [
+      {
+        day: 1,
+        title: 'Chegada no Aeroporto Internacional do Cairo',
+        description: 'Chegada ao Aeroporto do Cairo e traslado para o Hotel. Conforme o horário de chegada é possível oferecer algum passeio opcional.',
+        meals: 'Sem refeições'
+      },
+      {
+        day: 2,
+        title: 'Pirâmides, Esfinge, Fábrica de Papiros, Memphis e Sakkara',
+        description: 'Café da manhã no hotel e saída para visita às pirâmides de Giza: Quéops, Quefren e Miquerinos. Mirante das Pirâmides, Esfinge, Memphis, Pirâmide de Djoser, almoço em restaurante local, mastabas, Pirâmide de Teti e fábrica de papiros. Retorno ao hotel.',
+        meals: 'Café da manhã e Almoço'
+      },
+      {
+        day: 3,
+        title: 'Novo Museu (GEM), Mesquita de Alabastro, Mercado Khan El Khalili',
+        description: 'Café da manhã no hotel e saída para a visita ao Novo Museu, Mesquita de Alabastro e Cidadela de Saladino, passeio a pé pelo Bairro Copta e ao mercado Khan El Khalili. Almoço em restaurante local. Retorno para o hotel.',
+        meals: 'Café da manhã e Almoço'
+      },
+      {
+        day: 4,
+        title: 'Cairo / Aeroporto',
+        description: 'Café da manhã no hotel e saída ao Aeroporto para voo internacional de retorno ao seu país de origem. Fim de nossos serviços.',
+        meals: 'Café da manhã'
+      }
+    ],
+    translations: {
+      ar: {
+        title: 'القاهرة اكسبرس',
+        overview: 'برنامج مكثف لمدة أربعة أيام لاستكشاف قلب مصر القديمة. زيارة أهرامات الجيزة، أبو الهول، ممفيس، سقارة، المتحف المصري الكبير، مسجد الألباستر، وسوق خان الخليلي النابض بالحياة.',
+        highlights: [
+          'أهرامات الجيزة وأبو الهول',
+          'ممفيس وسقارة',
+          'المتحف المصري الكبير (GEM)',
+          'سوق خان الخليلي'
+        ]
+      },
+      en: {
+        title: 'Cairo Express',
+        overview: 'An intense 4-day itinerary exploring the heart of Ancient Egypt. Visit the Pyramids of Giza, the Sphinx, Memphis, Saqqara, the Grand Egyptian Museum, the Alabaster Mosque, and Khan El Khalili market.',
+        highlights: [
+          'Pyramids of Giza & Sphinx',
+          'Memphis & Saqqara',
+          'Grand Egyptian Museum (GEM)',
+          'Khan El Khalili Market'
+        ]
+      },
+      pt: {
+        title: 'Cairo Express',
+        overview: 'Roteiro intenso de quatro dias explorando o coração do Egito Antigo.',
+        highlights: [
+          'Pirâmides de Giza e Esfinge',
+          'Memphis e Sakkara',
+          'Grand Egyptian Museum (GEM)',
+          'Mercado Khan El Khalili'
+        ]
+      }
+    }
+  }
+];
 
 const INITIAL_HOTELS: HotelModel[] = [
   {
