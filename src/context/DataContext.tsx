@@ -83,7 +83,53 @@ export const DESTINATIONS_LIST: DestinationModel[] = [
   },
 ];
 
-export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [];
+export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [
+  {
+    id: 'egypt-classic',
+    titleAr: 'البرنامج الكلاسيكي (Classic Program)',
+    titleEn: 'Classic Program',
+    type: 'Classic',
+    icon: '🏛️',
+    description: 'زيارة القاهرة، الأهرامات، والمتحف المصري الكبير',
+    badge: 'الأكثر طلباً',
+  },
+  {
+    id: 'egypt-honeymoon',
+    titleAr: 'برنامج شهر العسل (Honeymoon)',
+    titleEn: 'Honeymoon Package',
+    type: 'Honeymoon',
+    icon: '💍',
+    description: 'إقامة رومانسية في الجونة، شرم الشيخ، وإطلالات النيل',
+    badge: 'رومانسي VIP',
+  },
+  {
+    id: 'egypt-religious',
+    titleAr: 'البرامج الدينية (Religious Programs)',
+    titleEn: 'Religious Programs',
+    type: 'Religious',
+    icon: '⛪',
+    description: 'رحلات روحية استكشافية للأديرة والمقاديس القبطية والتاريخية',
+    badge: 'برنامج روحي',
+  },
+  {
+    id: 'egypt-multi-country',
+    titleAr: 'جولات متعددة الدول (Multi-Country Tours)',
+    titleEn: 'Multi-Country Tours',
+    type: 'Multi-Country',
+    icon: '🌍',
+    description: 'رحلات مشتركة تجمع بين مصر والأردن وتركيا ودبي',
+    badge: 'جولة شاملة',
+  },
+  {
+    id: 'egypt-extensions',
+    titleAr: 'توسعات وتمديدات مصر (Egypt Extensions)',
+    titleEn: 'Egypt Extensions',
+    type: 'Extension',
+    icon: '🏖️',
+    description: 'رحلات تمديد الإقامة في الغردقة وشرم الشيخ وواحة سيوة',
+    badge: 'تغطية إضافية',
+  },
+];
 
 // Verified Egypt Tours Catalog (Empty by default - loaded dynamically from Backend)
 const INITIAL_TRIPS: TripModel[] = [];
