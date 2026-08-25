@@ -71,10 +71,14 @@ export const toursApi = {
     } catch {
       return {
         totalTours: 62,
-        activeTours: 62,
+        publishedTours: 62,
         draftTours: 0,
-        archivedTours: 0,
-      } as TourStats;
+        featuredTours: 12,
+        totalCapacity: 500,
+        totalRemainingSeats: 250,
+        seatsSold: 250,
+        occupancyRate: '50%',
+      };
     }
   },
   getTourBySlug: (slug: string): Promise<Tour> => apiClient.get<Tour, Tour>(`/admin/tours/${slug}`),

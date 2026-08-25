@@ -437,6 +437,7 @@ export default function ToursPage() {
   const { data, isLoading, error, refetch } = useTours(filters);
   const { data: stats } = useTourStats();
   const { trips: contextTrips } = useDataContext();
+  const removeTour = useSoftDeleteTour();
 
   const rawTours: Tour[] = useMemo(() => extractToursList(data), [data]);
 
