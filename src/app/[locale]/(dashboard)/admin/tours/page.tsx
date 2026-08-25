@@ -530,7 +530,7 @@ export default function ToursPage() {
               onClick={handleOpenAddTrip}
               className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 px-6 shadow-md shadow-amber-500/20 cursor-pointer"
             >
-              <Plus className="w-4 h-4 stroke-[3]" />
+              <Plus className="w-4 h-4 stroke-3" />
               <span>{isAr ? "إضافة رحلة جديدة +" : "Add New Trip +"}</span>
             </Button>
             <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 dark:bg-slate-800 text-amber-400 border border-amber-500/30 text-xs font-bold shadow-xs">
