@@ -83,53 +83,7 @@ export const DESTINATIONS_LIST: DestinationModel[] = [
   },
 ];
 
-export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [
-  {
-    id: 'egypt-classic',
-    titleAr: 'البرنامج الكلاسيكي (Classic Program)',
-    titleEn: 'Classic Program',
-    type: 'Classic',
-    icon: '🏛️',
-    description: 'زيارة القاهرة، الأهرامات، والمتحف المصري الكبير',
-    badge: 'الأكثر طلباً',
-  },
-  {
-    id: 'egypt-honeymoon',
-    titleAr: 'برنامج شهر العسل (Honeymoon)',
-    titleEn: 'Honeymoon Package',
-    type: 'Honeymoon',
-    icon: '💍',
-    description: 'إقامة رومانسية في الجونة، شرم الشيخ، وإطلالات النيل',
-    badge: 'رومانسي VIP',
-  },
-  {
-    id: 'egypt-nile-cruise',
-    titleAr: 'نايل كروز والأهرامات (Nile Cruise & Pyramids)',
-    titleEn: 'Nile Cruise & Pyramids',
-    type: 'Nile Cruise',
-    icon: '🚢',
-    description: 'إبحار بين الأقصر وأسوان مع جولة الأهرامات',
-    badge: 'إبحار فاخر',
-  },
-  {
-    id: 'egypt-luxury-vip',
-    titleAr: 'برنامج الفخامة VIP (Luxury VIP)',
-    titleEn: 'Luxury VIP Program',
-    type: 'VIP',
-    icon: '⭐',
-    description: 'طيران خاص، فنادق 5 نجوم ديلاكس، وخدمة حراسة وإرشاد خاص',
-    badge: 'VIP 5 Stars',
-  },
-  {
-    id: 'egypt-desert-adventure',
-    titleAr: 'المغامرات والتخييم الصحراوي (Desert & Adventure)',
-    titleEn: 'Desert & Adventure',
-    type: 'Adventure',
-    icon: '🐪',
-    description: 'رحلات الواحات البحرية، الصحراء البيضاء، والسفاري',
-    badge: 'مغامرة',
-  },
-];
+export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [];
 
 // Verified Egypt Tours Catalog (Empty by default - loaded dynamically from Backend)
 const INITIAL_TRIPS: TripModel[] = [];
