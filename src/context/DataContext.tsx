@@ -131,6 +131,7 @@ export const EGYPT_PACKAGES_LIST: EgyptPackageModel[] = [
   },
 ];
 
+// Verified Egypt Tours Catalog (Synced with Backend & Frontend)
 const INITIAL_TRIPS: TripModel[] = [
   {
     id: 'eg-br-001',
