@@ -139,8 +139,15 @@ export const DestinationsManager: React.FC = React.memo(() => {
 
   const realTrips = useMemo(() => {
     const rawTours = toursData?.data ?? [];
-    return rawTours.map(convertTourToTripModel);
-  }, [toursData]);
+    const apiMapped = rawTours.map(convertTourToTripModel);
+
+    const apiSlugs = new Set(apiMapped.map((t) => t.slug.toLowerCase()));
+    const missingContextTrips = (contextTrips || []).filter(
+      (ct) => !apiSlugs.has(ct.slug.toLowerCase())
+    );
+
+    return [...apiMapped, ...missingContextTrips];
+  }, [toursData, contextTrips]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
