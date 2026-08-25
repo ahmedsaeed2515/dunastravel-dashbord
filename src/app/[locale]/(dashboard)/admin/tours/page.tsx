@@ -432,11 +432,16 @@ export default function ToursPage() {
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
 
-  const filters = useMemo(() => ({ limit: 100, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
+  const filters = useMemo(() => ({ limit: 500, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
   const { data, isLoading, error, refetch } = useTours(filters);
   const { data: stats } = useTourStats();
   const { trips: contextTrips } = useDataContext();
-  const rawTours = data?.data ?? [];
+
+  const rawTours: Tour[] = useMemo(() => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray((data as any)?.data)) return (data as any).data;
+    return [];
+  }, [data]);
 
   const tours = useMemo(() => {
     const apiSlugs = new Set(rawTours.map((t) => t.slug.toLowerCase()));

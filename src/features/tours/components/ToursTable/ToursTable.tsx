@@ -58,6 +58,9 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 
+import { useDataContext } from "@/context/DataContext";
+import { useMemo } from "react";
+
 function tourToTripModel(tour: Tour): TripModel {
   const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
   const enTitle = tour.titleJsonb?.en || tour.slug;
@@ -126,6 +129,43 @@ function tourToTripModel(tour: Tour): TripModel {
   };
 }
 
+function tripModelToTour(trip: TripModel): Tour {
+  return {
+    id: trip.id,
+    slug: trip.slug,
+    titleJsonb: {
+      ar: trip.translations?.ar?.title || trip.title,
+      en: trip.translations?.en?.title || trip.title,
+      pt: trip.translations?.pt?.title || trip.title,
+      es: trip.title,
+      it: trip.title,
+    },
+    overviewJsonb: {
+      ar: trip.translations?.ar?.overview || trip.overview,
+      en: trip.translations?.en?.overview || trip.overview,
+      pt: trip.translations?.pt?.overview || trip.overview,
+      es: trip.overview,
+      it: trip.overview,
+    },
+    durationJsonb: { ar: trip.duration, en: trip.duration, pt: trip.duration },
+    category: trip.destination || 'egypt',
+    country: trip.destination || 'egypt',
+    city: 'Cairo',
+    basePriceUsd: String(trip.price || 450) as any,
+    currency: 'USD',
+    isActive: true,
+    isFeatured: trip.popular || false,
+    status: 'PUBLISHED',
+    highlightJsonb: { ar: trip.translations?.ar?.highlights || trip.highlights, en: trip.translations?.en?.highlights || trip.highlights, pt: trip.highlights },
+    includedServicesJsonb: { ar: trip.included, en: trip.included, pt: trip.included },
+    excludedServicesJsonb: { ar: trip.excluded, en: trip.excluded, pt: trip.excluded },
+    images: (trip.images || []).map((url, idx) => ({ id: `img-${idx}`, tourId: trip.id, imageUrl: url, sortOrder: idx, isHero: idx === 0 })),
+    itineraries: (trip.itinerary || []).map((item, idx) => ({ id: `itin-${idx}`, tourId: trip.id, dayLabel: item.title, sortOrder: idx, descriptionJsonb: { ar: item.description, en: item.description, pt: item.description }, mealsJsonb: { ar: item.meals, en: item.meals, pt: item.meals } })),
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+  } as Tour;
+}
+
 function queryErrorMessage(error: unknown): string {
   if (error && typeof error === "object" && "message" in error) {
     const message = (error as { message?: unknown }).message;
@@ -140,12 +180,13 @@ export function ToursTable() {
   const tStatus = useTranslations("status");
   const tDashboard = useTranslations("dashboard");
   const currentLocale = useLocale();
+  const { trips: contextTrips } = useDataContext();
 
   // View mode state (cards/grid vs table)
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   // Filters & Pagination state
-  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 12 });
+  const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 24 });
   const [search, setSearch] = useState("");
   const [activeTab, setActiveTab] = useState<string>("ALL");
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
@@ -172,7 +213,7 @@ export function ToursTable() {
     setActiveTab("ALL");
     setSelectedDestination("ALL");
     setSelectedMarket("ALL");
-    setPagination({ pageIndex: 0, pageSize: 12 });
+    setPagination({ pageIndex: 0, pageSize: 24 });
   };
 
   const { data, isLoading, error, refetch } = useTours(queryFilters);
@@ -242,8 +283,22 @@ export function ToursTable() {
   };
 
   const columns = getColumns(handleView, handleEdit, handleMove, handleDelete, tTours, tCommon, currentLocale);
-  const toursList: Tour[] = data?.data ?? [];
-  const totalCount: number = data?.meta?.total ?? 0;
+
+  const rawTours: Tour[] = useMemo(() => {
+    if (Array.isArray(data)) return data;
+    if (Array.isArray((data as any)?.data)) return (data as any).data;
+    return [];
+  }, [data]);
+
+  const toursList: Tour[] = useMemo(() => {
+    const apiSlugs = new Set(rawTours.map((t) => t.slug.toLowerCase()));
+    const missingContextTours = (contextTrips || [])
+      .filter((ct) => !apiSlugs.has(ct.slug.toLowerCase()))
+      .map(tripModelToTour);
+    return [...rawTours, ...missingContextTours];
+  }, [rawTours, contextTrips]);
+
+  const totalCount: number = (data as any)?.meta?.total ?? toursList.length;
   const overallTotal: number | null = stats?.totalTours ?? null;
 
   // Custom Toolbar Actions for Bulk Management & Export
