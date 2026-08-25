@@ -259,7 +259,7 @@ interface DataContextType {
 
 const DataContext = createContext<DataContextType | undefined>(undefined);
 
-const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v5';
+const LOCAL_STORAGE_TRIPS_KEY = 'dunas_admin_trips_v6';
 const LOCAL_STORAGE_HOTELS_KEY = 'dunas_admin_hotels_v1';
 
 const LEGACY_EGYPT_SLUGS = new Set([
@@ -277,10 +277,10 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [trips, setTrips] = useState<TripModel[]>(() => {
     if (typeof window !== 'undefined') {
       try {
-        localStorage.removeItem('dunas_admin_trips_v1');
-        localStorage.removeItem('dunas_admin_trips_v2');
-        localStorage.removeItem('dunas_admin_trips_v3');
-        localStorage.removeItem('dunas_admin_trips_v4');
+        localStorage.removeItem('dunas_admin_trips_v6');
+        localStorage.removeItem('dunas_admin_trips_v6');
+        localStorage.removeItem('dunas_admin_trips_v6');
+        localStorage.removeItem('dunas_admin_trips_v6');
       } catch {}
       const saved = localStorage.getItem(LOCAL_STORAGE_TRIPS_KEY);
       if (saved && saved !== 'undefined' && saved.trim() !== '') {
