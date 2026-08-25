@@ -146,7 +146,51 @@ export const DestinationsManager: React.FC = React.memo(() => {
       (ct) => !apiSlugs.has(ct.slug.toLowerCase())
     );
 
-    return [...apiMapped, ...missingContextTrips];
+    const combined = [...apiMapped, ...missingContextTrips];
+    return combined.map((trip) => {
+      const destLower = (trip.destination || '').toLowerCase();
+      const normDest =
+        destLower.includes('egypt') || destLower.includes('مصر')
+          ? 'egypt'
+          : destLower.includes('turkey') || destLower.includes('تركيا')
+          ? 'turkey'
+          : destLower.includes('jordan') || destLower.includes('الأردن')
+          ? 'jordan'
+          : destLower.includes('morocco') || destLower.includes('المغرب')
+          ? 'morocco'
+          : destLower.includes('dubai') || destLower.includes('دبي')
+          ? 'dubai'
+          : destLower.includes('tunisia') || destLower.includes('تونس')
+          ? 'tunisia'
+          : destLower.includes('greece') || destLower.includes('اليونان')
+          ? 'greece'
+          : destLower.includes('holyland') || destLower.includes('القدس')
+          ? 'holyland'
+          : destLower || 'egypt';
+
+      let pkgId = trip.packageId;
+      if (normDest === 'egypt' && !pkgId) {
+        const title = (trip.title || '').toLowerCase();
+        const slug = (trip.slug || '').toLowerCase();
+        if (slug.includes('nile') || title.includes('نيل') || title.includes('كروز')) {
+          pkgId = 'egypt-nile-cruise';
+        } else if (slug.includes('honeymoon') || title.includes('عسل')) {
+          pkgId = 'egypt-honeymoon';
+        } else if (slug.includes('ramses') || title.includes('رمسيس') || title.includes('vip')) {
+          pkgId = 'egypt-luxury-vip';
+        } else if (slug.includes('desert') || title.includes('صحراء')) {
+          pkgId = 'egypt-desert-adventure';
+        } else {
+          pkgId = 'egypt-classic';
+        }
+      }
+
+      return {
+        ...trip,
+        destination: normDest,
+        packageId: pkgId,
+      };
+    });
   }, [toursData, contextTrips]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
@@ -166,7 +210,8 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const tripCountMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const t of realTrips) {
-      map[t.destination] = (map[t.destination] || 0) + 1;
+      const dKey = (t.destination || '').toLowerCase();
+      map[dKey] = (map[dKey] || 0) + 1;
     }
     return map;
   }, [realTrips]);
@@ -174,7 +219,9 @@ export const DestinationsManager: React.FC = React.memo(() => {
   // Filter trips by active destination and optional package filter
   const filteredTrips = useMemo(() => {
     return realTrips.filter((t) => {
-      if (t.destination !== activeDestId) return false;
+      const tDest = (t.destination || '').toLowerCase();
+      const aDest = (activeDestId || '').toLowerCase();
+      if (tDest !== aDest) return false;
       if (activePackageId && t.packageId !== activePackageId) return false;
       return true;
     });
