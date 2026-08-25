@@ -112,6 +112,20 @@ export function useSoftDeleteTour() {
   });
 }
 
+export function useClearAllTours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => toursApi.clearAllTours(),
+    onSuccess: () => {
+      toast.success("All tours cleared successfully");
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to clear tours");
+    },
+  });
+}
+
 export function useAddTourItinerary() {
   const queryClient = useQueryClient();
   return useMutation({

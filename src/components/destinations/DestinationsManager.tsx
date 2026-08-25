@@ -5,7 +5,7 @@ import { useDataContext } from '@/context/DataContext';
 import { TripModel } from '@/types/dunas-suite';
 import { TripEditorModal } from '@/components/trips/TripEditorModal';
 import { TransferTripModal } from '@/components/trips/TransferTripModal';
-import { useTours, useSoftDeleteTour } from '@/features/tours/hooks/useTours';
+import { useTours, useSoftDeleteTour, useClearAllTours } from '@/features/tours/hooks/useTours';
 import type { Tour } from '@/features/tours/types';
 import { resolveTourDestination } from '@/app/[locale]/(dashboard)/admin/tours/page';
 import { Button } from '@/components/ui/button';
@@ -135,14 +135,12 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const { destinations, egyptPackages, trips: contextTrips } = useDataContext();
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 100 });
   const removeTourMutation = useSoftDeleteTour();
+  const clearAllToursMutation = useClearAllTours();
 
   const realTrips = useMemo(() => {
     const rawTours = toursData?.data ?? [];
-    if (rawTours.length > 0) {
-      return rawTours.map(convertTourToTripModel);
-    }
-    return contextTrips;
-  }, [toursData, contextTrips]);
+    return rawTours.map(convertTourToTripModel);
+  }, [toursData]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);

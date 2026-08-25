@@ -40,6 +40,7 @@ export const toursApi = {
   updateTour: (slug: string, data: UpdateTourPayload): Promise<{ success: boolean; slug: string }> => apiClient.patch<{ success: boolean; slug: string }, { success: boolean; slug: string }>(`/admin/tours/${slug}`, data),
   bulkUpdateTours: (data: BulkUpdateToursPayload): Promise<{ count: number }> => apiClient.patch<{ count: number }, { count: number }>('/admin/tours/bulk/update', data),
   softDeleteTour: (slug: string): Promise<void> => apiClient.delete<void, void>(`/admin/tours/${slug}`),
+  clearAllTours: (): Promise<{ success: boolean; message: string }> => apiClient.delete<{ success: boolean; message: string }, { success: boolean; message: string }>('/admin/tours/clear-all'),
   exportToursCsv: (filters: TourQueryFilters): Promise<Blob> => apiClient.get<Blob, Blob>('/admin/tours/export/csv', { params: filters, responseType: 'blob' }),
   addTourItinerary: (slug: string, data: TourItineraryPayload): Promise<TourItinerary> => apiClient.post<TourItinerary, TourItinerary>(`/admin/tours/${slug}/itinerary`, data),
   updateTourItinerary: (slug: string, dayId: string, data: Partial<TourItineraryPayload>): Promise<TourItinerary> => apiClient.patch<TourItinerary, TourItinerary>(`/admin/tours/${slug}/itinerary/${dayId}`, data),
