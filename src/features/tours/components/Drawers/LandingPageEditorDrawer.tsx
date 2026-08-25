@@ -182,7 +182,12 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
   };
 
   const attachedTourIds = tourRelations.map((t) => t.tourId);
-  const availableTours = allToursData?.data?.filter((t) => !attachedTourIds.includes(t.id)) || [];
+  const allToursList: Tour[] = Array.isArray(allToursData)
+    ? allToursData
+    : Array.isArray((allToursData as any)?.data)
+    ? (allToursData as any).data
+    : [];
+  const availableTours = allToursList.filter((t) => !attachedTourIds.includes(t.id));
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>

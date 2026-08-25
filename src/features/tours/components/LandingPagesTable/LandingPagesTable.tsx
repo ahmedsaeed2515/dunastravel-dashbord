@@ -30,7 +30,7 @@ export function LandingPagesTable({ fixedType }: { fixedType?: LandingPageType }
   const archive = useArchiveLandingPage();
   const remove = useDeleteLandingPage();
   const reorder = useReorderLandingPages();
-  const items = data?.data ?? [];
+  const items = Array.isArray(data) ? data : (data?.data ?? []);
 
   const openCreate = () => {
     setSelected({

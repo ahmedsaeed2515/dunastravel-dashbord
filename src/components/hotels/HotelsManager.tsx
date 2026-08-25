@@ -171,7 +171,7 @@ export function HotelsManager() {
 
   const removeMutation = useDeleteHotel();
 
-  const hotels = data?.data ?? [];
+  const hotels = Array.isArray(data) ? data : (data?.data ?? []);
 
   // Filter hotels
   const filteredHotels = useMemo(() => {
