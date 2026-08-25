@@ -290,7 +290,7 @@ export function HotelsManager() {
             onClick={handleOpenAdd}
             className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 px-6 shadow-md shadow-amber-500/20 cursor-pointer"
           >
-            <Plus className="w-4 h-4 stroke-[3]" />
+            <Plus className="w-4 h-4 stroke-3" />
             <span>{isAr ? "إضافة فندق جديد +" : "Add New Hotel +"}</span>
           </Button>
         </div>
@@ -397,7 +397,7 @@ export function HotelsManager() {
             const name = hotel.nameJsonb?.[locale] || hotel.nameJsonb?.en || hotel.slug;
             const desc = hotel.descriptionJsonb?.[locale] || hotel.descriptionJsonb?.en || (isAr ? "إقامة فاخرة متكاملة الخدمات مع إطلالة مميزة ومرافق راقية." : "Luxury 5-star accommodation with bespoke guest amenities.");
             const lowestRate = hotel.rooms && hotel.rooms.length > 0
-              ? Math.min(...hotel.rooms.map((r) => r.ratePerNight))
+              ? Math.min(...hotel.rooms.map((r: any) => r.ratePerNight))
               : null;
             const heroImg = hotel.heroImageUrl || FALLBACK_HOTEL_IMAGE;
             const ratingVal = hotel.rating !== null ? Number(hotel.rating).toFixed(1) : "4.9";

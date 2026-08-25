@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { LandingPageMutationPayload, LandingPageStatus, LandingPageType, TourLandingPage } from "../../api/landingPagesApi";
+import { Tour } from "../../types";
 import { useCreateLandingPage, useUpdateLandingPage, usePublishLandingPage, useUnpublishLandingPage, useAttachToursToLandingPage, useDetachTourFromLandingPage, useReorderLandingPageTours, useUpdateLandingPageTourRelation } from "../../hooks/useLandingPages";
 import { useTours } from "../../hooks/useTours";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -420,7 +421,7 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                   [...tourRelations].sort((a, b) => a.sortOrder - b.sortOrder).map((rel, index, relations) => (
                     <div key={rel.id} className="p-3 flex items-center justify-between text-sm">
                       <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded bg-muted overflow-hidden flex-shrink-0">
+                        <div className="w-10 h-10 rounded bg-muted overflow-hidden shrink-0">
                           {rel.tour.images?.[0]?.imageUrl ? (
                             <img src={rel.tour.images[0].imageUrl} className="w-full h-full object-cover" alt="" />
                           ) : (
