@@ -6,10 +6,21 @@ import {
   WalletMetrics, 
   CommissionMetrics, 
   CommissionQueryFilters, 
-  PaginatedResponse 
+  PaginatedResponse,
+  PaymentRecord,
+  PaymentQueryFilters,
+  ReconciliationSummary
 } from "../types";
 
 export const financeApi = {
+  getPayments: async (filters: PaymentQueryFilters): Promise<PaginatedResponse<PaymentRecord>> => {
+    return apiClient.get<PaginatedResponse<PaymentRecord>, PaginatedResponse<PaymentRecord>>('/admin/finance/payments', { params: filters });
+  },
+
+  getReconciliationSummary: async (): Promise<ReconciliationSummary> => {
+    return apiClient.get<ReconciliationSummary, ReconciliationSummary>('/admin/finance/reconciliation');
+  },
+
   // Wallets
   getWalletMetrics: async (): Promise<WalletMetrics> => {
     return apiClient.get<WalletMetrics, WalletMetrics>('/admin/finance/wallets/metrics');
@@ -42,7 +53,7 @@ export const financeApi = {
   },
 
   // Refunds
-  refundPayment: async (payload: { idempotencyKey: string; paymentId: string; amount: string; currency: string; reason?: string }): Promise<{ id: string; status: string }> => {
-    return apiClient.post<{ id: string; status: string }, { id: string; status: string }>("/admin/finance/refunds", payload);
+  refundPayment: async (payload: { idempotencyKey: string; paymentId: string; amount?: number; reason: string }): Promise<{ success: boolean; refundId: string; status: string }> => {
+    return apiClient.post<{ success: boolean; refundId: string; status: string }, { success: boolean; refundId: string; status: string }>("/admin/finance/refunds", payload);
   }
 };

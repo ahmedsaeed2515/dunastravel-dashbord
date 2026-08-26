@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { MoreHorizontal, Eye, Edit, Trash, ExternalLink, ArrowRightLeft } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash, ExternalLink, ArrowRightLeft, Archive, RotateCcw, Send, Undo2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -12,6 +12,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Tour } from "../../types";
+import { useTourLifecycleAction } from "../../hooks/useTours";
 
 interface TourRowActionsProps {
   tour: Tour;
@@ -31,6 +32,10 @@ export function TourRowActions({
   const params = useParams();
   const locale = (params?.locale as string) || "en";
   const isAr = locale === "ar";
+  const publish = useTourLifecycleAction("publish");
+  const unpublish = useTourLifecycleAction("unpublish");
+  const archive = useTourLifecycleAction("archive");
+  const unarchive = useTourLifecycleAction("unarchive");
 
   return (
     <DropdownMenu>
@@ -71,6 +76,25 @@ export function TourRowActions({
             <ExternalLink className="mr-2 h-4 w-4 text-emerald-500" /> {isAr ? "معاينة كزائر" : "Preview as Visitor"}
           </Link>
         </DropdownMenuItem>
+        {tour.status === "DRAFT" && (
+          <DropdownMenuItem onClick={() => publish.mutate(tour.slug)} className="cursor-pointer text-emerald-600 focus:text-emerald-600">
+            <Send className="mr-2 h-4 w-4" /> {isAr ? "نشر الرحلة" : "Publish Tour"}
+          </DropdownMenuItem>
+        )}
+        {tour.status === "PUBLISHED" && (
+          <DropdownMenuItem onClick={() => unpublish.mutate(tour.slug)} className="cursor-pointer text-amber-600 focus:text-amber-600">
+            <Undo2 className="mr-2 h-4 w-4" /> {isAr ? "إلغاء النشر" : "Unpublish Tour"}
+          </DropdownMenuItem>
+        )}
+        {tour.status !== "ARCHIVED" ? (
+          <DropdownMenuItem onClick={() => archive.mutate(tour.slug)} className="cursor-pointer text-amber-600 focus:text-amber-600">
+            <Archive className="mr-2 h-4 w-4" /> {isAr ? "أرشفة الرحلة" : "Archive Tour"}
+          </DropdownMenuItem>
+        ) : (
+          <DropdownMenuItem onClick={() => unarchive.mutate(tour.slug)} className="cursor-pointer text-sky-600 focus:text-sky-600">
+            <RotateCcw className="mr-2 h-4 w-4" /> {isAr ? "استعادة كمسودة" : "Restore as Draft"}
+          </DropdownMenuItem>
+        )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onDelete(tour)} className="text-red-600 focus:text-red-600 focus:bg-red-500/10 cursor-pointer">
           <Trash className="mr-2 h-4 w-4" /> {isAr ? "أرشفة الرحلة" : "Archive Tour"}

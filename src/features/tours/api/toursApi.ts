@@ -86,6 +86,14 @@ export const toursApi = {
     apiClient.get<TourPreview, TourPreview>(`/admin/tours/${slug}/preview`, { params: { lang } }),
   createTour: (data: CreateTourPayload): Promise<{ success: boolean; slug: string }> => apiClient.post<{ success: boolean; slug: string }, { success: boolean; slug: string }>('/admin/tours', data),
   updateTour: (slug: string, data: UpdateTourPayload): Promise<{ success: boolean; slug: string }> => apiClient.patch<{ success: boolean; slug: string }, { success: boolean; slug: string }>(`/admin/tours/${slug}`, data),
+  publishTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>
+    apiClient.post(`/admin/tours/${slug}/publish`),
+  unpublishTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>
+    apiClient.post(`/admin/tours/${slug}/unpublish`),
+  archiveTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>
+    apiClient.post(`/admin/tours/${slug}/archive`),
+  unarchiveTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>
+    apiClient.post(`/admin/tours/${slug}/unarchive`),
   bulkUpdateTours: (data: BulkUpdateToursPayload): Promise<{ count: number }> => apiClient.patch<{ count: number }, { count: number }>('/admin/tours/bulk/update', data),
   softDeleteTour: (slug: string): Promise<void> => apiClient.delete<void, void>(`/admin/tours/${slug}`),
   clearAllTours: (): Promise<{ success: boolean; message: string }> => apiClient.delete<{ success: boolean; message: string }, { success: boolean; message: string }>('/admin/tours/clear-all'),

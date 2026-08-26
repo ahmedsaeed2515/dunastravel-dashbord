@@ -97,13 +97,6 @@ export interface BulkUpdateBookingsPayload {
   priority?: string;
 }
 
-export interface AddPaymentPayload {
-  amount: number;
-  currency: 'USD';
-  method: 'CASH' | 'BANK_TRANSFER' | 'POS' | 'OTHER_MANUAL';
-  transactionId: string;
-}
-
 export interface Payment {
   id: string;
   amount: string;

@@ -2,6 +2,7 @@
 
 import { FinanceMetricsBanner } from "@/features/finance/components/FinanceMetricsBanner";
 import { CommissionsView } from "@/features/finance/components/CommissionsView";
+import { PaymentsView } from "@/features/finance/components/PaymentsView";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 
@@ -16,6 +17,7 @@ export default function FinanceDashboardPage() {
       />
 
       <FinanceMetricsBanner />
+      <PaymentsView />
       <CommissionsView />
     </div>
   );

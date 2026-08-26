@@ -55,6 +55,13 @@ export interface Tour {
   slug: string;
   titleJsonb: Record<string, any>;
   subtitleJsonb?: Record<string, any> | null;
+  highlightsJsonb?: Record<string, any> | null;
+  departureInfoJsonb?: Record<string, any> | null;
+  sourceCodeJsonb?: Record<string, any> | null;
+  sourceCatalogId?: string | null;
+  market?: string | null;
+  sourceRating?: string | null;
+  sourceReviewCount?: number | null;
   overviewJsonb?: Record<string, any> | null;
   durationJsonb?: Record<string, any> | null;
   descriptionJsonb?: Record<string, any> | null;
@@ -166,6 +173,12 @@ export interface CreateTourPayload {
   slug: string;
   titleJsonb: Record<string, any>;
   subtitleJsonb?: Record<string, any> | null;
+  highlightsJsonb?: Record<string, any> | null;
+  departureInfoJsonb?: Record<string, any> | null;
+  sourceCodeJsonb?: Record<string, any> | null;
+  market?: string | null;
+  sourceRating?: number | null;
+  sourceReviewCount?: number | null;
   overviewJsonb?: Record<string, any> | null;
   durationJsonb?: Record<string, any> | null;
   descriptionJsonb?: Record<string, any>;

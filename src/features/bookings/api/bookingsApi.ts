@@ -1,5 +1,5 @@
 import { apiClient } from "@/lib/axios";
-import { AddAttachmentPayload, AddNotePayload, AddPaymentPayload, Booking, BookingAttachment, BookingNote, BookingQueryFilters, ManualBookingPayload, Payment, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload } from "../types";
+import { AddAttachmentPayload, AddNotePayload, Booking, BookingAttachment, BookingNote, BookingQueryFilters, ManualBookingPayload, UpdateBookingPayload, UpdateBookingStatusPayload, UpsertPassengersPayload, AssignBookingPayload, BulkUpdateBookingsPayload } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
 
 export const bookingsApi = {
@@ -48,10 +48,6 @@ export const bookingsApi = {
 
   restoreBooking: async (referenceCode: string): Promise<Booking> => {
     return apiClient.post<Booking, Booking>(`/admin/bookings/${referenceCode}/restore`);
-  },
-
-  addPayment: async (referenceCode: string, data: AddPaymentPayload): Promise<Payment> => {
-    return apiClient.post<Payment, Payment>(`/admin/bookings/${referenceCode}/payments`, data);
   },
 
   addNote: async (referenceCode: string, data: AddNotePayload): Promise<BookingNote> => {

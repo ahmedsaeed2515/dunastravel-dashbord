@@ -4,6 +4,7 @@ export const adminRoutes = {
   tours: "/admin/tours",
   destinations: "/admin/destinations",
   hotels: "/admin/hotels",
+  transportation: "/admin/transportation",
   reviews: "/admin/reviews",
   promotions: "/admin/promotions",
   media: "/admin/media",

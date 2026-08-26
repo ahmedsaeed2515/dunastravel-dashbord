@@ -67,3 +67,38 @@ export interface CommissionQueryFilters {
   bookingId?: string;
   status?: CommissionStatus;
 }
+
+export interface PaymentRecord {
+  id: string;
+  bookingId: string;
+  bookingReferenceCode: string;
+  amount: string;
+  currency: string;
+  provider: string;
+  providerEnvironment?: string | null;
+  merchantReference: string | null;
+  providerPaymentId: string | null;
+  attemptNumber?: number | null;
+  transactionId: string | null;
+  status: string;
+  bookingStatus: string;
+  createdAt: string;
+  paidAt: string | null;
+  refundedAt: string | null;
+  failureMessage: string | null;
+}
+
+export interface PaymentQueryFilters {
+  page?: number;
+  limit?: number;
+  status?: string;
+  search?: string;
+}
+
+export interface ReconciliationSummary {
+  statusCounts: Record<string, number>;
+  stalePendingCount: number;
+  pendingRefundCount: number;
+  missingReferenceCount: number;
+  generatedAt: string;
+}

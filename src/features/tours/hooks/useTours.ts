@@ -226,6 +226,29 @@ export function useSetTourHeroImage() {
   });
 }
 
+type TourLifecycleAction = 'publish' | 'unpublish' | 'archive' | 'unarchive';
+
+export function useTourLifecycleAction(action: TourLifecycleAction) {
+  const queryClient = useQueryClient();
+  const operations = {
+    publish: toursApi.publishTour,
+    unpublish: toursApi.unpublishTour,
+    archive: toursApi.archiveTour,
+    unarchive: toursApi.unarchiveTour,
+  } as const;
+  return useMutation({
+    mutationFn: (slug: string) => operations[action](slug),
+    onSuccess: (_, slug) => {
+      toast.success(`Tour ${action === 'unarchive' ? 'restored as draft' : `${action}d`} successfully`);
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(slug) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || `Failed to ${action} tour`);
+    },
+  });
+}
+
 export function useCreateTourAvailability() {
   const queryClient = useQueryClient();
   return useMutation({

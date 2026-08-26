@@ -7,7 +7,6 @@ import {
   UpsertPassengersPayload,
   AssignBookingPayload,
   BulkUpdateBookingsPayload,
-  AddPaymentPayload,
   AddNotePayload,
   AddAttachmentPayload,
   ManualBookingPayload,
@@ -165,21 +164,6 @@ export function useRestoreBooking() {
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to restore booking");
-    },
-  });
-}
-
-export function useAddPayment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: AddPaymentPayload }) =>
-      bookingsApi.addPayment(referenceCode, data),
-    onSuccess: (_, variables) => {
-      toast.success("Payment added successfully");
-      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
-    },
-    onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to add payment");
     },
   });
 }

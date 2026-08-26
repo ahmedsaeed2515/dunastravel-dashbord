@@ -3,10 +3,15 @@ import { ToursTable } from '../ToursTable';
 import { vi, describe, it, expect } from 'vitest';
 import { useTours, useTourStats } from '../../../hooks/useTours';
 
+vi.mock('@/components/trips/TripEditorModal', () => ({
+  TripEditorModal: () => null,
+}));
+
 vi.mock('../../../hooks/useTours', () => ({
   useTours: vi.fn(),
   useTourStats: vi.fn(),
   useSoftDeleteTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useTourLifecycleAction: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useBulkUpdateTours: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useCreateTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useUpdateTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false })
@@ -18,7 +23,9 @@ describe('ToursTable', () => {
       id: "tour-1",
       slug: "pyramids-nile-cruise",
       title: "Pyramids & Nile Cruise",
+      titleJsonb: { en: "Pyramids & Nile Cruise" },
       priceUsd: 1500,
+      basePriceUsd: "1500",
       durationDays: 7,
       status: "PUBLISHED",
       createdAt: "2023-10-01T12:00:00Z"
@@ -27,7 +34,9 @@ describe('ToursTable', () => {
       id: "tour-2",
       slug: "turkey-highlights",
       title: "Turkey Highlights",
+      titleJsonb: { en: "Turkey Highlights" },
       priceUsd: 1800,
+      basePriceUsd: "1800",
       durationDays: 10,
       status: "DRAFT",
       createdAt: "2023-10-02T12:00:00Z"

@@ -38,3 +38,13 @@ export function useDeleteHotel() {
     onError: (error) => toast.error(messageFor(error, 'Could not archive hotel')),
   });
 }
+
+export function useHotelLifecycle() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, action }: { id: string; action: 'publish' | 'unpublish' | 'archive' | 'unarchive' | 'restore' }) =>
+      hotelsApi[action](id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hotels'] }),
+    onError: (error) => toast.error(messageFor(error, 'Could not update hotel lifecycle')),
+  });
+}

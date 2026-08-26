@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { financeApi } from "../api/financeApi";
-import { CommissionQueryFilters, CommissionStatus } from "../types";
+import { CommissionQueryFilters, CommissionStatus, PaymentQueryFilters } from "../types";
 import { toast } from "sonner";
 
 export const financeKeys = {
@@ -10,6 +10,8 @@ export const financeKeys = {
   walletTransactions: (walletId: string) => [...financeKeys.all, "transactions", walletId] as const,
   commissionMetrics: () => [...financeKeys.all, "commissionMetrics"] as const,
   commissions: (filters: CommissionQueryFilters) => [...financeKeys.all, "commissions", filters] as const,
+  payments: (filters: PaymentQueryFilters) => [...financeKeys.all, "payments", filters] as const,
+  reconciliation: () => [...financeKeys.all, "reconciliation"] as const,
 };
 
 export function useWalletMetrics() {
@@ -55,6 +57,21 @@ export function useCommissionMetrics() {
   return useQuery({
     queryKey: financeKeys.commissionMetrics(),
     queryFn: () => financeApi.getCommissionMetrics(),
+  });
+}
+
+export function usePayments(filters: PaymentQueryFilters) {
+  return useQuery({
+    queryKey: financeKeys.payments(filters),
+    queryFn: () => financeApi.getPayments(filters),
+    placeholderData: (prev) => prev,
+  });
+}
+
+export function useReconciliationSummary() {
+  return useQuery({
+    queryKey: financeKeys.reconciliation(),
+    queryFn: () => financeApi.getReconciliationSummary(),
   });
 }
 

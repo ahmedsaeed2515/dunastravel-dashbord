@@ -39,10 +39,8 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { useCreateHotel, useDeleteHotel, useHotels, useUpdateHotel } from "@/features/hotels/hooks/useHotels";
+import { useCreateHotel, useHotelLifecycle, useHotels, useUpdateHotel } from "@/features/hotels/hooks/useHotels";
 import { AdminHotel, HotelPayload, HotelStatus } from "@/features/hotels/types";
-
-const FALLBACK_HOTEL_IMAGE = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=800";
 
 const LUXURY_AMENITIES = [
   { id: "pool", labelEn: "Swimming Pool", labelAr: "مسبح فاخر", icon: Waves },
@@ -119,35 +117,23 @@ const defaultFormData = (): HotelFormData => ({
   descEs: "",
   descPt: "",
   descIt: "",
-  destinationSlug: "cairo",
-  city: "Cairo",
-  stars: 5,
-  rating: "4.90",
+  destinationSlug: "",
+  city: "",
+  stars: 0,
+  rating: "",
   currency: "USD",
   phone: "",
   email: "",
   website: "",
   heroMediaId: "",
   heroImageUrl: "",
-  amenities: {
-    pool: true,
-    spa: true,
-    wifi: true,
-    restaurant: true,
-    gym: true,
-    breakfast: true,
-    concierge: true,
-    roomService: true,
-  },
-  checkIn: "14:00",
-  checkOut: "12:00",
-  cancellationPolicy: "Free cancellation up to 48 hours before check-in.",
-  status: "PUBLISHED",
-  isActive: true,
-  rooms: [
-    { slug: "deluxe-king-room", name: "Deluxe King Room", ratePerNight: 180, maxOccupancy: 2, inventory: 15 },
-    { slug: "royal-suite-nile-view", name: "Royal Suite Nile View", ratePerNight: 350, maxOccupancy: 4, inventory: 5 },
-  ],
+  amenities: {},
+  checkIn: "",
+  checkOut: "",
+  cancellationPolicy: "",
+  status: "DRAFT",
+  isActive: false,
+  rooms: [],
 });
 
 export function HotelsManager() {
@@ -169,7 +155,7 @@ export function HotelsManager() {
     search: search || undefined,
   });
 
-  const removeMutation = useDeleteHotel();
+  const lifecycleMutation = useHotelLifecycle();
 
   const hotels = Array.isArray(data) ? data : (data?.data ?? []);
 
@@ -212,7 +198,17 @@ export function HotelsManager() {
     if (!window.confirm(isAr ? `هل أنت متأكد من أرشفة فندق "${name}"؟` : `Are you sure you want to archive "${name}"?`)) {
       return;
     }
-    removeMutation.mutate(hotel.id);
+    lifecycleMutation.mutate(
+      { id: hotel.id, action: hotel.status === "ARCHIVED" ? "unarchive" : "archive" },
+      { onSuccess: () => toast.success(hotel.status === "ARCHIVED" ? "Hotel returned to draft" : "Hotel archived") },
+    );
+  };
+
+  const handlePublish = (hotel: AdminHotel) => {
+    lifecycleMutation.mutate(
+      { id: hotel.id, action: hotel.status === "PUBLISHED" ? "unpublish" : "publish" },
+      { onSuccess: () => toast.success(hotel.status === "PUBLISHED" ? "Hotel returned to draft" : "Hotel published") },
+    );
   };
 
   // Metrics
@@ -252,7 +248,7 @@ export function HotelsManager() {
           <div className="space-y-1">
             <span className="text-xs font-bold text-muted-foreground">{isAr ? "منشورة ومتاحة للحجز" : "Published & Active"}</span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              {publishedCount} <span className="text-xs font-bold text-emerald-500">({totalHotels ? Math.round((publishedCount / totalHotels) * 100) : 100}%) 🌐</span>
+              {publishedCount} <span className="text-xs font-bold text-emerald-500">({totalHotels ? Math.round((publishedCount / totalHotels) * 100) : 0}%) 🌐</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
@@ -399,7 +395,7 @@ export function HotelsManager() {
             const lowestRate = hotel.rooms && hotel.rooms.length > 0
               ? Math.min(...hotel.rooms.map((r: any) => r.ratePerNight))
               : null;
-            const heroImg = hotel.heroImageUrl || FALLBACK_HOTEL_IMAGE;
+            const heroImg = hotel.heroImageUrl;
             const ratingVal = hotel.rating !== null ? Number(hotel.rating).toFixed(1) : "4.9";
 
             return (
@@ -410,11 +406,15 @@ export function HotelsManager() {
                 <div>
                   {/* Hero Image & Top Badges */}
                   <div className="h-48 relative overflow-hidden bg-slate-950">
-                    <img
-                      src={heroImg}
-                      alt={name}
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                    />
+                    {heroImg ? (
+                      <img
+                        src={heroImg}
+                        alt={name}
+                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      />
+                    ) : (
+                      <div className="flex h-full items-center justify-center text-xs font-semibold text-muted-foreground">No hotel image</div>
+                    )}
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-transparent to-black/30" />
 
                     {/* Stars Badge */}

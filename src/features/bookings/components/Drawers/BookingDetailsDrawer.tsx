@@ -8,9 +8,8 @@ import { format } from "date-fns";
 import { Separator } from "@/components/ui/separator";
 import { Button } from "@/components/ui/button";
 import { useRestoreBooking } from "../../hooks/useBookings";
-import { FileText, RefreshCcw, Paperclip, Plus, CreditCard } from "lucide-react";
+import { FileText, RefreshCcw, Paperclip, Plus } from "lucide-react";
 import { useState } from "react";
-import { AddPaymentDialog } from "../Dialogs/AddPaymentDialog";
 import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
 import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
 import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
@@ -47,7 +46,6 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
   const tNav = useTranslations("navigation");
   const { mutate: restoreBooking, isPending: isRestoring } = useRestoreBooking();
 
-  const [paymentOpen, setPaymentOpen] = useState(false);
   const [noteOpen, setNoteOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
   const [passengerOpen, setPassengerOpen] = useState(false);
@@ -176,9 +174,6 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
             </TabsContent>
 
             <TabsContent value="payments" className="space-y-4">
-               <div className="flex justify-end mb-2">
-                 <Button variant="outline" size="sm" className="gap-2" onClick={() => setPaymentOpen(true)}><CreditCard className="w-4 h-4"/> {tBookings("paymentDetails")}</Button>
-               </div>
                {booking.payments && booking.payments.length > 0 ? (
                 booking.payments.map((p: any, i: number) => (
                   <div key={p.id || i} className="border rounded-lg p-4 flex justify-between items-center">
@@ -267,11 +262,6 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
         </Tabs>
       </SheetContent>
 
-      <AddPaymentDialog 
-        referenceCode={booking.referenceCode} 
-        open={paymentOpen} 
-        onOpenChange={setPaymentOpen} 
-      />
       <AddNoteDialog 
         referenceCode={booking.referenceCode} 
         open={noteOpen} 

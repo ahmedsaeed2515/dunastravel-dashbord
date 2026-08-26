@@ -11,4 +11,9 @@ export const hotelsApi = {
   remove: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/hotels/${id}`);
   },
+  publish: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/publish`),
+  unpublish: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/unpublish`),
+  archive: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/archive`),
+  unarchive: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/unarchive`),
+  restore: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/restore`),
 };
