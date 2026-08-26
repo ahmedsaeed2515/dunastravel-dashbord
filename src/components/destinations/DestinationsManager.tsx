@@ -134,22 +134,18 @@ function convertTourToTripModel(tour: Tour): TripModel {
 import { extractToursList } from '@/lib/extract-tours';
 
 export const DestinationsManager: React.FC = React.memo(() => {
-  const { destinations, egyptPackages, trips: contextTrips } = useDataContext();
+  // Keep the restored destination UI, but make the Backend the only source of
+  // tour business data. DataContext still supplies presentation metadata
+  // (flags, gradients and package labels); tour records always come from the
+  // persisted API response.
+  const { destinations, egyptPackages } = useDataContext();
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 500 });
   const removeTourMutation = useSoftDeleteTour();
   const clearAllToursMutation = useClearAllTours();
 
   const realTrips = useMemo(() => {
     const rawTours: Tour[] = extractToursList(toursData);
-    const apiMapped = rawTours.map(convertTourToTripModel);
-
-    const apiSlugs = new Set(apiMapped.map((t) => t.slug.toLowerCase()));
-    const missingContextTrips = (contextTrips || []).filter(
-      (ct) => !apiSlugs.has(ct.slug.toLowerCase())
-    );
-
-    const combined = [...apiMapped, ...missingContextTrips];
-    return combined.map((trip) => {
+    return rawTours.map(convertTourToTripModel).map((trip) => {
       const destLower = (trip.destination || '').toLowerCase();
       const normDest =
         destLower.includes('egypt') || destLower.includes('مصر')
@@ -193,7 +189,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
         packageId: pkgId,
       };
     });
-  }, [toursData, contextTrips]);
+  }, [toursData]);
 
   const [activeDestId, setActiveDestId] = useState<string>('egypt');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);

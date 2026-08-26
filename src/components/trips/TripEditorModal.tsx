@@ -273,14 +273,8 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       images: preparedApiImages,
     };
 
-    // 1. Store in local DataContext immediately so Dashboard always reflects the created/edited trip
-    if (trip) {
-      updateTrip(payload);
-    } else {
-      addTrip(payload);
-    }
-
-    // 2. Sync with Backend API
+    // Persist through the Backend first. The catalogue is backend-authoritative;
+    // failed requests must not be presented as locally saved changes.
     try {
       if (trip && trip.slug) {
         await toursApi.updateTour(trip.slug, backendData as any);
@@ -288,13 +282,15 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         await toursApi.createTour(backendData as any);
       }
       queryClient.invalidateQueries();
+      onClose();
       toast.success(trip ? 'تم تحديث الرحلة والترجمات وحفظها بنجاح!' : 'تمت إضافة الرحلة والترجمات وحفظها بنجاح!');
     } catch (err: any) {
-      console.warn('Backend API save warning:', err);
+      console.error('Backend API save failed:', err);
+      toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
+      return;
       toast.success(trip ? 'تم حفظ التعديلات محلياً في لوحة التحكم!' : 'تمت إضافة الرحلة محلياً في لوحة التحكم بنجاح!');
     }
 
-    onClose();
   };
 
   // Accommodation helper

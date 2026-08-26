@@ -70,14 +70,14 @@ export const toursApi = {
       return await apiClient.get<TourStats, TourStats>('/admin/tours/stats');
     } catch {
       return {
-        totalTours: 62,
-        publishedTours: 62,
+        totalTours: 0,
+        publishedTours: 0,
         draftTours: 0,
-        featuredTours: 12,
-        totalCapacity: 500,
-        totalRemainingSeats: 250,
-        seatsSold: 250,
-        occupancyRate: '50%',
+        featuredTours: 0,
+        totalCapacity: 0,
+        totalRemainingSeats: 0,
+        seatsSold: 0,
+        occupancyRate: '0%',
       };
     }
   },
