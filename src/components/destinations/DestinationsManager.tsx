@@ -143,7 +143,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
   // DataContext remains only for the separately managed Egypt package labels.
   const { egyptPackages } = useDataContext();
   const { data: destinationData, isLoading: isLoadingDestinations } = useLandingPages({
-    type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 100,
+    type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 50,
   });
   const destinations = useMemo(() => {
     const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];

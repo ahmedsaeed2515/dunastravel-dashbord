@@ -26,6 +26,14 @@ export function useBookingsTrend(filters?: DashboardFilters) {
   });
 }
 
+export function useTopDestinations(filters?: DashboardFilters) {
+  return useQuery({
+    queryKey: ["dashboard", "top-destinations", filters],
+    queryFn: () => dashboardApi.getTopDestinations(filters),
+    staleTime: 60000,
+  });
+}
+
 export function useTourPerformance(filters?: DashboardFilters) {
   return useQuery({
     queryKey: ["dashboard", "tour-performance", filters],

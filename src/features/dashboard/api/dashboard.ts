@@ -9,6 +9,7 @@ import {
   RecentActivityItem,
   RecentBookingItem,
   RevenueTrendItem,
+  TopDestinationItem,
   TourPerformanceItem,
   TourRankings,
 } from "../types";
@@ -26,6 +27,8 @@ export const dashboardApi = {
     apiClient.get<unknown, RevenueTrendItem[]>('/admin/dashboard/revenue-trend', { params: filters }),
   getBookingsTrend: (filters?: DashboardFilters): Promise<BookingsTrendItem[]> =>
     apiClient.get<unknown, BookingsTrendItem[]>('/admin/dashboard/bookings-trend', { params: filters }),
+  getTopDestinations: (filters?: DashboardFilters): Promise<TopDestinationItem[]> =>
+    apiClient.get<unknown, TopDestinationItem[]>('/admin/dashboard/top-destinations', { params: filters }),
   getTourPerformance: (filters?: DashboardFilters): Promise<{ all: TourPerformanceItem[]; rankings: TourRankings }> =>
     apiClient.get<unknown, { all: TourPerformanceItem[]; rankings: TourRankings }>('/admin/dashboard/tour-performance', { params: filters }),
   getInterfacePerformance: (filters?: DashboardFilters): Promise<InterfacePerformanceItem[]> =>

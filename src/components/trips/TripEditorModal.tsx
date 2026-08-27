@@ -96,7 +96,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   onClose,
 }) => {
   const { egyptPackages } = useDataContext();
-  const { data: destinationData } = useLandingPages({ type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 100 });
+  const { data: destinationData } = useLandingPages({ type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 50 });
   const destinations = useMemo(() => {
     const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];
     return pages.map((page) => ({

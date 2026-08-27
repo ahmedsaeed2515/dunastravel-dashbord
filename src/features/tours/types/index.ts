@@ -23,6 +23,18 @@ export interface TourImage {
   sortOrder: number;
 }
 
+export interface TourLandingPageRelation {
+  id: string;
+  slug: string;
+  titleJsonb?: Record<string, unknown>;
+  type: string;
+  isVisible: boolean;
+  status: string;
+  isActive: boolean;
+  isFeatured?: boolean;
+  sortOrder?: number;
+}
+
 export type TourAvailabilityStatus = 'AVAILABLE' | 'LIMITED' | 'SOLD_OUT' | 'CLOSED';
 
 /** A departure-level inventory record. Tour itself has no capacity columns. */
@@ -103,7 +115,7 @@ export interface Tour {
   reviews?: any[];
   activityLogs?: any[];
   bookings?: any[];
-  landingPages?: any[];
+  landingPages?: TourLandingPageRelation[];
   bookingCount?: number;
   reviewCount?: number;
   heroImage?: string | null;

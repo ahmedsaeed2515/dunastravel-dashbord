@@ -156,3 +156,14 @@ export interface RecentActivityItem {
   timestamp: string;
   type: string;
 }
+
+export interface TopDestinationItem {
+  name: string;
+  nameAr: string;
+  countryCode: string;
+  bookingsCount: number;
+  grossRevenue: number;
+  collectedRevenue: number;
+  sharePercent: number;
+  color: string;
+}

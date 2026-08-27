@@ -4,13 +4,23 @@ import { useState } from "react";
 import { WelcomeBanner } from "@/features/dashboard/components/WelcomeBanner";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { KPIGrid } from "@/features/dashboard/components/KPIGrid";
+import { ActionCenter } from "@/features/dashboard/components/ActionCenter";
 import { AnalyticsCharts } from "@/features/dashboard/components/AnalyticsCharts";
 import { RecentBookingsTable } from "@/features/dashboard/components/RecentBookingsTable";
 import { RecentActivityFeed } from "@/features/dashboard/components/RecentActivityFeed";
 import { PopularToursSection } from "@/features/dashboard/components/PopularToursSection";
+import { ConversionFunnelCard } from "@/features/dashboard/components/ConversionFunnelCard";
+import { TrafficAnalyticsCard } from "@/features/dashboard/components/TrafficAnalyticsCard";
 import {
-  useDashboardSummary, useRevenueTrend, useTourPerformance,
-  useRecentBookings, useRecentActivity
+  useDashboardSummary,
+  useRevenueTrend,
+  useTopDestinations,
+  useTourPerformance,
+  useRecentBookings,
+  useRecentActivity,
+  useActionCenter,
+  useConversionFunnel,
+  useTrafficAnalytics,
 } from "@/features/dashboard/hooks/useDashboardData";
 import { DashboardFilters } from "@/features/dashboard/types";
 
@@ -19,16 +29,24 @@ export default function DashboardPage() {
 
   const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary, isRefetching: isRefetchingSummary } = useDashboardSummary(filters);
   const { data: revenueTrend, isLoading: isLoadingRevenue, refetch: refetchRevenue } = useRevenueTrend(filters);
+  const { data: topDestinations, isLoading: isLoadingDestinations, refetch: refetchDestinations } = useTopDestinations(filters);
+  const { data: actionAlerts, isLoading: isLoadingAlerts, refetch: refetchAlerts } = useActionCenter(filters);
   const { data: recentBookings, isLoading: isLoadingRecentBookings, refetch: refetchBookings } = useRecentBookings();
   const { data: recentActivity, isLoading: isLoadingActivity, refetch: refetchActivity } = useRecentActivity();
   const { data: tourPerformance, isLoading: isLoadingTours, isError: isToursError, refetch: refetchTours } = useTourPerformance(filters);
+  const { data: funnelData, isLoading: isLoadingFunnel, refetch: refetchFunnel } = useConversionFunnel(filters);
+  const { data: trafficData, isLoading: isLoadingTraffic, refetch: refetchTraffic } = useTrafficAnalytics(filters);
 
   const handleRefreshAll = () => {
     refetchSummary();
     refetchRevenue();
+    refetchDestinations();
+    refetchAlerts();
     refetchBookings();
     refetchActivity();
     refetchTours();
+    refetchFunnel();
+    refetchTraffic();
   };
 
   return (
@@ -47,13 +65,23 @@ export default function DashboardPage() {
       {/* 2. Executive KPIs Section (8 Cards in 2 Equal Rows) */}
       <KPIGrid data={summary} isLoading={isLoadingSummary} />
 
-      {/* 3. Financial & Revenue Analytics */}
+      {/* 3. Operational Action Center Alerts */}
+      <ActionCenter alerts={actionAlerts} isLoading={isLoadingAlerts} />
+
+      {/* 4. Financial & Revenue Analytics + Destination Breakdown */}
       <AnalyticsCharts
         revenueTrend={revenueTrend}
-        isLoadingRevenue={isLoadingRevenue}
+        topDestinations={topDestinations}
+        isLoadingRevenue={isLoadingRevenue || isLoadingDestinations}
       />
 
-      {/* 4. Recent Bookings Table & System Audit Activity Feed */}
+      {/* 5. Website Conversion Funnel & Traffic / Device Analytics */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <ConversionFunnelCard data={funnelData} isLoading={isLoadingFunnel} />
+        <TrafficAnalyticsCard data={trafficData} isLoading={isLoadingTraffic} />
+      </div>
+
+      {/* 6. Recent Bookings Table & System Audit Activity Feed */}
       <div className="grid gap-6 lg:grid-cols-3">
         <div className="lg:col-span-2">
           <RecentBookingsTable bookings={recentBookings} isLoading={isLoadingRecentBookings} />
@@ -63,7 +91,7 @@ export default function DashboardPage() {
         </div>
       </div>
 
-      {/* 5. Most Popular & High-Demand Tours Section */}
+      {/* 7. Most Popular & High-Demand Tours Section */}
       <PopularToursSection tours={tourPerformance?.rankings?.mostBooked} isLoading={isLoadingTours} isError={isToursError} />
     </div>
   );

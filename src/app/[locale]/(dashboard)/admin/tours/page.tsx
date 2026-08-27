@@ -40,7 +40,9 @@ import Link from "next/link";
 import {
   DESTINATIONS_LIST,
   resolveTourDestination,
-  destinationForCountry
+  destinationForCountry,
+  isTourVisibleOnWebsite,
+  publicDestinationLabelsForTour,
 } from "@/lib/tour-destinations";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
@@ -128,6 +130,7 @@ export default function ToursPage() {
   const isAr = locale === "ar";
 
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
+  const [catalogScope, setCatalogScope] = useState<"ADMIN" | "PUBLIC">("ADMIN");
   const [search, setSearch] = useState("");
   const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
@@ -141,25 +144,34 @@ export default function ToursPage() {
   const removeTour = useSoftDeleteTour();
 
   const tours = data?.data ?? [];
-  const translatedTourCount = useMemo(
-    () => tours.filter((tour) => completion(tour) === LOCALES.length).length,
-    [tours]
+  const visibleWebsiteTours = useMemo(
+    () => tours.filter(isTourVisibleOnWebsite),
+    [tours],
   );
-  const translatedPercent = tours.length
-    ? Math.round((translatedTourCount / tours.length) * 100)
+  const scopedTours = catalogScope === "PUBLIC" ? visibleWebsiteTours : tours;
+  const translatedTourCount = useMemo(
+    () => scopedTours.filter((tour) => completion(tour) === LOCALES.length).length,
+    [scopedTours]
+  );
+  const translatedPercent = scopedTours.length
+    ? Math.round((translatedTourCount / scopedTours.length) * 100)
     : 0;
   const connectedDestinationCount = useMemo(
-    () => new Set(tours.map((tour) => resolveTourDestination(tour))).size,
-    [tours]
+    () => new Set(scopedTours.flatMap((tour) =>
+      catalogScope === "PUBLIC"
+        ? publicDestinationLabelsForTour(tour)
+        : [resolveTourDestination(tour)],
+    )).size,
+    [scopedTours, catalogScope]
   );
   const averageRating = useMemo(() => {
-    const ratings = tours
+    const ratings = scopedTours
       .map((tour) => Number(tour.sourceRating))
       .filter((rating) => Number.isFinite(rating) && rating > 0);
     return ratings.length
       ? (ratings.reduce((sum, rating) => sum + rating, 0) / ratings.length).toFixed(2)
       : '0.00';
-  }, [tours]);
+  }, [scopedTours]);
 
   const handleOpenEditTrip = (tour: Tour) => {
     setSelectedTripForModal(tourToTripModel(tour));
@@ -171,25 +183,32 @@ export default function ToursPage() {
     setIsTripModalOpen(true);
   };
 
-  // Categorize tours by destination
+  // Admin scope diagnoses all records. Website scope uses only the canonical
+  // published destination relationship, matching the customer frontend.
   const destinationCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: tours.length };
+    const counts: Record<string, number> = { ALL: scopedTours.length };
     DESTINATIONS_LIST.forEach((d) => {
       if (d.id !== "ALL") counts[d.id] = 0;
     });
-    tours.forEach((tour) => {
-      const dest = resolveTourDestination(tour);
-      counts[dest] = (counts[dest] || 0) + 1;
+    scopedTours.forEach((tour) => {
+      const destinations = catalogScope === "PUBLIC"
+        ? publicDestinationLabelsForTour(tour)
+        : [resolveTourDestination(tour)];
+      destinations.forEach((destination) => {
+        counts[destination] = (counts[destination] || 0) + 1;
+      });
     });
     return counts;
-  }, [tours]);
+  }, [scopedTours, catalogScope]);
 
   // Filtered tours for the UI
   const filteredTours = useMemo(() => {
-    return tours.filter((tour) => {
+    return scopedTours.filter((tour) => {
       if (selectedDestination !== "ALL") {
-        const dest = resolveTourDestination(tour);
-        if (dest !== selectedDestination) return false;
+        const destinations = catalogScope === "PUBLIC"
+          ? publicDestinationLabelsForTour(tour)
+          : [resolveTourDestination(tour)];
+        if (!destinations.includes(selectedDestination)) return false;
       }
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -200,7 +219,7 @@ export default function ToursPage() {
       }
       return true;
     });
-  }, [tours, selectedDestination, search, locale]);
+  }, [scopedTours, catalogScope, selectedDestination, search, locale]);
 
   const handleDelete = async (tour: Tour) => {
     const title = textFor(tour.titleJsonb, locale) || tour.slug;
@@ -265,7 +284,7 @@ export default function ToursPage() {
               {isAr ? "إجمالي الرحلات النشطة" : "Total Active Trips"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              {stats?.totalTours ?? tours.length} <span className="text-xs font-bold text-amber-500">{isAr ? "رحلة 🗺️" : "Tours 🗺️"}</span>
+                {catalogScope === "PUBLIC" ? visibleWebsiteTours.length : (stats?.totalTours ?? tours.length)} <span className="text-xs font-bold text-amber-500">{isAr ? "رحلة 🗺️" : "Tours 🗺️"}</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
@@ -280,7 +299,7 @@ export default function ToursPage() {
               {isAr ? "مترجمة بالكامل (5 لغات)" : "5-Lang Translated"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              {translatedPercent}% <span className="text-xs font-bold text-emerald-500">({translatedTourCount}/{tours.length}) 🌐</span>
+                {translatedPercent}% <span className="text-xs font-bold text-emerald-500">({translatedTourCount}/{scopedTours.length}) 🌐</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
@@ -343,8 +362,36 @@ export default function ToursPage() {
         </TabsList>
 
         {/* Tab 1: Trips Grid & 5-Lang Translations */}
-        <TabsContent value="grid" className="space-y-6">
-          {/* Destination Selector & Search Bar */}
+          <TabsContent value="grid" className="space-y-6">
+           <Card className="p-3 bg-card border border-border/80 rounded-2xl flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+             <div>
+               <p className="text-xs font-black text-foreground">
+                 {isAr ? "مصدر العد" : "Count scope"}
+               </p>
+               <p className="text-[11px] text-muted-foreground">
+                 {catalogScope === "PUBLIC"
+                   ? (isAr ? "الرحلات الظاهرة حالياً على موقع العملاء فقط." : "Only tours currently visible on the customer website.")
+                   : (isAr ? "كل سجلات الإدارة، بما فيها غير المرتبط أو غير المنشور." : "All admin records, including unpublished or unlinked tours.")}
+               </p>
+             </div>
+             <div className="inline-flex rounded-xl border border-border p-1 bg-muted/40 self-start sm:self-auto">
+               <button
+                 type="button"
+                 onClick={() => { setCatalogScope("PUBLIC"); setSelectedDestination("ALL"); }}
+                 className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${catalogScope === "PUBLIC" ? "bg-emerald-500 text-white" : "text-muted-foreground hover:text-foreground"}`}
+               >
+                 {isAr ? "الظاهر بالموقع" : "Visible on website"}
+               </button>
+               <button
+                 type="button"
+                 onClick={() => { setCatalogScope("ADMIN"); setSelectedDestination("ALL"); }}
+                 className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${catalogScope === "ADMIN" ? "bg-amber-500 text-slate-950" : "text-muted-foreground hover:text-foreground"}`}
+               >
+                 {isAr ? "كل السجلات" : "All admin records"}
+               </button>
+             </div>
+           </Card>
+           {/* Destination Selector & Search Bar */}
           <Card className="p-4 bg-card border border-border/80 rounded-2xl shadow-xs space-y-3">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               {/* Destination Filter Bar */}

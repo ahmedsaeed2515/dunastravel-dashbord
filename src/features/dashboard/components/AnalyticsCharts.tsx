@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { 
   BarChart3, 
@@ -15,6 +15,7 @@ import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 
 import { useParams } from "next/navigation";
 import { Link } from "@/i18n/routing";
 import { adminRoutes } from "@/config/admin-routes";
+import { TopDestinationItem } from "../types";
 
 interface AnalyticsChartsProps {
   revenueTrend?: Array<{
@@ -23,10 +24,11 @@ interface AnalyticsChartsProps {
     collected: number;
     bookingsCount: number;
   }>;
+  topDestinations?: TopDestinationItem[];
   isLoadingRevenue?: boolean;
 }
 
-export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsChartsProps) {
+export function AnalyticsCharts({ revenueTrend, topDestinations, isLoadingRevenue }: AnalyticsChartsProps) {
   const params = useParams();
   const isAr = params?.locale === "ar";
   const [selectedYear, setSelectedYear] = useState<"2026" | "2025" | "6m">("2026");
@@ -69,8 +71,8 @@ export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsCha
 
   const monthlyData = dynamicTrend && dynamicTrend.length > 0 ? dynamicTrend : fallbackMonthlyData;
 
-  // Destinations breakdown data matching the image
-  const destinations = [
+  // Destinations breakdown data
+  const fallbackDestinations = [
     {
       name: isAr ? "EG مصر والرحلات النيلية" : "EG Egypt & Nile Cruises",
       percent: 48,
@@ -107,6 +109,19 @@ export function AnalyticsCharts({ revenueTrend, isLoadingRevenue }: AnalyticsCha
       textColor: "text-pink-600 dark:text-pink-400",
     },
   ];
+
+  const destinations = useMemo(() => {
+    if (Array.isArray(topDestinations) && topDestinations.length > 0) {
+      return topDestinations.map((d) => ({
+        name: isAr ? `${d.countryCode} ${d.nameAr || d.name}` : `${d.countryCode} ${d.name}`,
+        percent: d.sharePercent,
+        amount: `$${Number(d.grossRevenue || d.collectedRevenue || 0).toLocaleString()}`,
+        color: d.color || "bg-amber-500",
+        textColor: "text-foreground font-semibold",
+      }));
+    }
+    return fallbackDestinations;
+  }, [topDestinations, isAr]);
 
   return (
     <Card className="p-5 sm:p-6 bg-card border border-border/80 rounded-3xl shadow-sm space-y-6">

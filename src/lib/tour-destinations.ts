@@ -10,7 +10,20 @@ export const DESTINATIONS_LIST = [
   { id: "Tunisia", nameEn: "Tunisia", nameAr: "تونس", flag: "🇹🇳", code: "TN" },
   { id: "Greece", nameEn: "Greece", nameAr: "اليونان", flag: "🇬🇷", code: "GR" },
   { id: "Multi-Country", nameEn: "Multi-Country", nameAr: "مشترك", flag: "🌍", code: "MC" },
+  { id: "Religious", nameEn: "Religious", nameAr: "دينية", flag: "🕊️", code: "RL" },
 ] as const;
+
+const CANONICAL_DESTINATION_LABELS: Record<string, string> = {
+  egypt: "Egypt",
+  turkey: "Turkey",
+  jordan: "Jordan",
+  morocco: "Morocco",
+  dubai: "Dubai",
+  tunisia: "Tunisia",
+  greece: "Greece",
+  "multi-country": "Multi-Country",
+  religious: "Religious",
+};
 
 export const DEST_FLAGS: Record<string, string> = {
   egypt: "🇪🇬",
@@ -254,4 +267,30 @@ export function resolveTourDestination(tour: Tour): string {
   }
 
   return "Egypt";
+}
+
+/**
+ * A tour is public only when the tour and at least one destination relation
+ * satisfy the same publication requirements used by the customer catalog.
+ * Country/title/slug fallbacks are intentionally forbidden here: they are
+ * useful for diagnosing old admin records, not for deciding website display.
+ */
+export function publicDestinationLabelsForTour(tour: Tour): string[] {
+  if (tour.status !== "PUBLISHED" || !tour.isActive) return [];
+
+  return [...new Set(
+    (tour.landingPages || [])
+      .filter((relation) =>
+        relation.type === "DESTINATION" &&
+        relation.isVisible === true &&
+        relation.status === "PUBLISHED" &&
+        relation.isActive === true,
+      )
+      .map((relation) => CANONICAL_DESTINATION_LABELS[relation.slug.trim().toLowerCase()])
+      .filter((label): label is string => Boolean(label)),
+  )];
+}
+
+export function isTourVisibleOnWebsite(tour: Tour): boolean {
+  return publicDestinationLabelsForTour(tour).length > 0;
 }
