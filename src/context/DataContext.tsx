@@ -393,10 +393,24 @@ export const DataProvider: React.FC<{ children: React.ReactNode }> = ({ children
   );
 };
 
+const DEFAULT_DATA_CONTEXT: DataContextType = {
+  trips: [],
+  hotels: INITIAL_HOTELS,
+  destinations: DESTINATIONS_LIST,
+  egyptPackages: EGYPT_PACKAGES_LIST,
+  addTrip: () => {},
+  updateTrip: () => {},
+  deleteTrip: () => {},
+  transferTrip: () => {},
+  addHotel: () => {},
+  updateHotel: () => {},
+  deleteHotel: () => {},
+};
+
 export const useDataContext = () => {
   const context = useContext(DataContext);
   if (!context) {
-    throw new Error('useDataContext must be used within a DataProvider');
+    return DEFAULT_DATA_CONTEXT;
   }
   return context;
 };

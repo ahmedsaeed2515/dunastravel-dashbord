@@ -61,32 +61,50 @@ export function buildTripEditorPayload(
 ): CreateTourPayload {
   const translations = formData.translations;
   const images = (formData.images ?? [])
-    .filter((image): image is string => /^https?:\/\//i.test(image.trim()))
+    .filter((image): image is string => typeof image === 'string' && /^https?:\/\//i.test(image.trim()))
     .filter((image, index, values) => values.indexOf(image) === index)
     .map((imageUrl, index) => ({ imageUrl, isHero: index === 0, sortOrder: index }));
+
   const itinerary = (formData.itinerary ?? [])
     .filter((day) => Boolean(text(day.title).trim() || text(day.description).trim() || text(day.meals).trim()))
     .map((day, index) => ({
-    dayLabel: text(day.title).trim() || `Day ${day.day || index + 1}`,
-    descriptionJsonb: Object.fromEntries(LOCALES.map((locale) => [
-      locale,
-      locale === 'ar'
-        ? text(day.description)
-        : text(translation(translations, locale).itinerary?.[index]?.description),
-    ])),
-    mealsJsonb: Object.fromEntries(LOCALES.map((locale) => [
-      locale,
-      locale === 'ar'
-        ? text(day.meals)
-        : text(translation(translations, locale).itinerary?.[index]?.meals),
-    ])),
-    sortOrder: index,
-  }));
+      dayLabel: text(day.title).trim() || `Day ${day.day || index + 1}`,
+      descriptionJsonb: Object.fromEntries(LOCALES.map((locale) => [
+        locale,
+        locale === 'ar'
+          ? text(day.description)
+          : text(translation(translations, locale).itinerary?.[index]?.description),
+      ])),
+      mealsJsonb: Object.fromEntries(LOCALES.map((locale) => [
+        locale,
+        locale === 'ar'
+          ? text(day.meals)
+          : text(translation(translations, locale).itinerary?.[index]?.meals),
+      ])),
+      sortOrder: index,
+    }));
+
   const price = Number(formData.price);
   if (!Number.isFinite(price) || price < 0) {
     throw new Error('A real base price is required before this tour can be saved.');
   }
   const city = formData.accommodation?.[0]?.destination?.trim() || null;
+
+  const tags: string[] = [];
+  if (formData.popular) tags.push('popular');
+  if (formData.luxury) tags.push('luxury');
+  if (formData.honeymoon) tags.push('honeymoon');
+  if (formData.cultural) tags.push('cultural');
+  if (formData.adventure) tags.push('adventure');
+  if (formData.familyFriendly) tags.push('family');
+
+  const hotelInfoJsonb = (formData.accommodation && formData.accommodation.length > 0) || formData.hotelCategory || formData.hotels
+    ? {
+        hotelCategory: text(formData.hotelCategory),
+        notes: text(formData.hotels),
+        accommodation: formData.accommodation ?? [],
+      }
+    : null;
 
   return {
     slug: text(formData.slug),
@@ -97,10 +115,14 @@ export function buildTripEditorPayload(
     category: text(formData.type) || null,
     country: countryForDestination(text(formData.destination)),
     city,
+    market: text(formData.market) || null,
+    tags: tags.length > 0 ? tags : undefined,
     basePriceUsd: price,
     currency: 'USD',
     isFeatured: Boolean(formData.popular),
     ...(isNew ? { status: 'DRAFT' as const, isActive: false } : {}),
+    hotelInfoJsonb,
+    departureInfoJsonb: formData.departures ? { ar: text(formData.departures), en: text(formData.departures) } : undefined,
     includedServicesJsonb: localizedList(translations, 'included', formData.included),
     excludedServicesJsonb: localizedList(translations, 'excluded', formData.excluded),
     highlightsJsonb: localizedList(translations, 'highlights', formData.highlights),

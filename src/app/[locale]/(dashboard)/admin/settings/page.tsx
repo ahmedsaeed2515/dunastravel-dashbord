@@ -17,11 +17,11 @@ export default function SettingsPage() {
   const tCommon = useTranslations("common");
 
   const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
-  const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', true);
+  const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', false);
   const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
   const requireEmailVerification = typeof requireAuthSetting === 'boolean'
     ? requireAuthSetting
-    : true;
+    : false;
   
   return (
     <RequirePermission action="manage" resource="settings">
@@ -111,8 +111,13 @@ export default function SettingsPage() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="flex items-center justify-between p-4 border border-border/70 rounded-lg bg-muted/20">
-                  <div className="space-y-0.5">
+                  <div className="space-y-1 pe-6">
                     <h4 className="font-semibold text-sm">Require Email Verification</h4>
+                    <p className="text-xs text-muted-foreground">
+                      {requireEmailVerification
+                        ? 'New accounts must confirm their email before they can sign in.'
+                        : 'New accounts are activated immediately. Enable this only after email delivery is verified.'}
+                    </p>
                   </div>
                   <Switch 
                     checked={requireEmailVerification}

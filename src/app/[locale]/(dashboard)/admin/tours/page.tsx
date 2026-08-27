@@ -37,6 +37,11 @@ import { useSoftDeleteTour, useTour, useTours, useTourStats } from "@/features/t
 import type { Tour } from "@/features/tours/types";
 import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
+import { 
+  DESTINATIONS_LIST, 
+  resolveTourDestination, 
+  destinationForCountry 
+} from "@/lib/tour-destinations";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 
@@ -46,15 +51,6 @@ function localeText(value: Record<string, unknown> | null | undefined, locale: s
 
 function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
   return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
-}
-
-function destinationForCountry(country: string | null | undefined): string {
-  const normalized = country?.trim().toLowerCase() || "";
-  return {
-    "united arab emirates": "dubai",
-    "multi country": "multi-country",
-    "multi-country": "multi-country",
-  }[normalized] || normalized;
 }
 
 function tourToTripModel(tour: Tour): TripModel {
@@ -124,219 +120,6 @@ function textFor(value: Record<string, unknown> | null | undefined, locale: stri
 
 function completion(tour: Tour) {
   return LOCALES.filter((locale) => Boolean(textFor(tour.titleJsonb, locale))).length;
-}
-
-export const DESTINATIONS_LIST = [
-  { id: "ALL", nameEn: "All Destinations", nameAr: "جميع الواجهات الـ 8", flag: "🌐", code: "ALL" },
-  { id: "Egypt", nameEn: "Egypt", nameAr: "مصر", flag: "🇪🇬", code: "EG" },
-  { id: "Turkey", nameEn: "Turkey", nameAr: "تركيا", flag: "🇹🇷", code: "TR" },
-  { id: "Jordan", nameEn: "Jordan", nameAr: "الأردن", flag: "🇯🇴", code: "JO" },
-  { id: "Morocco", nameEn: "Morocco", nameAr: "المغرب", flag: "🇲🇦", code: "MA" },
-  { id: "Dubai", nameEn: "Dubai & UAE", nameAr: "دبي والإمارات", flag: "🇦🇪", code: "AE" },
-  { id: "Tunisia", nameEn: "Tunisia", nameAr: "تونس", flag: "🇹🇳", code: "TN" },
-  { id: "Greece", nameEn: "Greece", nameAr: "اليونان", flag: "🇬🇷", code: "GR" },
-  { id: "Multi-Country", nameEn: "Multi-Country", nameAr: "مشترك", flag: "🌍", code: "MC" },
-] as const;
-
-export function resolveTourDestination(tour: Tour): string {
-  // The admin API includes the canonical TourLandingPage relation. Prefer it
-  // so display titles/slugs can never reclassify a tour into another country.
-  const relatedDestination = tour.landingPages?.find((relation: any) => relation?.type === "DESTINATION")?.slug;
-  const canonical = String(relatedDestination || "").trim().toLowerCase();
-  const canonicalLabels: Record<string, string> = {
-    egypt: "Egypt",
-    turkey: "Turkey",
-    jordan: "Jordan",
-    morocco: "Morocco",
-    dubai: "Dubai",
-    tunisia: "Tunisia",
-    greece: "Greece",
-    "multi-country": "Multi-Country",
-  };
-  if (canonicalLabels[canonical]) return canonicalLabels[canonical];
-
-  const country = String(tour.country || "").trim().toLowerCase();
-  const countryCanonical = country === "united arab emirates" ? "dubai" : country === "multi country" ? "multi-country" : country;
-  if (canonicalLabels[countryCanonical]) return canonicalLabels[countryCanonical];
-  return "";
-
-  const c = (tour.country || "").trim().toLowerCase();
-  const cat = (tour.category || "").trim().toLowerCase();
-  const slug = (tour.slug || "").trim().toLowerCase();
-  const titleEn = ((tour.titleJsonb?.en as string) || "").toLowerCase();
-  const titleAr = ((tour.titleJsonb?.ar as string) || "").toLowerCase();
-  const titleEs = ((tour.titleJsonb?.es as string) || "").toLowerCase();
-
-  // Multi-Country check first (if tour connects multiple countries or is tagged multi-country)
-  if (
-    c.includes("multi") ||
-    cat.includes("multi") ||
-    slug.includes("and-") ||
-    slug.includes("stars-of-the-middle-east") ||
-    slug.includes("estrellas-medio-oriente") ||
-    slug.includes("jewels-of-egypt-and-jordan") ||
-    slug.includes("spices-of-egypt-and-morocco") ||
-    slug.includes("egypt-and-dubai") ||
-    slug.includes("treasures-of-egypt-and-tunisia") ||
-    slug.includes("marvels-of-dubai-and-turkey") ||
-    slug.includes("essences-of-egypt-and-turkey") ||
-    slug.includes("cairo-and-athens") ||
-    titleEn.includes("&") ||
-    titleEn.includes("and") ||
-    (titleAr.includes("و") && (titleAr.includes("مصر") && titleAr.includes("الأردن") || titleAr.includes("دبي") && titleAr.includes("مصر") || titleAr.includes("تونس") && titleAr.includes("مصر") || titleAr.includes("تركيا") && titleAr.includes("دبي")))
-  ) {
-    return "Multi-Country";
-  }
-
-  if (
-    c.includes("egypt") ||
-    cat.includes("egypt") ||
-    cat.includes("egito") ||
-    cat.includes("egipto") ||
-    cat.includes("cruzeiro") ||
-    slug.includes("egypt") ||
-    slug.includes("cairo") ||
-    slug.includes("sharm") ||
-    slug.includes("hurghada") ||
-    slug.includes("nile") ||
-    slug.includes("ramses") ||
-    slug.includes("egito") ||
-    slug.includes("tesouros") ||
-    slug.includes("grande-ramses") ||
-    slug.includes("wonders-of-egypt") ||
-    titleEn.includes("egypt") ||
-    titleAr.includes("مصر") ||
-    titleAr.includes("القاهرة") ||
-    titleAr.includes("شرم") ||
-    titleAr.includes("الغردقة") ||
-    titleAr.includes("النيل")
-  ) {
-    return "Egypt";
-  }
-
-  if (
-    c.includes("turkey") ||
-    c.includes("türkiye") ||
-    cat.includes("turkey") ||
-    cat.includes("turquía") ||
-    cat.includes("turquia") ||
-    cat.includes("turchia") ||
-    slug.includes("turkey") ||
-    slug.includes("turquia") ||
-    slug.includes("turquia-legendaria") ||
-    slug.includes("istanbul") ||
-    slug.includes("cappadocia") ||
-    slug.includes("antalya") ||
-    slug.includes("ist-") ||
-    slug.includes("reg-01") ||
-    slug.includes("reg-03") ||
-    slug.includes("reg-04") ||
-    slug.includes("reg-05") ||
-    slug.includes("reg-06") ||
-    slug.includes("reg-07") ||
-    slug.includes("reg-08") ||
-    slug.includes("reg-09") ||
-    slug.includes("reg-10") ||
-    slug.includes("reg-11") ||
-    slug.includes("reg-12") ||
-    slug.includes("reg-13") ||
-    slug.includes("reg-14") ||
-    slug.includes("passion-of-turkey") ||
-    titleEn.includes("turkey") ||
-    titleAr.includes("تركيا") ||
-    titleAr.includes("إسطنبول") ||
-    titleAr.includes("كابادوكيا") ||
-    titleAr.includes("أنطاليا")
-  ) {
-    return "Turkey";
-  }
-
-  if (
-    c.includes("jordan") ||
-    cat.includes("jordan") ||
-    cat.includes("jordania") ||
-    slug.includes("jordan") ||
-    slug.includes("jewels-of-jordan") ||
-    slug.includes("reg-15") ||
-    slug.includes("reg-16") ||
-    slug.includes("reg-17") ||
-    slug.includes("reg-18") ||
-    slug.includes("reg-19") ||
-    slug.includes("reg-20") ||
-    slug.includes("reg-21") ||
-    titleEn.includes("jordan") ||
-    titleAr.includes("الأردن") ||
-    titleAr.includes("البتراء")
-  ) {
-    return "Jordan";
-  }
-
-  if (
-    c.includes("morocco") ||
-    cat.includes("morocco") ||
-    cat.includes("marruecos") ||
-    slug.includes("morocco") ||
-    slug.includes("spices-of-morocco") ||
-    slug.includes("mrc-") ||
-    titleEn.includes("morocco") ||
-    titleAr.includes("المغرب")
-  ) {
-    return "Morocco";
-  }
-
-  if (
-    c.includes("emirates") ||
-    c.includes("dubai") ||
-    c.includes("uae") ||
-    cat.includes("emirates") ||
-    cat.includes("dubai") ||
-    cat.includes("honeymoon") ||
-    slug.includes("dubai") ||
-    slug.includes("emirates") ||
-    slug.includes("abu-dhabi") ||
-    slug.includes("hm001") ||
-    slug.includes("hm002") ||
-    slug.includes("reg-22") ||
-    slug.includes("reg-23") ||
-    slug.includes("reg-24") ||
-    slug.includes("reg-25") ||
-    slug.includes("reg-26") ||
-    slug.includes("reg-27") ||
-    slug.includes("reg-28") ||
-    titleEn.includes("dubai") ||
-    titleAr.includes("دبي") ||
-    titleAr.includes("الإمارات") ||
-    titleAr.includes("أبوظبي")
-  ) {
-    return "Dubai";
-  }
-
-  if (
-    c.includes("tunisia") ||
-    cat.includes("tunisia") ||
-    cat.includes("túnez") ||
-    slug.includes("tunisia") ||
-    titleEn.includes("tunisia") ||
-    titleAr.includes("تونس")
-  ) {
-    return "Tunisia";
-  }
-
-  if (
-    c.includes("greece") ||
-    cat.includes("greece") ||
-    cat.includes("grecia") ||
-    slug.includes("greece") ||
-    slug.includes("grecia") ||
-    slug.includes("lo-mejor-de-grecia") ||
-    titleEn.includes("greece") ||
-    titleAr.includes("اليونان") ||
-    titleAr.includes("أثينا")
-  ) {
-    return "Greece";
-  }
-
-  return "Egypt";
 }
 
 export default function ToursPage() {

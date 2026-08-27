@@ -47,4 +47,33 @@ describe('buildTripEditorPayload', () => {
     expect(payload).toMatchObject({ status: 'DRAFT', isActive: false, city: null, basePriceUsd: 900, images: [] });
     expect(payload.itineraries).toEqual([]);
   });
+
+  it('correctly serializes accommodation breakdown, market, and category tags', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'nile-luxury-experience',
+      title: 'Nile Luxury',
+      destination: 'egypt',
+      price: 2500,
+      market: 'España',
+      popular: true,
+      luxury: true,
+      hotelCategory: '5 Stars Deluxe',
+      accommodation: [
+        { destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' },
+        { destination: 'Luxor', nights: 4, regime: 'Full Board' },
+      ],
+    }, false);
+
+    expect(payload.market).toBe('España');
+    expect(payload.city).toBe('Cairo');
+    expect(payload.tags).toEqual(expect.arrayContaining(['popular', 'luxury']));
+    expect(payload.hotelInfoJsonb).toEqual({
+      hotelCategory: '5 Stars Deluxe',
+      notes: '',
+      accommodation: [
+        { destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' },
+        { destination: 'Luxor', nights: 4, regime: 'Full Board' },
+      ],
+    });
+  });
 });

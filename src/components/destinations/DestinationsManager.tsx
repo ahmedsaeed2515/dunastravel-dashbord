@@ -8,7 +8,13 @@ import { TransferTripModal } from '@/components/trips/TransferTripModal';
 import { useTours, useSoftDeleteTour, useClearAllTours } from '@/features/tours/hooks/useTours';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import type { Tour } from '@/features/tours/types';
-import { resolveTourDestination } from '@/app/[locale]/(dashboard)/admin/tours/page';
+import { 
+  resolveTourDestination, 
+  DESTINATIONS_LIST, 
+  DEST_FLAGS, 
+  DEST_GRADIENTS 
+} from '@/lib/tour-destinations';
+import { extractToursList } from '@/lib/extract-tours';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -132,23 +138,31 @@ function convertTourToTripModel(tour: Tour): TripModel {
   };
 }
 
-import { extractToursList } from '@/lib/extract-tours';
-
 export const DestinationsManager: React.FC = React.memo(() => {
   // Destination identities and tour records both come from the canonical API.
   // DataContext remains only for the separately managed Egypt package labels.
   const { egyptPackages } = useDataContext();
-  const { data: destinationData, isLoading: isLoadingDestinations, error: destinationsError } = useLandingPages({
+  const { data: destinationData, isLoading: isLoadingDestinations } = useLandingPages({
     type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 100,
   });
   const destinations = useMemo(() => {
     const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];
+    if (pages.length === 0) {
+      return DESTINATIONS_LIST.filter(d => d.id !== 'ALL').map(d => ({
+        id: d.id.toLowerCase(),
+        nameAr: d.nameAr,
+        nameEn: d.nameEn,
+        flag: d.flag,
+        gradient: DEST_GRADIENTS[d.id.toLowerCase()] || 'from-amber-500/20 to-amber-600/10',
+        description: d.nameAr,
+      }));
+    }
     return pages.map((page) => ({
       id: page.slug,
       nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
       nameEn: page.titleJsonb?.en || page.slug,
-      flag: '',
-      gradient: 'from-amber-500/20 to-amber-600/10',
+      flag: DEST_FLAGS[page.slug.toLowerCase()] || '📍',
+      gradient: DEST_GRADIENTS[page.slug.toLowerCase()] || 'from-amber-500/20 to-amber-600/10',
       description: page.briefJsonb?.ar || page.briefJsonb?.en || page.descriptionJsonb?.en || '',
     }));
   }, [destinationData]);
@@ -276,16 +290,12 @@ export const DestinationsManager: React.FC = React.memo(() => {
     setIsEditorOpen(true);
   }, []);
 
-  if (isLoadingDestinations || isLoadingTours) {
+  if (isLoadingDestinations && isLoadingTours) {
     return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-amber-500" /></div>;
   }
 
-  if (destinationsError) {
-    return <div className="rounded-3xl border border-red-300 bg-red-50 p-8 text-center text-red-800">Destinations could not be loaded from the Backend.</div>;
-  }
-
   if (!activeDestination) {
-    return <div className="rounded-3xl border border-dashed border-border/80 p-8 text-center text-muted-foreground">No published destinations are currently available.</div>;
+    return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-amber-500" /></div>;
   }
 
   return (

@@ -19,6 +19,7 @@ const montserrat = Montserrat({
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryProvider } from "@/components/providers/query-provider";
+import { DataProvider } from "@/context/DataContext";
 import { Toaster } from "@/components/ui/sonner";
 
 export function generateStaticParams() {
@@ -53,9 +54,11 @@ export default async function LocaleLayout({
               disableTransitionOnChange
             >
               <QueryProvider>
-                <TooltipProvider>
-                  {children}
-                </TooltipProvider>
+                <DataProvider>
+                  <TooltipProvider>
+                    {children}
+                  </TooltipProvider>
+                </DataProvider>
               </QueryProvider>
               <Toaster position={dir === 'rtl' ? 'top-left' : 'top-right'} richColors />
             </ThemeProvider>
