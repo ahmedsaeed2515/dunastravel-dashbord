@@ -5,24 +5,24 @@ describe('buildTripEditorPayload', () => {
   it('preserves existing non-Arabic content when Arabic is edited', () => {
     const payload = buildTripEditorPayload({
       slug: 'dubai-tour',
-      title: 'عنوان عربي جديد',
+      title: 'Arabic title',
       destination: 'dubai',
       duration: '',
       price: 0,
       translations: {
-        ar: { title: 'عنوان عربي سابق' },
+        ar: { title: 'Previous Arabic title' },
         en: { title: 'Existing English', overview: 'Existing English overview', duration: '4 days' },
-        es: { title: 'Título existente' },
-        pt: { title: 'Título existente PT' },
+        es: { title: 'Titulo existente' },
+        pt: { title: 'Titulo existente PT' },
         it: { title: 'Titolo esistente' },
       },
     }, false);
 
     expect(payload.titleJsonb).toEqual({
-      ar: 'عنوان عربي جديد',
+      ar: 'Arabic title',
       en: 'Existing English',
-      es: 'Título existente',
-      pt: 'Título existente PT',
+      es: 'Titulo existente',
+      pt: 'Titulo existente PT',
       it: 'Titolo esistente',
     });
     expect(payload.durationJsonb).toMatchObject({ en: '4 days' });
@@ -30,16 +30,21 @@ describe('buildTripEditorPayload', () => {
     expect(payload).not.toHaveProperty('status');
   });
 
-  it('creates incomplete tours as drafts without fabricated city, price, itinerary, or media', () => {
-    const payload = buildTripEditorPayload({ slug: 'new-tour', title: 'عنوان', destination: 'egypt' }, true);
+  it('rejects a missing price instead of inserting a placeholder value', () => {
+    expect(() => buildTripEditorPayload({ slug: 'new-tour', title: 'Title', destination: 'egypt' }, true))
+      .toThrow('A real base price is required');
+  });
 
-    expect(payload).toMatchObject({
-      status: 'DRAFT',
-      isActive: false,
-      city: null,
-      basePriceUsd: 0,
-      itineraries: [],
-      images: [],
-    });
+  it('omits blank itinerary rows and keeps a draft save non-destructive', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'new-tour',
+      title: 'Title',
+      destination: 'egypt',
+      price: 900,
+      itinerary: [{ day: 1, title: '', description: '', meals: '' }],
+    }, true);
+
+    expect(payload).toMatchObject({ status: 'DRAFT', isActive: false, city: null, basePriceUsd: 900, images: [] });
+    expect(payload.itineraries).toEqual([]);
   });
 });

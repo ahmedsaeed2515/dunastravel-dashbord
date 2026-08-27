@@ -56,7 +56,6 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   type: '',
   duration: '',
   departures: '',
-  price: 0,
   hotelCategory: '',
   rating: 0,
   reviewCount: 0,
@@ -145,6 +144,12 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       return;
     }
 
+    const price = Number(formData.price);
+    if (!Number.isFinite(price) || price < 0) {
+      toast.error('Enter the actual base price before saving. No placeholder price will be applied.');
+      return;
+    }
+
     const rawSlug = formData.slug || formData.title || '';
     const cleanSlug = formatSlug(rawSlug) || `tour-${Date.now()}`;
 
@@ -190,10 +195,16 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   // Itinerary helper
-  const addItineraryDay = () => {
+  const addLegacyItineraryDay = () => {
     const days = [...(formData.itinerary || [])];
     const nextDayNum = days.length + 1;
     days.push({ day: nextDayNum, title: `عنوان اليوم ${nextDayNum}`, description: '', meals: 'الإفطار' });
+    handleChange('itinerary', days);
+  };
+
+  const addItineraryDay = () => {
+    const days = [...(formData.itinerary || [])];
+    days.push({ day: days.length + 1, title: '', description: '', meals: '' });
     handleChange('itinerary', days);
   };
 

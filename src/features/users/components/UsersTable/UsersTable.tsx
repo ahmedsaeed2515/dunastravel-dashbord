@@ -49,9 +49,7 @@ export function UsersTable() {
     setIsDialogOpen(true);
   };
 
-  const handleDelete = (user: User) => {
-    console.log("Delete:", user);
-  };
+  const handleDelete = () => {};
 
   const columns = getColumns(handleView, handleEdit, handleDelete, tUsers, tCommon);
 

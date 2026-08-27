@@ -64,8 +64,10 @@ export function buildTripEditorPayload(
     .filter((image): image is string => /^https?:\/\//i.test(image.trim()))
     .filter((image, index, values) => values.indexOf(image) === index)
     .map((imageUrl, index) => ({ imageUrl, isHero: index === 0, sortOrder: index }));
-  const itinerary = (formData.itinerary ?? []).map((day, index) => ({
-    dayLabel: text(day.title) || `Day ${day.day || index + 1}`,
+  const itinerary = (formData.itinerary ?? [])
+    .filter((day) => Boolean(text(day.title).trim() || text(day.description).trim() || text(day.meals).trim()))
+    .map((day, index) => ({
+    dayLabel: text(day.title).trim() || `Day ${day.day || index + 1}`,
     descriptionJsonb: Object.fromEntries(LOCALES.map((locale) => [
       locale,
       locale === 'ar'
@@ -81,6 +83,9 @@ export function buildTripEditorPayload(
     sortOrder: index,
   }));
   const price = Number(formData.price);
+  if (!Number.isFinite(price) || price < 0) {
+    throw new Error('A real base price is required before this tour can be saved.');
+  }
   const city = formData.accommodation?.[0]?.destination?.trim() || null;
 
   return {
@@ -92,7 +97,7 @@ export function buildTripEditorPayload(
     category: text(formData.type) || null,
     country: countryForDestination(text(formData.destination)),
     city,
-    basePriceUsd: Number.isFinite(price) && price >= 0 ? price : 0,
+    basePriceUsd: price,
     currency: 'USD',
     isFeatured: Boolean(formData.popular),
     ...(isNew ? { status: 'DRAFT' as const, isActive: false } : {}),
