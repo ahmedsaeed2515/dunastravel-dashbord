@@ -4,11 +4,26 @@ export interface HotelRoomRecord {
   id: string;
   slug: string;
   name: Record<string, string>;
+  description?: Record<string, string> | null;
   ratePerNight: number;
   currency: string;
+  mealPlan?: Record<string, string> | null;
   maxOccupancy: number;
   inventory: number;
   isActive: boolean;
+}
+
+export interface HotelRoomPayload {
+  slug: string;
+  nameJsonb: Record<string, string>;
+  descriptionJsonb?: Record<string, string>;
+  ratePerNight: number;
+  currency?: string;
+  mealPlanJsonb?: Record<string, string>;
+  maxOccupancy: number;
+  inventory: number;
+  isActive?: boolean;
+  sortOrder?: number;
 }
 
 export interface AdminHotel {
@@ -66,6 +81,7 @@ export interface HotelPayload {
   heroMediaId?: string;
   status: HotelStatus;
   isActive: boolean;
-  rooms?: any[];
+  rooms?: HotelRoomPayload[];
 }
+
 
