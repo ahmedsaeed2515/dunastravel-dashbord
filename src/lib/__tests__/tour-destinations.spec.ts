@@ -54,4 +54,44 @@ describe("public website tour visibility", () => {
     expect(isTourVisibleOnWebsite(value)).toBe(false);
     expect(publicDestinationLabelsForTour(value)).toEqual([]);
   });
+
+  it("handles multi-country and religious destination relations correctly", () => {
+    const multi = tour({
+      slug: "stars-of-the-middle-east-16-days",
+      landingPages: [{
+        id: "landing-mc",
+        slug: "multi-country",
+        type: "DESTINATION",
+        isVisible: true,
+        status: "PUBLISHED",
+        isActive: true,
+      }],
+    });
+    expect(isTourVisibleOnWebsite(multi)).toBe(true);
+    expect(publicDestinationLabelsForTour(multi)).toEqual(["Multi-Country"]);
+
+    const holyFamily = tour({
+      slug: "journey-of-the-holy-family-10-days",
+      landingPages: [
+        {
+          id: "landing-egypt",
+          slug: "egypt",
+          type: "DESTINATION",
+          isVisible: true,
+          status: "PUBLISHED",
+          isActive: true,
+        },
+        {
+          id: "landing-rel",
+          slug: "religious",
+          type: "DESTINATION",
+          isVisible: true,
+          status: "PUBLISHED",
+          isActive: true,
+        },
+      ],
+    });
+    expect(isTourVisibleOnWebsite(holyFamily)).toBe(true);
+    expect(publicDestinationLabelsForTour(holyFamily)).toEqual(["Egypt", "Religious"]);
+  });
 });

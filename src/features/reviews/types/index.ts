@@ -4,16 +4,29 @@ export type ReviewStatus = 'PENDING' | 'APPROVED' | 'REJECTED';
 export interface Review {
   id: string;
   tourId: string;
-  userId: string | null;
+  userId?: string | null;
+  bookingId?: string | null;
   reviewerName: string;
   rating: number;
-  comment: string | null;
+  comment?: string | null;
+  adminReply?: string | null;
+  status: ReviewStatus;
   isPublished: boolean;
-  publishedAt: string | null;
+  publishedAt?: string | null;
   createdAt: string;
   updatedAt: string;
-  tour?: { titleJsonb: any; slug: string };
-  user?: { name: string; email: string };
+  deletedAt?: string | null;
+  tour?: {
+    id?: string;
+    slug?: string;
+    titleJsonb?: Record<string, string>;
+    title?: string;
+  };
+  user?: {
+    id?: string;
+    name?: string;
+    email?: string;
+  } | null;
 }
 
 export interface PaginatedResponse<T> {
@@ -27,7 +40,33 @@ export interface PaginatedResponse<T> {
 }
 
 export interface ReviewQueryFilters {
-  isPublished?: boolean;
   page?: number;
   limit?: number;
+  tourId?: string;
+  status?: ReviewStatus | 'ALL';
+  isPublished?: boolean;
+  rating?: number;
+  search?: string;
 }
+
+export interface CreateReviewDraft {
+  tourId: string;
+  reviewerName: string;
+  rating: number;
+  comment?: string;
+  adminReply?: string;
+  status?: ReviewStatus;
+  isPublished?: boolean;
+}
+
+export interface UpdateReviewDraft {
+  id: string;
+  tourId?: string;
+  reviewerName?: string;
+  rating?: number;
+  comment?: string;
+  adminReply?: string;
+  status?: ReviewStatus;
+  isPublished?: boolean;
+}
+

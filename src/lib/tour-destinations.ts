@@ -1,4 +1,4 @@
-﻿import type { Tour } from "@/features/tours/types";
+import type { Tour } from "@/features/tours/types";
 
 export const DESTINATIONS_LIST = [
   { id: "ALL", nameEn: "All Destinations", nameAr: "جميع الواجهات الـ 8", flag: "🌐", code: "ALL" },
@@ -33,6 +33,7 @@ export const DEST_FLAGS: Record<string, string> = {
   dubai: "🇦🇪",
   tunisia: "🇹🇳",
   greece: "🇬🇷",
+  religious: "🕊️",
   holyland: "🕊️",
   "multi-country": "🌍",
   all: "🌐",
@@ -46,6 +47,7 @@ export const DEST_GRADIENTS: Record<string, string> = {
   greece: "from-blue-500/20 to-blue-600/10",
   dubai: "from-yellow-500/20 to-yellow-600/10",
   tunisia: "from-orange-500/20 to-orange-600/10",
+  religious: "from-purple-500/20 to-purple-600/10",
   holyland: "from-purple-500/20 to-purple-600/10",
   "multi-country": "from-indigo-500/20 to-indigo-600/10",
 };
@@ -75,6 +77,7 @@ export function resolveTourDestination(tour: Tour): string {
     tunisia: "Tunisia",
     greece: "Greece",
     "multi-country": "Multi-Country",
+    religious: "Religious",
   };
   if (canonical && canonicalLabels[canonical]) return canonicalLabels[canonical];
 

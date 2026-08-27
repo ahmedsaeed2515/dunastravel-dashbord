@@ -36,6 +36,12 @@ import {
   Check,
   TrendingUp,
   FileCode,
+  Edit3,
+  Archive,
+  Sparkles,
+  ChevronDown,
+  ChevronUp,
+  Copy,
   ThumbsUp,
   ThumbsDown,
   Clock,
@@ -174,6 +180,13 @@ export default function AiAgentsPage() {
   const [newPromptNote, setNewPromptNote] = useState("");
   const [showNewPromptModal, setShowNewPromptModal] = useState(false);
   const [creatingPromptDraft, setCreatingPromptDraft] = useState(false);
+  const [editingPrompt, setEditingPrompt] = useState<PromptVersionItem | null>(null);
+  const [showEditPromptModal, setShowEditPromptModal] = useState(false);
+  const [updatingPrompt, setUpdatingPrompt] = useState(false);
+  const [promptSearch, setPromptSearch] = useState("");
+  const [promptFilterStatus, setPromptFilterStatus] = useState<string>("ALL");
+  const [expandedPromptId, setExpandedPromptId] = useState<string | null>(null);
+  const [seedingPrompts, setSeedingPrompts] = useState(false);
 
   // Feedback State
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
@@ -921,13 +934,102 @@ export default function AiAgentsPage() {
                     </tbody>
                   </table>
                 </div>
-              )}
+{/* Tab 3: Core Prompts & Personality */}
+        <TabsContent value="config" className="m-0 space-y-6">
+          {/* Quick Prompt Template Selector Bar */}
+          <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
+            <CardHeader className="pb-3">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="h-8 w-8 rounded-lg bg-amber-500/10 flex items-center justify-center text-amber-500">
+                    <Sparkles className="h-4 w-4" />
+                  </div>
+                  <div>
+                    <CardTitle className="text-sm font-bold text-foreground">
+                      قوالب البرومبتات المحفوظة (Stored Prompt Presets)
+                    </CardTitle>
+                    <CardDescription className="text-xs">
+                      اختر أي برومبت جاهز من قاعدة البيانات لتطبيقه أو تفعيله فوراً على شخصية الذكاء الاصطناعي.
+                    </CardDescription>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <Button
+                    onClick={handleSeedDefaultPrompts}
+                    disabled={seedingPrompts}
+                    variant="outline"
+                    size="xs"
+                    className="text-xs gap-1 border-amber-500/30 hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${seedingPrompts ? 'animate-spin' : ''}`} />
+                    استعادة الـ 7 برومبتات الجاهزة
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="pt-0">
+              <div className="flex flex-col md:flex-row gap-2.5 items-stretch md:items-center">
+                <div className="flex-1">
+                  <select
+                    value={selectedPresetPromptId}
+                    onChange={(e) => {
+                      const id = e.target.value;
+                      setSelectedPresetPromptId(id);
+                      const chosen = promptVersions.find((p) => p.id === id);
+                      if (chosen) {
+                        setConfig((prev) => ({
+                          ...prev,
+                          systemInstructions: chosen.systemPrompt,
+                        }));
+                        toast.success(`تم تحميل برومبت "${chosen.name}" إلى المحرر بنجاح!`);
+                      }
+                    }}
+                    className="w-full p-2.5 rounded-lg bg-background border border-border/80 text-xs font-bold cursor-pointer text-foreground focus:ring-2 focus:ring-amber-500"
+                  >
+                    <option value="" disabled>-- اضغط هنا لاختيار برومبت من قاعدة البيانات (Select Stored Prompt) --</option>
+                    {promptVersions.map((p) => (
+                      <option key={p.id} value={p.id}>
+                        {p.status === 'PUBLISHED' ? '🌟 [نشط حالياً] ' : p.status === 'DRAFT' ? '📝 [مسودة] ' : '📦 [مؤرشف] '}
+                        {p.name} (v{p.versionNumber})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                {selectedPresetPromptId && (
+                  <div className="flex items-center gap-2 shrink-0">
+                    <Button
+                      onClick={() => {
+                        const chosen = promptVersions.find((p) => p.id === selectedPresetPromptId);
+                        if (chosen) {
+                          setConfig((prev) => ({
+                            ...prev,
+                            systemInstructions: chosen.systemPrompt,
+                          }));
+                          toast.success(`تم تحميل برومبت "${chosen.name}" إلى المحرر!`);
+                        }
+                      }}
+                      variant="outline"
+                      size="sm"
+                      className="text-xs h-9"
+                    >
+                      تحميل في المحرر
+                    </Button>
+                    <Button
+                      onClick={() => handlePublishPrompt(selectedPresetPromptId)}
+                      variant="gold"
+                      size="sm"
+                      className="text-xs font-bold h-9 gap-1.5"
+                    >
+                      <Check className="h-3.5 w-3.5" /> تفعيل ونشر فوراً
+                    </Button>
+                  </div>
+                )}
+              </div>
             </CardContent>
           </Card>
-        </TabsContent>
 
-        {/* Tab 3: Core Prompts & Personality */}
-        <TabsContent value="config" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
@@ -1373,67 +1475,216 @@ export default function AiAgentsPage() {
 
         {/* Tab: Prompt Versions & Rollback */}
         <TabsContent value="prompts" className="m-0 space-y-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
             <div>
               <h3 className="text-base font-bold flex items-center gap-2">
                 <FileCode className="h-4 w-4 text-primary" /> Prompt Version Control & Audit Trail
               </h3>
-              <p className="text-xs text-muted-foreground">
-                Manage versioned system prompts, test drafts, publish changes safely, and rollback with one click.
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Manage, edit, publish, or archive luxury system prompts for AI Concierge, Itinerary Builder, and Translations.
               </p>
             </div>
-            <Button onClick={() => setShowNewPromptModal(true)} variant="gold" size="sm" className="gap-1.5">
-              <Plus className="h-3.5 w-3.5" /> Create Draft Version
-            </Button>
+            <div className="flex items-center gap-2 shrink-0">
+              <Button 
+                onClick={handleSeedDefaultPrompts} 
+                disabled={seedingPrompts} 
+                variant="outline" 
+                size="sm" 
+                className="gap-1.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+              >
+                <Sparkles className={`h-3.5 w-3.5 ${seedingPrompts ? 'animate-spin' : ''}`} />
+                {seedingPrompts ? "Restoring Defaults..." : "Restore Ready Templates (??????? ???????)"}
+              </Button>
+              <Button onClick={() => setShowNewPromptModal(true)} variant="gold" size="sm" className="gap-1.5 text-xs font-semibold">
+                <Plus className="h-3.5 w-3.5" /> Create Draft Version
+              </Button>
+            </div>
           </div>
 
+          {/* Search & Status Filters */}
+          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-muted/40 p-3 rounded-xl border border-border/70">
+            <div className="relative w-full sm:w-80">
+              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
+              <Input
+                placeholder="Search prompts by title or keyword..."
+                value={promptSearch}
+                onChange={(e) => setPromptSearch(e.target.value)}
+                className="pl-8 h-8 text-xs bg-background"
+              />
+            </div>
+            <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto w-full sm:w-auto">
+              {[
+                { id: "ALL", label: "All Prompts" },
+                { id: "PUBLISHED", label: "Published (Active)" },
+                { id: "DRAFT", label: "Drafts" },
+                { id: "ARCHIVED", label: "Archived (Inactive)" },
+              ].map((tab) => (
+                <button
+                  key={tab.id}
+                  onClick={() => setPromptFilterStatus(tab.id)}
+                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
+                    promptFilterStatus === tab.id
+                      ? "bg-primary text-primary-foreground shadow-xs"
+                      : "bg-background border border-border/80 text-muted-foreground hover:text-foreground"
+                  }`}
+                >
+                  {tab.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Prompts Cards List */}
           <Card className="border-border/80 shadow-xs bg-card">
             <CardContent className="p-0">
-              {promptVersions.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  <FileCode className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                  No versioned prompt snapshots created yet. Click "Create Draft Version" to start versioning.
-                </div>
-              ) : (
-                <div className="divide-y divide-border/60 text-xs">
-                  {promptVersions.map((v) => (
-                    <div key={v.id} className="p-4 flex items-center justify-between hover:bg-muted/20 transition-colors">
-                      <div className="space-y-1 max-w-2xl">
-                        <div className="flex items-center gap-2">
-                          <span className="font-bold text-sm text-foreground">{v.name}</span>
-                          <span className="font-mono text-[10px] text-muted-foreground">v{v.versionNumber}</span>
-                          <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                            v.status === 'PUBLISHED'
-                              ? 'bg-emerald-500/10 text-emerald-500 border border-emerald-500/20'
-                              : v.status === 'DRAFT'
-                              ? 'bg-amber-500/10 text-amber-500 border border-amber-500/20'
-                              : 'bg-muted text-muted-foreground'
-                          }`}>
-                            {v.status}
-                          </span>
-                        </div>
-                        {v.changeNote && <p className="text-muted-foreground text-xs">{v.changeNote}</p>}
-                        <p className="font-mono text-[10px] text-muted-foreground truncate max-w-xl">
-                          {v.systemPrompt.slice(0, 120)}...
-                        </p>
-                      </div>
+              {(() => {
+                const filtered = promptVersions.filter((v) => {
+                  const matchesSearch = !promptSearch.trim() || 
+                    v.name.toLowerCase().includes(promptSearch.toLowerCase()) || 
+                    v.systemPrompt.toLowerCase().includes(promptSearch.toLowerCase()) ||
+                    (v.changeNote && v.changeNote.toLowerCase().includes(promptSearch.toLowerCase()));
+                  const matchesStatus = promptFilterStatus === "ALL" || v.status === promptFilterStatus;
+                  return matchesSearch && matchesStatus;
+                });
 
-                      <div className="flex items-center gap-2 shrink-0">
-                        {v.status !== 'PUBLISHED' && (
-                          <Button onClick={() => handlePublishPrompt(v.id)} variant="gold" size="sm" className="h-8 text-xs">
-                            Publish Live
-                          </Button>
-                        )}
-                        {v.status === 'ARCHIVED' && (
-                          <Button onClick={() => handleRollbackPrompt(v.id)} variant="outline" size="sm" className="h-8 text-xs">
-                            <RotateCcw className="h-3 w-3 mr-1" /> Rollback
-                          </Button>
-                        )}
-                      </div>
+                if (loadingPrompts) {
+                  return (
+                    <div className="py-12 text-center text-xs text-muted-foreground">
+                      <RefreshCw className="h-6 w-6 mx-auto animate-spin text-primary mb-2" />
+                      Loading versioned system prompts...
                     </div>
-                  ))}
-                </div>
-              )}
+                  );
+                }
+
+                if (filtered.length === 0) {
+                  return (
+                    <div className="py-12 text-center text-xs text-muted-foreground space-y-2">
+                      <FileCode className="h-8 w-8 mx-auto text-muted-foreground/50" />
+                      <p>No prompts found matching your filter.</p>
+                      <Button onClick={handleSeedDefaultPrompts} variant="outline" size="xs" className="mt-2 text-xs">
+                        Restore Curated Luxury Prompts
+                      </Button>
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="divide-y divide-border/60 text-xs">
+                    {filtered.map((v) => {
+                      const isExpanded = expandedPromptId === v.id;
+                      const isPublished = v.status === 'PUBLISHED';
+                      const isArchived = v.status === 'ARCHIVED';
+                      const isDraft = v.status === 'DRAFT';
+
+                      return (
+                        <div key={v.id} className="p-4.5 space-y-3 hover:bg-muted/20 transition-colors">
+                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                            <div className="space-y-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                <span className="font-bold text-sm text-foreground">{v.name}</span>
+                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">
+                                  v{v.versionNumber}
+                                </span>
+                                <span
+                                  className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
+                                    isPublished
+                                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
+                                      : isDraft
+                                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
+                                      : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30"
+                                  }`}
+                                >
+                                  {isPublished ? "? ACTIVE / PUBLISHED" : isDraft ? "DRAFT" : "ARCHIVED / INACTIVE"}
+                                </span>
+                              </div>
+                              {v.changeNote && (
+                                <p className="text-muted-foreground text-xs">{v.changeNote}</p>
+                              )}
+                            </div>
+
+                            {/* Action Buttons */}
+                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+                              <Button
+                                onClick={() => setExpandedPromptId(isExpanded ? null : v.id)}
+                                variant="outline"
+                                size="xs"
+                                className="h-7 px-2 text-[11px] gap-1"
+                              >
+                                {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                                {isExpanded ? "Collapse" : "Preview"}
+                              </Button>
+
+                              <Button
+                                onClick={() => handleOpenEditPrompt(v)}
+                                variant="outline"
+                                size="xs"
+                                className="h-7 px-2 text-[11px] gap-1 hover:text-amber-500"
+                              >
+                                <Edit3 className="h-3 w-3" /> Edit
+                              </Button>
+
+                              {!isPublished && (
+                                <Button
+                                  onClick={() => handlePublishPrompt(v.id)}
+                                  variant="gold"
+                                  size="xs"
+                                  className="h-7 px-2.5 text-[11px] font-bold"
+                                >
+                                  Publish Live
+                                </Button>
+                              )}
+
+                              {!isArchived && !isPublished && (
+                                <Button
+                                  onClick={() => handleArchivePrompt(v.id)}
+                                  variant="outline"
+                                  size="xs"
+                                  className="h-7 px-2 text-[11px] gap-1 text-slate-500 hover:text-slate-700"
+                                  title="Archive (Disable from active use)"
+                                >
+                                  <Archive className="h-3 w-3" /> Archive
+                                </Button>
+                              )}
+
+                              {isArchived && (
+                                <Button
+                                  onClick={() => handleRollbackPrompt(v.id)}
+                                  variant="outline"
+                                  size="xs"
+                                  className="h-7 px-2 text-[11px] gap-1 text-blue-500 hover:text-blue-600"
+                                >
+                                  <RotateCcw className="h-3 w-3" /> Restore & Publish
+                                </Button>
+                              )}
+
+                              <Button
+                                onClick={() => handleDeletePrompt(v.id)}
+                                variant="outline"
+                                size="xs"
+                                className="h-7 px-2 text-[11px] text-destructive hover:bg-destructive/10"
+                                title="Delete prompt version"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Preview snippet or Full text */}
+                          {isExpanded ? (
+                            <div className="mt-2 p-3.5 rounded-lg bg-muted/40 border border-border/80 font-mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
+                              {v.systemPrompt}
+                            </div>
+                          ) : (
+                            <p className="font-mono text-[10px] text-muted-foreground/80 truncate max-w-3xl">
+                              {v.systemPrompt.slice(0, 160)}...
+                            </p>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
             </CardContent>
           </Card>
         </TabsContent>
@@ -1514,7 +1765,7 @@ export default function AiAgentsPage() {
           <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <FileCode className="h-5 w-5 text-primary" /> Create New Prompt Draft
+                <FileCode className="h-5 w-5 text-primary" /> Create New System Prompt Draft
               </h3>
               <button onClick={() => setShowNewPromptModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
@@ -1526,24 +1777,28 @@ export default function AiAgentsPage() {
                 <Input 
                   value={newPromptName}
                   onChange={(e) => setNewPromptName(e.target.value)}
-                  placeholder="e.g. Luxury Nile Cruise & VIP Sales v2"
+                  placeholder="e.g. Luxury Nile Cruise & VIP Sales Concierge"
+                  className="font-semibold"
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Change Summary / Notes</label>
+                <label className="font-semibold uppercase text-muted-foreground">Change Summary / Description</label>
                 <Input 
                   value={newPromptNote}
                   onChange={(e) => setNewPromptNote(e.target.value)}
-                  placeholder="e.g. Added strict price verification guardrails and refined tone."
+                  placeholder="e.g. Refined pricing guardrails, added 5-language luxury etiquette."
                 />
               </div>
               <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Master System Prompt</label>
+                <div className="flex justify-between items-center">
+                  <label className="font-semibold uppercase text-muted-foreground">Master System Prompt Instructions</label>
+                  <span className="text-[10px] text-muted-foreground">{newPromptText.length} characters</span>
+                </div>
                 <Textarea 
-                  rows={8}
+                  rows={9}
                   value={newPromptText}
                   onChange={(e) => setNewPromptText(e.target.value)}
-                  placeholder="You are GuideR (جايدر), the luxury AI travel concierge..."
+                  placeholder="You are GuideR (?????), the luxury AI travel concierge..."
                   className="font-mono text-xs leading-relaxed"
                 />
               </div>
@@ -1553,7 +1808,77 @@ export default function AiAgentsPage() {
                 Cancel
               </Button>
               <Button onClick={handleCreatePromptDraft} disabled={creatingPromptDraft} variant="gold" size="sm">
-                {creatingPromptDraft ? "Creating..." : "Save Draft"}
+                {creatingPromptDraft ? "Saving..." : "Save Draft to Database"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Existing Prompt Modal */}
+      {showEditPromptModal && editingPrompt && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
+            <div className="flex justify-between items-center border-b pb-3">
+              <h3 className="text-base font-bold flex items-center gap-2">
+                <Edit3 className="h-5 w-5 text-amber-500" /> Edit System Prompt (v{editingPrompt.versionNumber})
+              </h3>
+              <button onClick={() => setShowEditPromptModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+            <div className="space-y-3 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Prompt Name</label>
+                  <Input 
+                    value={editingPrompt.name}
+                    onChange={(e) => setEditingPrompt({ ...editingPrompt, name: e.target.value })}
+                    className="font-semibold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Status</label>
+                  <select
+                    value={editingPrompt.status}
+                    onChange={(e) => setEditingPrompt({ ...editingPrompt, status: e.target.value as any })}
+                    className="w-full p-2 rounded-lg bg-background border border-border/80 text-xs font-semibold"
+                  >
+                    <option value="DRAFT">DRAFT (?????)</option>
+                    <option value="PUBLISHED">PUBLISHED (???? ??? - ???)</option>
+                    <option value="ARCHIVED">ARCHIVED (????? - ??? ???)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="font-semibold uppercase text-muted-foreground">Change Notes / Description</label>
+                <Input 
+                  value={editingPrompt.changeNote || ''}
+                  onChange={(e) => setEditingPrompt({ ...editingPrompt, changeNote: e.target.value })}
+                  placeholder="Notes about this prompt's role or recent edits..."
+                />
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex justify-between items-center">
+                  <label className="font-semibold uppercase text-muted-foreground">Master System Prompt Instructions</label>
+                  <span className="text-[10px] text-muted-foreground">{editingPrompt.systemPrompt.length} characters</span>
+                </div>
+                <Textarea 
+                  rows={10}
+                  value={editingPrompt.systemPrompt}
+                  onChange={(e) => setEditingPrompt({ ...editingPrompt, systemPrompt: e.target.value })}
+                  className="font-mono text-xs leading-relaxed"
+                />
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button onClick={() => setShowEditPromptModal(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleUpdatePrompt} disabled={updatingPrompt} variant="gold" size="sm">
+                {updatingPrompt ? "Saving..." : "Save Changes to Database (??? ?????????)"}
               </Button>
             </div>
           </div>

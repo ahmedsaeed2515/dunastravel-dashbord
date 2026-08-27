@@ -227,8 +227,24 @@ export const aiApi = {
     return apiClient.get<unknown, PromptVersionItem[]>("/admin/ai/prompts");
   },
 
+  seedDefaultPrompts: async (): Promise<PromptVersionItem[]> => {
+    return apiClient.post<unknown, PromptVersionItem[]>("/admin/ai/prompts/seed-defaults");
+  },
+
   createPromptDraft: async (payload: { name: string; systemPrompt: string; changeNote?: string }): Promise<PromptVersionItem> => {
     return apiClient.post<unknown, PromptVersionItem>("/admin/ai/prompts", payload);
+  },
+
+  updatePromptVersion: async (id: string, payload: { name?: string; systemPrompt?: string; changeNote?: string; status?: string }): Promise<PromptVersionItem> => {
+    return apiClient.put<unknown, PromptVersionItem>(`/admin/ai/prompts/${id}`, payload);
+  },
+
+  deletePromptVersion: async (id: string): Promise<{ success: boolean; id: string }> => {
+    return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/prompts/${id}`);
+  },
+
+  archivePromptVersion: async (id: string): Promise<PromptVersionItem> => {
+    return apiClient.post<unknown, PromptVersionItem>(`/admin/ai/prompts/${id}/archive`);
   },
 
   publishPromptVersion: async (id: string): Promise<{ success: boolean; version: PromptVersionItem }> => {

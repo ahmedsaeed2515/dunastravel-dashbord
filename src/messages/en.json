@@ -280,6 +280,38 @@
     "memberCount": "Members"
   },
   "inquiries": {
+    "noMediaDesc": "Upload high-resolution images for tour packages and marketing."
+  },
+  "customers": {
+    "title": "Customer CRM",
+    "description": "View client profiles, booking history, preferences, and contact details.",
+    "addCustomer": "Add Customer",
+    "customerName": "Customer Name",
+    "nationality": "Nationality",
+    "totalBookings": "Total Bookings",
+    "totalSpent": "Total Spent",
+    "lastBooking": "Last Booking",
+    "noCustomers": "No Customers Found",
+    "noCustomersDesc": "Customer client profiles will appear here when bookings are placed."
+  },
+  "users": {
+    "title": "User Management",
+    "description": "Manage admin system accounts, security roles, and permissions.",
+    "addUser": "Add User",
+    "userName": "User Name",
+    "role": "Role",
+    "lastLogin": "Last Login",
+    "noUsers": "No Users Found",
+    "noUsersDesc": "Manage staff and partner system access."
+  },
+  "roles": {
+    "title": "Roles & Permissions",
+    "description": "Configure fine-grained security permissions for administrative roles.",
+    "roleName": "Role Name",
+    "permissions": "Permissions",
+    "memberCount": "Members"
+  },
+  "inquiries": {
     "title": "Inquiries & Leads",
     "description": "Track client inquiries, custom tour requests, and sales leads.",
     "noInquiries": "No Inquiries Found",
@@ -328,11 +360,42 @@
     "noContent": "No Content Found"
   },
   "reviews": {
-    "title": "Customer Reviews",
-    "description": "Moderate customer tour reviews, ratings, and feedback.",
+    "title": "Customer Reviews & Moderation",
+    "description": "Moderate, reply to, approve, and manage customer tour reviews and ratings.",
+    "all": "All Reviews",
+    "pending": "Pending Moderation",
+    "approved": "Approved & Live",
+    "rejected": "Rejected & Hidden",
+    "statsTotal": "Total Reviews",
+    "statsPending": "Pending Approval",
+    "statsApproved": "Published Live",
+    "statsAverage": "Average Rating",
+    "searchPlaceholder": "Search by reviewer name, comment, or tour...",
+    "filterByRating": "Filter by Stars",
+    "allRatings": "All Ratings",
+    "filterByTour": "All Tours",
+    "addReview": "Add Review",
+    "editReview": "Edit Review",
+    "adminReply": "Official Reply",
+    "replyPlaceholder": "Write official Dunas Travel response to the client...",
+    "quickApprove": "Approve & Publish",
+    "quickReject": "Reject & Hide",
+    "deleteReview": "Delete Review",
+    "confirmDelete": "Are you sure you want to delete this review?",
+    "verifiedTraveler": "Verified Traveler",
+    "guestTraveler": "Guest Traveler",
+    "published": "Published",
+    "pendingApproval": "Pending Moderation",
+    "rejectedStatus": "Rejected",
+    "tour": "Tour",
+    "reviewer": "Reviewer",
     "rating": "Rating",
     "comment": "Comment",
-    "noReviews": "No Reviews Found"
+    "date": "Date",
+    "status": "Status",
+    "actions": "Actions",
+    "noReviews": "No Reviews Found",
+    "noReviewsDesc": "No customer reviews match your current filters."
   },
   "audit": {
     "title": "Audit Logs",

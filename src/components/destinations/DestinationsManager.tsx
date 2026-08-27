@@ -39,10 +39,12 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 
-function convertTourToTripModel(tour: Tour): TripModel {
+function convertTourToTripModel(tour: Tour): TripModel & { landingPageSlugs: string[] } {
+  const canonicalLandingPage = tour.landingPages?.find((lp: any) => lp?.type === 'DESTINATION')?.slug?.toLowerCase();
   const destResolved = resolveTourDestination(tour);
   const destId =
-    destResolved === 'Egypt'
+    canonicalLandingPage ||
+    (destResolved === 'Egypt'
       ? 'egypt'
       : destResolved === 'Turkey'
       ? 'turkey'
@@ -56,7 +58,15 @@ function convertTourToTripModel(tour: Tour): TripModel {
       ? 'tunisia'
       : destResolved === 'Greece'
       ? 'greece'
-      : 'holyland';
+      : destResolved === 'Multi-Country'
+      ? 'multi-country'
+      : destResolved === 'Religious'
+      ? 'religious'
+      : 'egypt');
+
+  const landingPageSlugs = (tour.landingPages || [])
+    .filter((lp: any) => lp?.type === 'DESTINATION')
+    .map((lp: any) => lp.slug.toLowerCase());
 
   const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
   const enTitle = tour.titleJsonb?.en || tour.slug;
@@ -96,6 +106,7 @@ function convertTourToTripModel(tour: Tour): TripModel {
     title: arTitle,
     subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
     destination: destId,
+    landingPageSlugs,
     market: 'Global',
     language: 'ar',
     type: (tour.category || 'Classic') as any,
@@ -189,8 +200,10 @@ export const DestinationsManager: React.FC = React.memo(() => {
           ? 'tunisia'
           : destLower.includes('greece') || destLower.includes('اليونان')
           ? 'greece'
-          : destLower.includes('holyland') || destLower.includes('القدس')
-          ? 'holyland'
+          : destLower.includes('multi-country') || destLower.includes('مشترك')
+          ? 'multi-country'
+          : destLower.includes('religious') || destLower.includes('holyland') || destLower.includes('دينية')
+          ? 'religious'
           : destLower || 'egypt';
 
       let pkgId = trip.packageId;
@@ -239,8 +252,14 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const tripCountMap = useMemo(() => {
     const map: Record<string, number> = {};
     for (const t of realTrips) {
-      const dKey = (t.destination || '').toLowerCase();
-      map[dKey] = (map[dKey] || 0) + 1;
+      if (t.landingPageSlugs && t.landingPageSlugs.length > 0) {
+        for (const slug of t.landingPageSlugs) {
+          map[slug] = (map[slug] || 0) + 1;
+        }
+      } else {
+        const dKey = (t.destination || '').toLowerCase();
+        map[dKey] = (map[dKey] || 0) + 1;
+      }
     }
     return map;
   }, [realTrips]);
@@ -248,9 +267,12 @@ export const DestinationsManager: React.FC = React.memo(() => {
   // Filter trips by active destination and optional package filter
   const filteredTrips = useMemo(() => {
     return realTrips.filter((t) => {
-      const tDest = (t.destination || '').toLowerCase();
       const aDest = (activeDestId || '').toLowerCase();
-      if (tDest !== aDest) return false;
+      const belongs =
+        (t.landingPageSlugs && t.landingPageSlugs.length > 0)
+          ? t.landingPageSlugs.includes(aDest)
+          : (t.destination || '').toLowerCase() === aDest;
+      if (!belongs) return false;
       if (activePackageId && t.packageId !== activePackageId) return false;
       return true;
     });
