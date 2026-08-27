@@ -33,53 +33,17 @@ import { extractToursList } from '@/lib/extract-tours';
 
 export const toursApi = {
   getTours: async (filters: TourQueryFilters): Promise<PaginatedResponse<Tour>> => {
-    try {
-      const res = await apiClient.get<PaginatedResponse<Tour>, PaginatedResponse<Tour>>('/admin/tours', { params: filters });
-      const list = extractToursList(res);
-      const raw = res as any;
-      const total = raw?.meta?.total ?? raw?.total ?? list.length;
-      return {
-        data: list,
-        meta: { total, page: raw?.page || 1, limit: raw?.limit || 100, totalPages: raw?.totalPages || 1 },
-      } as PaginatedResponse<Tour>;
-    } catch {
-      try {
-        const publicRes = await apiClient.get('/tours', { params: { ...filters, limit: 100 } });
-        const list = extractToursList(publicRes);
-        const raw = publicRes as any;
-        const total = raw?.total ?? raw?.meta?.total ?? list.length;
-        return {
-          data: list,
-          meta: {
-            total,
-            page: 1,
-            limit: 100,
-            totalPages: 1,
-          },
-        } as PaginatedResponse<Tour>;
-      } catch {
-        return {
-          data: [],
-          meta: { total: 0, page: 1, limit: 100, totalPages: 1 },
-        } as PaginatedResponse<Tour>;
-      }
-    }
+    const res = await apiClient.get<PaginatedResponse<Tour>, PaginatedResponse<Tour>>('/admin/tours', { params: filters });
+    const list = extractToursList(res);
+    const raw = res as any;
+    const total = raw?.meta?.total ?? raw?.total ?? list.length;
+    return {
+      data: list,
+      meta: { total, page: raw?.page || 1, limit: raw?.limit || 100, totalPages: raw?.totalPages || 1 },
+    } as PaginatedResponse<Tour>;
   },
   getTourStats: async (): Promise<TourStats> => {
-    try {
-      return await apiClient.get<TourStats, TourStats>('/admin/tours/stats');
-    } catch {
-      return {
-        totalTours: 0,
-        publishedTours: 0,
-        draftTours: 0,
-        featuredTours: 0,
-        totalCapacity: 0,
-        totalRemainingSeats: 0,
-        seatsSold: 0,
-        occupancyRate: '0%',
-      };
-    }
+    return apiClient.get<TourStats, TourStats>('/admin/tours/stats');
   },
   getTourBySlug: (slug: string): Promise<Tour> => apiClient.get<Tour, Tour>(`/admin/tours/${slug}`),
   getTourPreview: (slug: string, lang: string): Promise<TourPreview> =>

@@ -12,7 +12,11 @@ vi.mock("../hooks/useTours", () => ({
   useDeleteTourAvailability: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 
-const tour = { id: "tour-1", slug: "nile-cruise", titleJsonb: { en: "Nile" } } as Tour;
+const tour = {
+  id: "tour-1", slug: "nile-cruise", titleJsonb: { en: "Nile" },
+  basePriceUsd: "0", currency: "USD", isActive: true, status: "DRAFT", isFeatured: false,
+  createdAt: "2026-01-01T00:00:00.000Z", updatedAt: "2026-01-01T00:00:00.000Z",
+} as Tour;
 
 describe("AvailabilityManager", () => {
   beforeEach(() => mocks.createSlot.mockClear());

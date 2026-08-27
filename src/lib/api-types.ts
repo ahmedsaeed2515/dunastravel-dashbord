@@ -70,6 +70,16 @@ export function unwrapApiEnvelope<T>(value: unknown): T {
   if (!isRecord(value)) {
     return value as T;
   }
+  // A response shaped as { data: { success, data, ... }, meta } is a legacy
+  // double envelope. Accepting it would make callers guess which pagination
+  // layer is authoritative and can silently reintroduce stale contracts.
+  if (
+    isRecord(value.data) &&
+    value.data.success === true &&
+    'data' in value.data
+  ) {
+    throw new Error('Invalid API success envelope');
+  }
   if (value.success !== true || !('data' in value)) {
     return value as T;
   }

@@ -4,6 +4,7 @@ export interface TranslationDict {
   title?: string;
   subtitle?: string;
   overview?: string;
+  duration?: string;
   highlights?: string[];
   included?: string[];
   excluded?: string[];

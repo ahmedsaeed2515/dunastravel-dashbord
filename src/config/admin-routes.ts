@@ -5,6 +5,7 @@ export const adminRoutes = {
   destinations: "/admin/destinations",
   hotels: "/admin/hotels",
   transportation: "/admin/transportation",
+  blogs: "/admin/blogs",
   reviews: "/admin/reviews",
   promotions: "/admin/promotions",
   media: "/admin/media",

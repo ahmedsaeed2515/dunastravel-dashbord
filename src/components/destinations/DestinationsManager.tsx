@@ -1,11 +1,12 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
 import { useDataContext } from '@/context/DataContext';
 import { TripModel } from '@/types/dunas-suite';
 import { TripEditorModal } from '@/components/trips/TripEditorModal';
 import { TransferTripModal } from '@/components/trips/TransferTripModal';
 import { useTours, useSoftDeleteTour, useClearAllTours } from '@/features/tours/hooks/useTours';
+import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import type { Tour } from '@/features/tours/types';
 import { resolveTourDestination } from '@/app/[locale]/(dashboard)/admin/tours/page';
 import { Button } from '@/components/ui/button';
@@ -55,13 +56,13 @@ function convertTourToTripModel(tour: Tour): TripModel {
   const enTitle = tour.titleJsonb?.en || tour.slug;
   const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || 'برنامج سياحي فاخر متكامل مع إقامة وجولات مرشد سياحي.';
   const enOverview = tour.overviewJsonb?.en || arOverview;
-  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '';
   const price = Number(tour.basePriceUsd || 650);
 
   const images =
     tour.images && tour.images.length > 0
       ? tour.images.map((img) => img.imageUrl)
-      : [tour.heroImage || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'];
+      : (tour.heroImage ? [tour.heroImage] : []);
 
   // Assign Egypt Package Id based on category & title
   let packageId: string | undefined = undefined;
@@ -97,7 +98,7 @@ function convertTourToTripModel(tour: Tour): TripModel {
     price,
     hotelCategory: '5-Star Luxury',
     rating: 4.9,
-    reviewCount: tour.reviewCount || 48,
+    reviewCount: tour.reviewCount || 0,
     popular: !!tour.isFeatured,
     familyFriendly: true,
     honeymoon: false,
@@ -105,9 +106,9 @@ function convertTourToTripModel(tour: Tour): TripModel {
     cultural: true,
     adventure: false,
     overview: arOverview,
-    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
-    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [''],
-    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [''],
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [],
     images,
     hotels: '5-Star Luxury Hotels',
     accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
@@ -134,11 +135,23 @@ function convertTourToTripModel(tour: Tour): TripModel {
 import { extractToursList } from '@/lib/extract-tours';
 
 export const DestinationsManager: React.FC = React.memo(() => {
-  // Keep the restored destination UI, but make the Backend the only source of
-  // tour business data. DataContext still supplies presentation metadata
-  // (flags, gradients and package labels); tour records always come from the
-  // persisted API response.
-  const { destinations, egyptPackages } = useDataContext();
+  // Destination identities and tour records both come from the canonical API.
+  // DataContext remains only for the separately managed Egypt package labels.
+  const { egyptPackages } = useDataContext();
+  const { data: destinationData, isLoading: isLoadingDestinations, error: destinationsError } = useLandingPages({
+    type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 100,
+  });
+  const destinations = useMemo(() => {
+    const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];
+    return pages.map((page) => ({
+      id: page.slug,
+      nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
+      nameEn: page.titleJsonb?.en || page.slug,
+      flag: '',
+      gradient: 'from-amber-500/20 to-amber-600/10',
+      description: page.briefJsonb?.ar || page.briefJsonb?.en || page.descriptionJsonb?.en || '',
+    }));
+  }, [destinationData]);
   const { data: toursData, isLoading: isLoadingTours } = useTours({ limit: 500 });
   const removeTourMutation = useSoftDeleteTour();
   const clearAllToursMutation = useClearAllTours();
@@ -191,7 +204,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
     });
   }, [toursData]);
 
-  const [activeDestId, setActiveDestId] = useState<string>('egypt');
+  const [activeDestId, setActiveDestId] = useState<string>('');
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
 
   const [editingTrip, setEditingTrip] = useState<TripModel | null>(null);
@@ -203,6 +216,10 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const activeDestination = useMemo(() => {
     return destinations.find((d) => d.id === activeDestId) || destinations[0];
   }, [destinations, activeDestId]);
+
+  useEffect(() => {
+    if (!activeDestId && destinations[0]) setActiveDestId(destinations[0].id);
+  }, [activeDestId, destinations]);
 
   // Pre-calculate trip count map per destination for instant switching
   const tripCountMap = useMemo(() => {
@@ -258,6 +275,18 @@ export const DestinationsManager: React.FC = React.memo(() => {
     setEditingTrip(null);
     setIsEditorOpen(true);
   }, []);
+
+  if (isLoadingDestinations || isLoadingTours) {
+    return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-amber-500" /></div>;
+  }
+
+  if (destinationsError) {
+    return <div className="rounded-3xl border border-red-300 bg-red-50 p-8 text-center text-red-800">Destinations could not be loaded from the Backend.</div>;
+  }
+
+  if (!activeDestination) {
+    return <div className="rounded-3xl border border-dashed border-border/80 p-8 text-center text-muted-foreground">No published destinations are currently available.</div>;
+  }
 
   return (
     <div className="space-y-8 animate-in fade-in duration-300">
@@ -373,11 +402,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
                 <div>
                   {/* Image Hero */}
                   <div className="h-48 relative overflow-hidden bg-slate-900">
-                    <img
-                      src={trip.images[0] || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'}
-                      alt={trip.title}
-                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                    />
+                    {trip.images[0] ? <img src={trip.images[0]} alt={trip.title} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No image uploaded</div>}
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent" />
                     
                     {/* Badges */}

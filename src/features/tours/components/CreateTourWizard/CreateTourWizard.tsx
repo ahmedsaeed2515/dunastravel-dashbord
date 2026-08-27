@@ -25,17 +25,17 @@ export function CreateTourWizard() {
   const [slug, setSlug] = useState("");
   const [titleEn, setTitleEn] = useState("");
   const [descriptionEn, setDescriptionEn] = useState("");
-  const [category, setCategory] = useState("ADVENTURE");
+  const [category, setCategory] = useState("");
 
   // Step 2: Logistics & Pricing
-  const [country, setCountry] = useState("Egypt");
-  const [city, setCity] = useState("Cairo");
-  const [basePriceUsd, setBasePriceUsd] = useState("1200");
-  const [capacity, setCapacity] = useState("12");
-  const [minParticipants, setMinParticipants] = useState("2");
+  const [country, setCountry] = useState("");
+  const [city, setCity] = useState("");
+  const [basePriceUsd, setBasePriceUsd] = useState("");
+  const [capacity, setCapacity] = useState("");
+  const [minParticipants, setMinParticipants] = useState("");
 
   // Step 3: Itinerary
-  const [itineraryDays, setItineraryDays] = useState([{ dayLabel: "Day 1", description: "" }]);
+  const [itineraryDays, setItineraryDays] = useState<{ dayLabel: string; description: string }[]>([]);
 
   // Step 4: Includes / Excludes
   const [includesEn, setIncludesEn] = useState("");
@@ -51,7 +51,7 @@ export function CreateTourWizard() {
   const [tagsString, setTagsString] = useState("");
 
   // Step 7: Media
-  const [images, setImages] = useState([{ url: "", isHero: true }]);
+  const [images, setImages] = useState<{ url: string; isHero: boolean }[]>([]);
 
   // Step 8: Publishing
   const [isFeatured, setIsFeatured] = useState(false);
@@ -98,12 +98,25 @@ export function CreateTourWizard() {
 
     try {
       setIsLoading(true);
-      const price = Math.max(0.01, parseFloat(basePriceUsd) || 0.01);
+      const price = parseFloat(basePriceUsd);
+      if (!Number.isFinite(price) || price < 0) {
+        toast.error("Please provide the actual base price; no placeholder price is applied.");
+        return;
+      }
+      const itineraries = itineraryDays.flatMap((it, idx) => {
+        const dayLabel = it.dayLabel.trim();
+        const description = it.description.trim();
+        if (!dayLabel && !description) return [];
+        return [{
+          dayLabel: dayLabel || `Day ${idx + 1}`,
+          description,
+        }];
+      });
       await createTour.mutateAsync({
         slug: slug.trim().toLowerCase(),
         titleJsonb: { en: titleEn.trim() },
-        overviewJsonb: descriptionEn.trim() ? { en: descriptionEn.trim() } : { en: titleEn.trim() },
-        category: category || "ADVENTURE",
+        overviewJsonb: descriptionEn.trim() ? { en: descriptionEn.trim() } : undefined,
+        category: category || undefined,
         basePriceUsd: price,
         currency: "USD",
         isActive: status === "PUBLISHED",
@@ -118,9 +131,9 @@ export function CreateTourWizard() {
         seoTitle: seoTitle || undefined,
         seoDescription: seoDescription || undefined,
         tags: tagsString.split(',').map(t => t.trim()).filter(Boolean),
-        itineraries: itineraryDays.map((it, idx) => ({
-          dayLabel: it.dayLabel || `Day ${idx + 1}`,
-          descriptionJsonb: { en: it.description || `Day ${idx + 1} plan` },
+        itineraries: itineraries.map((it, idx) => ({
+          dayLabel: it.dayLabel,
+          descriptionJsonb: { en: it.description },
           sortOrder: idx + 1,
         })),
         images: images.filter(img => img.url && img.url.trim()).map((img, idx) => ({

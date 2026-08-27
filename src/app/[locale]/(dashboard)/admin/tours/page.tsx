@@ -39,103 +39,77 @@ import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
-const FALLBACK_IMAGE = "https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800";
+
+function localeText(value: Record<string, unknown> | null | undefined, locale: string): string {
+  return typeof value?.[locale] === "string" ? value[locale] as string : "";
+}
+
+function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
+  return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
+}
+
+function destinationForCountry(country: string | null | undefined): string {
+  const normalized = country?.trim().toLowerCase() || "";
+  return {
+    "united arab emirates": "dubai",
+    "multi country": "multi-country",
+    "multi-country": "multi-country",
+  }[normalized] || normalized;
+}
 
 function tourToTripModel(tour: Tour): TripModel {
-  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
-  const enTitle = tour.titleJsonb?.en || tour.slug;
-  const esTitle = tour.titleJsonb?.es || enTitle;
-  const ptTitle = tour.titleJsonb?.pt || enTitle;
-  const itTitle = tour.titleJsonb?.it || enTitle;
-
-  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || '';
-  const enOverview = tour.overviewJsonb?.en || arOverview;
-  const esOverview = tour.overviewJsonb?.es || enOverview;
-  const ptOverview = tour.overviewJsonb?.pt || enOverview;
-  const itOverview = tour.overviewJsonb?.it || enOverview;
-
-  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
-  const price = Number(tour.basePriceUsd || 650);
-
-  const images = (tour.images && tour.images.length > 0)
-    ? tour.images.map(img => img.imageUrl)
-    : [tour.heroImage || FALLBACK_IMAGE];
-
-  const itinerary = (tour.itineraries && tour.itineraries.length > 0)
-    ? tour.itineraries.map((itin, idx) => ({
-        day: idx + 1,
-        title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
-        description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
-        meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
-      }))
-    : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }];
+  const highlights = tour.highlightsJsonb || tour.highlightJsonb;
+  const itinerary = (tour.itineraries || []).map((item, index) => ({
+    day: index + 1,
+    title: item.dayLabel || '',
+    description: localeText(item.descriptionJsonb, 'ar'),
+    meals: localeText(item.mealsJsonb, 'ar'),
+  }));
 
   return {
     id: tour.id,
     slug: tour.slug,
-    title: arTitle,
-    subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
-    destination: (tour.country?.toLowerCase() || 'egypt'),
-    market: 'Global',
+    title: localeText(tour.titleJsonb, 'ar'),
+    subtitle: localeText(tour.subtitleJsonb, 'ar'),
+    destination: destinationForCountry(tour.country),
+    market: tour.market || '',
     language: 'ar',
-    type: (tour.category || 'Classic') as any,
-    duration,
-    departures: 'Daily / Diário',
-    price,
-    hotelCategory: '5-Star Luxury',
-    rating: 4.9,
-    reviewCount: tour.reviewCount || 48,
+    type: tour.category || '',
+    duration: localeText(tour.durationJsonb, 'ar'),
+    departures: localeText(tour.departureInfoJsonb, 'ar'),
+    price: Number(tour.basePriceUsd || 0),
+    hotelCategory: '',
+    rating: Number(tour.sourceRating || 0),
+    reviewCount: tour.sourceReviewCount || 0,
     popular: !!tour.isFeatured,
-    familyFriendly: true,
+    familyFriendly: false,
     honeymoon: false,
-    luxury: true,
-    cultural: true,
+    luxury: false,
+    cultural: false,
     adventure: false,
-    overview: arOverview,
-    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
-    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || (tour.inclusionJsonb?.ar as string[]) || [''],
-    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || (tour.exclusionJsonb?.ar as string[]) || [''],
-    images,
-    hotels: '5-Star Luxury Hotels',
-    accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
+    overview: localeText(tour.overviewJsonb, 'ar'),
+    highlights: localeList(highlights, 'ar'),
+    included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
+    excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
+    images: tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []),
+    hotels: '',
+    accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
     itinerary,
-    translations: {
-      ar: {
-        title: arTitle,
-        overview: arOverview,
-        highlights: (tour.highlightJsonb?.ar as string[]) || [''],
-        included: (tour.includedServicesJsonb?.ar as string[]) || [''],
-        excluded: (tour.excludedServicesJsonb?.ar as string[]) || [''],
-      },
-      en: {
-        title: enTitle,
-        overview: enOverview,
-        highlights: (tour.highlightJsonb?.en as string[]) || [''],
-        included: (tour.includedServicesJsonb?.en as string[]) || [''],
-        excluded: (tour.excludedServicesJsonb?.en as string[]) || [''],
-      },
-      es: {
-        title: esTitle,
-        overview: esOverview,
-        highlights: (tour.highlightJsonb?.es as string[]) || [''],
-        included: (tour.includedServicesJsonb?.es as string[]) || [''],
-        excluded: (tour.excludedServicesJsonb?.es as string[]) || [''],
-      },
-      pt: {
-        title: ptTitle,
-        overview: ptOverview,
-        highlights: (tour.highlightJsonb?.pt as string[]) || [''],
-        included: (tour.includedServicesJsonb?.pt as string[]) || [''],
-        excluded: (tour.excludedServicesJsonb?.pt as string[]) || [''],
-      },
-      it: {
-        title: itTitle,
-        overview: itOverview,
-        highlights: (tour.highlightJsonb?.it as string[]) || [''],
-        included: (tour.includedServicesJsonb?.it as string[]) || [''],
-        excluded: (tour.excludedServicesJsonb?.it as string[]) || [''],
-      },
-    },
+    translations: Object.fromEntries(LOCALES.map((locale) => [locale, {
+      title: localeText(tour.titleJsonb, locale),
+      subtitle: localeText(tour.subtitleJsonb, locale),
+      overview: localeText(tour.overviewJsonb, locale),
+      duration: localeText(tour.durationJsonb, locale),
+      highlights: localeList(highlights, locale),
+      included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, locale),
+      excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, locale),
+      itinerary: (tour.itineraries || []).map((item, index) => ({
+        day: index + 1,
+        title: item.dayLabel || '',
+        description: localeText(item.descriptionJsonb, locale),
+        meals: localeText(item.mealsJsonb, locale),
+      })),
+    }])) as TripModel['translations'],
   };
 }
 
@@ -165,6 +139,27 @@ export const DESTINATIONS_LIST = [
 ] as const;
 
 export function resolveTourDestination(tour: Tour): string {
+  // The admin API includes the canonical TourLandingPage relation. Prefer it
+  // so display titles/slugs can never reclassify a tour into another country.
+  const relatedDestination = tour.landingPages?.find((relation: any) => relation?.type === "DESTINATION")?.slug;
+  const canonical = String(relatedDestination || "").trim().toLowerCase();
+  const canonicalLabels: Record<string, string> = {
+    egypt: "Egypt",
+    turkey: "Turkey",
+    jordan: "Jordan",
+    morocco: "Morocco",
+    dubai: "Dubai",
+    tunisia: "Tunisia",
+    greece: "Greece",
+    "multi-country": "Multi-Country",
+  };
+  if (canonicalLabels[canonical]) return canonicalLabels[canonical];
+
+  const country = String(tour.country || "").trim().toLowerCase();
+  const countryCanonical = country === "united arab emirates" ? "dubai" : country === "multi country" ? "multi-country" : country;
+  if (canonicalLabels[countryCanonical]) return canonicalLabels[countryCanonical];
+  return "";
+
   const c = (tour.country || "").trim().toLowerCase();
   const cat = (tour.category || "").trim().toLowerCase();
   const slug = (tour.slug || "").trim().toLowerCase();
@@ -532,7 +527,7 @@ export default function ToursPage() {
               {isAr ? "متوسط تقييم الرحلات" : "Avg Trips Rating"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-              4.95 <span className="text-xs font-bold text-amber-400">/ 5.0 ⭐</span>
+              — <span className="text-xs font-bold text-amber-400">/ 5.0</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
@@ -650,11 +645,11 @@ export default function ToursPage() {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {filteredTours.map((tour) => {
                 const title = textFor(tour.titleJsonb, locale) || tour.slug;
-                const overview = textFor(tour.overviewJsonb, locale) || (isAr ? "برنامج سياحي فاخر متكامل مع إقامة وجولات مرشد سياحي." : "Comprehensive luxury travel package with guided tours.");
-                const duration = textFor(tour.durationJsonb, locale) || (isAr ? "7 أيام / 6 ليالٍ" : "7 Days / 6 Nights");
+                const overview = textFor(tour.overviewJsonb, locale);
+                const duration = textFor(tour.durationJsonb, locale);
                 const price = tour.basePriceUsd ? Number(tour.basePriceUsd) : 0;
-                const isFeatured = tour.isFeatured || tour.status === "PUBLISHED";
-                const heroImg = tour.heroImage || FALLBACK_IMAGE;
+                const isFeatured = Boolean(tour.isFeatured);
+                const heroImg = tour.heroImage || null;
                 const destGroup = resolveTourDestination(tour);
 
                 return (
@@ -665,11 +660,7 @@ export default function ToursPage() {
                     <div>
                       {/* Image Thumbnail & Badges */}
                       <div className="h-52 relative overflow-hidden bg-slate-950">
-                        <img
-                          src={heroImg}
-                          alt={title}
-                          className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                        />
+                        {heroImg ? <img src={heroImg} alt={title} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No image uploaded</div>}
                         <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-transparent to-black/30" />
 
                         {/* Top Badges */}
@@ -697,7 +688,7 @@ export default function ToursPage() {
                             <Calendar className="w-3.5 h-3.5 text-amber-400" /> {duration}
                           </span>
                           <span className="flex items-center gap-1 font-bold text-amber-400">
-                            <Star className="w-3.5 h-3.5 fill-amber-400" /> 4.95 ({tour.reviewCount ?? 48} {isAr ? "تقييم" : "reviews"})
+                            <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount ?? 0} {isAr ? "تقييم" : "reviews"}
                           </span>
                         </div>
                       </div>

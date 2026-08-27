@@ -44,6 +44,7 @@ import {
   Star,
   MessageCircle,
   CarFront,
+  BookOpen,
 } from "lucide-react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -178,6 +179,7 @@ export const AppSidebar = memo(function AppSidebar() {
                   <NavItem href={adminRoutes.media} icon={Film} label={tNav("media")} />
                   <NavItem href={adminRoutes.hotels} icon={Hotel} label={tNav("hotels")} />
                   <NavItem href={adminRoutes.transportation} icon={CarFront} label="Transportation" />
+                  <NavItem href={adminRoutes.blogs} icon={BookOpen} label="Blogs & Journal" />
                   <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
                   <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
                   <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />

@@ -19,6 +19,13 @@ const tour = {
   id: "tour-1",
   slug: "nile-cruise",
   titleJsonb: { en: "Nile" },
+  basePriceUsd: "0",
+  currency: "USD",
+  isActive: true,
+  status: "DRAFT",
+  isFeatured: false,
+  createdAt: "2026-01-01T00:00:00.000Z",
+  updatedAt: "2026-01-01T00:00:00.000Z",
   images: [{ id: "image-1", imageUrl: "https://cdn.example.test/nile.webp", altText: "Nile", sortOrder: 1, isHero: true }],
 } as Tour;
 

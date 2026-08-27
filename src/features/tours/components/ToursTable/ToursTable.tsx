@@ -71,12 +71,12 @@ function tourToTripModel(tour: Tour): TripModel {
   const ptOverview = tour.overviewJsonb?.pt || enOverview;
   const itOverview = tour.overviewJsonb?.it || enOverview;
 
-  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '4 Days / 3 Nights';
-  const price = Number(tour.basePriceUsd || 650);
+  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '';
+  const price = Number(tour.basePriceUsd || 0);
 
   const images = (tour.images && tour.images.length > 0)
     ? tour.images.map(img => img.imageUrl)
-    : [tour.heroImage || 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'];
+    : (tour.heroImage ? [tour.heroImage] : []);
 
   const itinerary = (tour.itineraries && tour.itineraries.length > 0)
     ? tour.itineraries.map((itin, idx) => ({
@@ -85,7 +85,7 @@ function tourToTripModel(tour: Tour): TripModel {
         description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
         meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
       }))
-    : [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق والتسكين.', meals: 'الإفطار' }];
+    : [];
 
   return {
     id: tour.id,
@@ -101,7 +101,7 @@ function tourToTripModel(tour: Tour): TripModel {
     price,
     hotelCategory: '5-Star Luxury',
     rating: 4.9,
-    reviewCount: tour.reviewCount || 48,
+    reviewCount: tour.reviewCount || 0,
     popular: !!tour.isFeatured,
     familyFriendly: true,
     honeymoon: false,
@@ -109,19 +109,19 @@ function tourToTripModel(tour: Tour): TripModel {
     cultural: true,
     adventure: false,
     overview: arOverview,
-    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [''],
-    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [''],
-    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [''],
+    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [],
+    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [],
+    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [],
     images,
     hotels: '5-Star Luxury Hotels',
     accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
     itinerary,
     translations: {
-      ar: { title: arTitle, overview: arOverview, highlights: (tour.highlightJsonb?.ar as string[]) || [''], included: (tour.includedServicesJsonb?.ar as string[]) || [''], excluded: (tour.excludedServicesJsonb?.ar as string[]) || [''] },
-      en: { title: enTitle, overview: enOverview, highlights: (tour.highlightJsonb?.en as string[]) || [''], included: (tour.includedServicesJsonb?.en as string[]) || [''], excluded: (tour.excludedServicesJsonb?.en as string[]) || [''] },
-      es: { title: esTitle, overview: esOverview, highlights: (tour.highlightJsonb?.es as string[]) || [''], included: (tour.includedServicesJsonb?.es as string[]) || [''], excluded: (tour.excludedServicesJsonb?.es as string[]) || [''] },
-      pt: { title: ptTitle, overview: ptOverview, highlights: (tour.highlightJsonb?.pt as string[]) || [''], included: (tour.includedServicesJsonb?.pt as string[]) || [''], excluded: (tour.excludedServicesJsonb?.pt as string[]) || [''] },
-      it: { title: itTitle, overview: itOverview, highlights: (tour.highlightJsonb?.it as string[]) || [''], included: (tour.includedServicesJsonb?.it as string[]) || [''], excluded: (tour.excludedServicesJsonb?.it as string[]) || [''] },
+      ar: { title: arTitle, overview: arOverview, highlights: (tour.highlightJsonb?.ar as string[]) || [], included: (tour.includedServicesJsonb?.ar as string[]) || [], excluded: (tour.excludedServicesJsonb?.ar as string[]) || [] },
+      en: { title: enTitle, overview: enOverview, highlights: (tour.highlightJsonb?.en as string[]) || [], included: (tour.includedServicesJsonb?.en as string[]) || [], excluded: (tour.excludedServicesJsonb?.en as string[]) || [] },
+      es: { title: esTitle, overview: esOverview, highlights: (tour.highlightJsonb?.es as string[]) || [], included: (tour.includedServicesJsonb?.es as string[]) || [], excluded: (tour.excludedServicesJsonb?.es as string[]) || [] },
+      pt: { title: ptTitle, overview: ptOverview, highlights: (tour.highlightJsonb?.pt as string[]) || [], included: (tour.includedServicesJsonb?.pt as string[]) || [], excluded: (tour.excludedServicesJsonb?.pt as string[]) || [] },
+      it: { title: itTitle, overview: itOverview, highlights: (tour.highlightJsonb?.it as string[]) || [], included: (tour.includedServicesJsonb?.it as string[]) || [], excluded: (tour.excludedServicesJsonb?.it as string[]) || [] },
     },
   };
 }

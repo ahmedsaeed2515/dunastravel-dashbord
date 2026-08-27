@@ -1,10 +1,12 @@
 "use client";
 
-import React, { useState, useEffect, memo } from 'react';
+import React, { useState, useEffect, useMemo, memo } from 'react';
 import { TripModel, LanguageCode, AccommodationItem, ItineraryItem } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
+import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
+import { buildTripEditorPayload } from '@/features/tours/lib/tripEditorPayload';
 import {
   Dialog,
   DialogContent,
@@ -48,30 +50,30 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   title: '',
   subtitle: '',
   slug: '',
-  destination: 'egypt',
-  market: 'Global',
-  language: 'ar',
-  type: 'Classic',
-  duration: '4 Days / 3 Nights',
-  departures: 'Daily / Diário',
-  price: 500,
-  hotelCategory: '5-Star Luxury',
-  rating: 4.8,
-  reviewCount: 12,
+  destination: '',
+  market: '',
+  language: '',
+  type: '',
+  duration: '',
+  departures: '',
+  price: 0,
+  hotelCategory: '',
+  rating: 0,
+  reviewCount: 0,
   popular: false,
-  familyFriendly: true,
+  familyFriendly: false,
   honeymoon: false,
   luxury: false,
-  cultural: true,
+  cultural: false,
   adventure: false,
   overview: '',
-  highlights: [''],
-  included: [''],
-  excluded: [''],
-  images: ['https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=800'],
+  highlights: [],
+  included: [],
+  excluded: [],
+  images: [],
   hotels: '',
-  accommodation: [{ destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
-  itinerary: [{ day: 1, title: 'الوصول والتسكين', description: 'الوصول للمطار واستقبال في الفندق.', meals: 'الإفطار' }],
+  accommodation: [],
+  itinerary: [],
   translations: {
     ar: {},
     en: {},
@@ -94,7 +96,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   isOpen,
   onClose,
 }) => {
-  const { destinations, egyptPackages, addTrip, updateTrip } = useDataContext();
+  const { egyptPackages } = useDataContext();
+  const { data: destinationData } = useLandingPages({ type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 100 });
+  const destinations = useMemo(() => {
+    const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];
+    return pages.map((page) => ({
+      id: page.slug,
+      nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
+      nameEn: page.titleJsonb?.en || page.slug,
+      flag: '',
+    }));
+  }, [destinationData]);
   const [formData, setFormData] = useState<Partial<TripModel>>(DEFAULT_TRIP);
   const [activeTab, setActiveTab] = useState<string>('basic');
   const [translationLang, setTranslationLang] = useState<LanguageCode>('en');
@@ -128,150 +140,15 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const handleSave = async () => {
-    if (!formData.title || !formData.destination) {
+    if (!formData.destination || (!trip && !formData.title)) {
       toast.error('يرجى ملء كافة البيانات الأساسية المطلوبة');
       return;
     }
 
-    const rawSlug = formData.slug || formData.title;
+    const rawSlug = formData.slug || formData.title || '';
     const cleanSlug = formatSlug(rawSlug) || `tour-${Date.now()}`;
 
-    const rawImages = (formData.images || []).filter(Boolean);
-    const safeImages = rawImages.length > 0
-      ? rawImages
-      : ['https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1200'];
-
-    const payload: TripModel = {
-      id: formData.id || `trip-${Date.now()}`,
-      slug: cleanSlug,
-      title: formData.title,
-      subtitle: formData.subtitle || '',
-      destination: formData.destination || 'egypt',
-      market: formData.market || 'Global',
-      language: formData.language || 'ar',
-      type: formData.type || 'Classic',
-      duration: formData.duration || '4 Days / 3 Nights',
-      departures: formData.departures || 'Daily',
-      price: Number(formData.price) || 0,
-      hotelCategory: formData.hotelCategory || '5-Star',
-      rating: Number(formData.rating) || 5.0,
-      reviewCount: Number(formData.reviewCount) || 0,
-      popular: !!formData.popular,
-      familyFriendly: !!formData.familyFriendly,
-      honeymoon: !!formData.honeymoon,
-      luxury: !!formData.luxury,
-      cultural: !!formData.cultural,
-      adventure: !!formData.adventure,
-      overview: formData.overview || '',
-      highlights: (formData.highlights || []).filter(Boolean),
-      included: (formData.included || []).filter(Boolean),
-      excluded: (formData.excluded || []).filter(Boolean),
-      images: safeImages,
-      hotels: formData.hotels || '',
-      accommodation: formData.accommodation || [],
-      itinerary: formData.itinerary || [],
-      translations: formData.translations || { ar: {}, en: {}, es: {}, pt: {}, it: {} },
-      packageId: formData.packageId,
-    };
-
-    const preparedApiImages = safeImages.map((imageUrl, index) => {
-      let validUrl = imageUrl;
-      if (validUrl && !validUrl.startsWith('http://') && !validUrl.startsWith('https://')) {
-        validUrl = 'https://images.unsplash.com/photo-1503177119275-0aa32b3a9368?q=80&w=1200';
-      }
-      return {
-        imageUrl: validUrl,
-        isHero: index === 0,
-        sortOrder: index,
-      };
-    });
-
-    const backendData = {
-      slug: payload.slug,
-      titleJsonb: {
-        ar: payload.title,
-        en: payload.translations?.en?.title || payload.title,
-        es: payload.translations?.es?.title || payload.title,
-        pt: payload.translations?.pt?.title || payload.title,
-        it: payload.translations?.it?.title || payload.title,
-      },
-      subtitleJsonb: {
-        ar: payload.subtitle || '',
-        en: payload.translations?.en?.subtitle || payload.subtitle || '',
-        es: payload.translations?.es?.subtitle || payload.subtitle || '',
-        pt: payload.translations?.pt?.subtitle || payload.subtitle || '',
-        it: payload.translations?.it?.subtitle || payload.subtitle || '',
-      },
-      overviewJsonb: {
-        ar: payload.overview || '',
-        en: payload.translations?.en?.overview || payload.overview || '',
-        es: payload.translations?.es?.overview || payload.overview || '',
-        pt: payload.translations?.pt?.overview || payload.overview || '',
-        it: payload.translations?.it?.overview || payload.overview || '',
-      },
-      durationJsonb: {
-        ar: payload.duration,
-        en: payload.duration,
-        es: payload.duration,
-        pt: payload.duration,
-        it: payload.duration,
-      },
-      category: payload.type || payload.destination,
-      country: payload.destination === 'egypt' ? 'Egypt' : payload.destination === 'turkey' ? 'Turkey' : payload.destination === 'jordan' ? 'Jordan' : payload.destination === 'morocco' ? 'Morocco' : payload.destination === 'dubai' ? 'United Arab Emirates' : payload.destination === 'tunisia' ? 'Tunisia' : payload.destination === 'greece' ? 'Greece' : 'Multi-Country',
-      city: payload.accommodation?.[0]?.destination || 'Cairo',
-      basePriceUsd: Number(payload.price || 500),
-      currency: 'USD',
-      isFeatured: !!payload.popular,
-      status: 'PUBLISHED' as const,
-      isActive: true,
-      includedServicesJsonb: {
-        ar: payload.included,
-        en: payload.translations?.en?.included || payload.included,
-        es: payload.translations?.es?.included || payload.included,
-        pt: payload.translations?.pt?.included || payload.included,
-        it: payload.translations?.it?.included || payload.included,
-      },
-      excludedServicesJsonb: {
-        ar: payload.excluded,
-        en: payload.translations?.en?.excluded || payload.excluded,
-        es: payload.translations?.es?.excluded || payload.excluded,
-        pt: payload.translations?.pt?.excluded || payload.excluded,
-        it: payload.translations?.it?.excluded || payload.excluded,
-      },
-      highlightJsonb: {
-        ar: payload.highlights,
-        en: payload.translations?.en?.highlights || payload.highlights,
-        es: payload.translations?.es?.highlights || payload.highlights,
-        pt: payload.translations?.pt?.highlights || payload.highlights,
-        it: payload.translations?.it?.highlights || payload.highlights,
-      },
-      itineraries: payload.itinerary.map((day, index) => {
-        const translated = (language: LanguageCode) =>
-          payload.translations?.[language]?.itinerary?.[index] as
-            | { title?: string; description?: string; meals?: string }
-            | undefined;
-
-        return {
-          dayLabel: `Day ${day.day}`,
-          descriptionJsonb: {
-            ar: day.description,
-            en: translated('en')?.description || day.description,
-            es: translated('es')?.description || day.description,
-            pt: translated('pt')?.description || day.description,
-            it: translated('it')?.description || day.description,
-          },
-          mealsJsonb: {
-            ar: day.meals,
-            en: translated('en')?.meals || day.meals,
-            es: translated('es')?.meals || day.meals,
-            pt: translated('pt')?.meals || day.meals,
-            it: translated('it')?.meals || day.meals,
-          },
-          sortOrder: index,
-        };
-      }),
-      images: preparedApiImages,
-    };
+    const backendData = buildTripEditorPayload({ ...formData, slug: cleanSlug }, !trip);
 
     // Persist through the Backend first. The catalogue is backend-authoritative;
     // failed requests must not be presented as locally saved changes.
