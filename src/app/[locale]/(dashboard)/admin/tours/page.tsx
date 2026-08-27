@@ -37,10 +37,10 @@ import { useSoftDeleteTour, useTour, useTours, useTourStats } from "@/features/t
 import type { Tour } from "@/features/tours/types";
 import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
-import { 
-  DESTINATIONS_LIST, 
-  resolveTourDestination, 
-  destinationForCountry 
+import {
+  DESTINATIONS_LIST,
+  resolveTourDestination,
+  destinationForCountry
 } from "@/lib/tour-destinations";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;

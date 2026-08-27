@@ -8,11 +8,11 @@ import { TransferTripModal } from '@/components/trips/TransferTripModal';
 import { useTours, useSoftDeleteTour, useClearAllTours } from '@/features/tours/hooks/useTours';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import type { Tour } from '@/features/tours/types';
-import { 
-  resolveTourDestination, 
-  DESTINATIONS_LIST, 
-  DEST_FLAGS, 
-  DEST_GRADIENTS 
+import {
+  resolveTourDestination,
+  DESTINATIONS_LIST,
+  DEST_FLAGS,
+  DEST_GRADIENTS
 } from '@/lib/tour-destinations';
 import { extractToursList } from '@/lib/extract-tours';
 import { Button } from '@/components/ui/button';
