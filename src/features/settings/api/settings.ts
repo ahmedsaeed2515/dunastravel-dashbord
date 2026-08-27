@@ -1,6 +1,6 @@
 import { apiClient } from '@/lib/axios';
 
-export type SettingValue = string | number | boolean | null;
+export type SettingValue = string | number | boolean | Record<string, any> | any[] | null;
 
 export interface SettingResponse {
   key: string;

@@ -27,6 +27,7 @@ const LOCALES = [
 ];
 
 import { useAuth } from "@/features/auth/hooks/useAuth";
+import { useSetting } from "@/features/settings/hooks/useSettings";
 import { Link } from "@/i18n/routing";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut } from "lucide-react";
@@ -36,6 +37,27 @@ export const Topbar = memo(function Topbar() {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
   const { user, logout } = useAuth();
+  const { data: activeLocalesSetting } = useSetting('ACTIVE_LOCALES', {
+    en: true,
+    ar: true,
+    es: true,
+    pt: true,
+    it: true,
+  });
+
+  const availableLocales = React.useMemo(() => {
+    if (!activeLocalesSetting) return LOCALES;
+    if (Array.isArray(activeLocalesSetting)) {
+      return LOCALES.filter((l) => activeLocalesSetting.includes(l.code));
+    }
+    if (typeof activeLocalesSetting === 'object') {
+      const activeMap = activeLocalesSetting as Record<string, boolean>;
+      const filtered = LOCALES.filter((l) => activeMap[l.code] !== false);
+      return filtered.length > 0 ? filtered : LOCALES;
+    }
+    return LOCALES;
+  }, [activeLocalesSetting]);
+
   const pathname = usePathname();
   const router = useRouter();
   const params = useParams();
@@ -141,7 +163,7 @@ export const Topbar = memo(function Topbar() {
             onChange={(e) => handleLanguageChange(e.target.value)}
             className="bg-transparent text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-1 max-w-22.5 sm:max-w-none"
           >
-            {LOCALES.map((lang) => (
+            {availableLocales.map((lang) => (
               <option key={lang.code} value={lang.code} className="bg-card text-foreground">
                 {lang.flag} {lang.label}
               </option>

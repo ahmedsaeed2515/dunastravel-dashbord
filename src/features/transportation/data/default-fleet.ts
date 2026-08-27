@@ -1,4 +1,4 @@
-﻿import { TransportationService } from '../types';
+import { TransportationService } from '../types';
 
 export const DEFAULT_FLEET: TransportationService[] = [
   {
@@ -204,27 +204,169 @@ export const DEFAULT_FLEET: TransportationService[] = [
 ];
 
 export const PRESET_VEHICLE_IMAGES = [
-  { id: 'bus1', label: 'حافلة ذهبية 50 راكب', url: '/imgs/transportation/bus1.jpeg' },
-  { id: 'bus2', label: 'حافلة كلاسيك 45 راكب', url: '/imgs/transportation/bus2.jpeg' },
-  { id: 'bus3', label: 'مرسيدس توريزمو VIP', url: '/imgs/transportation/bus3.jpeg' },
-  { id: 'bus4', label: 'حافلة كوتش سياحية', url: '/imgs/transportation/bus4.jpeg' },
-  { id: 'bus5', label: 'حافلة جراند ترافيل', url: '/imgs/transportation/bus5.jpeg' },
-  { id: 'bus6', label: 'حافلة إيليت 45 راكب', url: '/imgs/transportation/bus6.jpeg' },
-  { id: 'bus7', label: 'حافلة رويال الملكية', url: '/imgs/transportation/bus7.jpeg' },
-  { id: 'costar', label: 'تويوتا كوستر 26 راكب', url: '/imgs/transportation/costar.jpeg' },
-  { id: 'costar1', label: 'كوستر VIP كابتن 22 راكب', url: '/imgs/transportation/costar1.jpeg' },
-  { id: 'privte', label: 'سيارة سيدان فاخرة VIP', url: '/imgs/transportation/privte.jpeg' },
+  { id: 'bus1', label: 'حافلة ذهبية 50 راكب', labelEn: 'Golden Tour Bus 50-Seat', url: '/imgs/transportation/bus1.jpeg' },
+  { id: 'bus2', label: 'حافلة كلاسيك 45 راكب', labelEn: 'Classic Coach 45-Seat', url: '/imgs/transportation/bus2.jpeg' },
+  { id: 'bus3', label: 'مرسيدس توريزمو VIP', labelEn: 'Mercedes Tourismo VIP', url: '/imgs/transportation/bus3.jpeg' },
+  { id: 'bus4', label: 'حافلة كوتش سياحية', labelEn: 'Tour Coach 48-Seat', url: '/imgs/transportation/bus4.jpeg' },
+  { id: 'bus5', label: 'حافلة جراند ترافيل', labelEn: 'Grand Touring 50-Seat', url: '/imgs/transportation/bus5.jpeg' },
+  { id: 'bus6', label: 'حافلة إيليت 45 راكب', labelEn: 'Elite Coach 45-Seat', url: '/imgs/transportation/bus6.jpeg' },
+  { id: 'bus7', label: 'حافلة رويال الملكية', labelEn: 'Royal Executive 48-Seat', url: '/imgs/transportation/bus7.jpeg' },
+  { id: 'costar', label: 'تويوتا كوستر 26 راكب', labelEn: 'Toyota Coaster 26-Seat', url: '/imgs/transportation/costar.jpeg' },
+  { id: 'costar1', label: 'كوستر VIP كابتن 22 راكب', labelEn: 'Toyota Coaster VIP 22-Seat', url: '/imgs/transportation/costar1.jpeg' },
+  { id: 'privte', label: 'سيارة سيدان فاخرة VIP', labelEn: 'Luxury Sedan & SUV', url: '/imgs/transportation/privte.jpeg' },
 ];
 
-export const AVAILABLE_FEATURES = [
-  { id: 'ac', labelAr: 'تكييف هوائي مركزي', labelEn: 'Air Conditioning' },
-  { id: 'wifi', labelAr: 'واي فاي فائق السرعة', labelEn: 'High-Speed Wi-Fi' },
-  { id: 'driver', labelAr: 'سائق محترف ومعتمد', labelEn: 'Professional Driver' },
-  { id: 'leather', labelAr: 'مقاعد جلدية مريحة', labelEn: 'Leather Reclining Seats' },
-  { id: 'restroom', labelAr: 'دورة مياه داخلية', labelEn: 'Onboard Restroom' },
-  { id: 'usb', labelAr: 'منافذ شحن USB', labelEn: 'USB Charging Ports' },
-  { id: 'fridge', labelAr: 'ثلاجة ومشروبات ضيافة', labelEn: 'Mini Fridge & Refreshments' },
-  { id: 'sound', labelAr: 'نظام صوتي وشاشات', labelEn: 'Audio System & Screens' },
-  { id: 'luggage', labelAr: 'مساحة أمتعة واسعة', labelEn: 'Spacious Luggage Storage' },
-  { id: 'gps', labelAr: 'نظام ملاحة GPS', labelEn: 'GPS Navigation' },
+export interface AmenityDefinition {
+  id: string;
+  keys: string[];
+  labelAr: string;
+  labelEn: string;
+  labelEs: string;
+  labelPt: string;
+  labelIt: string;
+}
+
+export const AVAILABLE_FEATURES: AmenityDefinition[] = [
+  {
+    id: 'ac',
+    keys: ['ac', 'air conditioning', 'تكييف', 'تكييف هوائي', 'تكييف هوائي مركزي', 'تكييف كامل', 'تكييف مركزي متطور', 'تكييف إلكتروني ثنائي', 'تكييف فائق التبريد', 'تكييف مركزي', 'تكييف قوي'],
+    labelAr: 'تكييف هوائي مركزي',
+    labelEn: 'Air Conditioning',
+    labelEs: 'Aire Acondicionado',
+    labelPt: 'Ar Condicionado',
+    labelIt: 'Aria Condizionata',
+  },
+  {
+    id: 'wifi',
+    keys: ['wifi', 'wi-fi', 'high-speed wi-fi', 'واي فاي', 'واي فاي فائق السرعة', 'واي فاي مجاني', 'إنترنت 5g مجاني', 'واي فاي سريع', 'واي فاي خاص'],
+    labelAr: 'واي فاي فائق السرعة',
+    labelEn: 'High-Speed Wi-Fi',
+    labelEs: 'Wi-Fi de Alta Velocidad',
+    labelPt: 'Wi-Fi de Alta Velocidade',
+    labelIt: 'Wi-Fi ad Alta Velocità',
+  },
+  {
+    id: 'driver',
+    keys: ['driver', 'professional driver', 'chauffeur', 'سائق محترف', 'سائق محترف ومعتمد', 'سائق محترف متعدد اللغات', 'سائق سياحي معتمد', 'سائق vip خاص', 'سائق ذو خبرة', 'سائق vip', 'سائق سياحي', 'سائق خاص', 'سائق شيفور بدلة رسمية'],
+    labelAr: 'سائق محترف ومعتمد',
+    labelEn: 'Professional Driver',
+    labelEs: 'Conductor Profesional',
+    labelPt: 'Motorista Profissional',
+    labelIt: 'Autista Professionista',
+  },
+  {
+    id: 'leather',
+    keys: ['leather', 'leather seats', 'leather reclining seats', 'مقاعد جلدية', 'مقاعد جلدية مريحة', 'مقاعد جلدية مريحة قابلة للإمالة', 'مقاعد جلدية فاخرة', 'مقاعد جلدية رحبة', 'مقاعد كابتن جلدية منفصلة', 'مقاعد جلدية نابا', 'مقاعد مريحة'],
+    labelAr: 'مقاعد جلدية مريحة',
+    labelEn: 'Leather Seats',
+    labelEs: 'Asientos de Cuero',
+    labelPt: 'Assentos de Couro',
+    labelIt: 'Sedili in Pelle',
+  },
+  {
+    id: 'restroom',
+    keys: ['restroom', 'toilet', 'onboard restroom', 'دورة مياه', 'دورة مياه داخلية', 'دورة مياه فاخرة'],
+    labelAr: 'دورة مياه داخلية',
+    labelEn: 'Onboard Restroom',
+    labelEs: 'Baño a Bordo',
+    labelPt: 'Banheiro a Bordo',
+    labelIt: 'Bagno a Bordo',
+  },
+  {
+    id: 'usb',
+    keys: ['usb', 'usb chargers', 'usb charging ports', 'منافذ شحن usb', 'شواحن هواتف', 'منافذ شحن فردية لكل مقعد'],
+    labelAr: 'منافذ شحن USB',
+    labelEn: 'USB Chargers',
+    labelEs: 'Cargadores USB',
+    labelPt: 'Carregadores USB',
+    labelIt: 'Caricatori USB',
+  },
+  {
+    id: 'fridge',
+    keys: ['fridge', 'mini fridge', 'refreshments', 'ثلاجة ومشروبات', 'ثلاجة ومشروبات ضيافة', 'ثلاجة مدمجة', 'مياه معدنية وضيافة', 'mineral water'],
+    labelAr: 'ثلاجة ومشروبات ضيافة',
+    labelEn: 'Mini Fridge & Water',
+    labelEs: 'Mini Nevera y Agua',
+    labelPt: 'Frigobar e Água',
+    labelIt: 'Frigo Bar e Acqua',
+  },
+  {
+    id: 'sound',
+    keys: ['sound', 'audio', 'audio system', 'premium audio', 'نظام صوتي', 'نظام صوتي متطور', 'نظام صوتي نقي', 'نظام صوتي متكامل', 'نظام صوتي وشاشات'],
+    labelAr: 'نظام صوتي متطور',
+    labelEn: 'Premium Audio System',
+    labelEs: 'Sistema de Audio Premium',
+    labelPt: 'Sistema de Áudio Premium',
+    labelIt: 'Sistema Audio Premium',
+  },
+  {
+    id: 'tv',
+    keys: ['tv', 'led tv', 'screens', 'multimedia', 'شاشات عرض led', 'شاشات العرض'],
+    labelAr: 'شاشات عرض LED',
+    labelEn: 'LED TV Screens',
+    labelEs: 'Pantallas LED TV',
+    labelPt: 'Telas LED TV',
+    labelIt: 'Schermi TV LED',
+  },
+  {
+    id: 'luggage',
+    keys: ['luggage', 'luggage compartment', 'spacious luggage storage', 'صندوق أمتعة كبير', 'مساحة أمتعة واسعة'],
+    labelAr: 'مساحة أمتعة واسعة',
+    labelEn: 'Luggage Compartment',
+    labelEs: 'Espacio de Equipaje',
+    labelPt: 'Bagageiro Amplo',
+    labelIt: 'Vano Bagagli Spazioso',
+  },
+  {
+    id: 'gps',
+    keys: ['gps', 'gps navigation', 'نظام ملاحة gps'],
+    labelAr: 'نظام ملاحة GPS',
+    labelEn: 'GPS Navigation',
+    labelEs: 'Navegación GPS',
+    labelPt: 'Navegação GPS',
+    labelIt: 'Navigazione GPS',
+  },
+  {
+    id: 'reclining',
+    keys: ['reclining seats', 'spacious legroom', 'مساحة واسعة للأرجل', 'إضاءة محيطية هادئة'],
+    labelAr: 'مقاعد مريحة قابلة للإمالة',
+    labelEn: 'Reclining Seats & Legroom',
+    labelEs: 'Asientos Reclinables',
+    labelPt: 'Poltronas Reclináveis',
+    labelIt: 'Sedili Reclinabili',
+  },
+  {
+    id: 'airbag',
+    keys: ['airbag', 'وسائد هوائية', 'أمان عالي'],
+    labelAr: 'وسائد هوائية وأنظمة أمان',
+    labelEn: 'Airbags & Safety Systems',
+    labelEs: 'Airbags y Seguridad',
+    labelPt: 'Airbags e Segurança',
+    labelIt: 'Airbag e Sicurezza',
+  },
 ];
+
+export function resolveLocalizedFeature(feature: string, locale: string = 'en'): string {
+  if (!feature) return '';
+  const clean = feature.trim().toLowerCase();
+  const found = AVAILABLE_FEATURES.find((item) =>
+    item.keys.some((k) => k.toLowerCase() === clean) ||
+    item.labelEn.toLowerCase() === clean ||
+    item.labelAr.toLowerCase() === clean ||
+    item.id.toLowerCase() === clean
+  );
+  if (!found) return feature;
+  switch (locale) {
+    case 'ar':
+      return found.labelAr;
+    case 'es':
+      return found.labelEs;
+    case 'pt':
+      return found.labelPt;
+    case 'it':
+      return found.labelIt;
+    default:
+      return found.labelEn;
+  }
+}
+

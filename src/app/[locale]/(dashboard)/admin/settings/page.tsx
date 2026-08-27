@@ -18,10 +18,54 @@ export default function SettingsPage() {
 
   const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
   const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', false);
-  const { mutate: updateSetting, isPending: isUpdatingAuthSetting } = useUpdateSetting();
+  const { data: rawActiveLocales, isLoading: isLoadingLocales } = useSetting('ACTIVE_LOCALES', {
+    en: true,
+    ar: true,
+    es: true,
+    pt: true,
+    it: true,
+  });
+  const { mutate: updateSetting, isPending: isUpdatingSetting } = useUpdateSetting();
+
   const requireEmailVerification = typeof requireAuthSetting === 'boolean'
     ? requireAuthSetting
     : false;
+
+  // Normalize active locales map
+  const activeLocales: Record<string, boolean> = (() => {
+    if (rawActiveLocales && typeof rawActiveLocales === 'object' && !Array.isArray(rawActiveLocales)) {
+      return {
+        en: rawActiveLocales.en ?? true,
+        ar: rawActiveLocales.ar ?? true,
+        es: rawActiveLocales.es ?? true,
+        pt: rawActiveLocales.pt ?? true,
+        it: rawActiveLocales.it ?? true,
+      };
+    }
+    if (Array.isArray(rawActiveLocales)) {
+      return {
+        en: rawActiveLocales.includes('en'),
+        ar: rawActiveLocales.includes('ar'),
+        es: rawActiveLocales.includes('es'),
+        pt: rawActiveLocales.includes('pt'),
+        it: rawActiveLocales.includes('it'),
+      };
+    }
+    return { en: true, ar: true, es: true, pt: true, it: true };
+  })();
+
+  const activeCount = Object.values(activeLocales).filter(Boolean).length;
+
+  const handleToggleLocale = (code: string, checked: boolean) => {
+    if (!checked && activeCount <= 1 && activeLocales[code]) {
+      return; // Cannot disable the last remaining active language
+    }
+    const updated = {
+      ...activeLocales,
+      [code]: checked,
+    };
+    updateSetting({ key: 'ACTIVE_LOCALES', value: updated });
+  };
   
   return (
     <RequirePermission action="manage" resource="settings">
@@ -47,24 +91,67 @@ export default function SettingsPage() {
           <TabsContent value="localization" className="m-0">
             <Card className="border-border/80 shadow-xs bg-card">
               <CardHeader>
-                <CardTitle className="text-base font-semibold">Supported Locales</CardTitle>
+                <div className="flex justify-between items-center">
+                  <div>
+                    <CardTitle className="text-base font-semibold">Supported Locales</CardTitle>
+                    <CardDescription className="text-xs text-muted-foreground mt-1">
+                      Toggle active languages across the website and dashboard. At least one language must remain active.
+                    </CardDescription>
+                  </div>
+                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    {activeCount} / 5 Active
+                  </span>
+                </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { name: "English (en)", info: "Default (LTR)" },
-                  { name: "Arabic (ar)", info: "العربية (RTL)" },
-                  { name: "Spanish (es)", info: "Español" },
-                  { name: "Portuguese (pt)", info: "Português" },
-                  { name: "Italian (it)", info: "Italiano" },
-                ].map((lang, idx) => (
-                  <div key={idx} className="flex justify-between items-center p-3.5 border border-border/70 rounded-lg bg-muted/20">
-                    <div>
-                      <h4 className="font-semibold text-sm">{lang.name}</h4>
-                      <p className="text-xs text-muted-foreground">{lang.info}</p>
+                  { code: "en", name: "English (en)", info: "Default (LTR)", flag: "🇬🇧" },
+                  { code: "ar", name: "Arabic (ar)", info: "العربية (RTL)", flag: "🇪🇬" },
+                  { code: "es", name: "Spanish (es)", info: "Español", flag: "🇪🇸" },
+                  { code: "pt", name: "Portuguese (pt)", info: "Português", flag: "🇧🇷" },
+                  { code: "it", name: "Italian (it)", info: "Italiano", flag: "🇮🇹" },
+                ].map((lang) => {
+                  const isLocaleActive = activeLocales[lang.code] ?? true;
+                  const isOnlyActive = isLocaleActive && activeCount <= 1;
+
+                  return (
+                    <div
+                      key={lang.code}
+                      className={`flex justify-between items-center p-3.5 border rounded-lg transition-colors ${
+                        isLocaleActive
+                          ? "border-border/80 bg-muted/20"
+                          : "border-border/40 bg-muted/5 opacity-70"
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <span className="text-2xl">{lang.flag}</span>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <h4 className="font-semibold text-sm">{lang.name}</h4>
+                            <span
+                              className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                isLocaleActive
+                                  ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+                                  : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30"
+                              }`}
+                            >
+                              {isLocaleActive ? "Active" : "Disabled"}
+                            </span>
+                          </div>
+                          <p className="text-xs text-muted-foreground">{lang.info}</p>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <Switch
+                          checked={isLocaleActive}
+                          disabled={isLoadingLocales || isUpdatingSetting || isOnlyActive}
+                          onCheckedChange={(checked) => handleToggleLocale(lang.code, checked)}
+                          title={isOnlyActive ? "At least one language must remain active" : undefined}
+                        />
+                      </div>
                     </div>
-                    <Button variant="outline" size="xs">Active</Button>
-                  </div>
-                ))}
+                  );
+                })}
               </CardContent>
             </Card>
           </TabsContent>
@@ -121,7 +208,7 @@ export default function SettingsPage() {
                   </div>
                   <Switch 
                     checked={requireEmailVerification}
-                    disabled={isLoadingAuthSetting || isUpdatingAuthSetting}
+                    disabled={isLoadingAuthSetting || isUpdatingSetting}
                     onCheckedChange={(checked) => updateSetting({ key: 'AUTH_REQUIRE_EMAIL_VERIFICATION', value: checked })}
                   />
                 </div>
