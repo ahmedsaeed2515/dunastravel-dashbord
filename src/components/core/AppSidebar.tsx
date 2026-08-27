@@ -183,7 +183,6 @@ export const AppSidebar = memo(function AppSidebar() {
                   <NavItem href={adminRoutes.content} icon={FileText} label={tNav("content")} badge="CMS" />
                   <NavItem href={adminRoutes.communications} icon={MessageSquare} label={tNav("communications")} />
                   <NavItem href={adminRoutes.notifications} icon={Bell} label={tNav("notifications")} />
-                  <NavItem href={adminRoutes.inquiries} icon={Star} label={tNav("inquiries")} />
                   <NavItem href={adminRoutes.reviews} icon={MessageCircle} label={tNav("reviews")} />
                   <NavItem href={adminRoutes.ai} icon={Bot} label={tNav("aiConcierge")} />
                 </>

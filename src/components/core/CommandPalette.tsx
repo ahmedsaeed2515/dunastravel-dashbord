@@ -53,9 +53,9 @@ export function CommandPalette() {
             <Smile className="me-2 h-4 w-4" />
             <span>{tDashboard("manageTours")}</span>
           </CommandItem>
-          <CommandItem onSelect={() => runCommand(() => router.push('/admin/inquiries'))}>
+          <CommandItem onSelect={() => runCommand(() => router.push('/admin/reviews'))}>
             <Calculator className="me-2 h-4 w-4" />
-            <span>{tNav("inquiries")}</span>
+            <span>{tNav("reviews")}</span>
           </CommandItem>
         </CommandGroup>
         <CommandSeparator />

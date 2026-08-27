@@ -11,5 +11,13 @@ export const contentApi = {
   
   updateBlock: async (key: string, payload: UpdateContentBlockDto): Promise<ContentBlock> => {
     return apiClient.patch<ContentBlock, ContentBlock>(`/admin/cms/${key}`, payload);
-  }
+  },
+
+  seedDefaults: async (): Promise<{ success: boolean; message: string; count: number }> => {
+    return apiClient.post('/admin/cms/seed-defaults', {});
+  },
+
+  deleteBlock: async (key: string): Promise<void> => {
+    await apiClient.delete(`/admin/cms/${key}`);
+  },
 };

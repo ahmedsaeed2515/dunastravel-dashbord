@@ -579,7 +579,7 @@ export function ReviewsManager() {
                 const title =
                   (tour.titleJsonb as any)?.[locale] ||
                   (tour.titleJsonb as any)?.en ||
-                  tour.title ||
+                  (tour as any).title ||
                   tour.slug;
                 return (
                   <option key={tour.id} value={tour.id}>
@@ -1016,7 +1016,7 @@ export function ReviewsManager() {
                   const title =
                     (tour.titleJsonb as any)?.[locale] ||
                     (tour.titleJsonb as any)?.en ||
-                    tour.title ||
+                    (tour as any).title ||
                     tour.slug;
                   return (
                     <option key={tour.id} value={tour.id}>
@@ -1167,7 +1167,7 @@ export function ReviewsManager() {
                   const title =
                     (tour.titleJsonb as any)?.[locale] ||
                     (tour.titleJsonb as any)?.en ||
-                    tour.title ||
+                    (tour as any).title ||
                     tour.slug;
                   return (
                     <option key={tour.id} value={tour.id}>

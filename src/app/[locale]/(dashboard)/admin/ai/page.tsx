@@ -187,6 +187,7 @@ export default function AiAgentsPage() {
   const [promptFilterStatus, setPromptFilterStatus] = useState<string>("ALL");
   const [expandedPromptId, setExpandedPromptId] = useState<string | null>(null);
   const [seedingPrompts, setSeedingPrompts] = useState(false);
+  const [selectedPresetPromptId, setSelectedPresetPromptId] = useState<string>("");
 
   // Feedback State
   const [feedbackList, setFeedbackList] = useState<FeedbackItem[]>([]);
@@ -204,6 +205,20 @@ export default function AiAgentsPage() {
     fetchPrompts();
     fetchFeedback();
   }, []);
+
+  const fetchOverview = async () => {
+    setLoadingOverview(true);
+    try {
+      const res = await aiApi.getOverview();
+      if (res && res.metrics) {
+        setMetrics(res.metrics);
+      }
+    } catch (err: any) {
+      console.warn("Failed to fetch AI overview metrics:", err);
+    } finally {
+      setLoadingOverview(false);
+    }
+  };
 
   const fetchAnalytics = async () => {
     setLoadingAnalytics(true);
@@ -246,67 +261,6 @@ export default function AiAgentsPage() {
       console.warn("Failed to fetch feedback:", err);
     } finally {
       setLoadingFeedback(false);
-    }
-  };
-
-  const handleCreatePromptDraft = async () => {
-    if (!newPromptName.trim() || !newPromptText.trim()) {
-      toast.error("Please provide prompt name and content.");
-      return;
-    }
-    setCreatingPromptDraft(true);
-    try {
-      await aiApi.createPromptDraft({
-        name: newPromptName.trim(),
-        systemPrompt: newPromptText.trim(),
-        changeNote: newPromptNote.trim() || undefined,
-      });
-      toast.success("New prompt draft created successfully!");
-      setShowNewPromptModal(false);
-      setNewPromptName("");
-      setNewPromptText("");
-      setNewPromptNote("");
-      fetchPrompts();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to create prompt draft.");
-    } finally {
-      setCreatingPromptDraft(false);
-    }
-  };
-
-  const handlePublishPrompt = async (id: string) => {
-    try {
-      await aiApi.publishPromptVersion(id);
-      toast.success("Prompt version published! Live system prompt is now active.");
-      fetchPrompts();
-      fetchConfig();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to publish prompt version.");
-    }
-  };
-
-  const handleRollbackPrompt = async (id: string) => {
-    try {
-      await aiApi.rollbackPromptVersion(id);
-      toast.success("Rolled back to selected prompt version successfully!");
-      fetchPrompts();
-      fetchConfig();
-    } catch (err: any) {
-      toast.error(err.message || "Failed to rollback prompt version.");
-    }
-  };
-
-  const fetchOverview = async () => {
-    setLoadingOverview(true);
-    try {
-      const res = await aiApi.getOverview();
-      if (res && res.metrics) {
-        setMetrics(res.metrics);
-      }
-    } catch (err: any) {
-      console.warn("Failed to fetch AI overview metrics:", err);
-    } finally {
-      setLoadingOverview(false);
     }
   };
 
@@ -660,6 +614,120 @@ export default function AiAgentsPage() {
     }
   };
 
+  // --- Prompt Version Lifecycle Handlers ---
+
+  const handleCreatePromptDraft = async () => {
+    if (!newPromptName.trim() || !newPromptText.trim()) {
+      toast.error("Please enter a prompt name and system instructions.");
+      return;
+    }
+    setCreatingPromptDraft(true);
+    try {
+      await aiApi.createPromptDraft({
+        name: newPromptName.trim(),
+        systemPrompt: newPromptText.trim(),
+        changeNote: newPromptNote.trim() || undefined,
+      });
+      toast.success("Draft prompt version created successfully!");
+      setShowNewPromptModal(false);
+      setNewPromptName("");
+      setNewPromptText("");
+      setNewPromptNote("");
+      fetchPrompts();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to create prompt draft.");
+    } finally {
+      setCreatingPromptDraft(false);
+    }
+  };
+
+  const handleOpenEditPrompt = (p: PromptVersionItem) => {
+    setEditingPrompt({ ...p });
+    setShowEditPromptModal(true);
+  };
+
+  const handleUpdatePrompt = async () => {
+    if (!editingPrompt || !editingPrompt.name.trim() || !editingPrompt.systemPrompt.trim()) {
+      toast.error("Please enter a prompt name and system instructions.");
+      return;
+    }
+    setUpdatingPrompt(true);
+    try {
+      await aiApi.updatePromptVersion(editingPrompt.id, {
+        name: editingPrompt.name.trim(),
+        systemPrompt: editingPrompt.systemPrompt.trim(),
+        changeNote: editingPrompt.changeNote?.trim() || undefined,
+        status: editingPrompt.status,
+      });
+      toast.success("Prompt version updated successfully!");
+      setShowEditPromptModal(false);
+      setEditingPrompt(null);
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update prompt version.");
+    } finally {
+      setUpdatingPrompt(false);
+    }
+  };
+
+  const handleDeletePrompt = async (id: string) => {
+    if (!confirm("Are you sure you want to permanently delete this prompt version?")) return;
+    try {
+      await aiApi.deletePromptVersion(id);
+      toast.success("Prompt version deleted.");
+      fetchPrompts();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to delete prompt version.");
+    }
+  };
+
+  const handleArchivePrompt = async (id: string) => {
+    try {
+      await aiApi.archivePromptVersion(id);
+      toast.success("Prompt version archived (inactive).");
+      fetchPrompts();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to archive prompt version.");
+    }
+  };
+
+  const handlePublishPrompt = async (id: string) => {
+    try {
+      await aiApi.publishPromptVersion(id);
+      toast.success("Prompt version published live as active AI system instructions!");
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to publish prompt version.");
+    }
+  };
+
+  const handleRollbackPrompt = async (id: string) => {
+    try {
+      await aiApi.rollbackPromptVersion(id);
+      toast.success("Rolled back to this prompt version.");
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to rollback prompt version.");
+    }
+  };
+
+  const handleSeedDefaultPrompts = async () => {
+    setSeedingPrompts(true);
+    try {
+      await aiApi.seedDefaultPrompts();
+      toast.success("Curated luxury prompt templates restored successfully!");
+      fetchPrompts();
+      fetchConfig();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to seed default prompts.");
+    } finally {
+      setSeedingPrompts(false);
+    }
+  };
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
@@ -934,7 +1002,12 @@ export default function AiAgentsPage() {
                     </tbody>
                   </table>
                 </div>
-{/* Tab 3: Core Prompts & Personality */}
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 3: Core Prompts & Personality */}
         <TabsContent value="config" className="m-0 space-y-6">
           {/* Quick Prompt Template Selector Bar */}
           <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
