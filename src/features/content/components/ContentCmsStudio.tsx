@@ -174,11 +174,27 @@ export function ContentCmsStudio() {
     if (index !== null && faqForm.items[index]) {
       const item = faqForm.items[index];
       setEditingFaqIndex(index);
+      const qObj = typeof item.question === "object" && item.question ? item.question : {};
+      const aObj = typeof item.answer === "object" && item.answer ? item.answer : {};
+      const qVal = typeof item.question === "string" ? item.question : "";
+      const aVal = typeof item.answer === "string" ? item.answer : "";
       setFaqDraft({
         id: item.id || `faq-${Date.now()}`,
         category: item.category || "general",
-        question: typeof item.question === "object" ? { ...item.question } : { [activeLang]: item.question || "" },
-        answer: typeof item.answer === "object" ? { ...item.answer } : { [activeLang]: item.answer || "" },
+        question: {
+          en: qObj.en || (activeLang === "en" ? qVal : ""),
+          ar: qObj.ar || (activeLang === "ar" ? qVal : ""),
+          es: qObj.es || (activeLang === "es" ? qVal : ""),
+          pt: qObj.pt || (activeLang === "pt" ? qVal : ""),
+          it: qObj.it || (activeLang === "it" ? qVal : ""),
+        },
+        answer: {
+          en: aObj.en || (activeLang === "en" ? aVal : ""),
+          ar: aObj.ar || (activeLang === "ar" ? aVal : ""),
+          es: aObj.es || (activeLang === "es" ? aVal : ""),
+          pt: aObj.pt || (activeLang === "pt" ? aVal : ""),
+          it: aObj.it || (activeLang === "it" ? aVal : ""),
+        },
       });
     } else {
       setEditingFaqIndex(null);

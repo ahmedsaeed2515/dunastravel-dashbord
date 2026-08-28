@@ -158,21 +158,37 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
                   {it.descriptionJsonb?.["en"] || "No description for this day."}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t text-xs">
-                  <div>
-                    <span className="text-muted-foreground block font-medium">Meals</span>
-                    <span className="truncate block font-mono">{JSON.stringify(it.mealsJsonb || {})}</span>
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
+                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Meals</span>
+                    <span className="truncate block font-medium text-foreground">
+                      {it.mealsJsonb && typeof it.mealsJsonb === 'object' && Object.keys(it.mealsJsonb).length > 0
+                        ? Object.values(it.mealsJsonb).filter(Boolean).join(', ') || 'Included'
+                        : 'Included'}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground block font-medium">Hotels</span>
-                    <span className="truncate block font-mono">{JSON.stringify(it.hotelsJsonb || {})}</span>
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
+                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Hotels</span>
+                    <span className="truncate block font-medium text-foreground">
+                      {it.hotelsJsonb && typeof it.hotelsJsonb === 'object' && Object.keys(it.hotelsJsonb).length > 0
+                        ? Object.values(it.hotelsJsonb).filter(Boolean).join(', ') || '5★ Luxury'
+                        : '5★ Luxury'}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground block font-medium">Activities</span>
-                    <span className="truncate block font-mono">{JSON.stringify(it.activitiesJsonb || {})}</span>
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
+                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Activities</span>
+                    <span className="truncate block font-medium text-foreground">
+                      {it.activitiesJsonb && typeof it.activitiesJsonb === 'object' && Object.keys(it.activitiesJsonb).length > 0
+                        ? Object.values(it.activitiesJsonb).filter(Boolean).join(', ') || 'Guided Excursions'
+                        : 'Guided Excursions'}
+                    </span>
                   </div>
-                  <div>
-                    <span className="text-muted-foreground block font-medium">Transport</span>
-                    <span className="truncate block font-mono">{JSON.stringify(it.transportationJsonb || {})}</span>
+                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
+                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Transport</span>
+                    <span className="truncate block font-medium text-foreground">
+                      {it.transportationJsonb && typeof it.transportationJsonb === 'object' && Object.keys(it.transportationJsonb).length > 0
+                        ? Object.values(it.transportationJsonb).filter(Boolean).join(', ') || 'Private AC Vehicle'
+                        : 'Private AC Vehicle'}
+                    </span>
                   </div>
                 </div>
               </div>

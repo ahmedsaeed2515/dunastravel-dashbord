@@ -184,9 +184,31 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                 <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
                   <DollarSign className="h-4 w-4 text-primary" /> Seasonal Pricing Rules
                 </h3>
-                <div className="bg-muted p-4 rounded-lg font-mono text-xs overflow-x-auto">
-                  {JSON.stringify(tour.seasonPricingJsonb || { defaultMargin: "25%", dynamicSurge: false }, null, 2)}
-                </div>
+                {tour.seasonPricingJsonb && typeof tour.seasonPricingJsonb === 'object' && Object.keys(tour.seasonPricingJsonb).length > 0 ? (
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    {Object.entries(tour.seasonPricingJsonb).map(([k, v]) => (
+                      <div key={k} className="p-3 bg-muted/40 rounded-lg border border-border/50">
+                        <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold mb-1">
+                          {k.replace(/([A-Z])/g, ' $1').replace(/_/g, ' ')}
+                        </span>
+                        <span className="font-mono font-medium text-foreground">
+                          {typeof v === 'object' ? JSON.stringify(v) : String(v)}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 gap-3 text-xs">
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
+                      <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold mb-1">Default Margin</span>
+                      <span className="font-mono font-medium text-foreground">25%</span>
+                    </div>
+                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
+                      <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold mb-1">Dynamic Surge</span>
+                      <span className="font-mono font-medium text-foreground">Standard Tier</span>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
 

@@ -512,8 +512,13 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                           </div>      
                           <div className="text-xs text-muted-foreground mt-0.5">Performed by {log.authorName}</div>
                           {log.details && Object.keys(log.details).length > 0 && (
-                            <div className="text-xs mt-2 p-2 bg-gray-50 dark:bg-gray-900/60 rounded-lg font-mono text-gray-600 dark:text-gray-300 border border-gray-100 dark:border-gray-800 overflow-x-auto">
-                              {JSON.stringify(log.details)}
+                            <div className="mt-2 flex flex-wrap gap-1.5 p-2 bg-muted/40 rounded-lg border border-border/50 text-[11px]">
+                              {Object.entries(log.details).map(([k, v]) => (
+                                <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-background/80 border text-muted-foreground">
+                                  <span className="font-semibold text-foreground">{k}:</span>
+                                  <span className="font-mono truncate max-w-[200px]">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+                                </span>
+                              ))}
                             </div>
                           )}
                         </div>

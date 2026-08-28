@@ -47,9 +47,11 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
   const [formData, setFormData] = useState<LandingPageMutationPayload>({});
   const [selectedTourToAdd, setSelectedTourToAdd] = useState("");
   const [tourRelations, setTourRelations] = useState<NonNullable<TourLandingPage["tours"]>>([]);
+  const [sectionsRaw, setSectionsRaw] = useState("{}");
 
   useEffect(() => {
     if (landingPage) {
+      setSectionsRaw(JSON.stringify(landingPage.sectionsJsonb || {}, null, 2));
       setFormData({
         slug: landingPage.slug,
         expectedUpdatedAt: landingPage.updatedAt || undefined,
@@ -380,13 +382,14 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
                 <Textarea
                   rows={8}
                   className="font-mono text-xs"
-                  value={JSON.stringify(formData.sectionsJsonb || {}, null, 2)}
+                  value={sectionsRaw}
                   onChange={(e) => {
+                    setSectionsRaw(e.target.value);
                     try {
                       const parsed = JSON.parse(e.target.value);
-                      setFormData({ ...formData, sectionsJsonb: parsed });
+                      setFormData((prev) => ({ ...prev, sectionsJsonb: parsed }));
                     } catch {
-                      // ignore parse errors while typing
+                      // allow fluid typing in buffer
                     }
                   }}
                 />
