@@ -9,6 +9,7 @@ import {
   TourItinerary,
   TourQueryFilters,
   TourStats,
+  TourCatalogOverview,
   UpdateTourPayload,
   CreateTourAvailabilityPayload,
   UpdateTourAvailabilityPayload,
@@ -45,11 +46,15 @@ export const toursApi = {
   getTourStats: async (): Promise<TourStats> => {
     return apiClient.get<TourStats, TourStats>('/admin/tours/stats');
   },
+  getTourCatalogOverview: async (): Promise<TourCatalogOverview> =>
+    apiClient.get<TourCatalogOverview, TourCatalogOverview>('/admin/tours/catalog-overview'),
   getTourBySlug: (slug: string): Promise<Tour> => apiClient.get<Tour, Tour>(`/admin/tours/${slug}`),
   getTourPreview: (slug: string, lang: string): Promise<TourPreview> =>
     apiClient.get<TourPreview, TourPreview>(`/admin/tours/${slug}/preview`, { params: { lang } }),
   createTour: (data: CreateTourPayload): Promise<{ success: boolean; slug: string }> => apiClient.post<{ success: boolean; slug: string }, { success: boolean; slug: string }>('/admin/tours', data),
   updateTour: (slug: string, data: UpdateTourPayload): Promise<{ success: boolean; slug: string }> => apiClient.patch<{ success: boolean; slug: string }, { success: boolean; slug: string }>(`/admin/tours/${slug}`, data),
+  moveTour: (slug: string, data: { destinationSlug: string; country: string; city?: string; category?: string }): Promise<{ success: boolean; slug: string; destinationSlug: string }> =>
+    apiClient.patch<{ success: boolean; slug: string; destinationSlug: string }, { success: boolean; slug: string; destinationSlug: string }>(`/admin/tours/${slug}/move`, data),
   publishTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>
     apiClient.post(`/admin/tours/${slug}/publish`),
   unpublishTour: (slug: string): Promise<{ success: boolean; slug: string; status: string; isActive: boolean }> =>

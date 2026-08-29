@@ -76,4 +76,12 @@ describe('buildTripEditorPayload', () => {
       ],
     });
   });
+
+  it('sends an empty tag array so removed tags are persisted', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'tagless-tour', title: 'Tagless', destination: 'egypt', price: 0,
+    }, false);
+
+    expect(payload.tags).toEqual([]);
+  });
 });

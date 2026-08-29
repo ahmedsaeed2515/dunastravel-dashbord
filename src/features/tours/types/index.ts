@@ -252,3 +252,28 @@ export interface TourStats {
   seatsSold: number;
   occupancyRate: string;
 }
+
+export interface TourCatalogOverview {
+  totalTours: number;
+  visibleOnWebsite: number;
+  hiddenFromWebsite: number;
+  unpublished: number;
+  unlinked: number;
+  interfaces: Array<{
+    slug: string;
+    titleJsonb: Record<string, unknown>;
+    isPublic: boolean;
+    total: number;
+    visible: number;
+    hidden: number;
+  }>;
+  integrity: {
+    complete: number;
+    needsReview: number;
+    issues: Array<{
+      slug: string;
+      missingLocales: string[];
+      missingFields: string[];
+    }>;
+  };
+}

@@ -404,31 +404,26 @@ export function TransportationServicesManager() {
       const backendPayload = {
         name: payload.name || payload.nameAr || payload.nameEn,
         serviceType: payload.serviceType || "AIRPORT",
-        description: payload.description,
-        vehicleCategory: payload.vehicleCategory,
-        vehicleType: payload.vehicleType,
-        capacity: Number(payload.capacity),
-        doors: Number(payload.doors),
-        transmission: payload.transmission,
-        heroImageUrl: payload.heroImageUrl,
+        description: payload.description || undefined,
+        vehicleCategory: payload.vehicleCategory || undefined,
+        vehicleType: payload.vehicleType || undefined,
+        capacity: Number(payload.capacity) || 4,
+        doors: Number(payload.doors) || 2,
+        transmission: payload.transmission || "AUTO",
+        heroImageUrl: payload.heroImageUrl || undefined,
         isPrivate: Boolean(payload.isPrivate),
-        pickupInstructions: payload.pickupInstructions,
-        dropoffInstructions: payload.dropoffInstructions,
-        features: payload.features,
-        heroMediaId: payload.heroMediaId,
-        basePriceUsd: String(payload.basePriceUsd),
+        pickupInstructions: payload.pickupInstructions || undefined,
+        dropoffInstructions: payload.dropoffInstructions || undefined,
+        features: Array.isArray(payload.features) ? payload.features : [],
+        heroMediaId: payload.heroMediaId && payload.heroMediaId.trim() ? payload.heroMediaId.trim() : undefined,
+        basePriceUsd: Number(payload.basePriceUsd) || 0,
         isActive: Boolean(payload.isActive),
       };
 
-      try {
-        if (editingItem?.id) {
-          return await apiClient.put(`/admin/transportation/services/${editingItem.id}`, backendPayload);
-        } else {
-          return await apiClient.post("/admin/transportation/services", backendPayload);
-        }
-      } catch (err) {
-        console.warn("Backend save failed, using local state update:", err);
-        return backendPayload;
+      if (editingItem?.id) {
+        return await apiClient.put(`/admin/transportation/services/${editingItem.id}`, backendPayload);
+      } else {
+        return await apiClient.post("/admin/transportation/services", backendPayload);
       }
     },
     onSuccess: () => {

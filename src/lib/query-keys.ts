@@ -16,6 +16,7 @@ export const queryKeys = {
     details: () => ['tours', 'detail'] as const,
     detail: (slug: string) => ['tours', 'detail', slug] as const,
     stats: () => ['tours', 'stats'] as const,
+    catalogOverview: () => ['tours', 'catalog-overview'] as const,
   },
   bookings: {
     all: ['bookings'] as const,

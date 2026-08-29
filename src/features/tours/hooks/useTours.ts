@@ -26,6 +26,13 @@ export function useTourStats() {
   });
 }
 
+export function useTourCatalogOverview() {
+  return useQuery({
+    queryKey: queryKeys.tours.catalogOverview(),
+    queryFn: () => toursApi.getTourCatalogOverview(),
+  });
+}
+
 export function useTour(slug: string) {
   return useQuery({
     queryKey: queryKeys.tours.detail(slug),
@@ -61,6 +68,7 @@ export function useCreateTour() {
     onSuccess: () => {
       toast.success("Tour created successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to create tour");
@@ -76,6 +84,7 @@ export function useUpdateTour() {
     onSuccess: (_, variables) => {
       toast.success("Tour updated successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(variables.slug) });
     },
     onError: (error: ApiError) => {
@@ -91,6 +100,7 @@ export function useBulkUpdateTours() {
     onSuccess: (data) => {
       toast.success(`Updated ${data.count} tours successfully`);
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to bulk update tours");
@@ -105,6 +115,7 @@ export function useSoftDeleteTour() {
     onSuccess: () => {
       toast.success("Tour deleted successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to delete tour");
@@ -241,6 +252,7 @@ export function useTourLifecycleAction(action: TourLifecycleAction) {
     onSuccess: (_, slug) => {
       toast.success(`Tour ${action === 'unarchive' ? 'restored as draft' : `${action}d`} successfully`);
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(slug) });
     },
     onError: (error: ApiError) => {

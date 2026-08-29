@@ -2,9 +2,9 @@
 
 import React, { useState, memo } from 'react';
 import { TripModel } from '@/types/dunas-suite';
-import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
+import { LANDING_PAGES_QUERY_KEY } from '@/features/tours/hooks/useLandingPages';
 import {
   Dialog,
   DialogContent,
@@ -21,15 +21,18 @@ interface TransferTripModalProps {
   trip: TripModel | null;
   isOpen: boolean;
   onClose: () => void;
+  destinations: Array<{ id: string; nameAr: string; nameEn: string; flag: string }>;
+  egyptPackages: Array<{ id: string; titleAr: string; description: string; icon: string }>;
 }
 
 export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   trip,
   isOpen,
   onClose,
+  destinations,
+  egyptPackages,
 }) => {
   const queryClient = useQueryClient();
-  const { destinations, egyptPackages } = useDataContext();
   const [selectedDestination, setSelectedDestination] = useState<string>(
     trip?.destination || 'egypt'
   );
@@ -51,31 +54,28 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   );
 
   const handleConfirmTransfer = async () => {
-    const countryName =
-      selectedDestination === 'egypt'
-        ? 'Egypt'
-        : selectedDestination === 'turkey'
-        ? 'Turkey'
-        : selectedDestination === 'jordan'
-        ? 'Jordan'
-        : selectedDestination === 'morocco'
-        ? 'Morocco'
-        : selectedDestination === 'dubai'
-        ? 'United Arab Emirates'
-        : selectedDestination === 'tunisia'
-        ? 'Tunisia'
-        : selectedDestination === 'greece'
-        ? 'Greece'
-        : 'Multi-Country';
+    const countryByDestination: Record<string, string> = {
+      egypt: 'Egypt',
+      turkey: 'Turkey',
+      jordan: 'Jordan',
+      morocco: 'Morocco',
+      dubai: 'United Arab Emirates',
+      tunisia: 'Tunisia',
+      greece: 'Greece',
+      'multi-country': 'Multi-Country',
+    };
+    const countryName = countryByDestination[selectedDestination] || selectedDestination;
 
     try {
-      if (trip.slug) {
-        await toursApi.updateTour(trip.slug, {
+      if (!trip.slug) throw new Error('A backend tour slug is required');
+      await toursApi.moveTour(trip.slug, {
+          destinationSlug: selectedDestination,
           country: countryName,
-          category: selectedPackage || countryName,
-        } as any);
-        queryClient.invalidateQueries({ queryKey: ['tours'] });
-      }
+          category: selectedPackage || undefined,
+        });
+      await queryClient.invalidateQueries({ queryKey: ['tours'] });
+      await queryClient.invalidateQueries({ queryKey: ['tours', 'catalog-overview'] });
+      await queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
     } catch {
       toast.error('تعذر نقل الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
       return;

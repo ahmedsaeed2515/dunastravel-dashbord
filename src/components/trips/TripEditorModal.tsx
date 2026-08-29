@@ -170,9 +170,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       console.error('Backend API save failed:', err);
       toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
       return;
-      toast.success(trip ? 'تم حفظ التعديلات محلياً في لوحة التحكم!' : 'تمت إضافة الرحلة محلياً في لوحة التحكم بنجاح!');
     }
-
   };
 
   // Accommodation helper

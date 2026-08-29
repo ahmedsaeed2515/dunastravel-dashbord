@@ -97,7 +97,7 @@ export function TourRowActions({
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={() => onDelete(tour)} className="text-red-600 focus:text-red-600 focus:bg-red-500/10 cursor-pointer">
-          <Trash className="mr-2 h-4 w-4" /> {isAr ? "أرشفة الرحلة" : "Archive Tour"}
+          <Trash className="mr-2 h-4 w-4" /> {isAr ? "حذف الرحلة" : "Delete Tour"}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

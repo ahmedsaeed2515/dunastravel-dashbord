@@ -1,7 +1,7 @@
 "use client";
 
 import { useMemo, useState, type ReactNode } from "react";
-import { useParams } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
 import {
   Award,
   Calendar,
@@ -33,7 +33,8 @@ import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
 import { DestinationsManager } from "@/components/destinations/DestinationsManager";
-import { useSoftDeleteTour, useTour, useTours, useTourStats } from "@/features/tours/hooks/useTours";
+import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats } from "@/features/tours/hooks/useTours";
+import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
 import type { Tour } from "@/features/tours/types";
 import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
@@ -120,17 +121,41 @@ function textFor(value: Record<string, unknown> | null | undefined, locale: stri
   return "";
 }
 
+function hasLocaleCoreContent(tour: Tour, locale: string) {
+  return [tour.titleJsonb, tour.overviewJsonb, tour.durationJsonb].every((field) =>
+    typeof field?.[locale] === "string" && field[locale].trim().length > 0,
+  );
+}
+
 function completion(tour: Tour) {
-  return LOCALES.filter((locale) => Boolean(textFor(tour.titleJsonb, locale))).length;
+  return LOCALES.filter((locale) => hasLocaleCoreContent(tour, locale)).length;
+}
+
+function hasDestinationInterface(tour: Tour, slug?: string): boolean {
+  return (tour.landingPages || []).some((relation) =>
+    relation.type === "DESTINATION" && (!slug || relation.slug.toLowerCase() === slug.toLowerCase()),
+  );
+}
+
+function isVisibleOnDestinationInterface(tour: Tour, slug?: string): boolean {
+  if (tour.status !== "PUBLISHED" || !tour.isActive) return false;
+  return (tour.landingPages || []).some((relation) =>
+    relation.type === "DESTINATION" &&
+    relation.isVisible === true &&
+    relation.status === "PUBLISHED" &&
+    relation.isActive === true &&
+    (!slug || relation.slug.toLowerCase() === slug.toLowerCase()),
+  );
 }
 
 export default function ToursPage() {
   const params = useParams<{ locale?: string }>();
+  const router = useRouter();
   const locale = params?.locale || "en";
   const isAr = locale === "ar";
 
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
-  const [catalogScope, setCatalogScope] = useState<"ADMIN" | "PUBLIC">("ADMIN");
+  const [catalogScope, setCatalogScope] = useState<"ADMIN" | "PUBLIC" | "HIDDEN" | "UNLINKED" | "UNPUBLISHED">("ADMIN");
   const [search, setSearch] = useState("");
   const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
@@ -138,17 +163,24 @@ export default function ToursPage() {
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
 
-  const filters = useMemo(() => ({ limit: 100, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
+  const filters = useMemo(() => ({ limit: 500, ...(search.trim() ? { search: search.trim() } : {}) }), [search]);
   const { data, isLoading, error, refetch } = useTours(filters);
+  const { data: landingPagesData } = useLandingPages({ type: "DESTINATION", limit: 50 });
   const { data: stats } = useTourStats();
+  const { data: catalogOverview } = useTourCatalogOverview();
   const removeTour = useSoftDeleteTour();
 
   const tours = data?.data ?? [];
-  const visibleWebsiteTours = useMemo(
-    () => tours.filter(isTourVisibleOnWebsite),
-    [tours],
-  );
-  const scopedTours = catalogScope === "PUBLIC" ? visibleWebsiteTours : tours;
+  const visibleWebsiteTours = useMemo(() => tours.filter(isTourVisibleOnWebsite), [tours]);
+  const scopedTours = useMemo(() => {
+    switch (catalogScope) {
+      case "PUBLIC": return visibleWebsiteTours;
+      case "HIDDEN": return tours.filter((tour) => !isTourVisibleOnWebsite(tour));
+      case "UNLINKED": return tours.filter((tour) => !hasDestinationInterface(tour));
+      case "UNPUBLISHED": return tours.filter((tour) => tour.status !== "PUBLISHED" || !tour.isActive);
+      default: return tours;
+    }
+  }, [catalogScope, tours, visibleWebsiteTours]);
   const translatedTourCount = useMemo(
     () => scopedTours.filter((tour) => completion(tour) === LOCALES.length).length,
     [scopedTours]
@@ -173,9 +205,20 @@ export default function ToursPage() {
       : '0.00';
   }, [scopedTours]);
 
+  const exactScopeCount = search.trim()
+    ? scopedTours.length
+    : catalogScope === "PUBLIC"
+      ? (catalogOverview?.visibleOnWebsite ?? visibleWebsiteTours.length)
+      : catalogScope === "HIDDEN"
+        ? (catalogOverview?.hiddenFromWebsite ?? tours.filter((tour) => !isTourVisibleOnWebsite(tour)).length)
+        : catalogScope === "UNLINKED"
+          ? (catalogOverview?.unlinked ?? tours.filter((tour) => !hasDestinationInterface(tour)).length)
+          : catalogScope === "UNPUBLISHED"
+            ? (catalogOverview?.unpublished ?? tours.filter((tour) => tour.status !== "PUBLISHED" || !tour.isActive).length)
+            : (catalogOverview?.totalTours ?? stats?.totalTours ?? tours.length);
+
   const handleOpenEditTrip = (tour: Tour) => {
-    setSelectedTripForModal(tourToTripModel(tour));
-    setIsTripModalOpen(true);
+    router.push(`/${locale}/admin/tours/${tour.slug}/edit`);
   };
 
   const handleOpenAddTrip = () => {
@@ -183,33 +226,44 @@ export default function ToursPage() {
     setIsTripModalOpen(true);
   };
 
-  // Admin scope diagnoses all records. Website scope uses only the canonical
-  // published destination relationship, matching the customer frontend.
-  const destinationCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: scopedTours.length };
-    DESTINATIONS_LIST.forEach((d) => {
-      if (d.id !== "ALL") counts[d.id] = 0;
+  const destinationInterfaces = useMemo(() => {
+    const pages = landingPagesData?.data || [];
+    if (pages.length > 0) {
+      return pages.map((page) => ({
+        slug: page.slug,
+        label: isAr ? (page.titleJsonb?.ar || page.titleJsonb?.en || page.slug) : (page.titleJsonb?.en || page.slug),
+      }));
+    }
+    return DESTINATIONS_LIST.filter((destination) => destination.id !== "ALL").map((destination) => ({
+      slug: destinationForCountry(destination.id),
+      label: isAr ? destination.nameAr : destination.nameEn,
+    }));
+  }, [isAr, landingPagesData]);
+
+  // These counts use interface relations and publication flags, never sort order.
+  const interfaceSummaries = useMemo(() => {
+    if (catalogOverview?.interfaces?.length) {
+      return catalogOverview.interfaces.map((destination) => ({
+        slug: destination.slug,
+        label: isAr
+          ? String(destination.titleJsonb?.ar || destination.titleJsonb?.en || destination.slug)
+          : String(destination.titleJsonb?.en || destination.slug),
+        total: destination.total,
+        visible: destination.visible,
+        hidden: destination.hidden,
+      }));
+    }
+    return destinationInterfaces.map((destination) => {
+    const attached = tours.filter((tour) => hasDestinationInterface(tour, destination.slug));
+    const visible = attached.filter((tour) => isVisibleOnDestinationInterface(tour, destination.slug));
+    return { ...destination, total: attached.length, visible: visible.length, hidden: attached.length - visible.length };
     });
-    scopedTours.forEach((tour) => {
-      const destinations = catalogScope === "PUBLIC"
-        ? publicDestinationLabelsForTour(tour)
-        : [resolveTourDestination(tour)];
-      destinations.forEach((destination) => {
-        counts[destination] = (counts[destination] || 0) + 1;
-      });
-    });
-    return counts;
-  }, [scopedTours, catalogScope]);
+  }, [catalogOverview, destinationInterfaces, isAr, tours]);
 
   // Filtered tours for the UI
   const filteredTours = useMemo(() => {
     return scopedTours.filter((tour) => {
-      if (selectedDestination !== "ALL") {
-        const destinations = catalogScope === "PUBLIC"
-          ? publicDestinationLabelsForTour(tour)
-          : [resolveTourDestination(tour)];
-        if (!destinations.includes(selectedDestination)) return false;
-      }
+      if (selectedDestination !== "ALL" && !hasDestinationInterface(tour, selectedDestination)) return false;
       if (search.trim()) {
         const q = search.toLowerCase();
         const title = textFor(tour.titleJsonb, locale).toLowerCase();
@@ -284,7 +338,7 @@ export default function ToursPage() {
               {isAr ? "إجمالي الرحلات النشطة" : "Total Active Trips"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-                {catalogScope === "PUBLIC" ? visibleWebsiteTours.length : (stats?.totalTours ?? tours.length)} <span className="text-xs font-bold text-amber-500">{isAr ? "رحلة 🗺️" : "Tours 🗺️"}</span>
+                {exactScopeCount} <span className="text-xs font-bold text-amber-500">{isAr ? "رحلة 🗺️" : "Tours 🗺️"}</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
@@ -299,7 +353,9 @@ export default function ToursPage() {
               {isAr ? "مترجمة بالكامل (5 لغات)" : "5-Lang Translated"}
             </span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
-                {translatedPercent}% <span className="text-xs font-bold text-emerald-500">({translatedTourCount}/{scopedTours.length}) 🌐</span>
+                {catalogScope === "ADMIN" && !search.trim() && catalogOverview
+                  ? Math.round((catalogOverview.integrity.complete / Math.max(catalogOverview.totalTours, 1)) * 100)
+                  : translatedPercent}% <span className="text-xs font-bold text-emerald-500">({catalogScope === "ADMIN" && !search.trim() && catalogOverview ? catalogOverview.integrity.complete : translatedTourCount}/{catalogScope === "ADMIN" && !search.trim() && catalogOverview ? catalogOverview.totalTours : scopedTours.length}) 🌐</span>
             </div>
           </div>
           <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
@@ -374,7 +430,7 @@ export default function ToursPage() {
                    : (isAr ? "كل سجلات الإدارة، بما فيها غير المرتبط أو غير المنشور." : "All admin records, including unpublished or unlinked tours.")}
                </p>
              </div>
-             <div className="inline-flex rounded-xl border border-border p-1 bg-muted/40 self-start sm:self-auto">
+             <div className="flex flex-wrap rounded-xl border border-border p-1 bg-muted/40 self-start sm:self-auto gap-1">
                <button
                  type="button"
                  onClick={() => { setCatalogScope("PUBLIC"); setSelectedDestination("ALL"); }}
@@ -390,28 +446,48 @@ export default function ToursPage() {
                  {isAr ? "كل السجلات" : "All admin records"}
                </button>
              </div>
+             <div className="flex flex-wrap gap-1">
+               <button type="button" onClick={() => { setCatalogScope("HIDDEN"); setSelectedDestination("ALL"); }} className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${catalogScope === "HIDDEN" ? "bg-rose-500 text-white" : "bg-muted/40 text-muted-foreground hover:text-foreground"}`}>
+                 {isAr ? "غير ظاهر بالموقع" : "Hidden from website"}
+               </button>
+               <button type="button" onClick={() => { setCatalogScope("UNPUBLISHED"); setSelectedDestination("ALL"); }} className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${catalogScope === "UNPUBLISHED" ? "bg-sky-500 text-white" : "bg-muted/40 text-muted-foreground hover:text-foreground"}`}>
+                 {isAr ? "غير منشور" : "Unpublished"}
+               </button>
+               <button type="button" onClick={() => { setCatalogScope("UNLINKED"); setSelectedDestination("ALL"); }} className={`rounded-lg px-3 py-1.5 text-xs font-black transition-colors ${catalogScope === "UNLINKED" ? "bg-violet-500 text-white" : "bg-muted/40 text-muted-foreground hover:text-foreground"}`}>
+                 {isAr ? "غير مربوط بواجهة" : "No interface"}
+               </button>
+             </div>
            </Card>
            {/* Destination Selector & Search Bar */}
           <Card className="p-4 bg-card border border-border/80 rounded-2xl shadow-xs space-y-3">
             <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
               {/* Destination Filter Bar */}
               <div className="flex items-center gap-2 overflow-x-auto pb-1.5 w-full lg:w-auto scrollbar-thin">
-                {DESTINATIONS_LIST.map((dest) => {
-                  const isActive = selectedDestination === dest.id;
-                  const count = destinationCounts[dest.id] ?? 0;
-                  const label = isAr ? dest.nameAr : dest.nameEn;
+                <button
+                  type="button"
+                  onClick={() => setSelectedDestination("ALL")}
+                  className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer shrink-0 border flex items-center gap-1.5 shadow-xs ${
+                    selectedDestination === "ALL"
+                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-amber-500/20 shadow-md scale-[1.02]"
+                      : "bg-muted/40 text-muted-foreground border-border hover:text-foreground hover:bg-muted/70"
+                  }`}
+                >
+                  <span>{isAr ? "كل الواجهات" : "All interfaces"}</span>
+                  <span className="text-[10px] font-black px-1.5 py-0.5 rounded-full bg-background/80 text-muted-foreground border">{exactScopeCount}</span>
+                </button>
+                {interfaceSummaries.map((destination) => {
+                  const isActive = selectedDestination === destination.slug;
                   return (
                     <button
-                      key={dest.id}
-                      onClick={() => setSelectedDestination(dest.id)}
+                      key={destination.slug}
+                      onClick={() => setSelectedDestination(destination.slug)}
                       className={`px-3.5 py-2 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer shrink-0 border flex items-center gap-1.5 shadow-xs ${
                         isActive
                           ? "bg-amber-500 text-slate-950 border-amber-500 shadow-amber-500/20 shadow-md scale-[1.02]"
                           : "bg-muted/40 text-muted-foreground border-border hover:text-foreground hover:bg-muted/70"
                       }`}
                     >
-                      <span>{dest.flag}</span>
-                      <span>{label}</span>
+                      <span>{destination.label}</span>
                       <span
                         className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
                           isActive
@@ -419,7 +495,7 @@ export default function ToursPage() {
                             : "bg-background/80 text-muted-foreground border"
                         }`}
                       >
-                        {count}
+                        {destination.visible}/{destination.total}
                       </span>
                     </button>
                   );
@@ -439,6 +515,24 @@ export default function ToursPage() {
               </div>
             </div>
           </Card>
+
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
+            {interfaceSummaries.map((destination) => (
+              <button
+                key={`summary-${destination.slug}`}
+                type="button"
+                onClick={() => setSelectedDestination(destination.slug)}
+                className={`rounded-xl border p-3 text-start transition-colors ${selectedDestination === destination.slug ? "border-amber-500 bg-amber-500/10" : "border-border bg-card hover:border-amber-500/50"}`}
+              >
+                <p className="truncate text-xs font-black text-foreground">{destination.label}</p>
+                <div className="mt-2 flex items-center gap-2 text-[11px] font-bold">
+                  <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">{destination.visible} {isAr ? "ظاهر" : "live"}</span>
+                  <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-rose-600">{destination.hidden} {isAr ? "مخفي" : "hidden"}</span>
+                  <span className="ms-auto text-muted-foreground">{destination.total} {isAr ? "إجمالي" : "total"}</span>
+                </div>
+              </button>
+            ))}
+          </div>
 
           {/* Interactive Tours Grid Body */}
           {error ? (
@@ -481,6 +575,8 @@ export default function ToursPage() {
                 const isFeatured = Boolean(tour.isFeatured);
                 const heroImg = tour.heroImage || null;
                 const destGroup = resolveTourDestination(tour);
+                const visibleOnWebsite = isTourVisibleOnWebsite(tour);
+                const attachedToInterface = hasDestinationInterface(tour);
 
                 return (
                   <Card
@@ -495,6 +591,14 @@ export default function ToursPage() {
 
                         {/* Top Badges */}
                         <div className="absolute top-3 right-3 flex flex-wrap gap-1.5">
+                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black shadow-xs ${visibleOnWebsite ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"}`}>
+                            {visibleOnWebsite ? (isAr ? "ظاهر بالموقع" : "Live on website") : (isAr ? "غير ظاهر" : "Hidden")}
+                          </span>
+                          {!attachedToInterface && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-violet-500 text-white shadow-xs">
+                              {isAr ? "بدون واجهة" : "No interface"}
+                            </span>
+                          )}
                           {isFeatured && (
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-rose-500 text-white shadow-xs flex items-center gap-1">
                               <Flame className="w-3 h-3 fill-white" /> {isAr ? "الأكثر إقبالاً 🔥" : "Popular 🔥"}
@@ -539,8 +643,8 @@ export default function ToursPage() {
                               <Globe2 className="w-3.5 h-3.5 text-amber-500" />
                               {isAr ? "مترجم بالكامل:" : "Translated:"}
                             </span>
-                            <span className="text-[10px] font-black text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                              5/5 {isAr ? "لغات ✓" : "Locales ✓"}
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${completion(tour) === LOCALES.length ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" : "text-amber-600 bg-amber-500/10 border-amber-500/20"}`}>
+                              {completion(tour)}/5 {isAr ? "لغات" : "Locales"}
                             </span>
                           </div>
                           <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] font-extrabold pt-0.5">

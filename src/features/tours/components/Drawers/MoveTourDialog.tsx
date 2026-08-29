@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { Tour } from "../../types";
-import { useUpdateTour } from "../../hooks/useTours";
 import { landingPagesApi, TourLandingPage } from "../../api/landingPagesApi";
+import { toursApi } from "../../api/toursApi";
+import { LANDING_PAGES_QUERY_KEY } from "../../hooks/useLandingPages";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   Dialog,
   DialogContent,
@@ -79,7 +81,7 @@ const CITIES_BY_COUNTRY: Record<string, string[]> = {
 export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps) {
   const tCommon = useTranslations("common");
   const currentLocale = useLocale();
-  const updateTourMutation = useUpdateTour();
+  const queryClient = useQueryClient();
 
   const [country, setCountry] = useState<string>("");
   const [city, setCity] = useState<string>("");
@@ -111,9 +113,7 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
       setCategory(tour.category || "Multi-Country");
       
       // Find matching initial landing page if attached
-      const attachedPage = tour.landingPages && tour.landingPages.length > 0
-        ? tour.landingPages[0]?.slug
-        : "NONE";
+      const attachedPage = tour.landingPages?.find((page) => page.type === "DESTINATION")?.slug;
       setSelectedLandingPage(attachedPage || "NONE");
     }
   }, [tour, open]);
@@ -132,33 +132,58 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
     if (suggestedCities && suggestedCities.length > 0) {
       setCity(suggestedCities[0]);
     }
+    const destinationSlugByCountry: Record<string, string> = {
+      Egypt: "egypt",
+      Turkey: "turkey",
+      Jordan: "jordan",
+      Morocco: "morocco",
+      Dubai: "dubai",
+      Tunisia: "tunisia",
+      Greece: "greece",
+      "Multi-Country": "multi-country",
+    };
+    const destinationSlug = destinationSlugByCountry[nextCountry];
+    const matchingPage = landingPages.find(
+      (page) => page.type === "DESTINATION" && page.slug.toLowerCase() === destinationSlug,
+    );
+    if (matchingPage) setSelectedLandingPage(matchingPage.slug);
   };
 
   const handleConfirmMove = async () => {
     try {
       setIsSubmitting(true);
 
-      // 1. Update tour's location/destination/category
-      await updateTourMutation.mutateAsync({
-        slug: tour.slug,
-        data: {
+      const destinationSlugByCountry: Record<string, string> = {
+        Egypt: "egypt",
+        Turkey: "turkey",
+        Jordan: "jordan",
+        Morocco: "morocco",
+        Dubai: "dubai",
+        Tunisia: "tunisia",
+        Greece: "greece",
+        "Multi-Country": "multi-country",
+      };
+      const selectedPage = selectedLandingPage === "NONE"
+        ? landingPages.find((page) => page.type === "DESTINATION" && page.slug.toLowerCase() === destinationSlugByCountry[country])
+        : landingPages.find((page) => page.slug === selectedLandingPage && page.type === "DESTINATION");
+      if (!selectedPage) {
+        toast.error(currentLocale === "ar"
+          ? "اختر واجهة وجهة صالحة لإتمام النقل."
+          : "Select a valid destination interface before moving the tour.");
+        return;
+      }
+
+      await toursApi.moveTour(tour.slug, {
+          destinationSlug: selectedPage.slug,
           country,
           city,
           category,
-        },
       });
-
-      // 2. Attach to landing page if selected
-      if (selectedLandingPage && selectedLandingPage !== "NONE") {
-        try {
-          await landingPagesApi.attachTours(selectedLandingPage, {
-            tourIds: [tour.id],
-            isVisible: true,
-          });
-        } catch (e) {
-          // Non-critical landing page attach error handler
-        }
-      }
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["tours"] }),
+        queryClient.invalidateQueries({ queryKey: ["tours", "catalog-overview"] }),
+        queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY }),
+      ]);
 
       toast.success(
         currentLocale === "ar"
@@ -350,7 +375,7 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
                   <SelectItem value="NONE">
                     {currentLocale === "ar" ? "بدون صفحة هبوط خاصة" : "None (Default Library Only)"}
                   </SelectItem>
-                  {landingPages.map((page) => (
+                  {landingPages.filter((page) => page.type === "DESTINATION").map((page) => (
                     <SelectItem key={page.id} value={page.slug}>
                       {page.titleJsonb?.en || page.slug} (/{page.slug})
                     </SelectItem>

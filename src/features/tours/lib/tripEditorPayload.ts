@@ -116,7 +116,8 @@ export function buildTripEditorPayload(
     country: countryForDestination(text(formData.destination)),
     city,
     market: text(formData.market) || null,
-    tags: tags.length > 0 ? tags : undefined,
+    // An empty array clears stale tags when the final checkbox is unchecked.
+    tags,
     basePriceUsd: price,
     currency: 'USD',
     isFeatured: Boolean(formData.popular),
