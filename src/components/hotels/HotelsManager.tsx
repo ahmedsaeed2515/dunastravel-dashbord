@@ -365,6 +365,38 @@ export function HotelsManager() {
   const publishedCount = hotels.filter((h) => h.status === "PUBLISHED" && h.isActive).length;
   const totalRoomsCount = hotels.reduce((acc: number, h) => acc + (h.rooms?.reduce((rAcc: number, r: any) => rAcc + (r.inventory || 0), 0) || 0), 0);
 
+  // Live Counts for destination pills
+  const destinationCounts = useMemo(() => {
+    const counts: Record<string, number> = { all: hotels.length };
+    for (const h of hotels) {
+      const d = (h.destinationSlug || "egypt").toLowerCase();
+      counts[d] = (counts[d] || 0) + 1;
+    }
+    return counts;
+  }, [hotels]);
+
+  // Live Counts for stars
+  const starCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: hotels.length, "5": 0, "4": 0, "3": 0 };
+    for (const h of hotels) {
+      if (h.stars === 5) counts["5"] = (counts["5"] || 0) + 1;
+      else if (h.stars === 4) counts["4"] = (counts["4"] || 0) + 1;
+      else if (h.stars === 3) counts["3"] = (counts["3"] || 0) + 1;
+    }
+    return counts;
+  }, [hotels]);
+
+  // Live Counts for statuses
+  const statusCounts = useMemo(() => {
+    const counts: Record<string, number> = { ALL: hotels.length, PUBLISHED: 0, DRAFT: 0, ARCHIVED: 0 };
+    for (const h of hotels) {
+      if (h.status === "PUBLISHED") counts.PUBLISHED = (counts.PUBLISHED || 0) + 1;
+      else if (h.status === "DRAFT") counts.DRAFT = (counts.DRAFT || 0) + 1;
+      else if (h.status === "ARCHIVED") counts.ARCHIVED = (counts.ARCHIVED || 0) + 1;
+    }
+    return counts;
+  }, [hotels]);
+
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
       {/* 1. Metric Cards */}
@@ -442,7 +474,7 @@ export function HotelsManager() {
           </Button>
         </div>
 
-        {/* Destination Filter Pills */}
+        {/* Destination Filter Pills with Counts */}
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
           <button
             onClick={() => setSelectedDestination("all")}
@@ -454,11 +486,21 @@ export function HotelsManager() {
           >
             <span>🌐</span>
             <span>{isAr ? "جميع الوجهات" : "All Destinations"}</span>
+            <span
+              className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-black ${
+                selectedDestination === "all"
+                  ? "bg-slate-950/20 text-slate-950"
+                  : "bg-muted text-muted-foreground"
+              }`}
+            >
+              {destinationCounts.all || 0}
+            </span>
           </button>
 
           {DESTINATION_OPTIONS.map((dest) => {
             const isActive = selectedDestination === dest.slug;
             const label = isAr ? dest.nameAr : dest.nameEn;
+            const count = destinationCounts[dest.slug.toLowerCase()] || 0;
             return (
               <button
                 key={dest.slug}
@@ -471,6 +513,15 @@ export function HotelsManager() {
               >
                 <span>{dest.flag}</span>
                 <span>{label}</span>
+                <span
+                  className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-black ${
+                    isActive
+                      ? "bg-slate-950/20 text-slate-950"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {count}
+                </span>
               </button>
             );
           })}
@@ -493,38 +544,54 @@ export function HotelsManager() {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground shrink-0">{isAr ? "النجوم:" : "Stars:"}</span>
               <div className="flex items-center gap-1">
-                {(["ALL", 5, 4, 3] as const).map((s) => (
-                  <button
-                    key={s}
-                    onClick={() => setSelectedStars(s)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer ${
-                      selectedStars === s
-                        ? "bg-amber-500 text-slate-950 border-amber-500"
-                        : "bg-muted/30 text-muted-foreground border-border"
-                    }`}
-                  >
-                    {s === "ALL" ? (isAr ? "الكل" : "All") : `${s} ⭐`}
-                  </button>
-                ))}
+                {(["ALL", 5, 4, 3] as const).map((s) => {
+                  const count = s === "ALL" ? starCounts.ALL : (starCounts[String(s)] || 0);
+                  return (
+                    <button
+                      key={s}
+                      onClick={() => setSelectedStars(s)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${
+                        selectedStars === s
+                          ? "bg-amber-500 text-slate-950 border-amber-500"
+                          : "bg-muted/30 text-muted-foreground border-border"
+                      }`}
+                    >
+                      <span>{s === "ALL" ? (isAr ? "الكل" : "All") : `${s} ⭐`}</span>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        selectedStars === s ? "text-slate-950" : "text-muted-foreground"
+                      }`}>
+                        ({count})
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground shrink-0">{isAr ? "الحالة:" : "Status:"}</span>
               <div className="flex items-center gap-1">
-                {(["ALL", "PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((st) => (
-                  <button
-                    key={st}
-                    onClick={() => setSelectedStatus(st)}
-                    className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer ${
-                      selectedStatus === st
-                        ? "bg-amber-500 text-slate-950 border-amber-500"
-                        : "bg-muted/30 text-muted-foreground border-border"
-                    }`}
-                  >
-                    {st === "ALL" ? (isAr ? "الكل" : "All") : st === "PUBLISHED" ? (isAr ? "منشور 🌐" : "Live") : st === "DRAFT" ? (isAr ? "مسودة" : "Draft") : (isAr ? "مؤرشف" : "Archived")}
-                  </button>
-                ))}
+                {(["ALL", "PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((st) => {
+                  const count = statusCounts[st] || 0;
+                  return (
+                    <button
+                      key={st}
+                      onClick={() => setSelectedStatus(st)}
+                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${
+                        selectedStatus === st
+                          ? "bg-amber-500 text-slate-950 border-amber-500"
+                          : "bg-muted/30 text-muted-foreground border-border"
+                      }`}
+                    >
+                      <span>{st === "ALL" ? (isAr ? "الكل" : "All") : st === "PUBLISHED" ? (isAr ? "منشور 🌐" : "Live") : st === "DRAFT" ? (isAr ? "مسودة" : "Draft") : (isAr ? "مؤرشف" : "Archived")}</span>
+                      <span className={`text-[10px] font-mono font-bold ${
+                        selectedStatus === st ? "text-slate-950" : "text-muted-foreground"
+                      }`}>
+                        ({count})
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
           </div>
