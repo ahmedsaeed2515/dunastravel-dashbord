@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ToursTable } from '../ToursTable';
 import { vi, describe, it, expect } from 'vitest';
 import { useTours, useTourStats } from '../../../hooks/useTours';
@@ -14,8 +15,16 @@ vi.mock('../../../hooks/useTours', () => ({
   useTourLifecycleAction: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useBulkUpdateTours: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
   useCreateTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
-  useUpdateTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false })
+  useUpdateTour: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useReorderTours: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false }),
+  useToggleFeatured: () => ({ mutate: vi.fn(), mutateAsync: vi.fn(), isPending: false })
 }));
+
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 describe('ToursTable', () => {
   const mockTours: any[] = [
@@ -53,7 +62,7 @@ describe('ToursTable', () => {
       isLoading: false
     });
 
-    render(<ToursTable />);
+    renderWithClient(<ToursTable />);
 
     expect(screen.getByText('Pyramids & Nile Cruise')).toBeInTheDocument();
     expect(screen.getByText('Turkey Highlights')).toBeInTheDocument();
@@ -63,7 +72,7 @@ describe('ToursTable', () => {
     (useTours as any).mockReturnValue({ data: undefined, isLoading: true });
     (useTourStats as any).mockReturnValue({ data: undefined, isLoading: true });
 
-    render(<ToursTable />);
+    renderWithClient(<ToursTable />);
 
     expect(screen.getByTestId('table-skeleton-row')).toBeInTheDocument();
   });
@@ -78,7 +87,7 @@ describe('ToursTable', () => {
     });
     (useTourStats as any).mockReturnValue({ data: undefined, isLoading: false });
 
-    render(<ToursTable />);
+    renderWithClient(<ToursTable />);
 
     expect(screen.getByTestId('tours-load-error')).toHaveTextContent('Unauthorized');
     expect(screen.getByRole('button', { name: 'Retry' })).toBeInTheDocument();
