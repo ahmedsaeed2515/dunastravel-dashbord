@@ -163,22 +163,21 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
         Greece: "greece",
         "Multi-Country": "multi-country",
       };
+
+      const fallbackSlug = destinationSlugByCountry[country] || country.toLowerCase().replace(/\s+/g, "-");
       const selectedPage = selectedLandingPage === "NONE"
-        ? landingPages.find((page) => page.type === "DESTINATION" && page.slug.toLowerCase() === destinationSlugByCountry[country])
+        ? landingPages.find((page) => page.type === "DESTINATION" && page.slug.toLowerCase() === fallbackSlug)
         : landingPages.find((page) => page.slug === selectedLandingPage && page.type === "DESTINATION");
-      if (!selectedPage) {
-        toast.error(currentLocale === "ar"
-          ? "اختر واجهة وجهة صالحة لإتمام النقل."
-          : "Select a valid destination interface before moving the tour.");
-        return;
-      }
+
+      const destinationSlug = selectedPage ? selectedPage.slug : fallbackSlug;
 
       await toursApi.moveTour(tour.slug, {
-          destinationSlug: selectedPage.slug,
-          country,
-          city,
-          category,
+        destinationSlug,
+        country,
+        city: city || undefined,
+        category: category || undefined,
       });
+
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["tours"] }),
         queryClient.invalidateQueries({ queryKey: ["tours", "catalog-overview"] }),
@@ -187,15 +186,16 @@ export function MoveTourDialog({ tour, open, onOpenChange }: MoveTourDialogProps
 
       toast.success(
         currentLocale === "ar"
-          ? `تم نقل الرحلة "${tourTitle}" إلى ${country} (${city}) بنجاح!`
-          : `Successfully moved "${tourTitle}" to ${country} (${city})!`
+          ? `تم نقل الرحلة "${tourTitle}" إلى ${country} (${city || ""}) بنجاح!`
+          : `Successfully moved "${tourTitle}" to ${country} (${city || ""})!`
       );
       onOpenChange(false);
     } catch (err: any) {
+      const msg = err?.response?.data?.message || err?.message;
       toast.error(
-        currentLocale === "ar"
+        msg || (currentLocale === "ar"
           ? "حدث خطأ أثناء نقل الرحلة. يرجى المحاولة مرة أخرى."
-          : "Failed to move tour. Please try again."
+          : "Failed to move tour. Please try again.")
       );
     } finally {
       setIsSubmitting(false);
