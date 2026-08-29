@@ -122,11 +122,12 @@ export function useUpdateLandingPageTourRelation() {
 export function useReorderLandingPageTours() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ slug, items }: { slug: string; items: { tourId: string; sortOrder: number }[] }) =>
+    mutationFn: ({ slug, items }: { slug: string; items: { tourId?: string; slug?: string; sortOrder: number }[] }) =>
       landingPagesApi.reorderToursInLandingPage(slug, items),
     onSuccess: (_, { slug }) => {
       queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: [...LANDING_PAGES_QUERY_KEY, "detail", slug] });
+      queryClient.invalidateQueries({ queryKey: ["tours"] });
     },
   });
 }

@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useEffect, useId } from "react";
+import { useState, useEffect, useId, useMemo } from "react";
 import { Tour } from "../../types";
 import { useReorderTours, useToggleFeatured } from "../../hooks/useTours";
+import { useLandingPages, useReorderLandingPageTours } from "../../hooks/useLandingPages";
 import { getTourTitle } from "../ToursTable/columns";
+import {
+  DESTINATIONS_LIST,
+  DEST_FLAGS,
+  resolveTourDestination,
+  destinationForCountry,
+} from "@/lib/tour-destinations";
 import {
   DndContext,
   closestCenter,
@@ -33,10 +40,14 @@ import {
   MapPin,
   Loader2,
   Info,
+  Globe2,
+  Layers,
+  Compass,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Card } from "@/components/ui/card";
 import { useLocale } from "next-intl";
 import { toast } from "sonner";
 
@@ -94,16 +105,20 @@ function SortableTourItem({
     maximumFractionDigits: 0,
   }).format(amount);
 
+  const destName = resolveTourDestination(tour);
+  const destSlug = destinationForCountry(destName);
+  const flag = DEST_FLAGS[destSlug] || "🗺️";
+
   return (
     <div
       ref={setNodeRef}
       style={style}
-      className={`group flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-xl border transition-all duration-200 ${
+      className={`group flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 p-3.5 rounded-2xl border transition-all duration-200 ${
         isDragging
-          ? "bg-primary/10 border-primary shadow-lg ring-2 ring-primary/30"
+          ? "bg-amber-500/15 border-amber-500 shadow-xl ring-2 ring-amber-500/40"
           : tour.isFeatured
           ? "bg-amber-500/5 border-amber-500/30 hover:border-amber-500/60 shadow-xs"
-          : "bg-card border-border hover:border-primary/40 hover:shadow-xs"
+          : "bg-card border-border/80 hover:border-amber-500/40 hover:shadow-xs"
       }`}
     >
       {/* Left: Drag handle + Index + Image + Info */}
@@ -112,7 +127,7 @@ function SortableTourItem({
           type="button"
           {...attributes}
           {...listeners}
-          className="cursor-grab active:cursor-grabbing p-1.5 rounded-md text-muted-foreground hover:text-foreground hover:bg-muted/80 shrink-0 transition-colors"
+          className="cursor-grab active:cursor-grabbing p-2 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted/80 shrink-0 transition-colors"
           title="اسحب لإعادة الترتيب (Drag to reorder)"
         >
           <GripVertical className="h-5 w-5" />
@@ -120,9 +135,9 @@ function SortableTourItem({
 
         {/* Position rank badge */}
         <div
-          className={`h-8 w-8 rounded-lg flex items-center justify-center font-mono font-bold text-xs shrink-0 border ${
+          className={`h-9 w-9 rounded-xl flex items-center justify-center font-mono font-black text-xs shrink-0 border shadow-xs ${
             index < 3
-              ? "bg-amber-500/20 text-amber-600 border-amber-500/40"
+              ? "bg-amber-500/20 text-amber-500 border-amber-500/40"
               : "bg-muted text-muted-foreground border-border"
           }`}
         >
@@ -130,7 +145,7 @@ function SortableTourItem({
         </div>
 
         {/* Tour thumbnail */}
-        <div className="relative h-12 w-16 rounded-lg overflow-hidden bg-muted border shrink-0">
+        <div className="relative h-12 w-16 rounded-xl overflow-hidden bg-muted border shrink-0">
           {heroImg ? (
             <img
               src={heroImg}
@@ -146,7 +161,7 @@ function SortableTourItem({
             </div>
           )}
           {tour.isFeatured && (
-            <div className="absolute top-0.5 right-0.5 bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
+            <div className="absolute top-1 right-1 bg-amber-500 text-white rounded-full p-0.5 shadow-xs">
               <Star className="h-2.5 w-2.5 fill-white text-white" />
             </div>
           )}
@@ -155,30 +170,29 @@ function SortableTourItem({
         {/* Title & Metadata */}
         <div className="flex flex-col min-w-0 flex-1">
           <div className="flex items-center gap-2">
-            <span className="font-semibold text-sm text-foreground truncate">
+            <span className="font-bold text-sm text-foreground truncate">
               {title}
             </span>
             {tour.isFeatured && (
               <Badge
                 variant="secondary"
-                className="bg-amber-500/15 text-amber-600 border-amber-500/30 text-[10px] py-0 px-1.5 font-bold shrink-0"
+                className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[10px] py-0 px-2 font-bold shrink-0"
               >
                 ⭐ مميزة
               </Badge>
             )}
           </div>
-          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5">
+          <div className="flex items-center gap-2 text-xs text-muted-foreground mt-0.5 flex-wrap">
             <span className="font-mono text-[11px] text-muted-foreground/80">
-              {tour.slug}
+              /{tour.slug}
             </span>
-            {tour.country && (
-              <span className="flex items-center gap-0.5">
-                <MapPin className="h-3 w-3" />
-                {tour.country}
-              </span>
-            )}
             <span>·</span>
-            <span className="font-mono text-primary font-semibold">
+            <span className="inline-flex items-center gap-1 font-semibold text-xs px-2 py-0.5 rounded-md bg-muted/60 text-foreground">
+              <span>{flag}</span>
+              <span>{destName}</span>
+            </span>
+            <span>·</span>
+            <span className="font-mono text-amber-500 font-bold">
               {formattedPrice}
             </span>
           </div>
@@ -194,12 +208,12 @@ function SortableTourItem({
           variant="outline"
           onClick={() => onToggleFeatured(tour)}
           disabled={isTogglingFeatured}
-          className={`h-8 px-2.5 text-xs font-semibold gap-1.5 transition-all ${
+          className={`h-8 px-3 text-xs font-bold gap-1.5 rounded-xl transition-all cursor-pointer ${
             tour.isFeatured
-              ? "bg-amber-500/15 text-amber-600 border-amber-500/40 hover:bg-amber-500/25"
-              : "text-muted-foreground hover:text-foreground"
+              ? "bg-amber-500/15 text-amber-500 border-amber-500/40 hover:bg-amber-500/25"
+              : "text-muted-foreground hover:text-foreground border-border/70"
           }`}
-          title={tour.isFeatured ? "إلغاء التمييز" : "تثبيت وتمييز في المقدمة"}
+          title={tour.isFeatured ? "إلغاء التمييز" : "تثبيت وتمييز في الصدارة"}
         >
           <Star
             className={`h-3.5 w-3.5 ${
@@ -218,7 +232,7 @@ function SortableTourItem({
           variant="ghost"
           disabled={index === 0}
           onClick={() => onMoveUp(index)}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
           title="تحريك لأعلى"
         >
           <ArrowUp className="h-4 w-4" />
@@ -231,7 +245,7 @@ function SortableTourItem({
           variant="ghost"
           disabled={index === total - 1}
           onClick={() => onMoveDown(index)}
-          className="h-8 w-8 text-muted-foreground hover:text-foreground"
+          className="h-8 w-8 rounded-xl text-muted-foreground hover:text-foreground hover:bg-muted cursor-pointer"
           title="تحريك لأسفل"
         >
           <ArrowDown className="h-4 w-4" />
@@ -249,18 +263,92 @@ export function TourPriorityList({
   const isAr = currentLocale === "ar";
   const dndId = useId();
 
-  const [tours, setTours] = useState<Tour[]>(() => [...initialTours]);
+  const [selectedInterface, setSelectedInterface] = useState<string>("ALL");
   const [filterQuery, setFilterQuery] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
 
-  useEffect(() => {
-    if (!hasChanges) {
-      setTours([...initialTours]);
-    }
-  }, [initialTours, hasChanges]);
+  // Fetch dynamic landing pages
+  const { data: landingPagesData } = useLandingPages({ type: "DESTINATION", limit: 50 });
 
-  const reorderMutation = useReorderTours();
+  const reorderGlobalMutation = useReorderTours();
+  const reorderInterfaceMutation = useReorderLandingPageTours();
   const toggleFeaturedMutation = useToggleFeatured();
+
+  // Build interface list with count
+  const interfaceList = useMemo(() => {
+    const pages = landingPagesData?.data || [];
+    const baseList = [
+      { slug: "ALL", nameEn: "All Interfaces", nameAr: "جميع الواجهات", flag: "🌐" },
+      { slug: "egypt", nameEn: "Egypt", nameAr: "مصر", flag: "🇪🇬" },
+      { slug: "turkey", nameEn: "Turkey", nameAr: "تركيا", flag: "🇹🇷" },
+      { slug: "jordan", nameEn: "Jordan", nameAr: "الأردن", flag: "🇯🇴" },
+      { slug: "dubai", nameEn: "Dubai & UAE", nameAr: "دبي والإمارات", flag: "🇦🇪" },
+      { slug: "morocco", nameEn: "Morocco", nameAr: "المغرب", flag: "🇲🇦" },
+      { slug: "tunisia", nameEn: "Tunisia", nameAr: "تونس", flag: "🇹🇳" },
+      { slug: "greece", nameEn: "Greece", nameAr: "اليونان", flag: "🇬🇷" },
+      { slug: "multi-country", nameEn: "Multi-Country", nameAr: "برامج مشتركة", flag: "🌍" },
+      { slug: "religious", nameEn: "Religious", nameAr: "دينية", flag: "🕊️" },
+    ];
+
+    // Add any custom landing pages
+    pages.forEach((p) => {
+      if (!baseList.some((b) => b.slug === p.slug)) {
+        baseList.push({
+          slug: p.slug,
+          nameEn: p.titleJsonb?.en || p.slug,
+          nameAr: p.titleJsonb?.ar || p.titleJsonb?.en || p.slug,
+          flag: "🏖️",
+        });
+      }
+    });
+
+    return baseList;
+  }, [landingPagesData]);
+
+  // Helper to check if tour matches interface
+  const isTourInInterface = (tour: Tour, ifaceSlug: string): boolean => {
+    if (ifaceSlug === "ALL") return true;
+
+    // 1. Check landingPages relations
+    if (tour.landingPages && tour.landingPages.length > 0) {
+      const matchRelation = tour.landingPages.some(
+        (lp: any) => lp.slug?.toLowerCase() === ifaceSlug.toLowerCase()
+      );
+      if (matchRelation) return true;
+    }
+
+    // 2. Check resolved destination
+    const resolved = resolveTourDestination(tour);
+    const resolvedSlug = destinationForCountry(resolved);
+    if (resolvedSlug === ifaceSlug.toLowerCase()) return true;
+
+    // 3. Check direct country
+    const countrySlug = destinationForCountry(tour.country);
+    if (countrySlug === ifaceSlug.toLowerCase()) return true;
+
+    return false;
+  };
+
+  // Calculate counts per interface
+  const interfaceCounts = useMemo(() => {
+    const counts: Record<string, number> = {};
+    interfaceList.forEach((iface) => {
+      counts[iface.slug] = initialTours.filter((t) => isTourInInterface(t, iface.slug)).length;
+    });
+    return counts;
+  }, [initialTours, interfaceList]);
+
+  // Tours currently active for the selected interface
+  const [currentTours, setCurrentTours] = useState<Tour[]>([]);
+
+  // When initialTours or selectedInterface changes, reset list
+  useEffect(() => {
+    const filtered = initialTours.filter((t) => isTourInInterface(t, selectedInterface));
+    // Sort by sortOrder from landingPage if applicable, otherwise displayOrder
+    const sorted = [...filtered].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    setCurrentTours(sorted);
+    setHasChanges(false);
+  }, [initialTours, selectedInterface]);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -277,7 +365,7 @@ export function TourPriorityList({
     const { active, over } = event;
     if (!over || active.id === over.id) return;
 
-    setTours((items) => {
+    setCurrentTours((items) => {
       const oldIndex = items.findIndex((item) => item.slug === active.id);
       const newIndex = items.findIndex((item) => item.slug === over.id);
       const updated = arrayMove(items, oldIndex, newIndex);
@@ -288,7 +376,7 @@ export function TourPriorityList({
 
   const handleMoveUp = (index: number) => {
     if (index === 0) return;
-    setTours((items) => {
+    setCurrentTours((items) => {
       const updated = arrayMove(items, index, index - 1);
       setHasChanges(true);
       return updated;
@@ -296,8 +384,8 @@ export function TourPriorityList({
   };
 
   const handleMoveDown = (index: number) => {
-    if (index === tours.length - 1) return;
-    setTours((items) => {
+    if (index === currentTours.length - 1) return;
+    setCurrentTours((items) => {
       const updated = arrayMove(items, index, index + 1);
       setHasChanges(true);
       return updated;
@@ -310,88 +398,111 @@ export function TourPriorityList({
         slug: tour.slug,
         isFeatured: !tour.isFeatured,
       });
-      setTours((items) =>
+      setCurrentTours((items) =>
         items.map((t) =>
           t.slug === tour.slug ? { ...t, isFeatured: !t.isFeatured } : t
         )
       );
     } catch {
-      // Error handled by mutation toast
+      // Error handled by mutation
     }
   };
 
-  const handleSaveOrder = async () => {
-    // Generate orders with step of 10 for clean spacing
-    const orders = tours.map((tour, index) => ({
-      slug: tour.slug,
-      displayOrder: index * 10,
-    }));
+  const activeInterfaceObj = interfaceList.find((i) => i.slug === selectedInterface) || interfaceList[0];
+  const activeInterfaceLabel = isAr ? activeInterfaceObj.nameAr : activeInterfaceObj.nameEn;
 
+  const handleSaveOrder = async () => {
     try {
-      await reorderMutation.mutateAsync(orders);
+      const items = currentTours.map((tour, index) => ({
+        tourId: tour.id,
+        slug: tour.slug,
+        sortOrder: index * 10,
+      }));
+
+      if (selectedInterface !== "ALL") {
+        // Save to specific landing page interface
+        await reorderInterfaceMutation.mutateAsync({
+          slug: selectedInterface,
+          items,
+        });
+      }
+
+      // Also sync global tour display priority
+      await reorderGlobalMutation.mutateAsync(
+        items.map((it) => ({ slug: it.slug, displayOrder: it.sortOrder }))
+      );
+
       setHasChanges(false);
       toast.success(
         isAr
-          ? `تم حفظ أولوية ظهور ${orders.length} رحلة بنجاح!`
-          : `Saved display priority for ${orders.length} tours successfully!`
+          ? `تم حفظ ترتيب واجهة "${activeInterfaceLabel}" (${currentTours.length} رحلة) بنجاح!`
+          : `Saved display priority for "${activeInterfaceLabel}" (${currentTours.length} tours) successfully!`
       );
-    } catch {
-      // Error handled by mutation toast
+    } catch (err: any) {
+      toast.error(
+        err?.message || (isAr ? "حدث خطأ أثناء حفظ الترتيب" : "Failed to save priority order")
+      );
     }
   };
 
   const handleResetOrder = () => {
-    setTours([...initialTours]);
+    const filtered = initialTours.filter((t) => isTourInInterface(t, selectedInterface));
+    const sorted = [...filtered].sort((a, b) => (a.displayOrder ?? 0) - (b.displayOrder ?? 0));
+    setCurrentTours(sorted);
     setHasChanges(false);
     toast.info(isAr ? "تمت استعادة الترتيب الأصلي" : "Reset to original order");
   };
 
-  // Filtered view if search is active
-  const filteredTours = filterQuery.trim()
-    ? tours.filter((t) => {
+  // Filtered view if search input is active
+  const displayedTours = filterQuery.trim()
+    ? currentTours.filter((t) => {
         const title = getTourTitle(t, currentLocale).toLowerCase();
         const slug = t.slug.toLowerCase();
         const country = (t.country || "").toLowerCase();
         const q = filterQuery.toLowerCase();
         return title.includes(q) || slug.includes(q) || country.includes(q);
       })
-    : tours;
+    : currentTours;
+
+  const isPending = reorderGlobalMutation.isPending || reorderInterfaceMutation.isPending;
 
   return (
-    <div className="space-y-4">
-      {/* Header Banner with Instructions & Actions */}
-      <div className="bg-card border rounded-2xl p-4 sm:p-5 shadow-sm space-y-4">
+    <div className="space-y-5">
+      {/* 1. Header Banner with Instructions & Actions */}
+      <Card className="p-5 sm:p-6 rounded-3xl bg-card border border-border/80 shadow-xs space-y-4">
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2">
-              <div className="p-2 bg-amber-500/10 text-amber-600 rounded-xl">
+              <div className="p-2.5 bg-amber-500/10 text-amber-500 border border-amber-500/20 rounded-2xl">
                 <Sparkles className="h-5 w-5" />
               </div>
-              <h3 className="text-lg font-bold text-foreground">
-                {isAr
-                  ? "إدارة أولوية ظهور الرحلات والتمييز (Tour Priority & Featured)"
-                  : "Tour Display Priority & Featured Manager"}
-              </h3>
+              <div>
+                <h3 className="text-lg font-black text-foreground">
+                  {isAr
+                    ? "إدارة أولوية وترتيب ظهور الرحلات داخل الواجهات"
+                    : "Per-Interface Tour Display Priority & Featured Manager"}
+                </h3>
+                <p className="text-xs text-muted-foreground flex items-center gap-1.5 mt-0.5 font-medium">
+                  <Info className="h-3.5 w-3.5 text-amber-500 shrink-0" />
+                  <span>
+                    {isAr
+                      ? "اختر الواجهة المطلوبة (مصر، تركيا، الأردن...) لرؤية رحلاتها وترتيب ظهورها المخصص على الموقع."
+                      : "Select an interface/destination below to manage its custom tour ordering and featured pins."}
+                  </span>
+                </p>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground flex items-center gap-1">
-              <Info className="h-3.5 w-3.5 text-primary shrink-0" />
-              <span>
-                {isAr
-                  ? "اسحب الرحلات أو استخدم الأسهم لترتيب ظهورها في الموقع. الرحلات المميزة ⭐ تظهر دائماً في صدارة الصفحة."
-                  : "Drag tours or use arrows to control public display order. Featured ⭐ tours always appear at the top."}
-              </span>
-            </p>
           </div>
 
           {/* Action Buttons */}
-          <div className="flex items-center gap-2 flex-wrap">
+          <div className="flex items-center gap-2 flex-wrap self-end md:self-auto">
             {hasChanges && (
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
                 onClick={handleResetOrder}
-                className="gap-1.5 text-xs text-muted-foreground hover:text-foreground"
+                className="gap-1.5 text-xs rounded-xl font-bold text-muted-foreground hover:text-foreground"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
                 <span>{isAr ? "إلغاء التغييرات" : "Reset"}</span>
@@ -401,75 +512,141 @@ export function TourPriorityList({
             <Button
               type="button"
               onClick={handleSaveOrder}
-              disabled={reorderMutation.isPending || !hasChanges}
-              className={`h-9 px-4 text-xs font-bold gap-1.5 shadow-sm transition-all ${
+              disabled={isPending || !hasChanges}
+              className={`h-10 px-5 text-xs font-black gap-2 rounded-2xl shadow-md transition-all cursor-pointer ${
                 hasChanges
-                  ? "bg-amber-600 hover:bg-amber-700 text-white animate-pulse"
+                  ? "bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-amber-500/25 animate-pulse scale-[1.02]"
                   : "bg-primary text-primary-foreground"
               }`}
             >
-              {reorderMutation.isPending ? (
+              {isPending ? (
                 <Loader2 className="h-4 w-4 animate-spin" />
               ) : (
-                <CheckSquare className="h-4 w-4" />
+                <CheckSquare className="h-4 w-4 stroke-[2.5]" />
               )}
               <span>
                 {isAr
                   ? hasChanges
-                    ? `حفظ الترتيب الجديد (${tours.length} رحلة) 💾`
-                    : "الترتيب محفوظ"
+                    ? `حفظ ترتيب واجهة ${activeInterfaceLabel} (${currentTours.length} رحلة) 💾`
+                    : `ترتيب واجهة ${activeInterfaceLabel} محفوظ ✓`
                   : hasChanges
-                  ? `Save New Order (${tours.length} Tours)`
-                  : "Order Saved"}
+                  ? `Save Order for ${activeInterfaceLabel} (${currentTours.length} Tours)`
+                  : `Order for ${activeInterfaceLabel} Saved ✓`}
               </span>
             </Button>
           </div>
         </div>
 
-        {/* Search inside priority list */}
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+        {/* 2. Destination / Interface Selector Pills Bar */}
+        <div className="pt-2 border-t border-border/60">
+          <div className="flex items-center justify-between gap-2 mb-2">
+            <span className="text-[11px] font-extrabold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+              <Compass className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isAr ? "اختر الواجهة لترتيب رحلاتها:" : "Select Interface to Reorder:"}</span>
+            </span>
+            <span className="text-[11px] font-bold text-amber-500">
+              {currentTours.length} {isAr ? "رحلة داخل الواجهة" : "tours in interface"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-thin">
+            {interfaceList.map((iface) => {
+              const count = interfaceCounts[iface.slug] ?? 0;
+              const isSelected = selectedInterface === iface.slug;
+              const label = isAr ? iface.nameAr : iface.nameEn;
+
+              return (
+                <button
+                  key={iface.slug}
+                  type="button"
+                  onClick={() => {
+                    if (hasChanges) {
+                      if (!window.confirm(isAr ? "لديك تغييرات غير محفوظة في الترتيب، هل تريد الانتقال لواجهة أخرى وتجاهلها؟" : "You have unsaved changes. Switch interface anyway?")) return;
+                    }
+                    setSelectedInterface(iface.slug);
+                    setFilterQuery("");
+                  }}
+                  className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all duration-200 cursor-pointer shrink-0 border flex items-center gap-2 shadow-xs ${
+                    isSelected
+                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-amber-500/25 shadow-md scale-[1.03]"
+                      : "bg-muted/40 text-muted-foreground border-border/70 hover:text-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <span className="text-sm">{iface.flag}</span>
+                  <span>{label}</span>
+                  <span
+                    className={`text-[10px] font-black px-1.5 py-0.5 rounded-full ${
+                      isSelected
+                        ? "bg-slate-950/20 text-slate-950 font-mono"
+                        : "bg-background text-muted-foreground border font-mono"
+                    }`}
+                  >
+                    {count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* 3. Search Filter Inside Priority List */}
+        <div className="relative pt-1">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
             value={filterQuery}
             onChange={(e) => setFilterQuery(e.target.value)}
             placeholder={
               isAr
-                ? "ابحث بالاسم أو الدولة لتحديد مكان رحلة معينة..."
-                : "Search by title or country to locate a specific tour..."
+                ? `ابحث بالاسم أو السعر داخل واجهة ${activeInterfaceLabel}...`
+                : `Search tours within ${activeInterfaceLabel}...`
             }
-            className="pl-9 text-xs h-9"
+            className="pl-10 text-xs h-10 rounded-2xl bg-background border-border/80"
           />
         </div>
-      </div>
+      </Card>
 
-      {/* Drag and drop sortable list */}
-      <DndContext
-        id={dndId}
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        onDragEnd={handleDragEnd}
-      >
-        <SortableContext
-          items={filteredTours.map((t) => t.slug)}
-          strategy={verticalListSortingStrategy}
+      {/* 4. Drag & Drop Sortable List */}
+      {displayedTours.length === 0 ? (
+        <Card className="p-12 text-center rounded-3xl bg-card border border-border/80 space-y-2">
+          <Compass className="h-10 w-10 text-muted-foreground/40 mx-auto" />
+          <h4 className="text-sm font-bold text-foreground">
+            {isAr ? `لا توجد رحلات داخل واجهة "${activeInterfaceLabel}"` : `No tours found in "${activeInterfaceLabel}"`}
+          </h4>
+          <p className="text-xs text-muted-foreground">
+            {isAr
+              ? "يمكنك نقل وتعيين رحلات إلى هذه الواجهة باستخدام زر (نقل الرحلة 🔄)."
+              : "You can transfer tours to this destination interface using the Transfer Tour action."}
+          </p>
+        </Card>
+      ) : (
+        <DndContext
+          id={dndId}
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleDragEnd}
         >
-          <div className="space-y-2">
-            {filteredTours.map((tour, index) => (
-              <SortableTourItem
-                key={tour.slug}
-                tour={tour}
-                index={index}
-                total={filteredTours.length}
-                currentLocale={currentLocale}
-                onMoveUp={handleMoveUp}
-                onMoveDown={handleMoveDown}
-                onToggleFeatured={handleToggleFeatured}
-                isTogglingFeatured={toggleFeaturedMutation.isPending}
-              />
-            ))}
-          </div>
-        </SortableContext>
-      </DndContext>
+          <SortableContext
+            items={displayedTours.map((t) => t.slug)}
+            strategy={verticalListSortingStrategy}
+          >
+            <div className="space-y-2.5">
+              {displayedTours.map((tour, index) => (
+                <SortableTourItem
+                  key={tour.slug}
+                  tour={tour}
+                  index={index}
+                  total={displayedTours.length}
+                  currentLocale={currentLocale}
+                  onMoveUp={handleMoveUp}
+                  onMoveDown={handleMoveDown}
+                  onToggleFeatured={handleToggleFeatured}
+                  isTogglingFeatured={toggleFeaturedMutation.isPending}
+                />
+              ))}
+            </div>
+          </SortableContext>
+        </DndContext>
+      )}
     </div>
   );
 }

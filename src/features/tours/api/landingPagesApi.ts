@@ -137,7 +137,7 @@ export const landingPagesApi = {
     return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/${tourId}`, payload);
   },
 
-  reorderToursInLandingPage: async (slug: string, items: { tourId: string; sortOrder: number }[]): Promise<TourLandingPage> => {
+  reorderToursInLandingPage: async (slug: string, items: { tourId?: string; slug?: string; sortOrder: number }[]): Promise<TourLandingPage> => {
     return apiClient.patch<TourLandingPage, TourLandingPage>(`/admin/tour-landing-pages/${slug}/tours/reorder`, { items });
   },
 };
