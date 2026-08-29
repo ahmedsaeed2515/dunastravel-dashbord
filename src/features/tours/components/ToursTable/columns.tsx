@@ -8,6 +8,8 @@ import { format } from "date-fns";
 import { Star, MapPin, ImageIcon } from "lucide-react";
 import { TourRowActions } from "./TourRowActions";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { useToggleFeatured } from "../../hooks/useTours";
+import { Loader2 } from "lucide-react";
 
 export function getTourTitle(tour: Tour, lang: string = "en"): string {
   if ((tour as any).title && typeof (tour as any).title === "string" && (tour as any).title.trim() !== "") {
@@ -24,6 +26,34 @@ export function getTourTitle(tour: Tour, lang: string = "en"): string {
     }
   }
   return tour.slug;
+}
+
+
+function FeaturedCell({ tour }: { tour: Tour }) {
+  const { mutate: toggleFeatured, isPending } = useToggleFeatured();
+  return (
+    <button
+      type="button"
+      onClick={(e) => {
+        e.stopPropagation();
+        toggleFeatured({ slug: tour.slug, isFeatured: !tour.isFeatured });
+      }}
+      disabled={isPending}
+      className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium transition-all border ${
+        tour.isFeatured
+          ? "bg-amber-500/15 text-amber-500 border-amber-500/40 hover:bg-amber-500/25 shadow-xs font-semibold"
+          : "bg-muted/40 text-muted-foreground border-border hover:bg-muted hover:text-foreground"
+      }`}
+      title={tour.isFeatured ? "انقر لإلغاء التمييز" : "انقر لتمييز الرحلة وتثبيتها في المقدمة"}
+    >
+      {isPending ? (
+        <Loader2 className="h-3 w-3 animate-spin text-amber-500" />
+      ) : (
+        <Star className={`h-3.5 w-3.5 ${tour.isFeatured ? "fill-amber-400 text-amber-500" : "text-muted-foreground/60"}`} />
+      )}
+      <span>{tour.isFeatured ? "مميزة ⭐" : "عادية"}</span>
+    </button>
+  );
 }
 
 export function getColumns(
@@ -56,6 +86,23 @@ export function getColumns(
       ),
       enableSorting: false,
       enableHiding: false,
+    },
+    {
+      accessorKey: "displayOrder",
+      header: "# الأولوية",
+      cell: ({ row }) => {
+        const order = row.original.displayOrder ?? 0;
+        return (
+          <span className="font-mono text-xs px-2 py-0.5 rounded bg-muted/60 text-muted-foreground border">
+            {order}
+          </span>
+        );
+      },
+    },
+    {
+      id: "isFeatured",
+      header: "التمييز",
+      cell: ({ row }) => <FeaturedCell tour={row.original} />,
     },
     {
       accessorKey: "titleJsonb",

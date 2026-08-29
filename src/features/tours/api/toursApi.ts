@@ -83,4 +83,8 @@ export const toursApi = {
     apiClient.patch<TourAvailability, TourAvailability>(`/admin/availabilities/${id}`, data),
   deleteTourAvailability: (id: string): Promise<{ success: boolean }> =>
     apiClient.delete<{ success: boolean }, { success: boolean }>(`/admin/availabilities/${id}`),
+  reorderTours: (orders: { slug: string; displayOrder: number }[]): Promise<{ success: boolean; count: number }> =>
+    apiClient.patch<{ success: boolean; count: number }, { success: boolean; count: number }>('/admin/tours/reorder', { orders }),
+  toggleFeatured: (slug: string, isFeatured: boolean): Promise<{ success: boolean; slug: string; isFeatured: boolean }> =>
+    apiClient.patch<{ success: boolean; slug: string; isFeatured: boolean }, { success: boolean; slug: string; isFeatured: boolean }>(`/admin/tours/${slug}/featured`, { isFeatured }),
 };

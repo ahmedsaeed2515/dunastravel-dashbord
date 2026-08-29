@@ -94,6 +94,7 @@ export interface Tour {
   isActive: boolean;
   status: TourStatus;
   isFeatured: boolean;
+  displayOrder?: number | null;
   country?: string | null;
   city?: string | null;
   latitude?: number | null;
@@ -142,6 +143,7 @@ export interface TourPreview {
   country: string | null;
   languages: string[];
   isFeatured: boolean;
+  displayOrder?: number | null;
   itinerary: Array<{
     id: string;
     dayLabel: string | null;
@@ -211,6 +213,7 @@ export interface CreateTourPayload {
   isActive?: boolean;
   status?: TourStatus;
   isFeatured?: boolean;
+  displayOrder?: number;
   country?: string | null;
   city?: string | null;
   latitude?: number | null;

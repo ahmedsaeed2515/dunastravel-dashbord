@@ -302,3 +302,37 @@ export function useDeleteTourAvailability() {
     onError: (error: ApiError) => toast.error(error?.message || "Failed to remove departure availability"),
   });
 }
+
+export function useReorderTours() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (orders: { slug: string; displayOrder: number }[]) =>
+      toursApi.reorderTours(orders),
+    onSuccess: () => {
+      toast.success("تم تحديث ترتيب أولويات الرحلات بنجاح");
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "فشل حفظ ترتيب الرحلات");
+    },
+  });
+}
+
+export function useToggleFeatured() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ slug, isFeatured }: { slug: string; isFeatured: boolean }) =>
+      toursApi.toggleFeatured(slug, isFeatured),
+    onSuccess: (data) => {
+      toast.success(
+        data.isFeatured
+          ? "تم تمييز الرحلة وتثبيتها في المقدمة ⭐"
+          : "تم إلغاء تمييز الرحلة"
+      );
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "فشل تحديث حالة التمييز للرحلة");
+    },
+  });
+}

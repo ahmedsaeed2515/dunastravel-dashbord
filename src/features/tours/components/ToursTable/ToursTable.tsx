@@ -18,6 +18,7 @@ import { EditTourDrawer } from "../Drawers/EditTourDrawer";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import type { TripModel } from "@/types/dunas-suite";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
+import { TourPriorityList } from "../TourPriorityList/TourPriorityList";
 import { Button } from "@/components/ui/button";
 import { 
   DropdownMenu, 
@@ -42,7 +43,8 @@ import {
   X,
   RotateCcw,
   Globe,
-  ArrowRightLeft
+  ArrowRightLeft,
+  ArrowUpDown
 } from "lucide-react";
 import { toast } from "sonner";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -142,7 +144,7 @@ export function ToursTable() {
   const currentLocale = useLocale();
 
   // View mode state (cards/grid vs table)
-  const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+  const [viewMode, setViewMode] = useState<"grid" | "table" | "priority">("grid");
 
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 12 });
@@ -316,6 +318,20 @@ export function ToursTable() {
           >
             <TableIcon className="h-3.5 w-3.5" />
             {tCommon("table")}
+          </Button>
+          <Button
+            type="button"
+            variant={viewMode === "priority" ? "secondary" : "ghost"}
+            size="sm"
+            className={`h-7 px-2.5 gap-1.5 text-xs font-semibold ${
+              viewMode === "priority"
+                ? "text-amber-500 bg-amber-500/10 border border-amber-500/30 font-bold"
+                : ""
+            }`}
+            onClick={() => setViewMode("priority")}
+          >
+            <ArrowUpDown className="h-3.5 w-3.5 text-amber-500" />
+            <span>{currentLocale === "ar" ? "أولوية الترتيب ⭐" : "Priority ⭐"}</span>
           </Button>
         </div>
 
@@ -589,6 +605,8 @@ export function ToursTable() {
         <div className="flex items-center justify-center py-24" data-testid="table-skeleton-row">
           <Loader2 className="h-8 w-8 animate-spin text-primary" />
         </div>
+      ) : viewMode === "priority" ? (
+        <TourPriorityList initialTours={toursList} />
       ) : viewMode === "grid" ? (
         <TourCardGrid
           tours={toursList}

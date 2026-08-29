@@ -35,6 +35,7 @@ const formSchema = z.object({
   basePriceUsd: z.coerce.number().min(0, "Base price must be 0 or greater"),
   status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
   isFeatured: z.boolean(),
+  displayOrder: z.coerce.number().min(0).default(0),
   country: z.string().optional(),
   city: z.string().optional(),
 });
@@ -66,6 +67,7 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
       basePriceUsd: undefined,
       status: undefined,
       isFeatured: false,
+      displayOrder: 0,
       country: "",
       city: "",
     },
@@ -93,6 +95,7 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
         basePriceUsd: Number(tour.basePriceUsd),
         status: tour.status,
         isFeatured: tour.isFeatured,
+        displayOrder: tour.displayOrder ?? 0,
         country: tour.country || "",
         city: tour.city || "",
       });
@@ -122,6 +125,7 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
       status: values.status,
       isActive: values.status === "PUBLISHED",
       isFeatured: values.isFeatured,
+      displayOrder: values.displayOrder,
       country: values.country,
       city: values.city,
       expectedUpdatedAt: tour.updatedAt,
@@ -397,9 +401,9 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
                     render={({ field }) => (
                       <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 h-[60px] self-end">
                         <div className="space-y-0.5">
-                          <FormLabel className="text-xs font-semibold">Featured</FormLabel>
+                          <FormLabel className="text-xs font-semibold">Featured ⭐</FormLabel>
                           <FormDescription className="text-[10px]">
-                            Highlight product
+                            Pin to top of catalog
                           </FormDescription>
                         </div>
                         <FormControl>
@@ -408,6 +412,29 @@ export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps
                             onCheckedChange={field.onChange}
                           />
                         </FormControl>
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control as any}
+                    name="displayOrder"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-xs font-semibold">Priority Order (#)</FormLabel>
+                        <FormControl>
+                          <Input
+                            type="number"
+                            min="0"
+                            placeholder="0"
+                            className="h-10 text-xs font-mono"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormDescription className="text-[10px]">
+                          Lower value appears first (0 = default)
+                        </FormDescription>
+                        <FormMessage />
                       </FormItem>
                     )}
                   />

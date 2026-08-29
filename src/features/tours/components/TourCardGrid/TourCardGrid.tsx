@@ -99,9 +99,14 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
                   {tStatus(tour.status)}
                 </Badge>
                 {tour.isFeatured && (
-                  <Badge variant="secondary" className="bg-amber-500 text-white border-none font-bold text-xs flex items-center gap-1 shadow-sm">
-                    <Sparkles className="h-3 w-3" />
-                    {tTours("published")}
+                  <Badge variant="secondary" className="bg-linear-to-r from-amber-500 to-amber-600 text-white border-none font-bold text-xs flex items-center gap-1 shadow-sm">
+                    <Star className="h-3 w-3 fill-white text-white" />
+                    {isAr ? "مميزة ⭐" : "Featured ⭐"}
+                  </Badge>
+                )}
+                {tour.displayOrder !== undefined && tour.displayOrder !== null && tour.displayOrder > 0 && (
+                  <Badge variant="outline" className="bg-black/60 backdrop-blur-md text-white border-white/20 font-mono text-xs">
+                    #{tour.displayOrder}
                   </Badge>
                 )}
               </div>
