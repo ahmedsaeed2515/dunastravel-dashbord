@@ -1,6 +1,6 @@
 "use client";
 
-import { use, useState } from "react";
+import { use, useState, useMemo } from "react";
 import Link from "next/link";
 import { useTour, useUpdateTour } from "@/features/tours/hooks/useTours";
 import { Button } from "@/components/ui/button";
@@ -8,8 +8,82 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Edit, Eye, Star, ShieldAlert, Layers } from "lucide-react";
+import { Loader2, ArrowLeft, Edit, Eye, Star, ShieldAlert, Layers, Sparkles } from "lucide-react";
 import { toast } from "sonner";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
+import type { TripModel } from "@/types/dunas-suite";
+import { destinationForCountry } from "@/lib/tour-destinations";
+
+const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
+
+function localeText(value: Record<string, unknown> | null | undefined, locale: string): string {
+  return typeof value?.[locale] === "string" ? (value[locale] as string) : "";
+}
+
+function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
+  return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
+}
+
+function tourToTripModel(tour: any): TripModel {
+  const highlights = tour.highlightsJsonb || tour.highlightJsonb;
+  const itinerary = (tour.itineraries || []).map((item: any, index: number) => ({
+    day: index + 1,
+    title: item.dayLabel || '',
+    description: localeText(item.descriptionJsonb, 'ar'),
+    meals: localeText(item.mealsJsonb, 'ar'),
+  }));
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: localeText(tour.titleJsonb, 'ar') || localeText(tour.titleJsonb, 'en') || tour.slug,
+    subtitle: localeText(tour.subtitleJsonb, 'ar'),
+    destination: destinationForCountry(tour.country),
+    market: tour.market || '',
+    language: 'ar',
+    type: tour.category || '',
+    duration: localeText(tour.durationJsonb, 'ar'),
+    departures: localeText(tour.departureInfoJsonb, 'ar'),
+    price: Number(tour.basePriceUsd || 0),
+    hotelCategory: '',
+    rating: Number(tour.sourceRating || 0),
+    reviewCount: tour.sourceReviewCount || 0,
+    popular: !!tour.isFeatured,
+    familyFriendly: false,
+    honeymoon: false,
+    luxury: false,
+    cultural: false,
+    adventure: false,
+    overview: localeText(tour.overviewJsonb, 'ar'),
+    highlights: localeList(highlights, 'ar'),
+    included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
+    excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
+    images: tour.images?.map((image: any) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []),
+    hotels: '',
+    accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
+    itinerary,
+    translations: Object.fromEntries(
+      LOCALES.map((locale) => [
+        locale,
+        {
+          title: localeText(tour.titleJsonb, locale),
+          subtitle: localeText(tour.subtitleJsonb, locale),
+          overview: localeText(tour.overviewJsonb, locale),
+          duration: localeText(tour.durationJsonb, locale),
+          highlights: localeList(highlights, locale),
+          included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, locale),
+          excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, locale),
+          itinerary: (tour.itineraries || []).map((item: any, index: number) => ({
+            day: index + 1,
+            title: item.dayLabel || '',
+            description: localeText(item.descriptionJsonb, locale),
+            meals: localeText(item.mealsJsonb, locale),
+          })),
+        },
+      ])
+    ) as TripModel['translations'],
+  };
+}
 
 export default function TourDetailsPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = use(params);
@@ -17,6 +91,12 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
   const updateMutation = useUpdateTour();
 
   const [activeLocale, setActiveLocale] = useState("en");
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const tripModel = useMemo(() => {
+    if (!tour) return null;
+    return tourToTripModel(tour);
+  }, [tour]);
 
   if (isLoading) {
     return (
@@ -97,11 +177,13 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
               <Eye className="w-4 h-4 text-emerald-500" /> Preview as Visitor (معاينة كزائر)
             </Button>
           </Link>
-          <Link href={`/${locale}/admin/tours/${tour.slug}/edit`}>
-            <Button size="sm" className="gap-1.5">
-              <Edit className="w-4 h-4" /> Full Tour Editor
-            </Button>
-          </Link>
+          <Button
+            size="sm"
+            onClick={() => setIsEditModalOpen(true)}
+            className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black cursor-pointer shadow-sm"
+          >
+            <Sparkles className="w-4 h-4" /> تعديل الرحلة (5 لغات)
+          </Button>
           <Button size="sm" variant={tour.status === "PUBLISHED" ? "secondary" : "default"} onClick={togglePublishStatus} disabled={updateMutation.isPending}>
             {tour.status === "PUBLISHED" ? "Unpublish" : "Publish"}
           </Button>
@@ -343,6 +425,12 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
           </Card>
         </TabsContent>
       </Tabs>
+
+      <TripEditorModal
+        trip={tripModel}
+        isOpen={isEditModalOpen}
+        onClose={() => setIsEditModalOpen(false)}
+      />
     </div>
   );
 }

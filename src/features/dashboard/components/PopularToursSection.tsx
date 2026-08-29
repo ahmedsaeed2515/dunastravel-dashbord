@@ -32,6 +32,7 @@ export function PopularToursSection({ tours, isLoading, isError }: Props) {
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {tours.slice(0, 4).map((tour) => {
           const title = tour.titleJsonb?.[locale] || tour.titleJsonb?.en || tour.slug;
+          const displayPrice = tour.displayPriceUsd || tour.basePriceUsd || 0;
           return (
             <Link key={tour.id} href={`${adminRoutes.tours}/${tour.slug}`} className="rounded-2xl border bg-card p-4 hover:border-amber-500/50 hover:shadow-md transition-all">
               {tour.heroImage ? (
@@ -45,9 +46,15 @@ export function PopularToursSection({ tours, isLoading, isError }: Props) {
               <p className="text-xs text-muted-foreground mt-1">
                 {tour.country} · {tour.confirmedBookings} {isAr ? "حجز مؤكد" : "confirmed bookings"}
               </p>
-              <p className="mt-2 text-sm font-extrabold font-mono text-foreground">
-                ${tour.basePriceUsd?.toLocaleString()} 
-                <span className="float-right inline-flex items-center gap-1 font-sans text-xs text-amber-500 font-semibold">
+              <p className="mt-2 text-sm font-extrabold font-mono text-foreground flex items-center justify-between">
+                <span>
+                  {displayPrice > 0 ? (
+                    `$${displayPrice.toLocaleString()}`
+                  ) : (
+                    <span className="text-xs font-sans text-muted-foreground">{isAr ? "أسعار حسب الموسم" : "Seasonal rates"}</span>
+                  )}
+                </span>
+                <span className="inline-flex items-center gap-1 font-sans text-xs text-amber-500 font-semibold">
                   <Star className="h-3.5 w-3.5 fill-amber-500" />
                   {tour.occupancyRate ?? 0}%
                 </span>

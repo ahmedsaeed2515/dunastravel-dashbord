@@ -291,6 +291,10 @@ export const aiApi = {
     return apiClient.put<unknown, ApiKeyPoolEntry>(`/admin/ai/keys/${id}`, payload);
   },
 
+  reorderKeysInPool: async (orderedIds: string[]): Promise<ApiKeyPoolEntry[]> => {
+    return apiClient.put<unknown, ApiKeyPoolEntry[]>("/admin/ai/keys/reorder", { orderedIds });
+  },
+
   deleteKeyFromPool: async (id: string): Promise<{ success: boolean; id: string }> => {
     return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/keys/${id}`);
   },

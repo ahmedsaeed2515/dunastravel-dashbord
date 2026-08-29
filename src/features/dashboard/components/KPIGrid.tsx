@@ -39,12 +39,23 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
   const capacity = summaryData?.capacity;
   const operational = summaryData?.operational;
 
+  const bookingsGrowth = bookings?.changePercent ?? 0;
+  const revenueGrowth = revenue?.revenueChangePercent ?? 0;
+  const totalCatalogTours = operational?.totalToursCount || 72;
+  const seatsSold = capacity?.seatsSold ?? 0;
+  const totalSeats = capacity?.totalCapacity ?? 0;
+  const unreadMessages = operational?.unreadContactsCount ?? 0;
+  const deliveryFailures = operational?.failedNotificationsCount ?? 0;
+  const outstandingBal = Number(revenue?.outstandingBalance ?? 0);
+
   const kpiCards = [
     {
       title: isAr ? "إجمالي الحجوزات" : "Total Bookings",
       value: bookings?.total ?? 0,
-      badge: isAr ? "+12% هذا الشهر" : "+12% this month",
-      badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      badge: `${bookingsGrowth >= 0 ? "+" : ""}${bookingsGrowth}% ${isAr ? "مقارنة بالفترة السابقة" : "vs prev period"}`,
+      badgeColor: bookingsGrowth >= 0
+        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
       icon: CalendarCheck,
       iconColor: "text-amber-500 dark:text-amber-400",
       iconBg: "bg-amber-500/10 border-amber-500/20",
@@ -53,8 +64,10 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     {
       title: isAr ? "إجمالي إيرادات الحجوزات" : "Gross Revenue",
       value: revenue?.grossRevenue == null ? '—' : `$${revenue.grossRevenue.toLocaleString()}`,
-      badge: isAr ? "نمو متصاعد 📈" : "Upward Growth 📈",
-      badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+      badge: `${revenueGrowth >= 0 ? "+" : ""}${revenueGrowth}% ${revenueGrowth >= 0 ? "نمو متصاعد 📈" : "تراجع 📉"}`,
+      badgeColor: revenueGrowth >= 0
+        ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+        : "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
       icon: DollarSign,
       iconColor: "text-emerald-500 dark:text-emerald-400",
       iconBg: "bg-emerald-500/10 border-emerald-500/20",
@@ -63,7 +76,9 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     {
       title: isAr ? "إجمالي الرحلات النشطة" : "Active Tours",
       value: operational?.activeToursCount ?? 0,
-      badge: isAr ? "مترجمة للغات الـ 5 🌐" : "Translated in 5 Languages 🌐",
+      badge: isAr
+        ? `${operational?.activeToursCount ?? 0} نشطة من ${totalCatalogTours} رحلة 🌐`
+        : `${operational?.activeToursCount ?? 0} of ${totalCatalogTours} active 🌐`,
       badgeColor: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20",
       icon: Map,
       iconColor: "text-amber-500 dark:text-amber-400",
@@ -73,7 +88,9 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     {
       title: isAr ? "إشغال الرحلات" : "Tour Occupancy",
       value: capacity?.occupancyRate == null ? "—" : `${capacity.occupancyRate}%`,
-      badge: isAr ? "المقاعد المباعة من السعة" : "Sold seats / total capacity",
+      badge: isAr
+        ? `${seatsSold.toLocaleString()} مباع من ${totalSeats.toLocaleString()} مقعد`
+        : `${seatsSold.toLocaleString()} / ${totalSeats.toLocaleString()} seats sold`,
       badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
       icon: Map,
       iconColor: "text-indigo-500 dark:text-indigo-400",
@@ -83,8 +100,12 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     {
       title: isAr ? "استفسارات العملاء" : "Customer Inquiries",
       value: operational?.openInquiriesCount ?? 0,
-      badge: isAr ? "غير مقروء 📩" : "Unread Messages 📩",
-      badgeColor: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20",
+      badge: isAr
+        ? (unreadMessages > 0 ? `${unreadMessages} رسائل جديدة غير مقروءة 📩` : "جميع الرسائل مقروءة")
+        : (unreadMessages > 0 ? `${unreadMessages} unread messages 📩` : "All messages read"),
+      badgeColor: unreadMessages > 0
+        ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20"
+        : "bg-muted text-muted-foreground border-border",
       icon: MessageSquare,
       iconColor: "text-rose-500 dark:text-rose-400",
       iconBg: "bg-rose-500/10 border-rose-500/20",
@@ -106,8 +127,8 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       title: isAr ? "المبالغ المحصلة والمتبقية" : "Collected & Balance",
       value: revenue?.collectedPayments == null ? "—" : `$${revenue.collectedPayments.toLocaleString()}`,
       badge: isAr
-        ? `$${Number(revenue?.outstandingBalance ?? 0).toLocaleString()} متبقي تحصيله`
-        : `$${Number(revenue?.outstandingBalance ?? 0).toLocaleString()} outstanding`,
+        ? `$${outstandingBal.toLocaleString()} متبقي تحصيله`
+        : `$${outstandingBal.toLocaleString()} outstanding`,
       badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
       icon: DollarSign,
       iconColor: "text-emerald-500 dark:text-emerald-400",
@@ -116,9 +137,13 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     },
     {
       title: isAr ? "الإشعارات والتنبيهات" : "Notifications",
-      value: operational?.failedNotificationsCount ?? 0,
-      badge: isAr ? "فشل التسليم يحتاج متابعة" : "Delivery failures need review",
-      badgeColor: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20",
+      value: deliveryFailures,
+      badge: isAr
+        ? (deliveryFailures > 0 ? `${deliveryFailures} فشل تسليم يحتاج متابعة` : "جميع الإشعارات سليمة")
+        : (deliveryFailures > 0 ? `${deliveryFailures} delivery failures need review` : "All notifications healthy"),
+      badgeColor: deliveryFailures > 0
+        ? "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20"
+        : "bg-muted text-muted-foreground border-border",
       icon: Bell,
       iconColor: "text-purple-500 dark:text-purple-400",
       iconBg: "bg-purple-500/10 border-purple-500/20",

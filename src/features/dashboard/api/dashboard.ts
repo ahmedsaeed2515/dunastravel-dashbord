@@ -9,6 +9,7 @@ import {
   RecentActivityItem,
   RecentBookingItem,
   RevenueTrendItem,
+  RevenueTrendResponse,
   TopDestinationItem,
   TourPerformanceItem,
   TourRankings,
@@ -23,8 +24,8 @@ export interface TrafficAnalytics {
 export const dashboardApi = {
   getSummary: (filters?: DashboardFilters): Promise<ExecutiveSummary> =>
     apiClient.get<unknown, ExecutiveSummary>('/admin/dashboard/summary', { params: filters }),
-  getRevenueTrend: (filters?: DashboardFilters): Promise<RevenueTrendItem[]> =>
-    apiClient.get<unknown, RevenueTrendItem[]>('/admin/dashboard/revenue-trend', { params: filters }),
+  getRevenueTrend: (filters?: DashboardFilters): Promise<RevenueTrendResponse | RevenueTrendItem[]> =>
+    apiClient.get<unknown, RevenueTrendResponse | RevenueTrendItem[]>('/admin/dashboard/revenue-trend', { params: filters }),
   getBookingsTrend: (filters?: DashboardFilters): Promise<BookingsTrendItem[]> =>
     apiClient.get<unknown, BookingsTrendItem[]>('/admin/dashboard/bookings-trend', { params: filters }),
   getTopDestinations: (filters?: DashboardFilters): Promise<TopDestinationItem[]> =>

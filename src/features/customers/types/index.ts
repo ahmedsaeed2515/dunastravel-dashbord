@@ -170,3 +170,21 @@ export interface AddCustomerDocumentPayload {
   documentType?: string;
   title: string;
 }
+
+export interface CreateCustomerPayload {
+  name: string;
+  email: string;
+  phone?: string;
+  nationality?: string;
+  isVip?: boolean;
+  preferredLanguage?: string;
+  preferredCurrency?: string;
+  preferredDestination?: string;
+  preferredTravelType?: string;
+  customerSource?: string;
+  initialNote?: string;
+  tags?: string[];
+  segments?: string[];
+  passportNumber?: string;
+}
+

@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 import { useState } from "react";
 import { 
@@ -14,7 +14,7 @@ import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { EditTourDrawer } from "../Drawers/EditTourDrawer";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import type { TripModel } from "@/types/dunas-suite";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
@@ -182,8 +182,9 @@ export function ToursTable() {
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
+  const [selectedTripModel, setSelectedTripModel] = useState<TripModel | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [isEditDrawerOpen, setEditDrawerOpen] = useState(false);
+  const [isTripModalOpen, setTripModalOpen] = useState(false);
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [bulkMoveSlugs, setBulkMoveSlugs] = useState<string[]>([]);
@@ -197,7 +198,8 @@ export function ToursTable() {
 
   const handleEdit = (tour: Tour) => {
     setSelectedTour(tour);
-    setEditDrawerOpen(true);
+    setSelectedTripModel(tourToTripModel(tour));
+    setTripModalOpen(true);
   };
 
   const handleMove = (tour: Tour) => {
@@ -635,10 +637,13 @@ export function ToursTable() {
         onOpenChange={setViewDrawerOpen}
       />
 
-      <EditTourDrawer
-        tour={selectedTour}
-        open={isEditDrawerOpen}
-        onOpenChange={setEditDrawerOpen}
+      <TripEditorModal
+        trip={selectedTripModel}
+        isOpen={isTripModalOpen}
+        onClose={() => {
+          setTripModalOpen(false);
+          setSelectedTripModel(null);
+        }}
       />
 
       <MoveTourDialog

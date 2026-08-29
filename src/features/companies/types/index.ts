@@ -86,6 +86,7 @@ export interface CompanyQueryFilters {
 
 export interface CreateCompanyPayload {
   name: string;
+  taxId?: string;
   companyType?: CompanyType;
   email?: string;
   phone?: string;

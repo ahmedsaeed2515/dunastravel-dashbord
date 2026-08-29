@@ -26,6 +26,14 @@ export const financeApi = {
     return apiClient.get<WalletMetrics, WalletMetrics>('/admin/finance/wallets/metrics');
   },
 
+  getWallets: async (filters?: any): Promise<PaginatedResponse<any>> => {
+    return apiClient.get<PaginatedResponse<any>, PaginatedResponse<any>>('/admin/finance/wallets', { params: filters });
+  },
+
+  reconcileWallets: async (): Promise<{ success: boolean; totalWalletsChecked: number; driftCount: number; message: string }> => {
+    return apiClient.post<{ success: boolean; totalWalletsChecked: number; driftCount: number; message: string }, { success: boolean; totalWalletsChecked: number; driftCount: number; message: string }>('/admin/finance/wallets/reconcile');
+  },
+
   getWallet: async (ownerType: 'USER' | 'COMPANY', ownerId: string): Promise<Wallet> => {
     return apiClient.get<Wallet, Wallet>(`/admin/finance/wallets/${ownerType}/${ownerId}`);
   },

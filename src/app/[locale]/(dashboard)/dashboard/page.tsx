@@ -9,7 +9,7 @@ import { RecentBookingsTable } from "@/features/dashboard/components/RecentBooki
 import { RecentActivityFeed } from "@/features/dashboard/components/RecentActivityFeed";
 import { PopularToursSection } from "@/features/dashboard/components/PopularToursSection";
 import {
-  useDashboardSummary, useRevenueTrend, useTourPerformance,
+  useDashboardSummary, useRevenueTrend, useTopDestinations, useTourPerformance,
   useRecentBookings, useRecentActivity
 } from "@/features/dashboard/hooks/useDashboardData";
 import { DashboardFilters } from "@/features/dashboard/types";
@@ -19,6 +19,7 @@ export default function DashboardPage() {
 
   const { data: summary, isLoading: isLoadingSummary, refetch: refetchSummary, isRefetching: isRefetchingSummary } = useDashboardSummary(filters);
   const { data: revenueTrend, isLoading: isLoadingRevenue, refetch: refetchRevenue } = useRevenueTrend(filters);
+  const { data: topDestinations, isLoading: isLoadingDestinations, refetch: refetchDestinations } = useTopDestinations(filters);
   const { data: recentBookings, isLoading: isLoadingRecentBookings, refetch: refetchBookings } = useRecentBookings();
   const { data: recentActivity, isLoading: isLoadingActivity, refetch: refetchActivity } = useRecentActivity();
   const { data: tourPerformance, isLoading: isLoadingTours, isError: isToursError, refetch: refetchTours } = useTourPerformance(filters);
@@ -26,6 +27,7 @@ export default function DashboardPage() {
   const handleRefreshAll = () => {
     refetchSummary();
     refetchRevenue();
+    refetchDestinations();
     refetchBookings();
     refetchActivity();
     refetchTours();
@@ -50,7 +52,11 @@ export default function DashboardPage() {
       {/* 3. Financial & Revenue Analytics */}
       <AnalyticsCharts
         revenueTrend={revenueTrend}
-        isLoadingRevenue={isLoadingRevenue}
+        topDestinations={topDestinations}
+        summary={summary}
+        filters={filters}
+        onFilterChange={(newFilters) => setFilters(newFilters)}
+        isLoadingRevenue={isLoadingRevenue || isLoadingDestinations}
       />
 
       {/* 4. Recent Bookings Table & System Audit Activity Feed */}

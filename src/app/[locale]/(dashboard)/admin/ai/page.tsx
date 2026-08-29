@@ -46,10 +46,17 @@ import {
   ThumbsDown,
   Clock,
   DollarSign,
+  Crown,
+  ArrowUp,
+  ArrowDown,
+  Power,
+  PowerOff,
+  SlidersHorizontal,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
+import { ModelSelector } from "@/features/ai/components/ModelSelector";
 import { 
   aiApi, 
   AiOverviewMetrics, 
@@ -119,6 +126,18 @@ export default function AiAgentsPage() {
   const [newKeyPriority, setNewKeyPriority] = useState(1);
   const [addingKey, setAddingKey] = useState(false);
   const [testingKeyId, setTestingKeyId] = useState<string | null>(null);
+
+  // Edit Key Modal State
+  const [showEditKeyModal, setShowEditKeyModal] = useState(false);
+  const [editingKey, setEditingKey] = useState<ApiKeyPoolEntry | null>(null);
+  const [editKeyProvider, setEditKeyProvider] = useState('anthropic');
+  const [editKeyModel, setEditKeyModel] = useState('claude-3-5-sonnet-20241022');
+  const [editKeyBaseUrl, setEditKeyBaseUrl] = useState('');
+  const [editKeySecret, setEditKeySecret] = useState('');
+  const [editKeyLabel, setEditKeyLabel] = useState('');
+  const [editKeyPriority, setEditKeyPriority] = useState(1);
+  const [editKeyActive, setEditKeyActive] = useState(true);
+  const [updatingKey, setUpdatingKey] = useState(false);
 
   // Simulator State
   const [simulatorSessionId] = useState(() => `admin-sim-${Date.now()}`);
@@ -258,7 +277,7 @@ export default function AiAgentsPage() {
         });
       }
     } catch (err: any) {
-      console.warn("Failed to fetch feedback:", err);
+      console.warn("Failed to fetch feedback summary:", err);
     } finally {
       setLoadingFeedback(false);
     }
@@ -379,6 +398,38 @@ export default function AiAgentsPage() {
     }
   };
 
+  // Priority calculation helper: returns next highest integer priority
+  const getNextPriority = () => {
+    if (!keyPool || keyPool.length === 0) return 1;
+    const maxP = keyPool.reduce((max, k) => Math.max(max, k.priority || 0), 0);
+    return maxP + 1;
+  };
+
+  // Open Add Key Modal with computed next priority
+  const handleOpenAddKeyModal = () => {
+    const nextPri = getNextPriority();
+    setNewKeyPriority(nextPri);
+    setNewKeySecret("");
+    setNewKeyLabel("");
+    setNewKeyBaseUrl("");
+    const p = SUPPORTED_PROVIDERS.find((x) => x.id === newKeyProvider);
+    if (p) setNewKeyModel(p.defaultModel);
+    setShowAddKeyModal(true);
+  };
+
+  // Open Edit Key Modal
+  const handleOpenEditKeyModal = (k: ApiKeyPoolEntry) => {
+    setEditingKey(k);
+    setEditKeyProvider(k.provider || 'anthropic');
+    setEditKeyModel(k.model || '');
+    setEditKeyBaseUrl(k.baseUrl || '');
+    setEditKeySecret('');
+    setEditKeyLabel(k.label || '');
+    setEditKeyPriority(k.priority || 1);
+    setEditKeyActive(k.isActive !== false);
+    setShowEditKeyModal(true);
+  };
+
   // Add Key to Pool
   const handleAddKeyToPool = async () => {
     if (!newKeySecret.trim()) {
@@ -393,7 +444,7 @@ export default function AiAgentsPage() {
         apiKey: newKeySecret.trim(),
         baseUrl: newKeyBaseUrl.trim() || undefined,
         label: newKeyLabel.trim() || undefined,
-        priority: Number(newKeyPriority) || 1,
+        priority: Number(newKeyPriority) || getNextPriority(),
         isActive: true,
       });
       toast.success("API key added to failover pool successfully!");
@@ -406,6 +457,74 @@ export default function AiAgentsPage() {
       toast.error(err.message || "Failed to add API key to pool.");
     } finally {
       setAddingKey(false);
+    }
+  };
+
+  // Update Key in Pool
+  const handleUpdateKeyInPool = async () => {
+    if (!editingKey) return;
+    setUpdatingKey(true);
+    try {
+      const payload: any = {
+        provider: editKeyProvider,
+        model: editKeyModel,
+        baseUrl: editKeyBaseUrl.trim() || undefined,
+        label: editKeyLabel.trim() || undefined,
+        priority: Number(editKeyPriority) || editingKey.priority || 1,
+        isActive: editKeyActive,
+      };
+      if (editKeySecret.trim()) {
+        payload.apiKey = editKeySecret.trim();
+      }
+      await aiApi.updateKeyInPool(editingKey.id, payload);
+      toast.success("API key updated successfully!");
+      setShowEditKeyModal(false);
+      setEditingKey(null);
+      fetchKeyPool();
+      fetchOverview();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to update API key.");
+    } finally {
+      setUpdatingKey(false);
+    }
+  };
+
+  // Move Key Priority Up or Down
+  const handleMovePriority = async (id: string, direction: 'up' | 'down') => {
+    const sorted = [...keyPool].sort((a, b) => a.priority - b.priority);
+    const index = sorted.findIndex((k) => k.id === id);
+    if (index === -1) return;
+    if (direction === 'up' && index === 0) return;
+    if (direction === 'down' && index === sorted.length - 1) return;
+
+    const targetIndex = direction === 'up' ? index - 1 : index + 1;
+    const reordered = [...sorted];
+    const temp = reordered[index];
+    reordered[index] = reordered[targetIndex];
+    reordered[targetIndex] = temp;
+
+    const orderedIds = reordered.map((k) => k.id);
+    try {
+      const updatedList = await aiApi.reorderKeysInPool(orderedIds);
+      setKeyPool(updatedList);
+      toast.success("Failover hierarchy updated!");
+      fetchOverview();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to reorder keys.");
+      fetchKeyPool();
+    }
+  };
+
+  // Toggle Key Active/Disabled status
+  const handleToggleKeyActive = async (k: ApiKeyPoolEntry) => {
+    try {
+      const newActive = !k.isActive;
+      await aiApi.updateKeyInPool(k.id, { isActive: newActive });
+      toast.success(`Key "${k.label || k.model}" is now ${newActive ? 'Active & Ready' : 'Disabled'}.`);
+      fetchKeyPool();
+      fetchOverview();
+    } catch (err: any) {
+      toast.error(err.message || "Failed to toggle key status.");
     }
   };
 
@@ -576,7 +695,6 @@ export default function AiAgentsPage() {
       setStaffReplyText("");
       const detail = await aiApi.getConversationDetail(selectedConversation.id);
       setSelectedConversation(detail);
-      fetchConversations();
     } catch (err: any) {
       toast.error(err.message || "Failed to send staff reply.");
     } finally {
@@ -584,11 +702,11 @@ export default function AiAgentsPage() {
     }
   };
 
-  // Return to AI
+  // Return to Autonomous AI
   const handleReturnToAi = async (id: string) => {
     try {
       await aiApi.returnToAi(id);
-      toast.success("Conversation returned to AI concierge.");
+      toast.success("Conversation returned to autonomous GuideR AI.");
       fetchConversations();
       if (selectedConversation && selectedConversation.id === id) {
         const detail = await aiApi.getConversationDetail(id);
@@ -603,22 +721,18 @@ export default function AiAgentsPage() {
   const handleResolve = async (id: string) => {
     try {
       await aiApi.resolveConversation(id);
-      toast.success("Conversation closed and marked resolved.");
+      toast.success("Conversation resolved and archived.");
+      setSelectedConversation(null);
       fetchConversations();
-      if (selectedConversation && selectedConversation.id === id) {
-        const detail = await aiApi.getConversationDetail(id);
-        setSelectedConversation(detail);
-      }
     } catch (err: any) {
       toast.error(err.message || "Failed to resolve conversation.");
     }
   };
 
-  // --- Prompt Version Lifecycle Handlers ---
-
+  // Create Prompt Draft
   const handleCreatePromptDraft = async () => {
     if (!newPromptName.trim() || !newPromptText.trim()) {
-      toast.error("Please enter a prompt name and system instructions.");
+      toast.error("Please specify both prompt name and system instructions.");
       return;
     }
     setCreatingPromptDraft(true);
@@ -641,86 +755,87 @@ export default function AiAgentsPage() {
     }
   };
 
+  // Open Edit Prompt Modal
   const handleOpenEditPrompt = (p: PromptVersionItem) => {
-    setEditingPrompt({ ...p });
+    setEditingPrompt(p);
     setShowEditPromptModal(true);
   };
 
+  // Update Prompt Version
   const handleUpdatePrompt = async () => {
-    if (!editingPrompt || !editingPrompt.name.trim() || !editingPrompt.systemPrompt.trim()) {
-      toast.error("Please enter a prompt name and system instructions.");
-      return;
-    }
+    if (!editingPrompt) return;
     setUpdatingPrompt(true);
     try {
       await aiApi.updatePromptVersion(editingPrompt.id, {
-        name: editingPrompt.name.trim(),
-        systemPrompt: editingPrompt.systemPrompt.trim(),
-        changeNote: editingPrompt.changeNote?.trim() || undefined,
+        name: editingPrompt.name,
+        systemPrompt: editingPrompt.systemPrompt,
+        changeNote: editingPrompt.changeNote || undefined,
         status: editingPrompt.status,
       });
       toast.success("Prompt version updated successfully!");
       setShowEditPromptModal(false);
       setEditingPrompt(null);
       fetchPrompts();
-      fetchConfig();
     } catch (err: any) {
-      toast.error(err.message || "Failed to update prompt version.");
+      toast.error(err.message || "Failed to update prompt.");
     } finally {
       setUpdatingPrompt(false);
     }
   };
 
+  // Delete Prompt Version
   const handleDeletePrompt = async (id: string) => {
-    if (!confirm("Are you sure you want to permanently delete this prompt version?")) return;
     try {
       await aiApi.deletePromptVersion(id);
       toast.success("Prompt version deleted.");
       fetchPrompts();
     } catch (err: any) {
-      toast.error(err.message || "Failed to delete prompt version.");
+      toast.error(err.message || "Failed to delete prompt.");
     }
   };
 
+  // Archive Prompt Version
   const handleArchivePrompt = async (id: string) => {
     try {
       await aiApi.archivePromptVersion(id);
       toast.success("Prompt version archived (inactive).");
       fetchPrompts();
     } catch (err: any) {
-      toast.error(err.message || "Failed to archive prompt version.");
+      toast.error(err.message || "Failed to archive prompt.");
     }
   };
 
+  // Publish Prompt Version
   const handlePublishPrompt = async (id: string) => {
     try {
       await aiApi.publishPromptVersion(id);
-      toast.success("Prompt version published live as active AI system instructions!");
+      toast.success("Prompt published to LIVE production!");
       fetchPrompts();
       fetchConfig();
     } catch (err: any) {
-      toast.error(err.message || "Failed to publish prompt version.");
+      toast.error(err.message || "Failed to publish prompt.");
     }
   };
 
+  // Rollback Prompt Version
   const handleRollbackPrompt = async (id: string) => {
     try {
       await aiApi.rollbackPromptVersion(id);
-      toast.success("Rolled back to this prompt version.");
+      toast.success("Rolled back to previous prompt version successfully!");
       fetchPrompts();
       fetchConfig();
     } catch (err: any) {
-      toast.error(err.message || "Failed to rollback prompt version.");
+      toast.error(err.message || "Failed to rollback prompt.");
     }
   };
 
+  // Seed Default Prompt Templates
   const handleSeedDefaultPrompts = async () => {
     setSeedingPrompts(true);
     try {
-      await aiApi.seedDefaultPrompts();
-      toast.success("Curated luxury prompt templates restored successfully!");
-      fetchPrompts();
-      fetchConfig();
+      const seeded = await aiApi.seedDefaultPrompts();
+      setPromptVersions(seeded || []);
+      toast.success("Curated luxury prompt templates seeded into database!");
     } catch (err: any) {
       toast.error(err.message || "Failed to seed default prompts.");
     } finally {
@@ -728,53 +843,92 @@ export default function AiAgentsPage() {
     }
   };
 
-  return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-300">
-      <PageHeader
-        title={tAi("title") || "GuideR (جايدر) AI Command Center"}
-        description={tAi("description") || "Enterprise multi-provider AI engine, multi-key failover pool, 5-language RAG knowledge generator, and live sales telemetry."}
-      />
+  // Filter Prompts
+  const filteredPrompts = promptVersions.filter((p) => {
+    const matchesSearch = promptSearch
+      ? p.name.toLowerCase().includes(promptSearch.toLowerCase()) ||
+        p.systemPrompt.toLowerCase().includes(promptSearch.toLowerCase()) ||
+        (p.changeNote && p.changeNote.toLowerCase().includes(promptSearch.toLowerCase()))
+      : true;
+    const matchesStatus = promptFilterStatus === "ALL" || p.status === promptFilterStatus;
+    return matchesSearch && matchesStatus;
+  });
 
+  const sortedKeyPool = [...keyPool].sort((a, b) => (a.priority || 0) - (b.priority || 0));
+
+  return (
+    <div className="p-6 space-y-6 max-w-7xl mx-auto pb-24">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <PageHeader 
+          title={tAi("title") || "AI Concierge & Autonomous Operations"}
+          description={tAi("description") || "Enterprise command center for GuideR luxury sales bot, multi-provider failover routing, RAG store, and FinOps analytics."}
+        />
+        <div className="flex items-center gap-2.5">
+          <Button 
+            onClick={fetchOverview} 
+            disabled={loadingOverview}
+            variant="outline" 
+            size="sm" 
+            className="gap-1.5 text-xs font-semibold"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loadingOverview ? 'animate-spin' : ''}`} />
+            Refresh Telemetry
+          </Button>
+          <Button 
+            onClick={() => setActiveTab("simulator")}
+            variant="gold" 
+            size="sm" 
+            className="gap-1.5 text-xs font-bold shadow-xs"
+          >
+            <Bot className="h-4 w-4" /> Launch GuideR Simulator
+          </Button>
+        </div>
+      </div>
+
+      {/* Primary Navigation Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="bg-muted/60 p-1 border border-border/60 flex-wrap h-auto gap-1">
-          <TabsTrigger value="overview" className="gap-2 text-xs font-semibold">
-            <Activity className="h-3.5 w-3.5" /> Overview & Metrics
+        <TabsList className="grid grid-cols-4 lg:grid-cols-8 h-auto p-1 bg-muted/60 border border-border/60 rounded-xl gap-1">
+          <TabsTrigger value="overview" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <Activity className="h-3.5 w-3.5 me-1.5 text-amber-500" /> Overview
           </TabsTrigger>
-          <TabsTrigger value="keys" className="gap-2 text-xs font-semibold">
-            <Key className="h-3.5 w-3.5" /> Multi-Key Pool ({keyPool.length})
+          <TabsTrigger value="keys" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs relative">
+            <Key className="h-3.5 w-3.5 me-1.5 text-amber-500" /> Failover Pool
+            {keyPool.length > 0 && (
+              <span className="ms-1.5 px-1.5 py-0.2 rounded-full text-[10px] bg-amber-500/20 text-amber-600 font-bold">
+                {keyPool.length}
+              </span>
+            )}
           </TabsTrigger>
-          <TabsTrigger value="config" className="gap-2 text-xs font-semibold">
-            <Settings className="h-3.5 w-3.5" /> Core Prompts & Personality
+          <TabsTrigger value="config" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <Settings className="h-3.5 w-3.5 me-1.5 text-primary" /> Core Prompts
           </TabsTrigger>
-          <TabsTrigger value="knowledge" className="gap-2 text-xs font-semibold">
-            <Database className="h-3.5 w-3.5" /> 5-Lang RAG Store ({metrics?.publishedKnowledgeArticles || 0})
+          <TabsTrigger value="prompts" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <Sparkles className="h-3.5 w-3.5 me-1.5 text-amber-500" /> Prompt Studio
           </TabsTrigger>
-          <TabsTrigger value="conversations" className="gap-2 text-xs font-semibold">
-            <Users className="h-3.5 w-3.5" /> Live Visitor Chats ({metrics?.totalConversations || 0})
+          <TabsTrigger value="knowledge" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <Database className="h-3.5 w-3.5 me-1.5 text-blue-500" /> RAG Catalog
           </TabsTrigger>
-          <TabsTrigger value="analytics" className="gap-2 text-xs font-semibold">
-            <TrendingUp className="h-3.5 w-3.5" /> Analytics & FinOps
+          <TabsTrigger value="simulator" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <Bot className="h-3.5 w-3.5 me-1.5 text-purple-500" /> Simulator
           </TabsTrigger>
-          <TabsTrigger value="prompts" className="gap-2 text-xs font-semibold">
-            <FileCode className="h-3.5 w-3.5" /> Prompt Versions ({promptVersions.length})
+          <TabsTrigger value="conversations" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <MessageSquare className="h-3.5 w-3.5 me-1.5 text-emerald-500" /> Live Takeover
           </TabsTrigger>
-          <TabsTrigger value="feedback" className="gap-2 text-xs font-semibold">
-            <ThumbsUp className="h-3.5 w-3.5" /> Feedback ({feedbackSummary.total})
-          </TabsTrigger>
-          <TabsTrigger value="simulator" className="gap-2 text-xs font-semibold">
-            <Bot className="h-3.5 w-3.5" /> Testing Playground
+          <TabsTrigger value="analytics" className="text-xs py-2 font-bold data-[state=active]:bg-background data-[state=active]:shadow-xs">
+            <TrendingUp className="h-3.5 w-3.5 me-1.5 text-indigo-500" /> FinOps & ROI
           </TabsTrigger>
         </TabsList>
 
-        {/* Tab 1: Overview & Performance Metrics */}
+        {/* Tab 1: Overview & Telemetry */}
         <TabsContent value="overview" className="m-0 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <Card className="border-border/80 shadow-xs bg-card">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Conversations</p>
+                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Chat Sessions</p>
                   <p className="text-2xl font-bold mt-1">{metrics?.totalConversations ?? 0}</p>
-                  <span className="text-[11px] text-emerald-600 font-medium">Active: {metrics?.activeConversations ?? 0}</span>
+                  <span className="text-[11px] text-emerald-600 font-medium">{metrics?.activeConversations ?? 0} active currently</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -787,7 +941,7 @@ export default function AiAgentsPage() {
                 <div>
                   <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Qualified Leads</p>
                   <p className="text-2xl font-bold mt-1">{metrics?.qualifiedLeads ?? 0}</p>
-                  <span className="text-[11px] text-amber-600 font-medium">Handoffs: {metrics?.handedOffConversations ?? 0}</span>
+                  <span className="text-[11px] text-amber-600 font-medium">{metrics?.handedOffConversations ?? 0} VIP handoffs</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                   <Users className="h-5 w-5 text-amber-600" />
@@ -898,107 +1052,213 @@ export default function AiAgentsPage() {
           </div>
         </TabsContent>
 
-        {/* Tab 2: Multi-API Key Failover Pool */}
+        {/* Tab 2: Multi-API Key Failover Pool (Enhanced UI/UX with Priority Engine & Edit) */}
         <TabsContent value="keys" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
               <div>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <Key className="h-5 w-5 text-amber-500" /> Multi-API Key Failover Pool & Provider Routing
                 </CardTitle>
-                <CardDescription>
-                  Configure multiple API keys across Anthropic, OpenAI, Google Gemini, OpenRouter (Chinese models), and DeepSeek. The system rotates and fails over instantly with zero latency if any key is exhausted.
+                <CardDescription className="text-xs mt-1">
+                  توزيع وترتيب مفاتيح الذكاء الاصطناعي مع التبديل التلقائي الفوري (Failover Circuit Breaker). يبدأ النظام بالمفتاح صاحب الأولوية (#1)، وفي حال حدوث ضغط أو نفاذ رصيد ينتقل فوراً للأولوية التالية.
                 </CardDescription>
               </div>
-              <Button onClick={() => setShowAddKeyModal(true)} variant="gold" size="sm" className="gap-1.5">
-                <Plus className="h-4 w-4" /> Add API Key to Pool
+              <Button onClick={handleOpenAddKeyModal} variant="gold" size="sm" className="gap-1.5 text-xs font-bold shrink-0">
+                <Plus className="h-4 w-4" /> + Add API Key to Pool (إضافة مفتاح جديد)
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               {loadingKeyPool ? (
-                <div className="py-8 text-center text-xs text-muted-foreground">Loading API Key Pool...</div>
-              ) : keyPool.length === 0 ? (
-                <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-3">
-                  <Key className="h-8 w-8 mx-auto text-muted-foreground/60" />
-                  <p className="font-semibold">No API keys configured in the failover pool.</p>
-                  <p className="text-[11px]">Add your Anthropic, OpenAI, Gemini, or OpenRouter/DeepSeek keys to enable seamless failover redundancy.</p>
-                  <Button onClick={() => setShowAddKeyModal(true)} variant="gold" size="sm">
-                    Add First API Key
+                <div className="py-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+                  <RefreshCw className="h-4 w-4 animate-spin text-amber-500" />
+                  <span>Loading API Key Failover Pool...</span>
+                </div>
+              ) : sortedKeyPool.length === 0 ? (
+                <div className="py-12 border-2 border-dashed border-border/80 rounded-2xl text-center text-xs text-muted-foreground space-y-3 bg-muted/10">
+                  <Key className="h-10 w-10 mx-auto text-amber-500/60" />
+                  <p className="font-bold text-sm text-foreground">No API keys configured in the failover pool.</p>
+                  <p className="text-xs max-w-md mx-auto text-muted-foreground">
+                    أضف مفاتيحك لمزودي الخدمة (Google Gemini, Anthropic Claude, OpenAI, DeepSeek, OpenRouter) لضمان استمرارية الردود بدون توقف.
+                  </p>
+                  <Button onClick={handleOpenAddKeyModal} variant="gold" size="sm" className="font-bold gap-1.5 mt-2">
+                    <Plus className="h-4 w-4" /> Add First API Key
                   </Button>
                 </div>
               ) : (
-                <div className="border border-border/60 rounded-xl overflow-hidden">
+                <div className="border border-border/60 rounded-2xl overflow-hidden shadow-xs">
                   <table className="w-full text-xs text-left">
-                    <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
+                    <thead className="bg-muted/60 font-bold text-muted-foreground uppercase tracking-wider text-[11px] border-b border-border/60">
                       <tr>
-                        <th className="p-3">Priority</th>
-                        <th className="p-3">Provider & Model</th>
-                        <th className="p-3">Masked Secret Key</th>
-                        <th className="p-3">Health Status</th>
-                        <th className="p-3">Latency</th>
-                        <th className="p-3">Failures</th>
-                        <th className="p-3">Active</th>
-                        <th className="p-3 text-right">Actions</th>
+                        <th className="p-3.5 w-32">Priority / الترتيب</th>
+                        <th className="p-3.5">Provider & Model</th>
+                        <th className="p-3.5">Masked Key</th>
+                        <th className="p-3.5">Health Status</th>
+                        <th className="p-3.5">Latency</th>
+                        <th className="p-3.5">Failures</th>
+                        <th className="p-3.5">Active State</th>
+                        <th className="p-3.5 text-right">Actions</th>
                       </tr>
                     </thead>
-                    <tbody className="divide-y divide-border/60">
-                      {keyPool.map((k) => (
-                        <tr key={k.id} className="hover:bg-muted/20">
-                          <td className="p-3 font-bold">#{k.priority}</td>
-                          <td className="p-3">
-                            <p className="font-bold text-foreground capitalize">{k.provider}</p>
-                            <p className="font-mono text-[11px] text-muted-foreground">{k.model}</p>
-                            {k.label && <span className="text-[10px] text-primary font-semibold">{k.label}</span>}
-                          </td>
-                          <td className="p-3 font-mono text-muted-foreground">{k.maskedKey}</td>
-                          <td className="p-3">
-                            {k.lastStatus === 'HEALTHY' && (
-                              <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] flex items-center gap-1 w-max">
-                                <CheckCircle2 className="h-3 w-3" /> HEALTHY
+                    <tbody className="divide-y divide-border/60 bg-card">
+                      {sortedKeyPool.map((k, index) => {
+                        const isPrimary = index === 0 && k.priority === 1;
+                        const isBackup = index === 1;
+                        return (
+                          <tr key={k.id} className="hover:bg-muted/20 transition-colors">
+                            {/* Priority Column with Quick Reorder buttons */}
+                            <td className="p-3.5">
+                              <div className="flex items-center gap-1.5">
+                                <div className="flex flex-col gap-0.5">
+                                  <button
+                                    onClick={() => handleMovePriority(k.id, 'up')}
+                                    disabled={index === 0}
+                                    title="Move Up in Failover Order (رفع الأولوية)"
+                                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                                  >
+                                    <ChevronUp className="h-3.5 w-3.5" />
+                                  </button>
+                                  <button
+                                    onClick={() => handleMovePriority(k.id, 'down')}
+                                    disabled={index === sortedKeyPool.length - 1}
+                                    title="Move Down in Failover Order (خفض الأولوية)"
+                                    className="p-0.5 rounded hover:bg-muted text-muted-foreground hover:text-foreground disabled:opacity-20 disabled:cursor-not-allowed cursor-pointer"
+                                  >
+                                    <ChevronDown className="h-3.5 w-3.5" />
+                                  </button>
+                                </div>
+
+                                {isPrimary ? (
+                                  <span className="px-2.5 py-1 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 font-mono font-black text-xs border border-amber-500/40 flex items-center gap-1 shadow-xs">
+                                    <Crown className="h-3 w-3 fill-amber-500 text-amber-500" /> #{k.priority}
+                                  </span>
+                                ) : isBackup ? (
+                                  <span className="px-2.5 py-1 rounded-lg bg-blue-500/15 text-blue-600 dark:text-blue-400 font-mono font-bold text-xs border border-blue-500/30">
+                                    #{k.priority}
+                                  </span>
+                                ) : (
+                                  <span className="px-2.5 py-1 rounded-lg bg-muted text-muted-foreground font-mono font-semibold text-xs border border-border">
+                                    #{k.priority}
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+
+                            {/* Provider & Model */}
+                            <td className="p-3.5">
+                              <div className="space-y-0.5">
+                                <div className="flex items-center gap-2">
+                                  <p className="font-bold text-foreground capitalize text-xs">{k.provider}</p>
+                                  {k.label && (
+                                    <span className="px-1.5 py-0.5 rounded bg-primary/10 text-primary font-semibold text-[10px]">
+                                      {k.label}
+                                    </span>
+                                  )}
+                                </div>
+                                <p className="font-mono text-[11px] text-muted-foreground font-semibold">{k.model}</p>
+                              </div>
+                            </td>
+
+                            {/* Masked Secret Key */}
+                            <td className="p-3.5 font-mono text-muted-foreground text-xs">
+                              {k.maskedKey || '••••••••••••••••'}
+                            </td>
+
+                            {/* Health Status */}
+                            <td className="p-3.5">
+                              {k.lastStatus === 'HEALTHY' && (
+                                <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 font-bold text-[10px] flex items-center gap-1 w-max border border-emerald-500/20">
+                                  <CheckCircle2 className="h-3 w-3" /> HEALTHY
+                                </span>
+                              )}
+                              {k.lastStatus === 'RATE_LIMITED' && (
+                                <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold text-[10px] flex items-center gap-1 w-max border border-amber-500/20">
+                                  <AlertTriangle className="h-3 w-3" /> RATE LIMITED (429)
+                                </span>
+                              )}
+                              {k.lastStatus === 'FAILED' && (
+                                <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-600 dark:text-red-400 font-bold text-[10px] flex items-center gap-1 w-max border border-red-500/20">
+                                  <XCircle className="h-3 w-3" /> FAILED
+                                </span>
+                              )}
+                              {k.lastStatus === 'UNTESTED' && (
+                                <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-bold text-[10px] border border-border/80">
+                                  UNTESTED
+                                </span>
+                              )}
+                            </td>
+
+                            {/* Latency */}
+                            <td className="p-3.5 font-mono font-semibold">
+                              {k.lastLatencyMs ? (
+                                <span className={k.lastLatencyMs < 1200 ? "text-emerald-600" : k.lastLatencyMs < 3000 ? "text-amber-600" : "text-red-500"}>
+                                  {k.lastLatencyMs} ms
+                                </span>
+                              ) : (
+                                <span className="text-muted-foreground">—</span>
+                              )}
+                            </td>
+
+                            {/* Fail Count */}
+                            <td className="p-3.5 font-semibold">
+                              <span className={k.failCount > 0 ? "text-red-500 font-bold" : "text-muted-foreground"}>
+                                {k.failCount}
                               </span>
-                            )}
-                            {k.lastStatus === 'RATE_LIMITED' && (
-                              <span className="px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 font-bold text-[10px] flex items-center gap-1 w-max">
-                                <AlertTriangle className="h-3 w-3" /> RATE LIMITED (429)
-                              </span>
-                            )}
-                            {k.lastStatus === 'FAILED' && (
-                              <span className="px-2.5 py-1 rounded-full bg-red-500/10 text-red-600 font-bold text-[10px] flex items-center gap-1 w-max">
-                                <XCircle className="h-3 w-3" /> FAILED
-                              </span>
-                            )}
-                            {k.lastStatus === 'UNTESTED' && (
-                              <span className="px-2.5 py-1 rounded-full bg-muted text-muted-foreground font-bold text-[10px]">
-                                UNTESTED
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3 font-mono">{k.lastLatencyMs ? `${k.lastLatencyMs} ms` : '—'}</td>
-                          <td className="p-3 font-semibold">{k.failCount}</td>
-                          <td className="p-3">
-                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${k.isActive ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'}`}>
-                              {k.isActive ? 'Active' : 'Disabled'}
-                            </span>
-                          </td>
-                          <td className="p-3 text-right space-x-1.5">
-                            <Button 
-                              onClick={() => handleTestKey(k.id)} 
-                              disabled={testingKeyId === k.id} 
-                              size="xs" 
-                              variant="outline"
-                            >
-                              <Play className={`h-3 w-3 ${testingKeyId === k.id ? 'animate-spin' : ''}`} />
-                            </Button>
-                            <Button 
-                              onClick={() => handleDeleteKey(k.id)} 
-                              size="xs" 
-                              variant="destructive"
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
+                            </td>
+
+                            {/* Active Toggle Switch */}
+                            <td className="p-3.5">
+                              <button
+                                onClick={() => handleToggleKeyActive(k)}
+                                className={`px-2.5 py-1 rounded-full text-[10px] font-bold border transition-all cursor-pointer flex items-center gap-1.5 ${
+                                  k.isActive 
+                                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30' 
+                                    : 'bg-muted text-muted-foreground border-border hover:bg-muted/80'
+                                }`}
+                              >
+                                {k.isActive ? <Power className="h-2.5 w-2.5" /> : <PowerOff className="h-2.5 w-2.5" />}
+                                {k.isActive ? 'Active' : 'Disabled'}
+                              </button>
+                            </td>
+
+                            {/* Actions Column: Test, Edit, Delete */}
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end gap-1.5">
+                                <Button 
+                                  onClick={() => handleTestKey(k.id)} 
+                                  disabled={testingKeyId === k.id} 
+                                  size="xs" 
+                                  variant="outline"
+                                  title="Test Key Connectivity (فحص الاتصال)"
+                                  className="h-7 px-2 text-xs"
+                                >
+                                  <Play className={`h-3 w-3 me-1 text-emerald-600 ${testingKeyId === k.id ? 'animate-spin' : ''}`} />
+                                  Test
+                                </Button>
+                                <Button 
+                                  onClick={() => handleOpenEditKeyModal(k)} 
+                                  size="xs" 
+                                  variant="outline"
+                                  title="Edit Key, Priority, Model (تعديل شامل)"
+                                  className="h-7 px-2 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
+                                >
+                                  <Edit3 className="h-3 w-3 me-1" />
+                                  Edit
+                                </Button>
+                                <Button 
+                                  onClick={() => handleDeleteKey(k.id)} 
+                                  size="xs" 
+                                  variant="destructive"
+                                  title="Delete Key (حذف)"
+                                  className="h-7 px-2 text-xs"
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -1129,12 +1389,13 @@ export default function AiAgentsPage() {
                     ))}
                   </select>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold uppercase text-muted-foreground">Default Model</label>
-                  <Input 
-                    value={config.model || ''}
-                    onChange={(e) => setConfig({ ...config, model: e.target.value })}
-                    className="text-xs font-mono font-semibold"
+                <div>
+                  <ModelSelector
+                    provider={config.provider || 'anthropic'}
+                    value={config.model || 'claude-3-5-sonnet-20241022'}
+                    onChange={(m) => setConfig((prev) => ({ ...prev, model: m }))}
+                    label="Default Fallback Model (الموديل الافتراضي)"
+                    isAr={false}
                   />
                 </div>
               </div>
@@ -1232,47 +1493,83 @@ export default function AiAgentsPage() {
                   <option value="pt">🇵🇹 Portuguese (pt)</option>
                   <option value="it">🇮🇹 Italian (it)</option>
                 </select>
-                <Button onClick={fetchKnowledge} size="sm" variant="outline">
-                  <Search className="h-3.5 w-3.5 mr-1" /> Search
+                <select
+                  value={knowledgeCategory}
+                  onChange={(e) => { setKnowledgeCategory(e.target.value); }}
+                  className="text-xs bg-muted border border-border/60 rounded-md px-2 py-1 font-semibold"
+                >
+                  <option value="">All Categories</option>
+                  <option value="GENERAL">GENERAL</option>
+                  <option value="CUSTOM_TOURS">CUSTOM_TOURS</option>
+                  <option value="BOOKING_POLICY">BOOKING_POLICY</option>
+                  <option value="DESTINATION_INFO">DESTINATION_INFO</option>
+                  <option value="FAQ">FAQ</option>
+                  <option value="TRANSPORTATION">TRANSPORTATION</option>
+                </select>
+                <Button onClick={fetchKnowledge} size="sm" variant="outline" className="text-xs">
+                  <Search className="h-3.5 w-3.5 me-1" /> Search
                 </Button>
               </div>
 
               {loadingKnowledge ? (
-                <div className="py-8 text-center text-xs text-muted-foreground">Loading Knowledge Base items...</div>
+                <div className="py-8 text-center text-xs text-muted-foreground">Loading Knowledge Items...</div>
               ) : knowledgeItems.length === 0 ? (
-                <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-2">
+                <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-3">
                   <Database className="h-8 w-8 mx-auto text-muted-foreground/60" />
-                  <p>No knowledge base items found. Click "Add 5-Language Article" or "Sync DB Catalog".</p>
+                  <p className="font-semibold">No knowledge articles found in RAG store.</p>
+                  <p className="text-[11px]">Add factual knowledge articles in 5 languages or sync existing Database tours.</p>
+                  <div className="flex justify-center gap-2">
+                    <Button onClick={() => setShowMultiLangModal(true)} variant="gold" size="sm">
+                      Create 5-Language Article
+                    </Button>
+                    <Button onClick={handleSyncCatalog} variant="outline" size="sm">
+                      Sync DB Tours
+                    </Button>
+                  </div>
                 </div>
               ) : (
                 <div className="border border-border/60 rounded-xl overflow-hidden">
                   <table className="w-full text-xs text-left">
                     <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
                       <tr>
-                        <th className="p-3">Locale</th>
-                        <th className="p-3">Title</th>
+                        <th className="p-3">Language</th>
+                        <th className="p-3">Title & Tags</th>
                         <th className="p-3">Category</th>
+                        <th className="p-3">Status</th>
                         <th className="p-3">Source</th>
-                        <th className="p-3">Priority</th>
-                        <th className="p-3">Last Updated</th>
+                        <th className="p-3">Updated</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60">
                       {knowledgeItems.map((item) => (
                         <tr key={item.id} className="hover:bg-muted/20">
-                          <td className="p-3">
-                            <span className="px-2 py-0.5 rounded font-mono font-bold text-[10px] bg-muted uppercase">
+                          <td className="p-3 font-mono font-bold uppercase">
+                            <span className="px-2 py-0.5 rounded bg-primary/10 text-primary">
                               {item.locale}
                             </span>
                           </td>
-                          <td className="p-3 font-semibold text-foreground max-w-xs truncate">{item.title}</td>
                           <td className="p-3">
-                            <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold text-[10px]">
-                              {item.category}
+                            <p className="font-bold text-foreground">{item.title}</p>
+                            <p className="text-[11px] text-muted-foreground truncate max-w-md">{item.content}</p>
+                            {item.tags && item.tags.length > 0 && (
+                              <div className="flex gap-1 mt-1">
+                                {item.tags.map((t, idx) => (
+                                  <span key={idx} className="px-1.5 py-0.2 rounded bg-muted text-[10px] text-muted-foreground">
+                                    #{t}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </td>
+                          <td className="p-3 font-mono text-[11px]">{item.category}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              item.status === 'PUBLISHED' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-muted text-muted-foreground'
+                            }`}>
+                              {item.status}
                             </span>
                           </td>
-                          <td className="p-3 font-mono text-[11px] text-muted-foreground">{item.source || 'DB_SYNC'}</td>
-                          <td className="p-3 font-bold">{item.priority}</td>
+                          <td className="p-3 font-mono text-muted-foreground">{item.source || 'MANUAL'}</td>
                           <td className="p-3 text-muted-foreground">{new Date(item.updatedAt).toLocaleDateString()}</td>
                         </tr>
                       ))}
@@ -1284,38 +1581,131 @@ export default function AiAgentsPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab 5: Visitor Chats, Live Takeover & Leads */}
+        {/* Tab 5: Simulator */}
+        <TabsContent value="simulator" className="m-0 space-y-6">
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-purple-600" /> Live GuideR Concierge Interactive Test Sandbox
+                </CardTitle>
+                <CardDescription>
+                  Interact directly with GuideR to test system prompt adherence, tour discovery, luxury tone, and zero-latency failover.
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-semibold text-muted-foreground">Simulation Language:</span>
+                <select
+                  value={simLocale}
+                  onChange={(e) => setSimLocale(e.target.value)}
+                  className="text-xs bg-muted border border-border/60 rounded-md px-2 py-1 font-semibold"
+                >
+                  <option value="ar">🇸🇦 Arabic (عربي)</option>
+                  <option value="en">🇬🇧 English</option>
+                  <option value="es">🇪🇸 Spanish</option>
+                  <option value="pt">🇵🇹 Portuguese</option>
+                  <option value="it">🇮🇹 Italian</option>
+                </select>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="h-[420px] overflow-y-auto p-4 rounded-xl bg-muted/20 border border-border/60 space-y-4">
+                {simLog.map((msg, i) => (
+                  <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                    <div className={`max-w-[85%] rounded-2xl p-4 text-xs leading-relaxed ${
+                      msg.role === 'user' 
+                        ? 'bg-primary text-primary-foreground rounded-tr-xs' 
+                        : 'bg-card border border-border/80 text-foreground rounded-tl-xs shadow-xs space-y-3'
+                    }`}>
+                      <p className="whitespace-pre-wrap">{msg.text}</p>
+                      {msg.tours && msg.tours.length > 0 && (
+                        <div className="border-t border-border/60 pt-2.5 mt-2 space-y-2">
+                          <span className="text-[11px] font-bold text-primary block">✨ Recommended Itineraries:</span>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                            {msg.tours.map((t: any, idx: number) => (
+                              <div key={idx} className="p-2 rounded-lg bg-muted/40 border border-border/60 text-[11px]">
+                                <p className="font-bold text-foreground">{t.title || t.slug}</p>
+                                <p className="text-muted-foreground font-mono text-[10px]">${t.price || 0} USD</p>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+                {simTyping && (
+                  <div className="flex justify-start">
+                    <div className="p-3 rounded-2xl bg-card border border-border/80 rounded-tl-xs text-xs text-muted-foreground animate-pulse">
+                      GuideR is consulting luxury catalog & formulating response...
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              <div className="flex gap-2">
+                <Input 
+                  value={simPrompt}
+                  onChange={(e) => setSimPrompt(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleSendSimulator()}
+                  placeholder="Type a traveler inquiry... (e.g. 'أريد رحلة نيلية فاخرة لمدة 5 أيام مع أهرامات الجيزة')"
+                  className="text-xs"
+                />
+                <Button onClick={handleSendSimulator} disabled={simTyping || !simPrompt.trim()} variant="gold" size="sm" className="gap-1.5">
+                  <Send className="h-4 w-4" /> Send
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Tab 6: Conversations & Live Staff Takeover */}
         <TabsContent value="conversations" className="m-0 space-y-6">
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader className="flex flex-row items-center justify-between">
               <div>
-                <CardTitle className="text-base font-semibold">Visitor Conversations, Live Takeover & Leads</CardTitle>
-                <CardDescription>Review live visitor chats, take over conversations as a human agent, and manage leads.</CardDescription>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <MessageSquare className="h-5 w-5 text-emerald-600" /> Live Traveler Conversations & Lead Takeover
+                </CardTitle>
+                <CardDescription>
+                  Monitor autonomous conversations in real-time, view buyer intent signals, and take over live chat instantly.
+                </CardDescription>
               </div>
-              <Button onClick={fetchConversations} size="sm" variant="outline" className="gap-1.5">
-                <RefreshCw className="h-3.5 w-3.5" /> Refresh List
+              <Button onClick={fetchConversations} variant="outline" size="sm" className="gap-1.5 text-xs">
+                <RefreshCw className={`h-3.5 w-3.5 ${loadingConversations ? 'animate-spin' : ''}`} /> Refresh
               </Button>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex gap-3">
                 <Input 
-                  placeholder="Search by visitor name, email, phone, or session ID..."
+                  placeholder="Search by visitor name, email, or session ID..."
                   value={conversationsSearch}
                   onChange={(e) => setConversationsSearch(e.target.value)}
                   onKeyDown={(e) => e.key === 'Enter' && fetchConversations()}
-                  className="max-w-md text-xs"
+                  className="max-w-xs text-xs"
                 />
-                <Button onClick={fetchConversations} size="sm" variant="outline">
-                  <Search className="h-3.5 w-3.5 mr-1" /> Search
+                <select
+                  value={conversationsStatus}
+                  onChange={(e) => setConversationsStatus(e.target.value)}
+                  className="text-xs bg-muted border border-border/60 rounded-md px-2 py-1 font-semibold"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="ACTIVE">ACTIVE (AI Responding)</option>
+                  <option value="HANDED_OFF">HANDED_OFF (Staff Taken Over)</option>
+                  <option value="CLOSED">CLOSED</option>
+                </select>
+                <Button onClick={fetchConversations} size="sm" variant="outline" className="text-xs">
+                  <Search className="h-3.5 w-3.5 me-1" /> Filter
                 </Button>
               </div>
 
               {loadingConversations ? (
-                <div className="py-8 text-center text-xs text-muted-foreground">Loading conversations...</div>
+                <div className="py-8 text-center text-xs text-muted-foreground">Loading Conversations...</div>
               ) : conversations.length === 0 ? (
                 <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-2">
-                  <Users className="h-8 w-8 mx-auto text-muted-foreground/60" />
-                  <p>No visitor conversations recorded yet.</p>
+                  <MessageSquare className="h-8 w-8 mx-auto text-muted-foreground/60" />
+                  <p className="font-semibold">No active chat conversations found.</p>
+                  <p className="text-[11px]">Live visitor conversations will automatically stream here.</p>
                 </div>
               ) : (
                 <div className="border border-border/60 rounded-xl overflow-hidden">
@@ -1323,11 +1713,10 @@ export default function AiAgentsPage() {
                     <thead className="bg-muted/50 font-semibold text-muted-foreground uppercase border-b border-border/60">
                       <tr>
                         <th className="p-3">Session / Visitor</th>
-                        <th className="p-3">Contact Details</th>
-                        <th className="p-3">Locale</th>
                         <th className="p-3">Status</th>
-                        <th className="p-3">Lead Score</th>
-                        <th className="p-3">Created</th>
+                        <th className="p-3">Lead State</th>
+                        <th className="p-3">Last Message</th>
+                        <th className="p-3">Updated</th>
                         <th className="p-3 text-right">Actions</th>
                       </tr>
                     </thead>
@@ -1335,29 +1724,40 @@ export default function AiAgentsPage() {
                       {conversations.map((conv) => (
                         <tr key={conv.id} className="hover:bg-muted/20">
                           <td className="p-3">
-                            <p className="font-bold text-foreground">{conv.visitorName || 'Anonymous Visitor'}</p>
-                            <p className="font-mono text-[10px] text-muted-foreground truncate max-w-[150px]">{conv.publicSessionId}</p>
+                            <p className="font-bold text-foreground">{conv.visitorName || 'Anonymous Traveler'}</p>
+                            <p className="text-muted-foreground font-mono text-[11px]">{conv.visitorEmail || conv.publicSessionId}</p>
                           </td>
-                          <td className="p-3 font-medium">
-                            <p>{conv.visitorEmail || '—'}</p>
-                            {conv.visitorPhone && <p className="text-[11px] text-muted-foreground">{conv.visitorPhone}</p>}
-                          </td>
-                          <td className="p-3 font-mono uppercase font-bold">{conv.locale}</td>
                           <td className="p-3">
                             <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
-                              conv.status === 'HANDED_OFF' ? 'bg-amber-500/20 text-amber-600' :
-                              conv.status === 'CLOSED' ? 'bg-muted text-muted-foreground' :
-                              'bg-emerald-500/10 text-emerald-600'
+                              conv.status === 'ACTIVE' ? 'bg-emerald-500/10 text-emerald-600' :
+                              conv.status === 'HANDED_OFF' ? 'bg-amber-500/10 text-amber-600' :
+                              'bg-muted text-muted-foreground'
                             }`}>
                               {conv.status}
                             </span>
                           </td>
-                          <td className="p-3 font-bold text-primary">{conv.leadScore || 0} pts</td>
-                          <td className="p-3 text-muted-foreground">{new Date(conv.createdAt).toLocaleDateString()}</td>
+                          <td className="p-3">
+                            <span className={`px-2 py-0.5 rounded-full font-bold text-[10px] ${
+                              conv.leadStatus === 'QUALIFIED' ? 'bg-purple-500/10 text-purple-600' :
+                              conv.leadStatus === 'CONVERTED' ? 'bg-emerald-500/10 text-emerald-600' :
+                              'bg-muted text-muted-foreground'
+                            }`}>
+                              {conv.leadStatus || 'NEW'}
+                            </span>
+                          </td>
+                          <td className="p-3 text-muted-foreground truncate max-w-xs">
+                            {conv.messages && conv.messages.length > 0 ? (conv.messages[0] as any)?.textContent || (conv.messages[0] as any)?.content || '—' : '—'}
+                          </td>
+                          <td className="p-3 text-muted-foreground">{new Date(conv.updatedAt).toLocaleTimeString()}</td>
                           <td className="p-3 text-right space-x-1.5">
-                            <Button onClick={() => handleViewConversation(conv)} size="xs" variant="outline" className="gap-1">
-                              <Eye className="h-3 w-3" /> Live Takeover & Transcript
+                            <Button onClick={() => handleViewConversation(conv)} size="xs" variant="outline">
+                              <Eye className="h-3 w-3 me-1" /> View Transcript
                             </Button>
+                            {conv.status === 'ACTIVE' && (
+                              <Button onClick={() => handleTakeover(conv.id)} size="xs" variant="gold">
+                                <UserCheck className="h-3 w-3 me-1" /> Take Over
+                              </Button>
+                            )}
                           </td>
                         </tr>
                       ))}
@@ -1369,433 +1769,71 @@ export default function AiAgentsPage() {
           </Card>
         </TabsContent>
 
-        {/* Tab 6: Testing Playground Simulator */}
-        <TabsContent value="simulator" className="m-0 space-y-6">
+        {/* Tab 7: FinOps, ROI & Analytics */}
+        <TabsContent value="analytics" className="m-0 space-y-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase">Total Tokens Processed</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold font-mono">{analyticsData?.summary?.totalTokens?.toLocaleString() || (metrics?.totalTokens || 0).toLocaleString()}</p>
+                <div className="flex justify-between text-xs text-muted-foreground mt-2 border-t pt-2">
+                  <span>Total Telemetry Tokens:</span>
+                  <span className="font-mono font-semibold">{(analyticsData?.summary?.totalTokens || metrics?.totalTokens || 0).toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-xs text-muted-foreground mt-1">
+                  <span>Average Latency:</span>
+                  <span className="font-mono font-semibold">{analyticsData?.summary?.avgLatencyMs || metrics?.avgLatencyMs || 0} ms</span>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase">Estimated LLM FinOps Cost</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-emerald-600 font-mono">${analyticsData?.summary?.totalCostUsd ?? metrics?.estimatedCostUsd ?? '0.0000'}</p>
+                <p className="text-xs text-muted-foreground mt-2 border-t pt-2">
+                  Calculated based on actual prompt/completion token pricing per model.
+                </p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-border/80 shadow-xs bg-card">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold text-muted-foreground uppercase">Visitor Satisfaction Rating</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-2xl font-bold text-amber-500 font-mono">{feedbackSummary.satisfactionRate}% Positive</p>
+                <div className="flex justify-between text-xs text-muted-foreground mt-2 border-t pt-2">
+                  <span>👍 Helpful: <strong className="text-emerald-600">{feedbackSummary.positive}</strong></span>
+                  <span>👎 Unhelpful: <strong className="text-red-500">{feedbackSummary.negative}</strong></span>
+                  <span>Total Votes: <strong>{feedbackSummary.total}</strong></span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
           <Card className="border-border/80 shadow-xs bg-card">
             <CardHeader>
               <CardTitle className="text-base font-semibold flex items-center gap-2">
-                <Bot className="h-5 w-5 text-primary" /> Live AI Concierge Simulator
+                <TrendingUp className="h-5 w-5 text-indigo-500" /> Recent Traveler Message Ratings & Heuristics
               </CardTitle>
-              <CardDescription>
-                Test real-time conversation flows, grounded tour matching, policy answers, and security rejection in a sandboxed session.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex gap-2">
-                <select
-                  value={simLocale}
-                  onChange={(e) => setSimLocale(e.target.value)}
-                  className="p-2 rounded-lg bg-muted border border-border/80 text-xs font-semibold"
-                >
-                  <option value="ar">🇸🇦 Arabic (ar)</option>
-                  <option value="en">🇬🇧 English (en)</option>
-                  <option value="es">🇪🇸 Spanish (es)</option>
-                  <option value="pt">🇵🇹 Portuguese (pt)</option>
-                  <option value="it">🇮🇹 Italian (it)</option>
-                </select>
-                <Button 
-                  onClick={() => {
-                    setSimLog([{ role: 'agent', text: "أهلاً بك! 👋 أنا جايدر (GuideR)، كيف أساعدك اليوم؟" }]);
-                  }} 
-                  variant="outline" 
-                  size="sm"
-                >
-                  Reset Session
-                </Button>
-              </div>
-
-              <div className="h-80 overflow-y-auto p-4 rounded-xl border border-border/60 bg-muted/20 space-y-3">
-                {simLog.map((m, idx) => (
-                  <div key={idx} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                    <div className={`max-w-[85%] rounded-2xl p-3 text-xs leading-relaxed ${
-                      m.role === 'user' ? 'bg-primary text-primary-foreground rounded-tr-xs' : 'bg-background border border-border/60 text-foreground rounded-tl-xs space-y-2'
-                    }`}>
-                      <p className="whitespace-pre-wrap">{m.text}</p>
-                      {m.tours && m.tours.length > 0 && (
-                        <div className="pt-1 space-y-1">
-                          <p className="font-bold text-primary">Matched Catalog Tours:</p>
-                          {m.tours.map((t: any) => (
-                            <div key={t.id} className="p-1.5 bg-muted rounded-md text-[11px]">
-                              <p className="font-bold">{t.title} (${t.price} {t.currency})</p>
-                              {t.matchReasons && <p className="text-muted-foreground">{t.matchReasons.join(', ')}</p>}
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-                {simTyping && (
-                  <div className="text-xs text-muted-foreground animate-pulse">GuideR is typing...</div>
-                )}
-              </div>
-
-              <div className="flex gap-2">
-                <Input 
-                  placeholder="Type a message (e.g. 'عايز رحلة نايل كروز 8 أيام' or 'What is your refund policy?')..."
-                  value={simPrompt}
-                  onChange={(e) => setSimPrompt(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleSendSimulator()}
-                  className="text-xs"
-                />
-                <Button onClick={handleSendSimulator} disabled={simTyping || !simPrompt.trim()} variant="gold" size="sm">
-                  <Send className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab: Analytics & FinOps */}
-        <TabsContent value="analytics" className="m-0 space-y-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-border/80 shadow-xs bg-card">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Lead Conversion Rate</p>
-                  <h3 className="text-2xl font-bold mt-1 text-emerald-500">{analyticsData?.summary?.conversionRate || 0}%</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.summary?.qualifiedLeadsCount || 0} qualified CRM leads</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center text-emerald-500">
-                  <TrendingUp className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/80 shadow-xs bg-card">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Traveler Satisfaction</p>
-                  <h3 className="text-2xl font-bold mt-1 text-gold-400">{analyticsData?.summary?.satisfactionRate || 100}%</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{analyticsData?.feedbackSummary?.positive || 0} positive ratings</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-gold-500/10 flex items-center justify-center text-gold-400">
-                  <ThumbsUp className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/80 shadow-xs bg-card">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Latency (P50/P95)</p>
-                  <h3 className="text-2xl font-bold mt-1 text-sky-400">{analyticsData?.summary?.avgLatencyMs || 0}ms</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">End-to-end response time</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-sky-500/10 flex items-center justify-center text-sky-400">
-                  <Clock className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-border/80 shadow-xs bg-card">
-              <CardContent className="p-5 flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Estimated AI Cost</p>
-                  <h3 className="text-2xl font-bold mt-1 text-amber-400">${analyticsData?.summary?.totalCostUsd?.toFixed(4) || "0.0000"}</h3>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">{((analyticsData?.summary?.totalTokens || 0) / 1000).toFixed(1)}k tokens used</p>
-                </div>
-                <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center text-amber-400">
-                  <DollarSign className="h-5 w-5" />
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="border-border/80 shadow-xs bg-card">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-base font-bold flex items-center gap-2">
-                <DollarSign className="h-4 w-4 text-amber-400" /> FinOps Provider Cost Breakdown
-              </CardTitle>
-              <CardDescription className="text-xs">
-                Usage and cost telemetry aggregated across all configured AI providers and models.
-              </CardDescription>
+              <CardDescription>Direct feedback left by visitors on AI-generated travel itineraries and answers.</CardDescription>
             </CardHeader>
             <CardContent>
-              {analyticsData?.providerBreakdown && analyticsData.providerBreakdown.length > 0 ? (
-                <div className="border border-border/60 rounded-xl overflow-hidden text-xs">
-                  <table className="w-full text-left">
-                    <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground border-b border-border/60">
-                      <tr>
-                        <th className="p-3">Provider</th>
-                        <th className="p-3">Model</th>
-                        <th className="p-3">Total Requests</th>
-                        <th className="p-3">Total Tokens</th>
-                        <th className="p-3">Estimated Cost</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border/60">
-                      {analyticsData.providerBreakdown.map((p, idx) => (
-                        <tr key={idx} className="hover:bg-muted/20">
-                          <td className="p-3 font-semibold">{p.provider}</td>
-                          <td className="p-3 font-mono text-muted-foreground">{p.model}</td>
-                          <td className="p-3">{p.requestCount}</td>
-                          <td className="p-3">{p.totalTokens.toLocaleString()}</td>
-                          <td className="p-3 font-bold text-amber-400">${p.costUsd.toFixed(5)}</td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="py-8 text-center text-xs text-muted-foreground">
-                  No provider logs recorded yet. Run requests through the testing playground or public widget to gather FinOps telemetry.
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab: Prompt Versions & Rollback */}
-        <TabsContent value="prompts" className="m-0 space-y-6">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-            <div>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <FileCode className="h-4 w-4 text-primary" /> Prompt Version Control & Audit Trail
-              </h3>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                Manage, edit, publish, or archive luxury system prompts for AI Concierge, Itinerary Builder, and Translations.
-              </p>
-            </div>
-            <div className="flex items-center gap-2 shrink-0">
-              <Button 
-                onClick={handleSeedDefaultPrompts} 
-                disabled={seedingPrompts} 
-                variant="outline" 
-                size="sm" 
-                className="gap-1.5 text-xs text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10"
-              >
-                <Sparkles className={`h-3.5 w-3.5 ${seedingPrompts ? 'animate-spin' : ''}`} />
-                {seedingPrompts ? "Restoring Defaults..." : "Restore Ready Templates (??????? ???????)"}
-              </Button>
-              <Button onClick={() => setShowNewPromptModal(true)} variant="gold" size="sm" className="gap-1.5 text-xs font-semibold">
-                <Plus className="h-3.5 w-3.5" /> Create Draft Version
-              </Button>
-            </div>
-          </div>
-
-          {/* Search & Status Filters */}
-          <div className="flex flex-col sm:flex-row gap-3 items-center justify-between bg-muted/40 p-3 rounded-xl border border-border/70">
-            <div className="relative w-full sm:w-80">
-              <Search className="absolute left-2.5 top-2.5 h-3.5 w-3.5 text-muted-foreground" />
-              <Input
-                placeholder="Search prompts by title or keyword..."
-                value={promptSearch}
-                onChange={(e) => setPromptSearch(e.target.value)}
-                className="pl-8 h-8 text-xs bg-background"
-              />
-            </div>
-            <div className="flex items-center gap-1.5 self-start sm:self-auto overflow-x-auto w-full sm:w-auto">
-              {[
-                { id: "ALL", label: "All Prompts" },
-                { id: "PUBLISHED", label: "Published (Active)" },
-                { id: "DRAFT", label: "Drafts" },
-                { id: "ARCHIVED", label: "Archived (Inactive)" },
-              ].map((tab) => (
-                <button
-                  key={tab.id}
-                  onClick={() => setPromptFilterStatus(tab.id)}
-                  className={`px-3 py-1 rounded-lg text-xs font-bold transition-all shrink-0 ${
-                    promptFilterStatus === tab.id
-                      ? "bg-primary text-primary-foreground shadow-xs"
-                      : "bg-background border border-border/80 text-muted-foreground hover:text-foreground"
-                  }`}
-                >
-                  {tab.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Prompts Cards List */}
-          <Card className="border-border/80 shadow-xs bg-card">
-            <CardContent className="p-0">
-              {(() => {
-                const filtered = promptVersions.filter((v) => {
-                  const matchesSearch = !promptSearch.trim() || 
-                    v.name.toLowerCase().includes(promptSearch.toLowerCase()) || 
-                    v.systemPrompt.toLowerCase().includes(promptSearch.toLowerCase()) ||
-                    (v.changeNote && v.changeNote.toLowerCase().includes(promptSearch.toLowerCase()));
-                  const matchesStatus = promptFilterStatus === "ALL" || v.status === promptFilterStatus;
-                  return matchesSearch && matchesStatus;
-                });
-
-                if (loadingPrompts) {
-                  return (
-                    <div className="py-12 text-center text-xs text-muted-foreground">
-                      <RefreshCw className="h-6 w-6 mx-auto animate-spin text-primary mb-2" />
-                      Loading versioned system prompts...
-                    </div>
-                  );
-                }
-
-                if (filtered.length === 0) {
-                  return (
-                    <div className="py-12 text-center text-xs text-muted-foreground space-y-2">
-                      <FileCode className="h-8 w-8 mx-auto text-muted-foreground/50" />
-                      <p>No prompts found matching your filter.</p>
-                      <Button onClick={handleSeedDefaultPrompts} variant="outline" size="xs" className="mt-2 text-xs">
-                        Restore Curated Luxury Prompts
-                      </Button>
-                    </div>
-                  );
-                }
-
-                return (
-                  <div className="divide-y divide-border/60 text-xs">
-                    {filtered.map((v) => {
-                      const isExpanded = expandedPromptId === v.id;
-                      const isPublished = v.status === 'PUBLISHED';
-                      const isArchived = v.status === 'ARCHIVED';
-                      const isDraft = v.status === 'DRAFT';
-
-                      return (
-                        <div key={v.id} className="p-4.5 space-y-3 hover:bg-muted/20 transition-colors">
-                          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                            <div className="space-y-1">
-                              <div className="flex items-center gap-2 flex-wrap">
-                                <span className="font-bold text-sm text-foreground">{v.name}</span>
-                                <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-muted text-muted-foreground font-semibold">
-                                  v{v.versionNumber}
-                                </span>
-                                <span
-                                  className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] border ${
-                                    isPublished
-                                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                                      : isDraft
-                                      ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30"
-                                      : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border-slate-500/30"
-                                  }`}
-                                >
-                                  {isPublished ? "? ACTIVE / PUBLISHED" : isDraft ? "DRAFT" : "ARCHIVED / INACTIVE"}
-                                </span>
-                              </div>
-                              {v.changeNote && (
-                                <p className="text-muted-foreground text-xs">{v.changeNote}</p>
-                              )}
-                            </div>
-
-                            {/* Action Buttons */}
-                            <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-                              <Button
-                                onClick={() => setExpandedPromptId(isExpanded ? null : v.id)}
-                                variant="outline"
-                                size="xs"
-                                className="h-7 px-2 text-[11px] gap-1"
-                              >
-                                {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
-                                {isExpanded ? "Collapse" : "Preview"}
-                              </Button>
-
-                              <Button
-                                onClick={() => handleOpenEditPrompt(v)}
-                                variant="outline"
-                                size="xs"
-                                className="h-7 px-2 text-[11px] gap-1 hover:text-amber-500"
-                              >
-                                <Edit3 className="h-3 w-3" /> Edit
-                              </Button>
-
-                              {!isPublished && (
-                                <Button
-                                  onClick={() => handlePublishPrompt(v.id)}
-                                  variant="gold"
-                                  size="xs"
-                                  className="h-7 px-2.5 text-[11px] font-bold"
-                                >
-                                  Publish Live
-                                </Button>
-                              )}
-
-                              {!isArchived && !isPublished && (
-                                <Button
-                                  onClick={() => handleArchivePrompt(v.id)}
-                                  variant="outline"
-                                  size="xs"
-                                  className="h-7 px-2 text-[11px] gap-1 text-slate-500 hover:text-slate-700"
-                                  title="Archive (Disable from active use)"
-                                >
-                                  <Archive className="h-3 w-3" /> Archive
-                                </Button>
-                              )}
-
-                              {isArchived && (
-                                <Button
-                                  onClick={() => handleRollbackPrompt(v.id)}
-                                  variant="outline"
-                                  size="xs"
-                                  className="h-7 px-2 text-[11px] gap-1 text-blue-500 hover:text-blue-600"
-                                >
-                                  <RotateCcw className="h-3 w-3" /> Restore & Publish
-                                </Button>
-                              )}
-
-                              <Button
-                                onClick={() => handleDeletePrompt(v.id)}
-                                variant="outline"
-                                size="xs"
-                                className="h-7 px-2 text-[11px] text-destructive hover:bg-destructive/10"
-                                title="Delete prompt version"
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          </div>
-
-                          {/* Preview snippet or Full text */}
-                          {isExpanded ? (
-                            <div className="mt-2 p-3.5 rounded-lg bg-muted/40 border border-border/80 font-mono text-[11px] leading-relaxed text-foreground whitespace-pre-wrap">
-                              {v.systemPrompt}
-                            </div>
-                          ) : (
-                            <p className="font-mono text-[10px] text-muted-foreground/80 truncate max-w-3xl">
-                              {v.systemPrompt.slice(0, 160)}...
-                            </p>
-                          )}
-                        </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        {/* Tab: Traveler Feedback Inspector */}
-        <TabsContent value="feedback" className="m-0 space-y-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <ThumbsUp className="h-4 w-4 text-primary" /> Traveler Ratings & Satisfaction
-              </h3>
-              <p className="text-xs text-muted-foreground">
-                Inspect visitor message ratings, negative feedback categories, and recommendations refinement insights.
-              </p>
-            </div>
-            <div className="flex items-center gap-3 bg-muted/60 px-3 py-1.5 rounded-xl text-xs font-semibold">
-              <span className="text-emerald-500">👍 {feedbackSummary.positive} Positive</span>
-              <span className="text-rose-500">👎 {feedbackSummary.negative} Negative</span>
-              <span className="text-gold-400 font-bold">★ {feedbackSummary.satisfactionRate}% Score</span>
-            </div>
-          </div>
-
-          <Card className="border-border/80 shadow-xs bg-card">
-            <CardContent className="p-0">
               {feedbackList.length === 0 ? (
-                <div className="py-12 text-center text-xs text-muted-foreground">
-                  <ThumbsUp className="h-8 w-8 mx-auto text-muted-foreground/50 mb-2" />
-                  No feedback ratings recorded yet. Visitor ratings will appear here in real-time.
-                </div>
+                <p className="text-xs text-center py-8 text-muted-foreground">No feedback ratings submitted yet by visitors.</p>
               ) : (
                 <div className="border border-border/60 rounded-xl overflow-hidden text-xs">
                   <table className="w-full text-left">
                     <thead className="bg-muted/50 font-semibold uppercase text-muted-foreground border-b border-border/60">
                       <tr>
                         <th className="p-3">Rating</th>
-                        <th className="p-3">Category</th>
-                        <th className="p-3">Traveler Comments</th>
-                        <th className="p-3">Visitor / Locale</th>
+                        <th className="p-3">Comment / Feedback</th>
+                        <th className="p-3">Session</th>
                         <th className="p-3">Timestamp</th>
                       </tr>
                     </thead>
@@ -1803,23 +1841,18 @@ export default function AiAgentsPage() {
                       {feedbackList.map((f) => (
                         <tr key={f.id} className="hover:bg-muted/20">
                           <td className="p-3">
-                            {f.rating === 1 ? (
-                              <span className="inline-flex items-center gap-1 text-emerald-500 font-bold">
-                                <ThumbsUp className="h-3.5 w-3.5" /> Helpful (+1)
+                            {f.rating >= 4 ? (
+                              <span className="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-bold text-[10px] flex items-center gap-1 w-max">
+                                <ThumbsUp className="h-3 w-3" /> Helpful ({f.rating}/5)
                               </span>
                             ) : (
-                              <span className="inline-flex items-center gap-1 text-rose-500 font-bold">
-                                <ThumbsDown className="h-3.5 w-3.5" /> Unhelpful (-1)
+                              <span className="px-2 py-0.5 rounded-full bg-red-500/10 text-red-600 font-bold text-[10px] flex items-center gap-1 w-max">
+                                <ThumbsDown className="h-3 w-3" /> Unhelpful ({f.rating}/5)
                               </span>
                             )}
                           </td>
-                          <td className="p-3 font-semibold">
-                            <span className="px-2 py-0.5 rounded-full bg-muted font-mono text-[10px]">
-                              {f.category || 'GENERAL'}
-                            </span>
-                          </td>
-                          <td className="p-3 text-muted-foreground italic">{f.comments || '—'}</td>
-                          <td className="p-3 font-semibold">{f.conversation?.visitorName || 'Guest'} ({f.locale?.toUpperCase()})</td>
+                          <td className="p-3">{f.comments || '<No comment provided>'}</td>
+                          <td className="p-3 font-mono text-muted-foreground">{f.conversation?.publicSessionId || f.conversationId || '—'}</td>
                           <td className="p-3 text-muted-foreground">{new Date(f.createdAt).toLocaleString()}</td>
                         </tr>
                       ))}
@@ -1830,15 +1863,210 @@ export default function AiAgentsPage() {
             </CardContent>
           </Card>
         </TabsContent>
+
+        {/* Tab 8: Prompt Versions Management */}
+        <TabsContent value="prompts" className="m-0 space-y-6">
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader className="flex flex-row items-center justify-between pb-3">
+              <div>
+                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-amber-500" /> System Prompt Version Management & A/B Studio
+                </CardTitle>
+                <CardDescription>
+                  Full lifecycle for system prompts: Create drafts, edit instructions, publish to production with 1-click, and rollback instantly.
+                </CardDescription>
+              </div>
+              <div className="flex gap-2">
+                <Button onClick={handleSeedDefaultPrompts} disabled={seedingPrompts} variant="outline" size="sm" className="gap-1 text-xs">
+                  <RefreshCw className={`h-3 w-3 ${seedingPrompts ? 'animate-spin' : ''}`} /> Seed Luxury Presets
+                </Button>
+                <Button onClick={() => setShowNewPromptModal(true)} variant="gold" size="sm" className="gap-1 text-xs font-bold">
+                  <Plus className="h-3.5 w-3.5" /> New Prompt Draft
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex flex-wrap gap-2.5 items-center">
+                <Input 
+                  placeholder="Search prompt versions by name or instructions..."
+                  value={promptSearch}
+                  onChange={(e) => setPromptSearch(e.target.value)}
+                  className="max-w-xs text-xs"
+                />
+                <select
+                  value={promptFilterStatus}
+                  onChange={(e) => setPromptFilterStatus(e.target.value)}
+                  className="text-xs bg-muted border border-border/60 rounded-md px-2 py-1.5 font-semibold"
+                >
+                  <option value="ALL">All Statuses (الكل)</option>
+                  <option value="PUBLISHED">🌟 PUBLISHED (Active in Production)</option>
+                  <option value="DRAFT">📝 DRAFT (Work in progress)</option>
+                  <option value="ARCHIVED">📦 ARCHIVED (Historical versions)</option>
+                </select>
+              </div>
+
+              {loadingPrompts ? (
+                <div className="py-8 text-center text-xs text-muted-foreground">Loading Prompt Versions...</div>
+              ) : filteredPrompts.length === 0 ? (
+                <div className="py-12 border-2 border-dashed rounded-xl text-center text-xs text-muted-foreground space-y-3">
+                  <FileCode className="h-8 w-8 mx-auto text-muted-foreground/60" />
+                  <p className="font-semibold">No prompt versions found.</p>
+                  <p className="text-[11px]">Create a new prompt draft or seed the 7 curated luxury prompt templates.</p>
+                  <Button onClick={handleSeedDefaultPrompts} variant="gold" size="sm">
+                    Seed 7 Luxury Prompt Templates
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {filteredPrompts.map((p) => {
+                    const isExpanded = expandedPromptId === p.id;
+                    const isLive = p.status === 'PUBLISHED';
+                    return (
+                      <div 
+                        key={p.id} 
+                        className={`border rounded-xl p-4 transition-all ${
+                          isLive 
+                            ? 'border-amber-500/40 bg-amber-500/5 shadow-xs' 
+                            : 'border-border/60 bg-card hover:border-border'
+                        }`}
+                      >
+                        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2">
+                          <div className="flex items-center gap-2.5">
+                            <span className="font-mono font-bold text-xs px-2 py-0.5 rounded bg-muted text-foreground">
+                              v{p.versionNumber}
+                            </span>
+                            <h4 className="font-bold text-sm text-foreground flex items-center gap-2">
+                              {p.name}
+                              {isLive && (
+                                <span className="px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-[10px] flex items-center gap-1">
+                                  <Sparkles className="h-2.5 w-2.5" /> LIVE IN PRODUCTION
+                                </span>
+                              )}
+                              {p.status === 'DRAFT' && (
+                                <span className="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-600 font-semibold text-[10px]">
+                                  DRAFT
+                                </span>
+                              )}
+                              {p.status === 'ARCHIVED' && (
+                                <span className="px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-semibold text-[10px]">
+                                  ARCHIVED
+                                </span>
+                              )}
+                            </h4>
+                          </div>
+
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <Button 
+                              onClick={() => setExpandedPromptId(isExpanded ? null : p.id)}
+                              size="xs" 
+                              variant="ghost"
+                              className="text-xs gap-1"
+                            >
+                              {isExpanded ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                              {isExpanded ? 'Collapse' : 'Preview'}
+                            </Button>
+
+                            <Button 
+                              onClick={() => handleOpenEditPrompt(p)}
+                              size="xs" 
+                              variant="outline"
+                              className="text-xs gap-1"
+                            >
+                              <Edit3 className="h-3 w-3" /> Edit
+                            </Button>
+
+                            {!isLive && (
+                              <Button 
+                                onClick={() => handlePublishPrompt(p.id)}
+                                size="xs" 
+                                variant="gold"
+                                className="text-xs font-bold gap-1 shadow-xs"
+                              >
+                                <Check className="h-3 w-3" /> Publish Live
+                              </Button>
+                            )}
+
+                            {isLive && (
+                              <Button 
+                                onClick={() => handleRollbackPrompt(p.id)}
+                                size="xs" 
+                                variant="outline"
+                                className="text-xs gap-1 text-amber-600"
+                              >
+                                <RotateCcw className="h-3 w-3" /> Rollback
+                              </Button>
+                            )}
+
+                            {p.status !== 'ARCHIVED' && !isLive && (
+                              <Button 
+                                onClick={() => handleArchivePrompt(p.id)}
+                                size="xs" 
+                                variant="ghost"
+                                className="text-xs text-muted-foreground"
+                              >
+                                <Archive className="h-3 w-3" />
+                              </Button>
+                            )}
+
+                            {!isLive && (
+                              <Button 
+                                onClick={() => handleDeletePrompt(p.id)}
+                                size="xs" 
+                                variant="destructive"
+                                className="h-7 px-2"
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+
+                        {p.changeNote && (
+                          <p className="text-xs text-muted-foreground mt-1.5 italic">
+                            Note: {p.changeNote}
+                          </p>
+                        )}
+
+                        {isExpanded && (
+                          <div className="mt-3 pt-3 border-t border-border/60 space-y-2">
+                            <div className="flex justify-between items-center text-xs text-muted-foreground">
+                              <span>System Instructions Character Count: {p.systemPrompt.length}</span>
+                              <Button 
+                                onClick={() => {
+                                  navigator.clipboard.writeText(p.systemPrompt);
+                                  toast.success("Prompt copied to clipboard!");
+                                }}
+                                size="xs" 
+                                variant="outline"
+                                className="gap-1 text-[11px]"
+                              >
+                                <Copy className="h-3 w-3" /> Copy
+                              </Button>
+                            </div>
+                            <pre className="p-3 rounded-lg bg-muted/40 text-xs font-mono whitespace-pre-wrap leading-relaxed max-h-72 overflow-y-auto border border-border/60">
+                              {p.systemPrompt}
+                            </pre>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
       </Tabs>
 
-      {/* Create Draft Prompt Modal */}
+      {/* --- MODALS --- */}
+
+      {/* New Prompt Draft Modal */}
       {showNewPromptModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <FileCode className="h-5 w-5 text-primary" /> Create New System Prompt Draft
+                <Sparkles className="h-5 w-5 text-amber-500" /> Create New System Prompt Draft
               </h3>
               <button onClick={() => setShowNewPromptModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
@@ -1846,32 +2074,31 @@ export default function AiAgentsPage() {
             </div>
             <div className="space-y-3 text-xs">
               <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Prompt Version Name</label>
+                <label className="font-semibold uppercase text-muted-foreground">Prompt Name</label>
                 <Input 
                   value={newPromptName}
                   onChange={(e) => setNewPromptName(e.target.value)}
-                  placeholder="e.g. Luxury Nile Cruise & VIP Sales Concierge"
+                  placeholder="e.g. VIP Nile Cruise Specialist v2"
                   className="font-semibold"
                 />
               </div>
+
               <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Change Summary / Description</label>
+                <label className="font-semibold uppercase text-muted-foreground">Change Note / Description (Optional)</label>
                 <Input 
                   value={newPromptNote}
                   onChange={(e) => setNewPromptNote(e.target.value)}
-                  placeholder="e.g. Refined pricing guardrails, added 5-language luxury etiquette."
+                  placeholder="e.g. Added strict Dahabiya booking policies & Arabic VIP tone"
                 />
               </div>
+
               <div className="space-y-1">
-                <div className="flex justify-between items-center">
-                  <label className="font-semibold uppercase text-muted-foreground">Master System Prompt Instructions</label>
-                  <span className="text-[10px] text-muted-foreground">{newPromptText.length} characters</span>
-                </div>
+                <label className="font-semibold uppercase text-muted-foreground">System Prompt Instructions</label>
                 <Textarea 
                   rows={9}
                   value={newPromptText}
                   onChange={(e) => setNewPromptText(e.target.value)}
-                  placeholder="You are GuideR (?????), the luxury AI travel concierge..."
+                  placeholder="You are GuideR, the elite luxury travel concierge for Dunas Travel..."
                   className="font-mono text-xs leading-relaxed"
                 />
               </div>
@@ -1881,20 +2108,20 @@ export default function AiAgentsPage() {
                 Cancel
               </Button>
               <Button onClick={handleCreatePromptDraft} disabled={creatingPromptDraft} variant="gold" size="sm">
-                {creatingPromptDraft ? "Saving..." : "Save Draft to Database"}
+                {creatingPromptDraft ? "Creating..." : "Save Draft Version"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Edit Existing Prompt Modal */}
+      {/* Edit Prompt Version Modal */}
       {showEditPromptModal && editingPrompt && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-card border border-border/80 rounded-2xl w-full max-w-2xl p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
             <div className="flex justify-between items-center border-b pb-3">
               <h3 className="text-base font-bold flex items-center gap-2">
-                <Edit3 className="h-5 w-5 text-amber-500" /> Edit System Prompt (v{editingPrompt.versionNumber})
+                <Edit3 className="h-5 w-5 text-amber-500" /> Edit Prompt Version (v{editingPrompt.versionNumber})
               </h3>
               <button onClick={() => setShowEditPromptModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
@@ -1917,9 +2144,9 @@ export default function AiAgentsPage() {
                     onChange={(e) => setEditingPrompt({ ...editingPrompt, status: e.target.value as any })}
                     className="w-full p-2 rounded-lg bg-background border border-border/80 text-xs font-semibold"
                   >
-                    <option value="DRAFT">DRAFT (?????)</option>
-                    <option value="PUBLISHED">PUBLISHED (???? ??? - ???)</option>
-                    <option value="ARCHIVED">ARCHIVED (????? - ??? ???)</option>
+                    <option value="DRAFT">DRAFT (مسودة)</option>
+                    <option value="PUBLISHED">PUBLISHED (منشور نشط - مباشر)</option>
+                    <option value="ARCHIVED">ARCHIVED (مؤرشف - غير نشط)</option>
                   </select>
                 </div>
               </div>
@@ -1951,28 +2178,37 @@ export default function AiAgentsPage() {
                 Cancel
               </Button>
               <Button onClick={handleUpdatePrompt} disabled={updatingPrompt} variant="gold" size="sm">
-                {updatingPrompt ? "Saving..." : "Save Changes to Database (??? ?????????)"}
+                {updatingPrompt ? "Saving..." : "Save Changes to Database (حفظ التعديلات)"}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add API Key Modal */}
+      {/* Add API Key Modal (with Smart ModelSelector & Dynamic Next Priority) */}
       {showAddKeyModal && (
         <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95">
-            <div className="flex justify-between items-center">
-              <h3 className="text-base font-bold flex items-center gap-2">
-                <Key className="h-5 w-5 text-amber-500" /> Add API Key to Failover Pool
-              </h3>
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Key className="h-5 w-5 text-amber-500" /> Add API Key to Failover Pool
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  إضافة مفتاح API جديد إلى مصفوفة الاستجابة السريعة وتجاوز الفشل.
+                </p>
+              </div>
               <button onClick={() => setShowAddKeyModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
                 <X className="h-4 w-4" />
               </button>
             </div>
-            <div className="space-y-3 text-xs">
-              <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Provider</label>
+
+            <div className="space-y-4 text-xs">
+              {/* Provider Selection */}
+              <div className="space-y-1.5">
+                <label className="font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                  <Globe className="h-3.5 w-3.5 text-primary" /> AI Provider (مزود الخدمة)
+                </label>
                 <select
                   value={newKeyProvider}
                   onChange={(e) => {
@@ -1980,7 +2216,7 @@ export default function AiAgentsPage() {
                     const p = SUPPORTED_PROVIDERS.find((x) => x.id === e.target.value);
                     if (p) setNewKeyModel(p.defaultModel);
                   }}
-                  className="w-full p-2 rounded-lg bg-background border border-border/80 font-semibold"
+                  className="w-full p-2.5 rounded-xl bg-background border border-border/80 font-bold text-foreground focus:ring-2 focus:ring-amber-500 cursor-pointer"
                 >
                   {SUPPORTED_PROVIDERS.map((p) => (
                     <option key={p.id} value={p.id}>{p.name}</option>
@@ -1988,63 +2224,211 @@ export default function AiAgentsPage() {
                 </select>
               </div>
 
-              <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">Model Name</label>
-                <Input 
-                  value={newKeyModel}
-                  onChange={(e) => setNewKeyModel(e.target.value)}
-                  placeholder="e.g. claude-3-5-sonnet-20241022, deepseek/deepseek-chat, gpt-4o"
-                />
-              </div>
+              {/* Smart Model Selector */}
+              <ModelSelector
+                provider={newKeyProvider}
+                value={newKeyModel}
+                onChange={setNewKeyModel}
+                label="Model Architecture (اختيار أو كتابة الموديل)"
+                isAr={true}
+              />
 
+              {/* Base URL (for Custom or OpenRouter) */}
               {(newKeyProvider === 'custom' || newKeyProvider === 'openrouter') && (
                 <div className="space-y-1">
-                  <label className="font-semibold uppercase text-muted-foreground">Base URL (Optional)</label>
+                  <label className="font-semibold uppercase text-muted-foreground">Base URL (اختياري)</label>
                   <Input 
                     value={newKeyBaseUrl}
                     onChange={(e) => setNewKeyBaseUrl(e.target.value)}
                     placeholder="https://api.deepseek.com/v1 or https://openrouter.ai/api/v1"
+                    className="font-mono text-xs"
                   />
                 </div>
               )}
 
+              {/* API Secret Key */}
               <div className="space-y-1">
-                <label className="font-semibold uppercase text-muted-foreground">API Secret Key</label>
+                <label className="font-semibold uppercase text-muted-foreground">API Secret Key (المفتاح السري)</label>
                 <Input 
                   type="password"
                   value={newKeySecret}
                   onChange={(e) => setNewKeySecret(e.target.value)}
-                  placeholder="sk-..."
+                  placeholder="sk-... or AIzaSy..."
+                  className="font-mono text-xs"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {/* Friendly Label */}
                 <div className="space-y-1">
-                  <label className="font-semibold uppercase text-muted-foreground">Friendly Label</label>
+                  <label className="font-semibold uppercase text-muted-foreground">Friendly Label (تسمية توضيحية)</label>
                   <Input 
                     value={newKeyLabel}
                     onChange={(e) => setNewKeyLabel(e.target.value)}
-                    placeholder="e.g. Primary Anthropic Key"
+                    placeholder="e.g. Gemini 2.5 Flash Primary"
+                    className="text-xs"
                   />
                 </div>
+
+                {/* Priority with auto-increment badge */}
                 <div className="space-y-1">
-                  <label className="font-semibold uppercase text-muted-foreground">Priority (1 = Highest)</label>
+                  <div className="flex justify-between items-center">
+                    <label className="font-semibold uppercase text-muted-foreground">Priority (الترتيب)</label>
+                    <span className="text-[10px] text-amber-600 font-bold bg-amber-500/10 px-1.5 py-0.5 rounded">
+                      Auto: #{getNextPriority()}
+                    </span>
+                  </div>
                   <Input 
                     type="number"
                     min={1}
                     max={99}
                     value={newKeyPriority}
                     onChange={(e) => setNewKeyPriority(Number(e.target.value))}
+                    className="text-xs font-bold font-mono"
                   />
                 </div>
               </div>
             </div>
-            <div className="flex justify-end gap-2 pt-2">
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
               <Button onClick={() => setShowAddKeyModal(false)} variant="outline" size="sm">
                 Cancel
               </Button>
-              <Button onClick={handleAddKeyToPool} disabled={addingKey} variant="gold" size="sm">
-                {addingKey ? "Adding..." : "Add Key"}
+              <Button onClick={handleAddKeyToPool} disabled={addingKey || !newKeySecret.trim()} variant="gold" size="sm" className="font-bold">
+                {addingKey ? "Adding Key..." : "Add Key to Pool (إضافة للمصفوفة)"}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Edit API Key Modal (Comprehensive Edit Capability) */}
+      {showEditKeyModal && editingKey && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-card border border-border/80 rounded-2xl w-full max-w-lg p-6 space-y-4 shadow-2xl animate-in zoom-in-95 max-h-[90vh] overflow-y-auto">
+            <div className="flex justify-between items-center border-b pb-3">
+              <div>
+                <h3 className="text-base font-bold flex items-center gap-2">
+                  <Edit3 className="h-5 w-5 text-amber-500" /> Edit API Key & Failover Settings
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  تعديل اسم الموديل، الأولوية، التسمية، أو استبدال المفتاح السري لهذا العنصر.
+                </p>
+              </div>
+              <button onClick={() => setShowEditKeyModal(false)} className="p-1 rounded-full hover:bg-muted text-muted-foreground">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="space-y-4 text-xs">
+              {/* Provider Selection */}
+              <div className="space-y-1.5">
+                <label className="font-semibold uppercase text-muted-foreground flex items-center gap-1">
+                  <Globe className="h-3.5 w-3.5 text-primary" /> AI Provider (مزود الخدمة)
+                </label>
+                <select
+                  value={editKeyProvider}
+                  onChange={(e) => {
+                    setEditKeyProvider(e.target.value);
+                    const p = SUPPORTED_PROVIDERS.find((x) => x.id === e.target.value);
+                    if (p) setEditKeyModel(p.defaultModel);
+                  }}
+                  className="w-full p-2.5 rounded-xl bg-background border border-border/80 font-bold text-foreground focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                >
+                  {SUPPORTED_PROVIDERS.map((p) => (
+                    <option key={p.id} value={p.id}>{p.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Smart Model Selector */}
+              <ModelSelector
+                provider={editKeyProvider}
+                value={editKeyModel}
+                onChange={setEditKeyModel}
+                label="Model Architecture (الموديل المخصص أو المختار)"
+                isAr={true}
+              />
+
+              {/* Base URL */}
+              {(editKeyProvider === 'custom' || editKeyProvider === 'openrouter') && (
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Base URL (اختياري)</label>
+                  <Input 
+                    value={editKeyBaseUrl}
+                    onChange={(e) => setEditKeyBaseUrl(e.target.value)}
+                    placeholder="https://api.deepseek.com/v1 or https://openrouter.ai/api/v1"
+                    className="font-mono text-xs"
+                  />
+                </div>
+              )}
+
+              {/* Friendly Label & Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Friendly Label</label>
+                  <Input 
+                    value={editKeyLabel}
+                    onChange={(e) => setEditKeyLabel(e.target.value)}
+                    placeholder="e.g. Claude 3.7 Primary Failover"
+                    className="text-xs font-semibold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="font-semibold uppercase text-muted-foreground">Priority (1 = Highest / الأعلى)</label>
+                  <Input 
+                    type="number"
+                    min={1}
+                    max={99}
+                    value={editKeyPriority}
+                    onChange={(e) => setEditKeyPriority(Number(e.target.value))}
+                    className="text-xs font-bold font-mono"
+                  />
+                </div>
+              </div>
+
+              {/* Active Toggle */}
+              <div className="flex items-center justify-between p-3 rounded-xl bg-muted/40 border border-border/60">
+                <div>
+                  <p className="font-bold text-foreground text-xs">Failover Status (حالة المفتاح)</p>
+                  <p className="text-[11px] text-muted-foreground">تفعيل المفتاح في مصفوفة الاستجابة أو تعطيله مؤقتاً</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setEditKeyActive(!editKeyActive)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold border transition-all flex items-center gap-1.5 cursor-pointer ${
+                    editKeyActive 
+                      ? 'bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 border-emerald-500/40' 
+                      : 'bg-muted text-muted-foreground border-border'
+                  }`}
+                >
+                  {editKeyActive ? <Power className="h-3 w-3" /> : <PowerOff className="h-3 w-3" />}
+                  {editKeyActive ? 'Active (نشط ومتاح)' : 'Disabled (معطل)'}
+                </button>
+              </div>
+
+              {/* Optional Secret Key Replacement */}
+              <div className="space-y-1 pt-1">
+                <div className="flex justify-between items-center">
+                  <label className="font-semibold uppercase text-muted-foreground">Update API Secret Key (اختياري)</label>
+                  <span className="text-[10px] text-muted-foreground font-mono">Current: {editingKey.maskedKey}</span>
+                </div>
+                <Input 
+                  type="password"
+                  value={editKeySecret}
+                  onChange={(e) => setEditKeySecret(e.target.value)}
+                  placeholder="اتركه فارغاً للاحتفاظ بالمفتاح الحالي... (Leave blank to keep current key)"
+                  className="font-mono text-xs"
+                />
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-2 pt-3 border-t">
+              <Button onClick={() => setShowEditKeyModal(false)} variant="outline" size="sm">
+                Cancel
+              </Button>
+              <Button onClick={handleUpdateKeyInPool} disabled={updatingKey} variant="gold" size="sm" className="font-bold">
+                {updatingKey ? "Saving Changes..." : "Save Key Changes (حفظ التعديلات)"}
               </Button>
             </div>
           </div>

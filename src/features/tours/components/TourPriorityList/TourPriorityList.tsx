@@ -1,6 +1,6 @@
-﻿"use client";
+"use client";
 
-import { useState, useId } from "react";
+import { useState, useEffect, useId } from "react";
 import { Tour } from "../../types";
 import { useReorderTours, useToggleFeatured } from "../../hooks/useTours";
 import { getTourTitle } from "../ToursTable/columns";
@@ -252,6 +252,12 @@ export function TourPriorityList({
   const [tours, setTours] = useState<Tour[]>(() => [...initialTours]);
   const [filterQuery, setFilterQuery] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
+
+  useEffect(() => {
+    if (!hasChanges) {
+      setTours([...initialTours]);
+    }
+  }, [initialTours, hasChanges]);
 
   const reorderMutation = useReorderTours();
   const toggleFeaturedMutation = useToggleFeatured();

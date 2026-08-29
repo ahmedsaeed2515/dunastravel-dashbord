@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { companiesApi } from "../api/companiesApi";
 import { toast } from "sonner";
-import { Loader2 } from "lucide-react";
+import { Loader2, Building2, Percent, CreditCard, Globe, Mail, Phone } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTranslations } from "next-intl";
 
@@ -20,7 +20,6 @@ interface CreateCompanyDialogProps {
 export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompanyDialogProps) {
   const tCompanies = useTranslations("companies");
   const tCommon = useTranslations("common");
-  const tAuth = useTranslations("auth");
 
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
@@ -28,31 +27,46 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
     taxId: "",
     email: "",
     phone: "",
+    website: "",
     companyType: "AGENCY",
+    commissionRate: 10,
+    paymentTerms: "NET_30",
   });
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name) {
-      toast.error(tCommon("error"));
+    if (!formData.name.trim()) {
+      toast.error(tCommon("error") || "Company name is required.");
       return;
     }
     
     setIsSubmitting(true);
     try {
       await companiesApi.createCompany({
-        name: formData.name,
-        taxId: formData.taxId,
-        email: formData.email,
-        phone: formData.phone,
+        name: formData.name.trim(),
+        taxId: formData.taxId.trim() || undefined,
+        email: formData.email.trim() || undefined,
+        phone: formData.phone.trim() || undefined,
+        website: formData.website.trim() || undefined,
         companyType: formData.companyType as any,
-      } as any);
-      toast.success(tCommon("success"));
+        commissionRate: Number(formData.commissionRate) || 0,
+        paymentTerms: formData.paymentTerms,
+      });
+      toast.success(tCommon("success") || "Company registered successfully!");
       onSuccess();
       onClose();
-      setFormData({ name: "", taxId: "", email: "", phone: "", companyType: "AGENCY" });
+      setFormData({
+        name: "",
+        taxId: "",
+        email: "",
+        phone: "",
+        website: "",
+        companyType: "AGENCY",
+        commissionRate: 10,
+        paymentTerms: "NET_30",
+      });
     } catch (error: any) {
-      toast.error(error?.response?.data?.message || tCommon("error"));
+      toast.error(error?.response?.data?.message || tCommon("error") || "Failed to create company.");
     } finally {
       setIsSubmitting(false);
     }
@@ -60,80 +74,176 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-[520px] max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{tCompanies("addCompany")}</DialogTitle>
-          <DialogDescription>
-            {tCompanies("description")}
-          </DialogDescription>
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+              <Building2 className="h-4 w-4" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-bold text-foreground">
+                {tCompanies("addCompany") || "Register New B2B Partner / Company"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                Create a Travel Agency, Corporate Account, or Wholesaler partner in Dunas Travel.
+              </DialogDescription>
+            </div>
+          </div>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4 py-4">
-          <div className="space-y-2">
-            <Label htmlFor="name">{tCompanies("companyName")} *</Label>
+
+        <form onSubmit={handleSubmit} className="space-y-4 py-3 text-xs">
+          {/* Company Name */}
+          <div className="space-y-1.5">
+            <Label htmlFor="company-name" className="font-semibold text-muted-foreground flex items-center gap-1">
+              <Building2 className="h-3 w-3 text-primary" /> {tCompanies("companyName") || "Company Name (اسم الشركة)"} *
+            </Label>
             <Input 
-              id="name" 
-              placeholder={tCompanies("companyName")} 
+              id="company-name" 
+              placeholder="e.g. Dunas International Travel Agency" 
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required 
+              className="text-xs font-semibold"
             />
           </div>
-          <div className="space-y-2">
-            <Label htmlFor="taxId">{tCompanies("taxId")}</Label>
-            <Input 
-              id="taxId" 
-              placeholder="123456789" 
-              className="dir-ltr text-start"
-              value={formData.taxId}
-              onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
-            />
+
+          {/* Company Type & Tax ID */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <Label className="font-semibold text-muted-foreground">
+                {tCompanies("companyType") || "Partner Type (نوع الشريك)"}
+              </Label>
+              <Select 
+                value={formData.companyType} 
+                onValueChange={(val) => setFormData({ ...formData, companyType: val || 'AGENCY' })}
+              >
+                <SelectTrigger className="text-xs font-semibold">
+                  <SelectValue placeholder={tCommon("selectOption")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="AGENCY">✈️ Travel Agency (وكالة سياحة)</SelectItem>
+                  <SelectItem value="CORPORATE">🏢 Corporate Client (شركة / مؤسسة)</SelectItem>
+                  <SelectItem value="AFFILIATE">🤝 Affiliate Partner (مسوق معتمد)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label htmlFor="taxId" className="font-semibold text-muted-foreground">
+                {tCompanies("taxId") || "Tax ID / Commercial Reg. (السجل التجاري)"}
+              </Label>
+              <Input 
+                id="taxId" 
+                placeholder="TR-123456789" 
+                className="dir-ltr text-start text-xs font-mono"
+                value={formData.taxId}
+                onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+              />
+            </div>
           </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">{tCommon("email")}</Label>
+
+          {/* Email & Phone */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="font-semibold text-muted-foreground flex items-center gap-1">
+                <Mail className="h-3 w-3 text-primary" /> {tCommon("email") || "Email"}
+              </Label>
               <Input 
                 id="email" 
                 type="email" 
-                placeholder="contact@company.com" 
-                className="dir-ltr text-start"
+                placeholder="contact@agency.com" 
+                className="dir-ltr text-start text-xs"
                 value={formData.email}
                 onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">{tCommon("phone")}</Label>
+            <div className="space-y-1.5">
+              <Label htmlFor="phone" className="font-semibold text-muted-foreground flex items-center gap-1">
+                <Phone className="h-3 w-3 text-primary" /> {tCommon("phone") || "Phone"}
+              </Label>
               <Input 
                 id="phone" 
-                placeholder="+1 234 567 890" 
-                className="dir-ltr text-start"
+                placeholder="+20 100 123 4567" 
+                className="dir-ltr text-start text-xs"
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
               />
             </div>
           </div>
-          <div className="space-y-2">
-            <Label>{tCompanies("companyType")}</Label>
-            <Select 
-              value={formData.companyType} 
-              onValueChange={(val) => setFormData({ ...formData, companyType: val || 'AGENCY' })}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder={tCommon("selectOption")} />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="AGENCY">{tCompanies("travelAgencies")}</SelectItem>
-                <SelectItem value="CORPORATE">{tCompanies("corporateAccounts")}</SelectItem>
-                <SelectItem value="AFFILIATE">Affiliate</SelectItem>
-              </SelectContent>
-            </Select>
+
+          {/* Website */}
+          <div className="space-y-1.5">
+            <Label htmlFor="website" className="font-semibold text-muted-foreground flex items-center gap-1">
+              <Globe className="h-3 w-3 text-primary" /> Website (الموقع الإلكتروني)
+            </Label>
+            <Input 
+              id="website" 
+              placeholder="https://www.agency.com" 
+              className="dir-ltr text-start text-xs"
+              value={formData.website}
+              onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+            />
           </div>
-          <DialogFooter className="pt-4">
-            <Button type="button" variant="outline" onClick={onClose} disabled={isSubmitting}>
+
+          {/* Financial Settings: Commission Rate & Payment Terms */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 p-3 rounded-xl bg-muted/40 border border-border/60">
+            <div className="space-y-1.5">
+              <Label htmlFor="comm-rate" className="font-semibold text-foreground flex items-center gap-1">
+                <Percent className="h-3.5 w-3.5 text-amber-500" /> Default Commission (نسبة العمولة %)
+              </Label>
+              <Input 
+                id="comm-rate" 
+                type="number"
+                min={0}
+                max={50}
+                step={0.5}
+                placeholder="10" 
+                className="dir-ltr text-start text-xs font-mono font-bold"
+                value={formData.commissionRate}
+                onChange={(e) => setFormData({ ...formData, commissionRate: Number(e.target.value) })}
+              />
+              <p className="text-[10px] text-muted-foreground">
+                Automatic commission percentage earned on bookings.
+              </p>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="font-semibold text-foreground flex items-center gap-1">
+                <CreditCard className="h-3.5 w-3.5 text-emerald-600" /> Payment Terms (شروط الدفع)
+              </Label>
+              <Select 
+                value={formData.paymentTerms} 
+                onValueChange={(val) => setFormData({ ...formData, paymentTerms: val || 'NET_30' })}
+              >
+                <SelectTrigger className="text-xs font-semibold">
+                  <SelectValue placeholder="Payment Terms" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="NET_30">Net 30 (فاتورة شهرية)</SelectItem>
+                  <SelectItem value="NET_15">Net 15 (15 يوماً)</SelectItem>
+                  <SelectItem value="PREPAID">Prepaid (دفع مسبق من المحفظة)</SelectItem>
+                  <SelectItem value="CREDIT_LIMIT">Credit Limit (حد ائتماني)</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                Invoicing settlement schedule for this partner.
+              </p>
+            </div>
+          </div>
+
+          <DialogFooter className="pt-3 border-t">
+            <Button type="button" variant="outline" size="sm" onClick={onClose} disabled={isSubmitting}>
               {tCommon("cancel")}
             </Button>
-            <Button type="submit" disabled={isSubmitting}>
-              {isSubmitting && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {tCommon("saveChanges")}
+            <Button type="submit" variant="gold" size="sm" disabled={isSubmitting} className="font-bold gap-1.5">
+              {isSubmitting ? (
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  <span>{tCommon("saving") || "Saving..."}</span>
+                </>
+              ) : (
+                <span>{tCommon("saveChanges") || "Register Partner"}</span>
+              )}
             </Button>
           </DialogFooter>
         </form>

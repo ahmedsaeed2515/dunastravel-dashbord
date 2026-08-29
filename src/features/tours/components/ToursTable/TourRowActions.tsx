@@ -52,7 +52,7 @@ export function TourRowActions({
         <DropdownMenuLabel>{isAr ? "إدارة الرحلة" : "Tour Management"}</DropdownMenuLabel>
         {onEdit && (
           <DropdownMenuItem onClick={() => onEdit(tour)} className="font-semibold text-amber-500 focus:text-amber-500 cursor-pointer">
-            <Edit className="mr-2 h-4 w-4 text-amber-500" /> {isAr ? "تعديل الرحلة (سريع)" : "Edit Tour (Quick)"}
+            <Edit className="mr-2 h-4 w-4 text-amber-500" /> {isAr ? "تعديل الرحلة والترجمات" : "Edit Tour & Translations"}
           </DropdownMenuItem>
         )}
         {onMove && (

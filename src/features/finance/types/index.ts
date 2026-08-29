@@ -102,3 +102,38 @@ export interface ReconciliationSummary {
   missingReferenceCount: number;
   generatedAt: string;
 }
+
+export interface WalletDirectoryItem {
+  id: string;
+  ownerType: WalletOwnerType;
+  ownerId: string;
+  currency: string;
+  balance: number;
+  status: string;
+  transactionsCount: number;
+  createdAt: string;
+  updatedAt: string;
+  owner: {
+    id: string;
+    name: string;
+    email?: string;
+    phone?: string;
+    referenceCode?: string;
+    type?: string;
+    role?: string;
+    status?: string;
+    commissionRate?: number;
+    company?: { id: string; name: string; referenceCode: string };
+  } | null;
+}
+
+export interface WalletListQueryFilters {
+  page?: number;
+  limit?: number;
+  search?: string;
+  ownerType?: WalletOwnerType;
+  status?: string;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
+

@@ -1,44 +1,81 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { Tour, UpdateTourPayload } from "../../types";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
-import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage, FormDescription } from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Switch } from "@/components/ui/switch";
-import { useUpdateTour } from "../../hooks/useTours";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Loader2, Globe } from "lucide-react";
-import { toast } from "sonner";
+import { useMemo } from "react";
+import { Tour } from "../../types";
+import { TripEditorModal } from "@/components/trips/TripEditorModal";
+import type { TripModel } from "@/types/dunas-suite";
+import { destinationForCountry } from "@/lib/tour-destinations";
 
-const formSchema = z.object({
-  titleEn: z.string().min(1, "English title is required"),
-  titleAr: z.string().optional(),
-  titleEs: z.string().optional(),
-  titlePt: z.string().optional(),
-  titleIt: z.string().optional(),
+const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 
-  overviewEn: z.string().optional(),
-  overviewAr: z.string().optional(),
-  overviewEs: z.string().optional(),
-  overviewPt: z.string().optional(),
-  overviewIt: z.string().optional(),
+function localeText(value: Record<string, unknown> | null | undefined, locale: string): string {
+  return typeof value?.[locale] === "string" ? (value[locale] as string) : "";
+}
 
-  category: z.string().min(1),
-  basePriceUsd: z.coerce.number().min(0, "Base price must be 0 or greater"),
-  status: z.enum(["DRAFT", "PUBLISHED", "ARCHIVED"]),
-  isFeatured: z.boolean(),
-  displayOrder: z.coerce.number().min(0).default(0),
-  country: z.string().optional(),
-  city: z.string().optional(),
-});
+function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
+  return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
+}
+
+function tourToTripModel(tour: Tour): TripModel {
+  const highlights = tour.highlightsJsonb || tour.highlightJsonb;
+  const itinerary = (tour.itineraries || []).map((item, index) => ({
+    day: index + 1,
+    title: item.dayLabel || '',
+    description: localeText(item.descriptionJsonb, 'ar'),
+    meals: localeText(item.mealsJsonb, 'ar'),
+  }));
+
+  return {
+    id: tour.id,
+    slug: tour.slug,
+    title: localeText(tour.titleJsonb, 'ar') || localeText(tour.titleJsonb, 'en') || tour.slug,
+    subtitle: localeText(tour.subtitleJsonb, 'ar'),
+    destination: destinationForCountry(tour.country),
+    market: tour.market || '',
+    language: 'ar',
+    type: tour.category || '',
+    duration: localeText(tour.durationJsonb, 'ar'),
+    departures: localeText(tour.departureInfoJsonb, 'ar'),
+    price: Number(tour.basePriceUsd || 0),
+    hotelCategory: '',
+    rating: Number(tour.sourceRating || 0),
+    reviewCount: tour.sourceReviewCount || 0,
+    popular: !!tour.isFeatured,
+    familyFriendly: false,
+    honeymoon: false,
+    luxury: false,
+    cultural: false,
+    adventure: false,
+    overview: localeText(tour.overviewJsonb, 'ar'),
+    highlights: localeList(highlights, 'ar'),
+    included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
+    excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
+    images: tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []),
+    hotels: '',
+    accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
+    itinerary,
+    translations: Object.fromEntries(
+      LOCALES.map((locale) => [
+        locale,
+        {
+          title: localeText(tour.titleJsonb, locale),
+          subtitle: localeText(tour.subtitleJsonb, locale),
+          overview: localeText(tour.overviewJsonb, locale),
+          duration: localeText(tour.durationJsonb, locale),
+          highlights: localeList(highlights, locale),
+          included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, locale),
+          excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, locale),
+          itinerary: (tour.itineraries || []).map((item, index) => ({
+            day: index + 1,
+            title: item.dayLabel || '',
+            description: localeText(item.descriptionJsonb, locale),
+            meals: localeText(item.mealsJsonb, locale),
+          })),
+        },
+      ])
+    ) as TripModel['translations'],
+  };
+}
 
 interface EditTourDrawerProps {
   tour: Tour | null;
@@ -47,413 +84,19 @@ interface EditTourDrawerProps {
 }
 
 export function EditTourDrawer({ tour, open, onOpenChange }: EditTourDrawerProps) {
-  const { mutate: updateTour, isPending: isUpdating } = useUpdateTour();
-  const [activeLangTab, setActiveLangTab] = useState<string>("en");
+  const tripModel = useMemo(() => {
+    if (!tour) return null;
+    return tourToTripModel(tour);
+  }, [tour]);
 
-  const form = useForm<z.infer<typeof formSchema>>({
-    resolver: zodResolver(formSchema) as any,
-    defaultValues: {
-      titleEn: "",
-      titleAr: "",
-      titleEs: "",
-      titlePt: "",
-      titleIt: "",
-      overviewEn: "",
-      overviewAr: "",
-      overviewEs: "",
-      overviewPt: "",
-      overviewIt: "",
-      category: "",
-      basePriceUsd: undefined,
-      status: undefined,
-      isFeatured: false,
-      displayOrder: 0,
-      country: "",
-      city: "",
-    },
-  });
-
-  useEffect(() => {
-    if (tour && open) {
-      const titles = tour.titleJsonb || {};
-      const overviews = tour.overviewJsonb ?? {};
-
-      form.reset({
-        titleEn: titles.en || "",
-        titleAr: titles.ar || "",
-        titleEs: titles.es || "",
-        titlePt: titles.pt || "",
-        titleIt: titles.it || "",
-
-        overviewEn: overviews.en || "",
-        overviewAr: overviews.ar || "",
-        overviewEs: overviews.es || "",
-        overviewPt: overviews.pt || "",
-        overviewIt: overviews.it || "",
-
-        category: tour.category ?? "",
-        basePriceUsd: Number(tour.basePriceUsd),
-        status: tour.status,
-        isFeatured: tour.isFeatured,
-        displayOrder: tour.displayOrder ?? 0,
-        country: tour.country || "",
-        city: tour.city || "",
-      });
-    }
-  }, [tour, open, form]);
-
-  if (!tour) return null;
-
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
-    const payload: UpdateTourPayload = {
-      titleJsonb: {
-        en: values.titleEn,
-        ar: values.titleAr,
-        es: values.titleEs,
-        pt: values.titlePt,
-        it: values.titleIt,
-      },
-      overviewJsonb: {
-        en: values.overviewEn || "",
-        ar: values.overviewAr,
-        es: values.overviewEs,
-        pt: values.overviewPt,
-        it: values.overviewIt,
-      },
-      category: values.category,
-      basePriceUsd: values.basePriceUsd,
-      status: values.status,
-      isActive: values.status === "PUBLISHED",
-      isFeatured: values.isFeatured,
-      displayOrder: values.displayOrder,
-      country: values.country,
-      city: values.city,
-      expectedUpdatedAt: tour.updatedAt,
-    };
-
-    updateTour({ slug: tour.slug, data: payload }, {
-      onSuccess: () => {
-        toast.success(`Tour ${tour.slug} updated successfully across all 5 languages`);
-        onOpenChange(false);
-      },
-      onError: (err: any) => {
-        toast.error(`Failed to update tour: ${err?.message || "Server error"}`);
-      }
-    });
-  };
+  if (!open || !tour) return null;
 
   return (
-    <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px] md:w-[650px] overflow-hidden flex flex-col">
-        <SheetHeader className="mb-4 shrink-0">
-          <SheetTitle>Edit Tour Package</SheetTitle>
-          <SheetDescription className="font-mono text-xs text-muted-foreground">
-            SLUG: {tour.slug}
-          </SheetDescription>
-        </SheetHeader>
-
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="flex flex-col flex-1 overflow-hidden">
-            <ScrollArea className="flex-1 pr-4 -mr-4">
-              <div className="space-y-6 pb-4">
-                
-                {/* 5-Language Localized Editing Tabs */}
-                <div className="border rounded-xl p-4 bg-card space-y-4">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                      <Globe className="h-4 w-4 text-primary" /> Localized Content (5 Languages)
-                    </span>
-                  </div>
-
-                  <Tabs value={activeLangTab} onValueChange={setActiveLangTab} className="w-full">
-                    <TabsList className="grid grid-cols-5 w-full h-9 bg-muted/50 p-1">
-                      <TabsTrigger value="en" className="text-xs font-bold">EN</TabsTrigger>
-                      <TabsTrigger value="ar" className="text-xs font-bold">AR (عربي)</TabsTrigger>
-                      <TabsTrigger value="es" className="text-xs font-bold">ES</TabsTrigger>
-                      <TabsTrigger value="pt" className="text-xs font-bold">PT</TabsTrigger>
-                      <TabsTrigger value="it" className="text-xs font-bold">IT</TabsTrigger>
-                    </TabsList>
-
-                    {/* EN TAB */}
-                    <TabsContent value="en" className="space-y-3 pt-3">
-                      <FormField
-                        control={form.control as any}
-                        name="titleEn"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Title (English)</FormLabel>
-                            <FormControl><Input placeholder="English title..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control as any}
-                        name="overviewEn"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Overview (English)</FormLabel>
-                            <FormControl><Textarea placeholder="English overview..." className="min-h-[90px]" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    {/* AR TAB */}
-                    <TabsContent value="ar" className="space-y-3 pt-3" dir="rtl">
-                      <FormField
-                        control={form.control as any}
-                        name="titleAr"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">العنوان (العربية)</FormLabel>
-                            <FormControl><Input placeholder="العنوان بالعربية..." dir="rtl" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control as any}
-                        name="overviewAr"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">الوصف (العربية)</FormLabel>
-                            <FormControl><Textarea placeholder="الوصف بالعربية..." dir="rtl" className="min-h-[90px]" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    {/* ES TAB */}
-                    <TabsContent value="es" className="space-y-3 pt-3">
-                      <FormField
-                        control={form.control as any}
-                        name="titleEs"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Título (Español)</FormLabel>
-                            <FormControl><Input placeholder="Título en español..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control as any}
-                        name="overviewEs"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Resumen (Español)</FormLabel>
-                            <FormControl><Textarea placeholder="Resumen en español..." className="min-h-[90px]" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    {/* PT TAB */}
-                    <TabsContent value="pt" className="space-y-3 pt-3">
-                      <FormField
-                        control={form.control as any}
-                        name="titlePt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Título (Português)</FormLabel>
-                            <FormControl><Input placeholder="Título em português..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control as any}
-                        name="overviewPt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Visão Geral (Português)</FormLabel>
-                            <FormControl><Textarea placeholder="Visão geral em português..." className="min-h-[90px]" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-
-                    {/* IT TAB */}
-                    <TabsContent value="it" className="space-y-3 pt-3">
-                      <FormField
-                        control={form.control as any}
-                        name="titleIt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Titolo (Italiano)</FormLabel>
-                            <FormControl><Input placeholder="Titolo in italiano..." {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control as any}
-                        name="overviewIt"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs font-semibold">Panoramica (Italiano)</FormLabel>
-                            <FormControl><Textarea placeholder="Panoramica in italiano..." className="min-h-[90px]" {...field} /></FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                    </TabsContent>
-                  </Tabs>
-                </div>
-
-                {/* Core Parameters */}
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control as any}
-                    name="category"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Category</FormLabel>
-                        <FormControl><Input placeholder="e.g. Multi-Country" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control as any}
-                    name="basePriceUsd"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Base Price (USD)</FormLabel>
-                        <FormControl><Input type="number" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control as any}
-                    name="country"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Country</FormLabel>
-                        <FormControl><Input placeholder="e.g. Egypt" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                  <FormField
-                    control={form.control as any}
-                    name="city"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">City</FormLabel>
-                        <FormControl><Input placeholder="e.g. Cairo" {...field} /></FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold">Capacity (Seats)</FormLabel>
-                    <Input type="number" value={tour.capacity ?? ""} disabled />
-                    <FormDescription>Capacity is managed per departure in Availability.</FormDescription>
-                  </FormItem>
-                  <FormItem>
-                    <FormLabel className="text-xs font-semibold">Min Participants</FormLabel>
-                    <Input type="number" value={tour.minParticipants ?? ""} disabled />
-                    <FormDescription>Departure rules are managed in Availability.</FormDescription>
-                  </FormItem>
-                </div>
-
-                <div className="grid grid-cols-2 gap-4">
-                  <FormField
-                    control={form.control as any}
-                    name="status"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Status</FormLabel>
-                        <Select onValueChange={field.onChange} value={field.value}>
-                          <FormControl>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select status" />
-                            </SelectTrigger>
-                          </FormControl>
-                          <SelectContent>
-                            <SelectItem value="DRAFT">Draft</SelectItem>
-                            <SelectItem value="PUBLISHED">Published</SelectItem>
-                            <SelectItem value="ARCHIVED">Archived</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control as any}
-                    name="isFeatured"
-                    render={({ field }) => (
-                      <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3 h-[60px] self-end">
-                        <div className="space-y-0.5">
-                          <FormLabel className="text-xs font-semibold">Featured ⭐</FormLabel>
-                          <FormDescription className="text-[10px]">
-                            Pin to top of catalog
-                          </FormDescription>
-                        </div>
-                        <FormControl>
-                          <Switch
-                            checked={field.value}
-                            onCheckedChange={field.onChange}
-                          />
-                        </FormControl>
-                      </FormItem>
-                    )}
-                  />
-
-                  <FormField
-                    control={form.control as any}
-                    name="displayOrder"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-xs font-semibold">Priority Order (#)</FormLabel>
-                        <FormControl>
-                          <Input
-                            type="number"
-                            min="0"
-                            placeholder="0"
-                            className="h-10 text-xs font-mono"
-                            {...field}
-                          />
-                        </FormControl>
-                        <FormDescription className="text-[10px]">
-                          Lower value appears first (0 = default)
-                        </FormDescription>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-                </div>
-              </div>
-            </ScrollArea>
-
-            <div className="pt-4 pb-2 shrink-0 border-t flex justify-end gap-3 bg-background mt-auto">
-              <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-                Cancel
-              </Button>
-              <Button type="submit" disabled={isUpdating}>
-                {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Save 5-Language Tour
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </SheetContent>
-    </Sheet>
+    <TripEditorModal
+      trip={tripModel}
+      isOpen={open}
+      onClose={() => onOpenChange(false)}
+    />
   );
 }
+

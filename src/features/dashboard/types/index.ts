@@ -7,7 +7,8 @@ export interface DashboardFilters {
   currency?: string;
   locale?: 'en' | 'ar' | 'es' | 'pt' | 'it';
   timezone?: 'UTC' | 'Africa/Cairo';
-  preset?: 'all' | '30d' | '90d' | '12m';
+  preset?: 'all' | '30d' | '90d' | '6m' | '12m' | '2026' | '2025';
+  year?: string;
 }
 
 export interface ExecutiveSummary {
@@ -40,6 +41,7 @@ export interface ExecutiveSummary {
   };
   operational: {
     activeToursCount: number;
+    totalToursCount?: number;
     openInquiriesCount: number;
     unreadContactsCount: number;
     failedNotificationsCount: number;
@@ -57,6 +59,27 @@ export interface RevenueTrendItem {
   grossRevenue: number;
   collected: number;
   bookingsCount: number;
+  month?: string;
+  isPeak?: boolean;
+}
+
+export interface RevenueAnalytics {
+  monthlySalesRate: number;
+  monthlyGrowthPercent: number;
+  averageBookingValue: number;
+  topDestination: TopDestinationItem | null;
+  bookingConversionRate: number;
+  peakMonth: {
+    period: string;
+    label: string;
+    labelAr?: string;
+    amount: number;
+  } | null;
+}
+
+export interface RevenueTrendResponse {
+  trend: RevenueTrendItem[];
+  analytics: RevenueAnalytics;
 }
 
 export interface BookingsTrendItem {
@@ -75,6 +98,7 @@ export interface TourPerformanceItem {
   country: string;
   city: string;
   basePriceUsd: number;
+  displayPriceUsd?: number;
   status: string;
   heroImage: string | null;
   totalBookings: number;

@@ -21,6 +21,7 @@ import {
   Sparkles,
   ExternalLink,
   CheckCircle2,
+  ArrowUpDown,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -31,12 +32,12 @@ import { EditTourDrawer } from "@/features/tours/components/Drawers/EditTourDraw
 import { MoveTourDialog } from "@/features/tours/components/Drawers/MoveTourDialog";
 import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
+import type { Tour } from "@/features/tours/types";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
+import { TourPriorityList } from "@/features/tours/components/TourPriorityList/TourPriorityList";
 import { DestinationsManager } from "@/components/destinations/DestinationsManager";
 import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats } from "@/features/tours/hooks/useTours";
 import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
-import type { Tour } from "@/features/tours/types";
-import { adminRoutes } from "@/config/admin-routes";
 import Link from "next/link";
 import {
   DESTINATIONS_LIST,
@@ -48,12 +49,12 @@ import {
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 
-function localeText(value: Record<string, unknown> | null | undefined, locale: string): string {
+function localeText(value: Record<string, any> | null | undefined, locale: string): string {
   return typeof value?.[locale] === "string" ? value[locale] as string : "";
 }
 
-function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
-  return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
+function localeList(value: Record<string, any> | null | undefined, locale: string): string[] {
+  return Array.isArray(value?.[locale]) ? value[locale].filter((item: unknown): item is string => typeof item === "string") : [];
 }
 
 function tourToTripModel(tour: Tour): TripModel {
@@ -90,7 +91,7 @@ function tourToTripModel(tour: Tour): TripModel {
     highlights: localeList(highlights, 'ar'),
     included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
     excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
-    images: tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []),
+    images: tour.images?.map((image: { imageUrl?: string }) => image.imageUrl || "").filter(Boolean) || (tour.heroImage ? [tour.heroImage] : []),
     hotels: '',
     accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
     itinerary,
@@ -114,16 +115,20 @@ function tourToTripModel(tour: Tour): TripModel {
 
 function textFor(value: Record<string, unknown> | null | undefined, locale: string) {
   if (!value) return "";
-  for (const key of [locale, "en", "ar", "es", "pt", "it"]) {
-    const item = value[key];
-    if (typeof item === "string" && item.trim()) return item;
+  if (typeof value[locale] === "string" && (value[locale] as string)?.trim()) {
+    return (value[locale] as string).trim();
+  }
+  for (const fallback of LOCALES) {
+    if (typeof value[fallback] === "string" && (value[fallback] as string)?.trim()) {
+      return (value[fallback] as string).trim();
+    }
   }
   return "";
 }
 
 function hasLocaleCoreContent(tour: Tour, locale: string) {
   return [tour.titleJsonb, tour.overviewJsonb, tour.durationJsonb].every((field) =>
-    typeof field?.[locale] === "string" && field[locale].trim().length > 0,
+    typeof (field as Record<string, unknown>)?.[locale] === "string" && ((field as Record<string, unknown>)[locale] as string).trim().length > 0,
   );
 }
 
@@ -132,19 +137,19 @@ function completion(tour: Tour) {
 }
 
 function hasDestinationInterface(tour: Tour, slug?: string): boolean {
-  return (tour.landingPages || []).some((relation) =>
-    relation.type === "DESTINATION" && (!slug || relation.slug.toLowerCase() === slug.toLowerCase()),
+  return (tour.landingPages || []).some((relation: { type?: string; slug?: string }) =>
+    relation.type === "DESTINATION" && (!slug || relation.slug?.toLowerCase() === slug.toLowerCase()),
   );
 }
 
 function isVisibleOnDestinationInterface(tour: Tour, slug?: string): boolean {
   if (tour.status !== "PUBLISHED" || !tour.isActive) return false;
-  return (tour.landingPages || []).some((relation) =>
+  return (tour.landingPages || []).some((relation: { type?: string; isVisible?: boolean; status?: string; isActive?: boolean; slug?: string }) =>
     relation.type === "DESTINATION" &&
     relation.isVisible === true &&
     relation.status === "PUBLISHED" &&
     relation.isActive === true &&
-    (!slug || relation.slug.toLowerCase() === slug.toLowerCase()),
+    (!slug || relation.slug?.toLowerCase() === slug.toLowerCase()),
   );
 }
 
@@ -157,6 +162,7 @@ export default function ToursPage() {
   const [selectedDestination, setSelectedDestination] = useState<string>("ALL");
   const [catalogScope, setCatalogScope] = useState<"ADMIN" | "PUBLIC" | "HIDDEN" | "UNLINKED" | "UNPUBLISHED">("ADMIN");
   const [search, setSearch] = useState("");
+  const [activeMainTab, setActiveMainTab] = useState<string>("grid");
   const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
   const [isTripModalOpen, setIsTripModalOpen] = useState(false);
 
@@ -218,7 +224,8 @@ export default function ToursPage() {
             : (catalogOverview?.totalTours ?? stats?.totalTours ?? tours.length);
 
   const handleOpenEditTrip = (tour: Tour) => {
-    router.push(`/${locale}/admin/tours/${tour.slug}/edit`);
+    setSelectedTripForModal(tourToTripModel(tour));
+    setIsTripModalOpen(true);
   };
 
   const handleOpenAddTrip = () => {
@@ -316,10 +323,22 @@ export default function ToursPage() {
           <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
             <Button
               onClick={handleOpenAddTrip}
-              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 px-6 shadow-md shadow-amber-500/20 cursor-pointer"
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
             >
               <Plus className="w-4 h-4 stroke-3" />
               <span>{isAr ? "إضافة رحلة جديدة +" : "Add New Trip +"}</span>
+            </Button>
+            <Button
+              type="button"
+              onClick={() => setActiveMainTab("priority")}
+              className={`rounded-2xl font-black text-xs gap-2 px-4.5 py-2.5 shadow-xs transition-all cursor-pointer ${
+                activeMainTab === "priority"
+                  ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+                  : "bg-amber-500/15 hover:bg-amber-500/25 text-amber-500 border border-amber-500/40"
+              }`}
+            >
+              <ArrowUpDown className="w-4 h-4 text-amber-500 stroke-[2.5]" />
+              <span>{isAr ? "تغيير ترتيب ظهور الرحلات ⭐" : "Tour Display Order ⭐"}</span>
             </Button>
             <div className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-900/90 dark:bg-slate-800 text-amber-400 border border-amber-500/30 text-xs font-bold shadow-xs">
               <Globe2 className="w-4 h-4 text-amber-400" />
@@ -395,13 +414,19 @@ export default function ToursPage() {
       </div>
 
       {/* 3. Main Views Tabs Switcher */}
-      <Tabs defaultValue="grid" className="w-full">
-        <TabsList className="flex flex-wrap items-center gap-1.5 bg-card border border-border/80 p-1.5 rounded-2xl max-w-3xl mb-6 shadow-xs backdrop-blur-md">
+      <Tabs value={activeMainTab} onValueChange={setActiveMainTab} className="w-full">
+        <TabsList className="flex flex-wrap items-center gap-1.5 bg-card border border-border/80 p-1.5 rounded-2xl max-w-4xl mb-6 shadow-xs backdrop-blur-md">
           <TabsTrigger
             value="grid"
             className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm cursor-pointer"
           >
             <Compass className="w-4 h-4" /> {isAr ? "إدارة الرحلات والترجمات الـ 5" : "Trips & 5-Lang Cards"}
+          </TabsTrigger>
+          <TabsTrigger
+            value="priority"
+            className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm cursor-pointer"
+          >
+            <ArrowUpDown className="w-4 h-4" /> {isAr ? "تغيير ترتيب ظهور الرحلات ⭐" : "Tour Display Priority ⭐"}
           </TabsTrigger>
           <TabsTrigger
             value="destinations"
@@ -418,7 +443,7 @@ export default function ToursPage() {
         </TabsList>
 
         {/* Tab 1: Trips Grid & 5-Lang Translations */}
-          <TabsContent value="grid" className="space-y-6">
+        <TabsContent value="grid" className="space-y-6">
            <Card className="p-3 bg-card border border-border/80 rounded-2xl flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
              <div>
                <p className="text-xs font-black text-foreground">
@@ -515,24 +540,6 @@ export default function ToursPage() {
               </div>
             </div>
           </Card>
-
-          <div className="grid grid-cols-1 gap-2 sm:grid-cols-2 xl:grid-cols-4">
-            {interfaceSummaries.map((destination) => (
-              <button
-                key={`summary-${destination.slug}`}
-                type="button"
-                onClick={() => setSelectedDestination(destination.slug)}
-                className={`rounded-xl border p-3 text-start transition-colors ${selectedDestination === destination.slug ? "border-amber-500 bg-amber-500/10" : "border-border bg-card hover:border-amber-500/50"}`}
-              >
-                <p className="truncate text-xs font-black text-foreground">{destination.label}</p>
-                <div className="mt-2 flex items-center gap-2 text-[11px] font-bold">
-                  <span className="rounded-md bg-emerald-500/10 px-1.5 py-0.5 text-emerald-600">{destination.visible} {isAr ? "ظاهر" : "live"}</span>
-                  <span className="rounded-md bg-rose-500/10 px-1.5 py-0.5 text-rose-600">{destination.hidden} {isAr ? "مخفي" : "hidden"}</span>
-                  <span className="ms-auto text-muted-foreground">{destination.total} {isAr ? "إجمالي" : "total"}</span>
-                </div>
-              </button>
-            ))}
-          </div>
 
           {/* Interactive Tours Grid Body */}
           {error ? (
@@ -717,12 +724,17 @@ export default function ToursPage() {
           )}
         </TabsContent>
 
-        {/* Tab 2: 8 Destinations & Egypt Special Packages */}
+        {/* Tab 2: Tour Display Priority & Featured Manager */}
+        <TabsContent value="priority" className="space-y-4">
+          <TourPriorityList initialTours={tours} />
+        </TabsContent>
+
+        {/* Tab 3: 8 Destinations & Egypt Special Packages */}
         <TabsContent value="destinations" className="space-y-4">
           <DestinationsManager />
         </TabsContent>
 
-        {/* Tab 3: Trips Data Table */}
+        {/* Tab 4: Trips Data Table */}
         <TabsContent value="table" className="space-y-4">
           <div className="rounded-3xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
             <ToursTable />
@@ -730,7 +742,7 @@ export default function ToursPage() {
         </TabsContent>
       </Tabs>
 
-      {/* Complete Trip & 5-Lang Editor Modal (Commit 8a9ab4f) */}
+      {/* Complete Trip & 5-Lang Editor Modal */}
       <TripEditorModal
         trip={selectedTripForModal}
         isOpen={isTripModalOpen}

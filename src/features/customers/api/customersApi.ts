@@ -9,7 +9,8 @@ import {
   AddCustomerNotePayload, 
   AddCustomerDocumentPayload, 
   CustomerNote, 
-  CustomerDocument 
+  CustomerDocument,
+  CreateCustomerPayload 
 } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
 
@@ -20,6 +21,10 @@ export const customersApi = {
 
   getCustomers: async (params: ListCustomersParams): Promise<PaginatedResponse<Customer>> => {
     return apiClient.get<PaginatedResponse<Customer>, PaginatedResponse<Customer>>("/admin/users/crm/list", { params });
+  },
+
+  createCustomer: async (data: CreateCustomerPayload): Promise<Customer> => {
+    return apiClient.post<Customer, Customer>("/admin/users/crm", data);
   },
 
   getCustomerDetail: async (id: string): Promise<CustomerDetail> => {

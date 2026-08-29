@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import { buildTripEditorPayload } from '@/features/tours/lib/tripEditorPayload';
+import { ALL_LOCALES, autoTranslateFullTrip, translateToAllLocales } from '@/lib/translationService';
 import {
   Dialog,
   DialogContent,
@@ -20,6 +21,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Badge } from '@/components/ui/badge';
 import {
   Plus,
   Trash2,
@@ -36,7 +38,10 @@ import {
   Flame,
   Check,
   MapPin,
-  ListOrdered
+  ListOrdered,
+  Loader2,
+  Wand2,
+  Languages,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -50,27 +55,27 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   title: '',
   subtitle: '',
   slug: '',
-  destination: '',
-  market: '',
-  language: '',
-  type: '',
-  duration: '',
-  departures: '',
-  hotelCategory: '',
-  rating: 0,
+  destination: 'egypt',
+  market: 'Global',
+  language: 'ar',
+  type: 'Classic',
+  duration: '5 أيام / 4 ليالي',
+  departures: 'Daily / Diário',
+  hotelCategory: '5-Star Luxury',
+  rating: 5,
   reviewCount: 0,
   popular: false,
-  familyFriendly: false,
+  familyFriendly: true,
   honeymoon: false,
-  luxury: false,
-  cultural: false,
+  luxury: true,
+  cultural: true,
   adventure: false,
   overview: '',
   highlights: [],
   included: [],
   excluded: [],
   images: [],
-  hotels: '',
+  hotels: '5-Star Luxury Hotels',
   accommodation: [],
   itinerary: [],
   translations: {
@@ -82,14 +87,6 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   },
 };
 
-const LANGUAGES: { code: LanguageCode; label: string; flag: string }[] = [
-  { code: 'ar', label: 'العربية', flag: '🇸🇦' },
-  { code: 'en', label: 'English', flag: '🇬🇧' },
-  { code: 'es', label: 'Español', flag: '🇪🇸' },
-  { code: 'pt', label: 'Português', flag: '🇵🇹' },
-  { code: 'it', label: 'Italiano', flag: '🇮🇹' },
-];
-
 export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   trip,
   isOpen,
@@ -99,20 +96,40 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const { data: destinationData } = useLandingPages({ type: 'DESTINATION', status: 'PUBLISHED', isActive: true, limit: 50 });
   const destinations = useMemo(() => {
     const pages = Array.isArray(destinationData?.data) ? destinationData.data : [];
-    return pages.map((page) => ({
-      id: page.slug,
-      nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
-      nameEn: page.titleJsonb?.en || page.slug,
-      flag: '',
-    }));
+    if (pages.length > 0) {
+      return pages.map((page) => ({
+        id: page.slug,
+        nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
+        nameEn: page.titleJsonb?.en || page.slug,
+        flag: '',
+      }));
+    }
+    return [
+      { id: 'egypt', nameAr: 'مصر', nameEn: 'Egypt', flag: '🇪🇬' },
+      { id: 'turkey', nameAr: 'تركيا', nameEn: 'Turkey', flag: '🇹🇷' },
+      { id: 'jordan', nameAr: 'الأردن', nameEn: 'Jordan', flag: '🇯🇴' },
+      { id: 'morocco', nameAr: 'المغرب', nameEn: 'Morocco', flag: '🇲🇦' },
+      { id: 'dubai', nameAr: 'دبي والإمارات', nameEn: 'Dubai & UAE', flag: '🇦🇪' },
+      { id: 'tunisia', nameAr: 'تونس', nameEn: 'Tunisia', flag: '🇹🇳' },
+      { id: 'greece', nameAr: 'اليونان', nameEn: 'Greece', flag: '🇬🇷' },
+      { id: 'multi-country', nameAr: 'رحلات متعددة الوجهات', nameEn: 'Multi-Country Tours', flag: '🌍' },
+    ];
   }, [destinationData]);
+
   const [formData, setFormData] = useState<Partial<TripModel>>(DEFAULT_TRIP);
   const [activeTab, setActiveTab] = useState<string>('basic');
-  const [translationLang, setTranslationLang] = useState<LanguageCode>('en');
+  const [activeLang, setActiveLang] = useState<LanguageCode>('ar');
+  const [isTranslating, setIsTranslating] = useState(false);
+  const [translateStatus, setTranslateStatus] = useState<string>('');
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     if (trip) {
-      setFormData(JSON.parse(JSON.stringify(trip)));
+      const cloned = JSON.parse(JSON.stringify(trip));
+      if (!cloned.translations) {
+        cloned.translations = { ar: {}, en: {}, es: {}, pt: {}, it: {} };
+      }
+      setFormData(cloned);
     } else {
       setFormData(DEFAULT_TRIP);
     }
@@ -122,6 +139,185 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   const handleChange = (field: keyof TripModel, value: any) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const getLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration'): string => {
+    if (activeLang === 'ar') {
+      return (formData[field] as string) || (formData.translations?.ar?.[field] as string) || '';
+    }
+    return (formData.translations?.[activeLang]?.[field] as string) || '';
+  };
+
+  const setLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration', value: string) => {
+    setFormData(prev => {
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      trans[activeLang] = { ...trans[activeLang], [field]: value };
+
+      if (activeLang === 'ar') {
+        return { ...prev, [field]: value, translations: trans };
+      }
+      return { ...prev, translations: trans };
+    });
+  };
+
+  const getLocalizedList = (field: 'highlights' | 'included' | 'excluded'): string[] => {
+    if (activeLang === 'ar') {
+      return (formData[field] as string[]) || (formData.translations?.ar?.[field] as string[]) || [];
+    }
+    return (formData.translations?.[activeLang]?.[field] as string[]) || [];
+  };
+
+  const setLocalizedList = (field: 'highlights' | 'included' | 'excluded', items: string[]) => {
+    setFormData(prev => {
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      trans[activeLang] = { ...trans[activeLang], [field]: items };
+
+      if (activeLang === 'ar') {
+        return { ...prev, [field]: items, translations: trans };
+      }
+      return { ...prev, translations: trans };
+    });
+  };
+
+  const handleArrayItemChange = (field: 'highlights' | 'included' | 'excluded', index: number, value: string) => {
+    const list = [...getLocalizedList(field)];
+    list[index] = value;
+    setLocalizedList(field, list);
+  };
+
+  const addArrayItem = (field: 'highlights' | 'included' | 'excluded') => {
+    const list = [...getLocalizedList(field), ''];
+    setLocalizedList(field, list);
+  };
+
+  const removeArrayItem = (field: 'highlights' | 'included' | 'excluded', index: number) => {
+    const list = [...getLocalizedList(field)];
+    list.splice(index, 1);
+    setLocalizedList(field, list);
+  };
+
+  const getLocalizedItinerary = (): ItineraryItem[] => {
+    if (activeLang === 'ar') {
+      return formData.itinerary || [];
+    }
+    const currentDays = formData.itinerary || [];
+    const transItin = formData.translations?.[activeLang]?.itinerary || [];
+    return currentDays.map((baseDay, idx) => {
+      const transDay = transItin[idx];
+      return {
+        day: idx + 1,
+        title: transDay?.title ?? '',
+        description: transDay?.description ?? '',
+        meals: transDay?.meals ?? '',
+      };
+    });
+  };
+
+  const updateItineraryField = (idx: number, field: keyof ItineraryItem, value: any) => {
+    setFormData(prev => {
+      const baseItin = [...(prev.itinerary || [])];
+      if (!baseItin[idx]) {
+        baseItin[idx] = { day: idx + 1, title: '', description: '', meals: '' };
+      }
+
+      if (activeLang === 'ar') {
+        baseItin[idx] = { ...baseItin[idx], [field]: value };
+      }
+
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transItin = [...(trans[activeLang]?.itinerary || [])];
+      if (!transItin[idx]) {
+        transItin[idx] = { day: idx + 1, title: '', description: '', meals: '' };
+      }
+      transItin[idx] = { ...transItin[idx], [field]: value };
+      trans[activeLang] = { ...trans[activeLang], itinerary: transItin };
+
+      return {
+        ...prev,
+        itinerary: baseItin,
+        translations: trans,
+      };
+    });
+  };
+
+  const addItineraryDay = () => {
+    const baseItin = [...(formData.itinerary || [])];
+    const newDayNum = baseItin.length + 1;
+    const newDay: ItineraryItem = {
+      day: newDayNum,
+      title: activeLang === 'ar' ? `اليوم ${newDayNum}` : `Day ${newDayNum}`,
+      description: '',
+      meals: activeLang === 'ar' ? 'الإفطار' : 'Breakfast',
+    };
+    baseItin.push(newDay);
+
+    setFormData(prev => {
+      const trans = { ...(prev.translations || {}) };
+      ALL_LOCALES.forEach(loc => {
+        if (!trans[loc.code]) trans[loc.code] = {};
+        const it = [...(trans[loc.code]?.itinerary || [])];
+        it.push({
+          day: newDayNum,
+          title: loc.code === 'ar' ? `اليوم ${newDayNum}` : `Day ${newDayNum}`,
+          description: '',
+          meals: loc.code === 'ar' ? 'الإفطار' : 'Breakfast',
+        });
+        trans[loc.code] = { ...trans[loc.code], itinerary: it };
+      });
+      return {
+        ...prev,
+        itinerary: baseItin,
+        translations: trans,
+      };
+    });
+  };
+
+  const removeItineraryDay = (idx: number) => {
+    setFormData(prev => {
+      const baseItin = [...(prev.itinerary || [])];
+      baseItin.splice(idx, 1);
+      const reindexed = baseItin.map((d, i) => ({ ...d, day: i + 1 }));
+
+      const trans = { ...(prev.translations || {}) };
+      ALL_LOCALES.forEach(loc => {
+        const currentLoc = trans[loc.code];
+        if (currentLoc && Array.isArray(currentLoc.itinerary)) {
+          const it = [...currentLoc.itinerary];
+          it.splice(idx, 1);
+          trans[loc.code] = {
+            ...currentLoc,
+            itinerary: it.map((d, i) => ({ ...d, day: i + 1 })),
+          };
+        }
+      });
+
+      return {
+        ...prev,
+        itinerary: reindexed,
+        translations: trans,
+      };
+    });
+  };
+
+  const addAccommodationRow = () => {
+    const rows = [...(formData.accommodation || [])];
+    rows.push({ destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' });
+    handleChange('accommodation', rows);
+  };
+
+  const removeAccommodationRow = (index: number) => {
+    const rows = [...(formData.accommodation || [])];
+    rows.splice(index, 1);
+    handleChange('accommodation', rows);
+  };
+
+  const updateAccommodationRow = (index: number, field: keyof AccommodationItem, val: any) => {
+    const rows = [...(formData.accommodation || [])];
+    rows[index] = { ...rows[index], [field]: val };
+    handleChange('accommodation', rows);
   };
 
   const formatSlug = (input: string): string => {
@@ -138,6 +334,92 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       .replace(/^-+|-+$/g, '');
   };
 
+  // 5-Language Completion Stats Calculation
+  const localeStats = useMemo(() => {
+    return ALL_LOCALES.map(loc => {
+      let filled = 0;
+      const total = 5; // title, overview, duration, itinerary, included
+
+      if (loc.code === 'ar') {
+        if (formData.title?.trim()) filled++;
+        if (formData.overview?.trim()) filled++;
+        if (formData.duration?.trim()) filled++;
+        if ((formData.itinerary || []).length > 0) filled++;
+        if ((formData.included || []).length > 0) filled++;
+      } else {
+        const trans = formData.translations?.[loc.code] || {};
+        if (trans.title?.trim()) filled++;
+        if (trans.overview?.trim()) filled++;
+        if (trans.duration?.trim()) filled++;
+        if ((trans.itinerary || []).length > 0) filled++;
+        if ((trans.included || []).length > 0) filled++;
+      }
+
+      const percent = Math.round((filled / total) * 100);
+      return {
+        code: loc.code,
+        name: loc.name,
+        flag: loc.flag,
+        percent,
+        complete: percent === 100,
+      };
+    });
+  }, [formData]);
+
+  const handleAutoTranslateAll = async () => {
+    const sourceTitle = formData.title || formData.translations?.ar?.title || '';
+    if (!sourceTitle.trim()) {
+      toast.error('يرجى إدخال العنوان الرئيسي للرحلة أولاً للتمكن من الترجمة.');
+      return;
+    }
+
+    setIsTranslating(true);
+    setTranslateStatus('جاري تحليل المحتوى والترجمة للغات الـ 5...');
+
+    try {
+      const translated = await autoTranslateFullTrip(formData as TripModel, activeLang, (step) => {
+        setTranslateStatus(step);
+      });
+      setFormData(translated);
+      toast.success('✨ تم توليد وترجمة كامل بيانات الرحلة للغات الخمس (AR, EN, ES, PT, IT) بنجاح!');
+    } catch (err: any) {
+      console.error('Translation error:', err);
+      toast.error('حدث خطأ أثناء الترجمة التلقائية: ' + (err.message || 'يرجى المحاولة لاحقاً'));
+    } finally {
+      setIsTranslating(false);
+      setTranslateStatus('');
+    }
+  };
+
+  const handleTranslateSingleField = async (field: 'title' | 'subtitle' | 'overview') => {
+    const val = getLocalizedText(field);
+    if (!val.trim()) {
+      toast.error('يرجى كتابة نص في هذا الحقل أولاً.');
+      return;
+    }
+    setIsTranslating(true);
+    try {
+      const translations = await translateToAllLocales(val, activeLang);
+      setFormData(prev => {
+        const trans = { ...(prev.translations || {}) };
+        ALL_LOCALES.forEach(loc => {
+          if (!trans[loc.code]) trans[loc.code] = {};
+          trans[loc.code] = { ...trans[loc.code], [field]: translations[loc.code] };
+        });
+        return {
+          ...prev,
+          ...(activeLang === 'ar' ? { [field]: val } : {}),
+          translations: trans,
+        };
+      });
+      toast.success(`تمت ترجمة ${field === 'title' ? 'العنوان' : field === 'subtitle' ? 'العنوان الفرعي' : 'الوصف'} للغات الـ 5!`);
+    } catch (e: any) {
+      toast.error('تعذر ترجمة الحقل.');
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
   const handleSave = async () => {
     if (!formData.destination || (!trip && !formData.title)) {
       toast.error('يرجى ملء كافة البيانات الأساسية المطلوبة');
@@ -146,18 +428,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
     const price = Number(formData.price);
     if (!Number.isFinite(price) || price < 0) {
-      toast.error('Enter the actual base price before saving. No placeholder price will be applied.');
+      toast.error('يرجى إدخال سعر صحيح للرحلة قبل الحفظ.');
       return;
     }
 
     const rawSlug = formData.slug || formData.title || '';
     const cleanSlug = formatSlug(rawSlug) || `tour-${Date.now()}`;
 
-    const backendData = buildTripEditorPayload({ ...formData, slug: cleanSlug }, !trip);
-
-    // Persist through the Backend first. The catalogue is backend-authoritative;
-    // failed requests must not be presented as locally saved changes.
+    setIsSaving(true);
     try {
+      const backendData = buildTripEditorPayload({ ...formData, slug: cleanSlug }, !trip);
+
       if (trip && trip.slug) {
         await toursApi.updateTour(trip.slug, backendData as any);
       } else {
@@ -165,165 +446,120 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       }
       queryClient.invalidateQueries();
       onClose();
-      toast.success(trip ? 'تم تحديث الرحلة والترجمات وحفظها بنجاح!' : 'تمت إضافة الرحلة والترجمات وحفظها بنجاح!');
+      toast.success(trip ? 'تم تحديث الرحلة والترجمات الـ 5 وحفظها بنجاح!' : 'تمت إضافة الرحلة والترجمات وحفظها بنجاح!');
     } catch (err: any) {
       console.error('Backend API save failed:', err);
-      toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات. لم يتم تطبيق أي تغيير.');
-      return;
+      toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات.');
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  // Accommodation helper
-  const addAccommodationRow = () => {
-    const rows = [...(formData.accommodation || [])];
-    rows.push({ destination: '', nights: 1, regime: 'Bed & Breakfast' });
-    handleChange('accommodation', rows);
-  };
-
-  const removeAccommodationRow = (index: number) => {
-    const rows = [...(formData.accommodation || [])];
-    rows.splice(index, 1);
-    handleChange('accommodation', rows);
-  };
-
-  const updateAccommodationRow = (index: number, field: keyof AccommodationItem, val: any) => {
-    const rows = [...(formData.accommodation || [])];
-    rows[index] = { ...rows[index], [field]: val };
-    handleChange('accommodation', rows);
-  };
-
-  // Itinerary helper
-  const addLegacyItineraryDay = () => {
-    const days = [...(formData.itinerary || [])];
-    const nextDayNum = days.length + 1;
-    days.push({ day: nextDayNum, title: `عنوان اليوم ${nextDayNum}`, description: '', meals: 'الإفطار' });
-    handleChange('itinerary', days);
-  };
-
-  const addItineraryDay = () => {
-    const days = [...(formData.itinerary || [])];
-    days.push({ day: days.length + 1, title: '', description: '', meals: '' });
-    handleChange('itinerary', days);
-  };
-
-  const removeItineraryDay = (index: number) => {
-    const days = [...(formData.itinerary || [])];
-    days.splice(index, 1);
-    const reindexed = days.map((d, i) => ({ ...d, day: i + 1 }));
-    handleChange('itinerary', reindexed);
-  };
-
-  const updateItineraryDay = (index: number, field: keyof ItineraryItem, val: any) => {
-    const days = [...(formData.itinerary || [])];
-    days[index] = { ...days[index], [field]: val };
-    handleChange('itinerary', days);
-  };
-
-  // List helpers (Highlights, Included, Excluded, Images)
-  const handleArrayChange = (field: 'highlights' | 'included' | 'excluded' | 'images', index: number, val: string) => {
-    const arr = [...(formData[field] || [])];
-    arr[index] = val;
-    handleChange(field, arr);
-  };
-
-  const addArrayItem = (field: 'highlights' | 'included' | 'excluded' | 'images') => {
-    const arr = [...(formData[field] || []), ''];
-    handleChange(field, arr);
-  };
-
-  const removeArrayItem = (field: 'highlights' | 'included' | 'excluded' | 'images', index: number) => {
-    const arr = [...(formData[field] || [])];
-    arr.splice(index, 1);
-    handleChange(field, arr);
-  };
-
-  // Translation helpers
-  const handleTranslationChange = (lang: LanguageCode, key: string, val: any) => {
-    const trans = { ...(formData.translations || {}) };
-    if (!trans[lang]) trans[lang] = {};
-    trans[lang] = { ...trans[lang], [key]: val };
-    handleChange('translations', trans);
-  };
-
-  // Array translation helper for highlights, included, excluded
-  const handleTranslationArrayChange = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded', index: number, val: string) => {
-    const trans = { ...(formData.translations || {}) };
-    if (!trans[lang]) trans[lang] = {};
-    const arr = [...(trans[lang]?.[field] || [])];
-    arr[index] = val;
-    trans[lang] = { ...trans[lang], [field]: arr };
-    handleChange('translations', trans);
-  };
-
-  const addTranslationArrayItem = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded') => {
-    const trans = { ...(formData.translations || {}) };
-    if (!trans[lang]) trans[lang] = {};
-    const arr = [...(trans[lang]?.[field] || []), ''];
-    trans[lang] = { ...trans[lang], [field]: arr };
-    handleChange('translations', trans);
-  };
-
-  const removeTranslationArrayItem = (lang: LanguageCode, field: 'highlights' | 'included' | 'excluded', index: number) => {
-    const trans = { ...(formData.translations || {}) };
-    if (!trans[lang]) trans[lang] = {};
-    const arr = [...(trans[lang]?.[field] || [])];
-    arr.splice(index, 1);
-    trans[lang] = { ...trans[lang], [field]: arr };
-    handleChange('translations', trans);
-  };
-
-  // Itinerary translation helper
-  const handleTranslationItineraryChange = (lang: LanguageCode, dayIndex: number, field: 'title' | 'description' | 'meals', val: string) => {
-    const trans = { ...(formData.translations || {}) };
-    if (!trans[lang]) trans[lang] = {};
-    const itin = [...(trans[lang]?.itinerary || [])];
-    if (!itin[dayIndex]) itin[dayIndex] = { day: dayIndex + 1, title: '', description: '', meals: '' };
-    itin[dayIndex] = { ...itin[dayIndex], [field]: val };
-    trans[lang] = { ...trans[lang], itinerary: itin };
-    handleChange('translations', trans);
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col bg-card border border-border/80 rounded-3xl shadow-2xl p-0 overflow-hidden">
-        {/* Fixed Header */}
+      <DialogContent className="max-w-6xl w-[96vw] max-h-[94vh] flex flex-col bg-card border border-border/80 rounded-3xl shadow-2xl p-0 overflow-hidden">
+        {/* Top Header */}
         <DialogHeader className="p-5 border-b border-border/60 bg-muted/20 shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
-              <Sparkles className="w-5 h-5" />
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                <Sparkles className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2">
+                  <span>{trip ? 'تعديل الرحلة والترجمات الـ 5 الفورية' : 'إضافة رحلة جديدة فاخرة'}</span>
+                  <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[11px] font-black">
+                    5 Languages AI Ready
+                  </Badge>
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground font-semibold mt-0.5">
+                  تحرير كامل الخصائص الفنية، الأيام، الفنادق، وترجمة المحتوى للغات الخمس بضغطة زر واحدة.
+                </DialogDescription>
+              </div>
             </div>
-            <div>
-              <DialogTitle className="text-lg font-extrabold font-heading text-foreground">
-                {trip ? 'تعديل الرحلة والترجمات الـ 5 (Edit Trip & 5-Lang Translations)' : 'إضافة رحلة جديدة (Add New Trip)'}
-              </DialogTitle>
-              <DialogDescription className="text-xs text-muted-foreground font-medium mt-0.5">
-                تحرير كامل الخصائص الفنية، الأيام، الفنادق والترجمات باللغات الخمس (Key Highlights, Itinerary, What's Included & Excluded).
-              </DialogDescription>
+
+            {/* AI Auto-Translate Header Button */}
+            <div className="flex items-center gap-2.5 shrink-0">
+              <Button
+                type="button"
+                onClick={handleAutoTranslateAll}
+                disabled={isTranslating}
+                className="rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>{translateStatus || 'جاري الترجمة للغات الـ 5...'}</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-4 h-4 stroke-[2.5]" />
+                    <span>✨ ترجمة الرحلة كاملة للـ 5 لغات تلقائياً</span>
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+
+          {/* Active Language Switcher Bar */}
+          <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-border/40">
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
+              <span className="text-xs font-bold text-muted-foreground me-1 flex items-center gap-1">
+                <Languages className="w-3.5 h-3.5 text-amber-500" /> اللغة النشطة للتعديل:
+              </span>
+              {ALL_LOCALES.map(loc => {
+                const stat = localeStats.find(s => s.code === loc.code);
+                const isActive = activeLang === loc.code;
+                return (
+                  <button
+                    key={loc.code}
+                    type="button"
+                    onClick={() => setActiveLang(loc.code)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer border ${
+                      isActive
+                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm shadow-amber-500/20 scale-102'
+                        : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/60'
+                    }`}
+                  >
+                    <span>{loc.flag}</span>
+                    <span>{loc.name}</span>
+                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                      isActive ? 'bg-slate-950/20 text-slate-950' : stat?.complete ? 'bg-emerald-500/20 text-emerald-500' : 'bg-muted text-muted-foreground'
+                    }`}>
+                      {stat?.percent}%
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="text-[11px] font-bold text-muted-foreground hidden sm:block">
+              تعديل مباشر في: <span className="text-amber-500 font-extrabold uppercase">{activeLang}</span>
             </div>
           </div>
         </DialogHeader>
 
-        {/* 6 Tabs Container with Fixed Top Tabs Bar */}
+        {/* 6 Tabs Container */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="border-b border-border/60 bg-muted/40 px-6 pt-2 overflow-x-auto shrink-0 z-20">
             <TabsList className="bg-transparent h-11 gap-1 p-0">
-              <TabsTrigger value="basic" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+              <TabsTrigger value="basic" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <DollarSign className="w-3.5 h-3.5 me-1.5" /> 1. الأساسية والتسعير
               </TabsTrigger>
-              <TabsTrigger value="overview" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+              <TabsTrigger value="overview" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <Hotel className="w-3.5 h-3.5 me-1.5" /> 2. الوصف والإقامة
               </TabsTrigger>
-              <TabsTrigger value="itinerary" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
-                <Calendar className="w-3.5 h-3.5 me-1.5" /> 3. البرنامج اليومي
+              <TabsTrigger value="itinerary" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+                <Calendar className="w-3.5 h-3.5 me-1.5" /> 3. البرنامج اليومي ({formData.itinerary?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="inclusions" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+              <TabsTrigger value="inclusions" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <CheckCircle2 className="w-3.5 h-3.5 me-1.5" /> 4. المشتملات والمميزات
               </TabsTrigger>
-              <TabsTrigger value="gallery" className="rounded-xl px-3.5 py-2 text-xs font-semibold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
-                <ImageIcon className="w-3.5 h-3.5 me-1.5" /> 5. معرض الصور
+              <TabsTrigger value="gallery" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+                <ImageIcon className="w-3.5 h-3.5 me-1.5" /> 5. معرض الصور ({formData.images?.length || 0})
               </TabsTrigger>
-              <TabsTrigger value="translations" className="rounded-xl px-3.5 py-2 text-xs font-black data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-xs cursor-pointer">
-                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 6. الترجمات 🌐
+              <TabsTrigger value="matrix" className="rounded-xl px-3.5 py-2 text-xs font-black data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-xs cursor-pointer">
+                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 6. جدول الترجمات الـ 5 🌐
               </TabsTrigger>
             </TabsList>
           </div>
@@ -331,30 +567,55 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
             {/* TAB 1: BASIC & PRICING */}
             <TabsContent value="basic" className="space-y-5 m-0">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">العنوان الرئيسي (Title) *</label>
-                  <Input
-                    value={formData.title || ''}
-                    onChange={e => handleChange('title', e.target.value)}
-                    placeholder="مثال: القاهرة السريعة والأهرامات 4 أيام"
-                    className="rounded-xl"
-                  />
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>{ALL_LOCALES.find(l => l.code === activeLang)?.flag}</span>
+                    عناوين الرحلة باللغة ({ALL_LOCALES.find(l => l.code === activeLang)?.name}):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleTranslateSingleField('title')}
+                    disabled={isTranslating}
+                    className="text-xs text-amber-500 hover:bg-amber-500/10 gap-1 font-bold cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> ترجمة العنوان للـ 5 لغات
+                  </Button>
                 </div>
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">العنوان الفرعي الترويجي (Subtitle)</label>
-                  <Input
-                    value={formData.subtitle || ''}
-                    onChange={e => handleChange('subtitle', e.target.value)}
-                    placeholder="مثال: اكتشف عجائب الأهرامات"
-                    className="rounded-xl"
-                  />
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                      العنوان الرئيسي (Title) *
+                      <span className="text-[10px] text-amber-500 font-extrabold uppercase">({activeLang})</span>
+                    </label>
+                    <Input
+                      value={getLocalizedText('title')}
+                      onChange={e => setLocalizedText('title', e.target.value)}
+                      placeholder={activeLang === 'ar' ? 'مثال: القاهرة السريعة والأهرامات 4 أيام' : 'e.g. Cairo Express & Pyramids 4 Days'}
+                      className="rounded-xl font-bold"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground flex items-center gap-1">
+                      العنوان الفرعي الترويجي (Subtitle)
+                      <span className="text-[10px] text-amber-500 font-extrabold uppercase">({activeLang})</span>
+                    </label>
+                    <Input
+                      value={getLocalizedText('subtitle')}
+                      onChange={e => setLocalizedText('subtitle', e.target.value)}
+                      placeholder={activeLang === 'ar' ? 'مثال: اكتشف عجائب الأهرامات وأسرار الفراعنة' : 'e.g. Discover the Wonders of the Pyramids'}
+                      className="rounded-xl"
+                    />
+                  </div>
                 </div>
               </div>
 
+              {/* Core Specs Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">الرابط الفرعي (Slug)</label>
+                  <label className="text-xs font-bold text-foreground">الرابط الفرعي (Slug / Route Identifier)</label>
                   <Input
                     value={formData.slug || ''}
                     onChange={e => handleChange('slug', e.target.value)}
@@ -364,7 +625,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">الوجهة السياحية الـ 8 (Destination) *</label>
+                  <label className="text-xs font-bold text-foreground">الوجهة السياحية (Destination) *</label>
                   <select
                     value={formData.destination || 'egypt'}
                     onChange={e => handleChange('destination', e.target.value)}
@@ -378,19 +639,19 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   </select>
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">السوق المستهدف (Market)</label>
+                  <label className="text-xs font-bold text-foreground">السوق المستهدف (Target Market)</label>
                   <Input
                     value={formData.market || 'Global'}
                     onChange={e => handleChange('market', e.target.value)}
-                    placeholder="Global, Brasil, España..."
-                    className="rounded-xl"
+                    placeholder="Global, Brasil, España, Italia..."
+                    className="rounded-xl font-semibold"
                   />
                 </div>
               </div>
 
               {/* Egypt Destination Placement Selector */}
               {formData.destination === 'egypt' && (
-                <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
+                <div className="p-4.5 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-foreground flex items-center gap-1.5">
                       <Layers className="w-4 h-4 text-amber-500" />
@@ -402,7 +663,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {/* Option 1: Main Tours */}
                     <button
                       type="button"
                       onClick={() => handleChange('packageId', undefined)}
@@ -421,7 +681,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                       </div>
                     </button>
 
-                    {/* Option 2: Special Packages */}
                     <button
                       type="button"
                       onClick={() => {
@@ -445,20 +704,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     </button>
                   </div>
 
-                  {/* Sub Package Dropdown Selector if Option 2 active */}
                   {formData.packageId && (
                     <div className="pt-2 border-t border-amber-500/20 space-y-1.5">
-                      <label className="text-xs font-black text-foreground block">
-                        اختر الباكج المخصص للرحلة (Egypt Package Assignment):
-                      </label>
+                      <label className="text-xs font-bold text-foreground">اختر الباكدج المخصص:</label>
                       <select
                         value={formData.packageId}
                         onChange={e => handleChange('packageId', e.target.value)}
-                        className="w-full h-10 px-3 rounded-xl border border-amber-500/50 bg-background text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500 cursor-pointer"
+                        className="w-full h-10 px-3 rounded-xl border border-amber-500/40 bg-card text-sm font-bold text-amber-500"
                       >
                         {egyptPackages.map(pkg => (
                           <option key={pkg.id} value={pkg.id}>
-                            {pkg.icon} {pkg.titleAr} ({pkg.badge || pkg.type})
+                            {pkg.icon} {pkg.titleAr} ({pkg.badge || pkg.id})
                           </option>
                         ))}
                       </select>
@@ -467,22 +723,24 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 </div>
               )}
 
+              {/* Pricing, Duration & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">السعر بالدولار ($) *</label>
+                  <label className="text-xs font-bold text-foreground">السعر الأساسي بالدولار ($) *</label>
                   <Input
                     type="number"
-                    value={formData.price || 0}
-                    onChange={e => handleChange('price', parseFloat(e.target.value))}
-                    className="rounded-xl font-bold text-amber-500"
+                    value={formData.price ?? ''}
+                    onChange={e => handleChange('price', e.target.value)}
+                    placeholder="1250"
+                    className="rounded-xl font-bold font-mono"
                   />
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground">المدة (Duration)</label>
                   <Input
-                    value={formData.duration || ''}
-                    onChange={e => handleChange('duration', e.target.value)}
-                    placeholder="4 Days / 3 Nights"
+                    value={getLocalizedText('duration')}
+                    onChange={e => setLocalizedText('duration', e.target.value)}
+                    placeholder={activeLang === 'ar' ? '5 أيام / 4 ليالي' : '5 Days / 4 Nights'}
                     className="rounded-xl"
                   />
                 </div>
@@ -558,464 +816,502 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               </div>
             </TabsContent>
 
-            {/* TAB 2: OVERVIEW & ACCOMMODATION */}
+            {/* TAB 2: OVERVIEW & LODGING */}
             <TabsContent value="overview" className="space-y-5 m-0">
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground">الوصف التفصيلي للبرنامج (Overview)</label>
-                <Textarea
-                  value={formData.overview || ''}
-                  onChange={e => handleChange('overview', e.target.value)}
-                  rows={4}
-                  placeholder="اكتب وصفاً شاملاً للرحلة..."
-                  className="rounded-2xl"
-                />
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="text-xs font-bold text-foreground">أسماء الفنادق والملاحظات (Hotels Notes)</label>
-                <Input
-                  value={formData.hotels || ''}
-                  onChange={e => handleChange('hotels', e.target.value)}
-                  placeholder="مثال: فندق ماريوت مينا هاوس / باخرة سونستا نايل كروز"
-                  className="rounded-xl"
-                />
-              </div>
-
-              {/* Accommodation Breakdown Table */}
-              <div className="space-y-3 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground">توزيع الليالي والإقامة حسب المدينة (Accommodation Breakdown):</label>
-                  <Button size="sm" variant="outline" onClick={addAccommodationRow} className="rounded-xl text-xs gap-1">
-                    <Plus className="w-3.5 h-3.5" /> إضافة مدينة
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>{ALL_LOCALES.find(l => l.code === activeLang)?.flag}</span>
+                    نبذة ووصف الرحلة باللغة ({ALL_LOCALES.find(l => l.code === activeLang)?.name}):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleTranslateSingleField('overview')}
+                    disabled={isTranslating}
+                    className="text-xs text-amber-500 hover:bg-amber-500/10 gap-1 font-bold cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> ترجمة الوصف للـ 5 لغات
                   </Button>
                 </div>
 
-                <div className="space-y-2">
-                  {(formData.accommodation || []).map((item, idx) => (
-                    <div key={idx} className="flex items-center gap-2 p-2.5 rounded-xl bg-muted/30 border border-border/50">
-                      <Input
-                        value={item.destination}
-                        onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
-                        placeholder="المدينة (Cairo, Luxor...)"
-                        className="rounded-lg text-xs"
-                      />
-                      <Input
-                        type="number"
-                        value={item.nights}
-                        onChange={e => updateAccommodationRow(idx, 'nights', parseInt(e.target.value))}
-                        placeholder="الليالي"
-                        className="rounded-lg text-xs w-24"
-                      />
-                      <Input
-                        value={item.regime}
-                        onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
-                        placeholder="نظام الوجبات (Bed & Breakfast...)"
-                        className="rounded-lg text-xs"
-                      />
-                      <Button size="icon-sm" variant="ghost" onClick={() => removeAccommodationRow(idx)} className="text-destructive hover:bg-destructive/10">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  ))}
+                <Textarea
+                  value={getLocalizedText('overview')}
+                  onChange={e => setLocalizedText('overview', e.target.value)}
+                  rows={6}
+                  placeholder={activeLang === 'ar' ? 'اكتب نبذة تسويقية وتفصيلية عن الرحلة، الأماكن التي سيتم زيارتها، والتجربة الفريدة...' : 'Write an attractive detailed overview of this luxury tour itinerary...'}
+                  className="rounded-xl leading-relaxed text-sm font-medium"
+                />
+              </div>
+
+              {/* Accommodation Items */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <Hotel className="w-4 h-4 text-amber-500" />
+                    توزيع الإقامة والفنادق (Accommodation Plan):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={addAccommodationRow}
+                    className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة فندق / إقامة
+                  </Button>
                 </div>
-              </div>
-            </TabsContent>
 
-            {/* TAB 3: ITINERARY */}
-            <TabsContent value="itinerary" className="space-y-4 m-0">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">جدول برنامج اليوم بيوم (Day-by-Day Itinerary):</span>
-                <Button size="sm" variant="outline" onClick={addItineraryDay} className="rounded-xl text-xs gap-1">
-                  <Plus className="w-3.5 h-3.5" /> إضافة يوم جديد
-                </Button>
-              </div>
-
-              <div className="space-y-3">
-                {(formData.itinerary || []).map((day, idx) => (
-                  <div key={idx} className="p-4 rounded-2xl bg-card border border-border/70 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-7 h-7 rounded-xl bg-amber-500/10 text-amber-500 font-bold text-xs flex items-center justify-center border border-amber-500/20">
-                          {day.day}
-                        </span>
+                <div className="space-y-3">
+                  {(formData.accommodation || []).map((acc, idx) => (
+                    <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-muted/30 border border-border/60 items-center">
+                      <div>
+                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
                         <Input
-                          value={day.title}
-                          onChange={e => updateItineraryDay(idx, 'title', e.target.value)}
-                          placeholder="عنوان اليوم"
-                          className="rounded-xl text-xs font-bold h-8"
+                          value={acc.destination || ''}
+                          onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
+                          placeholder="Cairo, Luxor, Aswan..."
+                          className="rounded-xl text-xs font-bold h-9"
                         />
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div>
+                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
                         <Input
-                          value={day.meals}
-                          onChange={e => updateItineraryDay(idx, 'meals', e.target.value)}
-                          placeholder="الوجبة (الإفطار، الغداء...)"
-                          className="rounded-xl text-xs h-8 w-36"
+                          type="number"
+                          value={acc.nights ?? 1}
+                          onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
+                          className="rounded-xl text-xs font-bold h-9 font-mono"
                         />
-                        <Button size="icon-sm" variant="ghost" onClick={() => removeItineraryDay(idx)} className="text-destructive hover:bg-destructive/10">
+                      </div>
+                      <div>
+                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الإقامة</label>
+                        <Input
+                          value={acc.regime || ''}
+                          onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
+                          placeholder="Bed & Breakfast, Full Board..."
+                          className="rounded-xl text-xs font-semibold h-9"
+                        />
+                      </div>
+                      <div className="flex justify-end items-end pt-5">
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => removeAccommodationRow(idx)}
+                          className="text-destructive hover:bg-destructive/10"
+                        >
                           <Trash2 className="w-4 h-4" />
                         </Button>
                       </div>
                     </div>
+                  ))}
+                  {(formData.accommodation || []).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-4">لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 3: DAILY ITINERARY */}
+            <TabsContent value="itinerary" className="space-y-5 m-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <div>
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <span>{ALL_LOCALES.find(l => l.code === activeLang)?.flag}</span>
+                    برنامج الرحلة اليومي يوماً بيوم باللغة ({ALL_LOCALES.find(l => l.code === activeLang)?.name}):
+                  </span>
+                  <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                    إجمالي الأيام: {formData.itinerary?.length || 0} أيام محددة
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={addItineraryDay}
+                    className="text-xs gap-1.5 font-bold rounded-xl"
+                  >
+                    <Plus className="w-3.5 h-3.5 text-amber-500" /> إضافة يوم جديد +
+                  </Button>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {getLocalizedItinerary().map((day, idx) => (
+                  <div key={idx} className="p-4.5 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
+                    <div className="flex items-center justify-between gap-3 border-b border-border/40 pb-2.5">
+                      <div className="flex items-center gap-2.5 flex-1">
+                        <span className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
+                          {idx + 1}
+                        </span>
+                        <Input
+                          value={day.title || ''}
+                          onChange={e => updateItineraryField(idx, 'title', e.target.value)}
+                          placeholder={activeLang === 'ar' ? `عنوان اليوم ${idx + 1} (مثال: الوصول إلى القاهرة وزيارة الأهرامات)` : `Day ${idx + 1} Title`}
+                          className="rounded-xl font-bold text-sm h-10"
+                        />
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <Input
+                          value={day.meals || ''}
+                          onChange={e => updateItineraryField(idx, 'meals', e.target.value)}
+                          placeholder={activeLang === 'ar' ? 'الوجبات: إفطار، غداء' : 'Meals: Breakfast, Lunch'}
+                          className="rounded-xl text-xs h-10 w-44 font-semibold"
+                        />
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => removeItineraryDay(idx)}
+                          className="text-destructive hover:bg-destructive/10 rounded-xl"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
                     <Textarea
-                      value={day.description}
-                      onChange={e => updateItineraryDay(idx, 'description', e.target.value)}
-                      rows={2}
-                      placeholder="تفاصيل الأنشطة والزيارات لهذا اليوم..."
-                      className="rounded-xl text-xs"
+                      value={day.description || ''}
+                      onChange={e => updateItineraryField(idx, 'description', e.target.value)}
+                      rows={3}
+                      placeholder={activeLang === 'ar' ? `تفاصيل أنشطة وجدول اليوم ${idx + 1}...` : `Activities and schedule for Day ${idx + 1}...`}
+                      className="rounded-xl text-xs leading-relaxed font-medium"
                     />
                   </div>
                 ))}
+
+                {(formData.itinerary || []).length === 0 && (
+                  <div className="p-10 text-center rounded-2xl border border-dashed border-border bg-muted/20 space-y-3">
+                    <Calendar className="w-10 h-10 mx-auto text-muted-foreground/40" />
+                    <p className="text-xs font-bold text-muted-foreground">لا يوجد أيام مضافة في البرنامج حتى الآن.</p>
+                    <Button size="sm" onClick={addItineraryDay} className="rounded-xl bg-amber-500 text-slate-950 font-black text-xs">
+                      إضافة اليوم الأول +
+                    </Button>
+                  </div>
+                )}
               </div>
             </TabsContent>
 
             {/* TAB 4: INCLUSIONS & HIGHLIGHTS */}
             <TabsContent value="inclusions" className="space-y-5 m-0">
               {/* Highlights */}
-              <div className="space-y-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-foreground">أبرز المعالم والمميزات (Highlights):</label>
-                  <Button size="sm" variant="ghost" onClick={() => addArrayItem('highlights')} className="text-xs gap-1">
-                    <Plus className="w-3.5 h-3.5" /> إضافة ميزة
-                  </Button>
-                </div>
-                {(formData.highlights || []).map((hl, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      value={hl}
-                      onChange={e => handleArrayChange('highlights', idx, e.target.value)}
-                      placeholder="ميزة جديدة..."
-                      className="rounded-xl text-xs"
-                    />
-                    <Button size="icon-sm" variant="ghost" onClick={() => removeArrayItem('highlights', idx)} className="text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Included (Emerald) */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                    <CheckCircle2 className="w-4 h-4" /> الخدمات المشمولة (Included):
-                  </label>
-                  <Button size="sm" variant="ghost" onClick={() => addArrayItem('included')} className="text-xs text-emerald-500 gap-1">
-                    <Plus className="w-3.5 h-3.5" /> إضافة مشمول
-                  </Button>
-                </div>
-                {(formData.included || []).map((inc, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      value={inc}
-                      onChange={e => handleArrayChange('included', idx, e.target.value)}
-                      placeholder="خدمة مشمولة..."
-                      className="rounded-xl text-xs border-emerald-500/30"
-                    />
-                    <Button size="icon-sm" variant="ghost" onClick={() => removeArrayItem('included', idx)} className="text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-
-              {/* Excluded (Rose Red) */}
-              <div className="space-y-2 pt-2">
-                <div className="flex items-center justify-between">
-                  <label className="text-xs font-bold text-rose-500 flex items-center gap-1">
-                    <XCircle className="w-4 h-4" /> غير المشمول في الرحلة (Excluded):
-                  </label>
-                  <Button size="sm" variant="ghost" onClick={() => addArrayItem('excluded')} className="text-xs text-rose-500 gap-1">
-                    <Plus className="w-3.5 h-3.5" /> إضافة غير مشمول
-                  </Button>
-                </div>
-                {(formData.excluded || []).map((exc, idx) => (
-                  <div key={idx} className="flex items-center gap-2">
-                    <Input
-                      value={exc}
-                      onChange={e => handleArrayChange('excluded', idx, e.target.value)}
-                      placeholder="غير مشمول..."
-                      className="rounded-xl text-xs border-rose-500/30"
-                    />
-                    <Button size="icon-sm" variant="ghost" onClick={() => removeArrayItem('excluded', idx)} className="text-destructive">
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* TAB 5: GALLERY */}
-            <TabsContent value="gallery" className="space-y-4 m-0">
-              <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-foreground">روابط ومعرض الصور (Images Gallery):</span>
-                <Button size="sm" variant="outline" onClick={() => addArrayItem('images')} className="rounded-xl text-xs gap-1">
-                  <Plus className="w-3.5 h-3.5" /> إضافة رابط صورة
-                </Button>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {(formData.images || []).map((imgUrl, idx) => (
-                  <div key={idx} className="p-3 rounded-2xl bg-muted/30 border border-border/60 space-y-2">
-                    <div className="flex items-center gap-2">
-                      <Input
-                        value={imgUrl}
-                        onChange={e => handleArrayChange('images', idx, e.target.value)}
-                        placeholder="https://..."
-                        className="rounded-xl text-xs font-mono"
-                      />
-                      <Button size="icon-sm" variant="ghost" onClick={() => removeArrayItem('images', idx)} className="text-destructive">
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                    {imgUrl && (
-                      <div className="h-32 rounded-xl overflow-hidden bg-slate-900 relative">
-                        <img src={imgUrl} alt="Preview" className="w-full h-full object-cover" />
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </TabsContent>
-
-            {/* TAB 6: 5-LANGUAGE TRANSLATIONS (Key Highlights, Itinerary, What's Included & Excluded) */}
-            <TabsContent value="translations" className="space-y-6 m-0">
-              {/* Minimal 5-Language Switcher Bar */}
-              <div className="flex items-center justify-start gap-1.5 overflow-x-auto pb-2 border-b border-border/60">
-                {LANGUAGES.map(l => (
-                  <button
-                    key={l.code}
-                    type="button"
-                    onClick={() => setTranslationLang(l.code)}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 ${
-                      translationLang === l.code
-                        ? 'bg-amber-500 text-slate-950 shadow-xs font-black'
-                        : 'bg-muted/60 text-muted-foreground hover:text-foreground hover:bg-muted'
-                    }`}
-                  >
-                    {l.flag} {l.label} ({l.code.toUpperCase()})
-                  </button>
-                ))}
-              </div>
-
-              {/* 1. Basic Info Translation Section */}
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
-                <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
-                  <Sparkles className="w-4 h-4" />
-                  1. ترجمة البيانات والوصف العام ({translationLang.toUpperCase()})
-                </span>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-foreground">العنوان المترجم ({translationLang.toUpperCase()})</label>
-                    <Input
-                      value={formData.translations?.[translationLang]?.title || ''}
-                      onChange={e => handleTranslationChange(translationLang, 'title', e.target.value)}
-                      placeholder={`Title in ${translationLang.toUpperCase()}...`}
-                      className="rounded-xl text-xs font-semibold"
-                    />
-                  </div>
-
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-foreground">العنوان الفرعي المترجم ({translationLang.toUpperCase()})</label>
-                    <Input
-                      value={formData.translations?.[translationLang]?.subtitle || ''}
-                      onChange={e => handleTranslationChange(translationLang, 'subtitle', e.target.value)}
-                      placeholder={`Subtitle in ${translationLang.toUpperCase()}...`}
-                      className="rounded-xl text-xs font-semibold"
-                    />
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">الوصف التفصيلي المترجم ({translationLang.toUpperCase()})</label>
-                  <Textarea
-                    value={formData.translations?.[translationLang]?.overview || ''}
-                    onChange={e => handleTranslationChange(translationLang, 'overview', e.target.value)}
-                    rows={3}
-                    placeholder={`Overview & Description in ${translationLang.toUpperCase()}...`}
-                    className="rounded-xl text-xs"
-                  />
-                </div>
-              </div>
-
-              {/* 2. Key Highlights Translation Section */}
-              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
                 <div className="flex items-center justify-between border-b border-border/40 pb-2">
                   <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
-                    <Star className="w-4 h-4 fill-amber-500" />
-                    2. ترجمة مميزات ومحطات الرحلة (Key Highlights in {translationLang.toUpperCase()})
+                    <Star className="w-4 h-4 text-amber-500 fill-amber-500" />
+                    أبرز مميزات الرحلة (Highlights in {ALL_LOCALES.find(l => l.code === activeLang)?.name}):
                   </span>
                   <Button
                     size="sm"
                     variant="ghost"
-                    onClick={() => addTranslationArrayItem(translationLang, 'highlights')}
+                    onClick={() => addArrayItem('highlights')}
                     className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
                   >
-                    <Plus className="w-3.5 h-3.5" /> إضافة ميزة مترجمة
+                    <Plus className="w-3.5 h-3.5" /> إضافة ميزة
                   </Button>
                 </div>
 
                 <div className="space-y-2">
-                  {(formData.translations?.[translationLang]?.highlights || ['']).map((hl, idx) => (
+                  {getLocalizedList('highlights').map((hl, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <Input
                         value={hl}
-                        onChange={e => handleTranslationArrayChange(translationLang, 'highlights', idx, e.target.value)}
-                        placeholder={`Highlight #${idx + 1} in ${translationLang.toUpperCase()}...`}
+                        onChange={e => handleArrayItemChange('highlights', idx, e.target.value)}
+                        placeholder={activeLang === 'ar' ? `ميزة رقم ${idx + 1}...` : `Highlight #${idx + 1}...`}
                         className="rounded-xl text-xs font-semibold"
                       />
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        onClick={() => removeTranslationArrayItem(translationLang, 'highlights', idx)}
+                        onClick={() => removeArrayItem('highlights', idx)}
                         className="text-destructive hover:bg-destructive/10 shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
+                  {getLocalizedList('highlights').length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">لا توجد مميزات مضافة. اضغط "إضافة ميزة" بالأعلى.</p>
+                  )}
                 </div>
               </div>
 
-              {/* 3. Itinerary Day-by-Day Translation Section */}
+              {/* What's Included */}
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
                 <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
-                    <ListOrdered className="w-4 h-4" />
-                    3. ترجمة جدول برنامج الرحلة اليومي (Day-by-Day Itinerary in {translationLang.toUpperCase()})
+                  <span className="text-xs font-black text-emerald-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                    الخدمات المشمولة (What's Included in {ALL_LOCALES.find(l => l.code === activeLang)?.name}):
                   </span>
-                  <span className="text-[11px] font-bold text-muted-foreground">
-                    ({(formData.itinerary || []).length} أيام محددة)
-                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => addArrayItem('included')}
+                    className="text-xs text-emerald-500 gap-1 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة خدمة مشمولة
+                  </Button>
                 </div>
 
-                <div className="space-y-3">
-                  {(formData.itinerary || []).map((day, idx) => {
-                    const itinTrans = (formData.translations?.[translationLang]?.itinerary?.[idx] || {}) as Record<string, string>;
-                    return (
-                      <div key={idx} className="p-3.5 rounded-xl bg-muted/30 border border-border/60 space-y-2.5">
-                        <div className="flex items-center justify-between gap-3">
-                          <div className="flex items-center gap-2 flex-1">
-                            <span className="w-6 h-6 rounded-lg bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
-                              {day.day}
-                            </span>
-                            <Input
-                              value={itinTrans.title || ''}
-                              onChange={e => handleTranslationItineraryChange(translationLang, idx, 'title', e.target.value)}
-                              placeholder={`Day ${day.day} Title in ${translationLang.toUpperCase()} (e.g. ${day.title})...`}
-                              className="rounded-xl text-xs font-bold h-8"
-                            />
-                          </div>
-                          <Input
-                            value={itinTrans.meals || ''}
-                            onChange={e => handleTranslationItineraryChange(translationLang, idx, 'meals', e.target.value)}
-                            placeholder={`Meals (${translationLang.toUpperCase()})...`}
-                            className="rounded-xl text-xs h-8 w-36 shrink-0"
-                          />
-                        </div>
-                        <Textarea
-                          value={itinTrans.description || ''}
-                          onChange={e => handleTranslationItineraryChange(translationLang, idx, 'description', e.target.value)}
-                          rows={2}
-                          placeholder={`Day ${day.day} Activities & Details in ${translationLang.toUpperCase()}...`}
-                          className="rounded-xl text-xs font-medium"
-                        />
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-
-              {/* 4. What's Included & Excluded Translation Section */}
-              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
-                <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5 border-b border-border/40 pb-2">
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-                  4. ترجمة المشمولات والمستثنيات (What's Included & Excluded in {translationLang.toUpperCase()})
-                </span>
-
-                {/* Included Translation */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-emerald-500 flex items-center gap-1">
-                      <CheckCircle2 className="w-3.5 h-3.5" /> ترجمة الخدمات المشمولة (Included in {translationLang.toUpperCase()}):
-                    </label>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => addTranslationArrayItem(translationLang, 'included')}
-                      className="text-xs text-emerald-500 gap-1 font-bold cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> إضافة مشمول مترجم
-                    </Button>
-                  </div>
-                  {(formData.translations?.[translationLang]?.included || ['']).map((inc, idx) => (
+                  {getLocalizedList('included').map((inc, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <Input
                         value={inc}
-                        onChange={e => handleTranslationArrayChange(translationLang, 'included', idx, e.target.value)}
-                        placeholder={`Included item #${idx + 1} in ${translationLang.toUpperCase()}...`}
-                        className="rounded-xl text-xs border-emerald-500/30 font-semibold"
+                        onChange={e => handleArrayItemChange('included', idx, e.target.value)}
+                        placeholder={activeLang === 'ar' ? `خدمة مشمولة (فنادق 5 نجوم، استقبال بالمطار...)` : `Included item #${idx + 1}...`}
+                        className="rounded-xl text-xs font-semibold border-emerald-500/30"
                       />
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        onClick={() => removeTranslationArrayItem(translationLang, 'included', idx)}
+                        onClick={() => removeArrayItem('included', idx)}
                         className="text-destructive hover:bg-destructive/10 shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
+                  {getLocalizedList('included').length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">لا توجد خدمات مشمولة مضافة.</p>
+                  )}
+                </div>
+              </div>
+
+              {/* What's Excluded */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-rose-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <XCircle className="w-4 h-4 text-rose-500" />
+                    الخدمات المستثناة (What's Excluded in {ALL_LOCALES.find(l => l.code === activeLang)?.name}):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => addArrayItem('excluded')}
+                    className="text-xs text-rose-500 gap-1 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة خدمة مستثناة
+                  </Button>
                 </div>
 
-                {/* Excluded Translation */}
-                <div className="space-y-2 pt-2 border-t border-border/40">
-                  <div className="flex items-center justify-between">
-                    <label className="text-xs font-bold text-rose-500 flex items-center gap-1">
-                      <XCircle className="w-3.5 h-3.5" /> ترجمة الخدمات غير المشمولة (Excluded in {translationLang.toUpperCase()}):
-                    </label>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => addTranslationArrayItem(translationLang, 'excluded')}
-                      className="text-xs text-rose-500 gap-1 font-bold cursor-pointer"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> إضافة مستثنى مترجم
-                    </Button>
-                  </div>
-                  {(formData.translations?.[translationLang]?.excluded || ['']).map((exc, idx) => (
+                <div className="space-y-2">
+                  {getLocalizedList('excluded').map((exc, idx) => (
                     <div key={idx} className="flex items-center gap-2">
                       <Input
                         value={exc}
-                        onChange={e => handleTranslationArrayChange(translationLang, 'excluded', idx, e.target.value)}
-                        placeholder={`Excluded item #${idx + 1} in ${translationLang.toUpperCase()}...`}
-                        className="rounded-xl text-xs border-rose-500/30 font-semibold"
+                        onChange={e => handleArrayItemChange('excluded', idx, e.target.value)}
+                        placeholder={activeLang === 'ar' ? `خدمة غير مشمولة (تذاكر الطيران الدولي، المصاريف الشخصية...)` : `Excluded item #${idx + 1}...`}
+                        className="rounded-xl text-xs font-semibold border-rose-500/30"
                       />
                       <Button
                         size="icon-sm"
                         variant="ghost"
-                        onClick={() => removeTranslationArrayItem(translationLang, 'excluded', idx)}
+                        onClick={() => removeArrayItem('excluded', idx)}
                         className="text-destructive hover:bg-destructive/10 shrink-0"
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
                   ))}
+                  {getLocalizedList('excluded').length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">لا توجد خدمات مستثناة مضافة.</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 5: PHOTO GALLERY */}
+            <TabsContent value="gallery" className="space-y-5 m-0">
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                    <ImageIcon className="w-4 h-4 text-amber-500" />
+                    روابط صور المعرض (Photo Gallery & Hero Image):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => {
+                      const imgs = [...(formData.images || []), ''];
+                      handleChange('images', imgs);
+                    }}
+                    className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة صورة +
+                  </Button>
+                </div>
+
+                <div className="space-y-3">
+                  {(formData.images || []).map((imgUrl, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-border/60">
+                      <div className="w-16 h-12 rounded-xl bg-slate-950 overflow-hidden shrink-0 border">
+                        {imgUrl ? (
+                          <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No URL</div>
+                        )}
+                      </div>
+                      <Input
+                        value={imgUrl}
+                        onChange={e => {
+                          const imgs = [...(formData.images || [])];
+                          imgs[idx] = e.target.value;
+                          handleChange('images', imgs);
+                        }}
+                        placeholder="https://images.unsplash.com/..."
+                        className="rounded-xl text-xs font-mono flex-1"
+                      />
+                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${
+                        idx === 0 ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-muted text-muted-foreground'
+                      }`}>
+                        {idx === 0 ? 'الصورة الرئيسية (Hero)' : `صورة #${idx + 1}`}
+                      </span>
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => {
+                          const imgs = [...(formData.images || [])];
+                          imgs.splice(idx, 1);
+                          handleChange('images', imgs);
+                        }}
+                        className="text-destructive hover:bg-destructive/10"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+
+                  {(formData.images || []).length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-6">لا توجد صور مضافة حتى الآن.</p>
+                  )}
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 6: 5-LANG TRANSLATIONS MATRIX */}
+            <TabsContent value="matrix" className="space-y-5 m-0">
+              <div className="p-4.5 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-3">
+                  <div>
+                    <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                      <Globe2 className="w-4 h-4 text-amber-500" />
+                      مصفوفة مراجعة اللغات الـ 5 للرحلة
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                      نظرة عامة فورية على اكتمال الترجمة عبر كافة اللغات مع إمكانية التبديل والتعديل اللحظي.
+                    </p>
+                  </div>
+
+                  <Button
+                    size="sm"
+                    onClick={handleAutoTranslateAll}
+                    disabled={isTranslating}
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 shrink-0"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> ترجمة الحقول الناقصة الآن
+                  </Button>
+                </div>
+
+                {/* Matrix Table */}
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
+                  {ALL_LOCALES.map(loc => {
+                    const trans = loc.code === 'ar'
+                      ? {
+                          title: formData.title,
+                          subtitle: formData.subtitle,
+                          overview: formData.overview,
+                          duration: formData.duration,
+                          highlights: formData.highlights,
+                          included: formData.included,
+                          excluded: formData.excluded,
+                          itinerary: formData.itinerary,
+                        }
+                      : formData.translations?.[loc.code] || {};
+
+                    const isCurrent = activeLang === loc.code;
+                    const stat = localeStats.find(s => s.code === loc.code);
+
+                    return (
+                      <div
+                        key={loc.code}
+                        onClick={() => setActiveLang(loc.code)}
+                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                          isCurrent
+                            ? 'bg-amber-500/10 border-amber-500 shadow-md ring-1 ring-amber-500/50'
+                            : 'bg-muted/20 border-border hover:border-amber-500/40'
+                        }`}
+                      >
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-sm font-black flex items-center gap-1.5">
+                              <span>{loc.flag}</span> {loc.name}
+                            </span>
+                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${
+                              stat?.complete ? 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30' : 'bg-amber-500/20 text-amber-500 border-amber-500/30'
+                            }`}>
+                              {stat?.percent}%
+                            </span>
+                          </div>
+
+                          <div className="space-y-1.5 text-xs">
+                            <div>
+                              <span className="text-[10px] font-bold text-muted-foreground block">العنوان:</span>
+                              <p className="font-bold text-foreground line-clamp-1">{trans.title || '— بدون عنوان'}</p>
+                            </div>
+                            <div>
+                              <span className="text-[10px] font-bold text-muted-foreground block">الوصف:</span>
+                              <p className="text-muted-foreground text-[11px] line-clamp-2">{trans.overview || '— بدون وصف'}</p>
+                            </div>
+                            <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground pt-1 border-t border-border/40">
+                              <span>الأيام: {trans.itinerary?.length || 0}</span>
+                              <span>المميزات: {trans.highlights?.length || 0}</span>
+                            </div>
+                          </div>
+                        </div>
+
+                        <Button
+                          size="sm"
+                          variant={isCurrent ? 'default' : 'outline'}
+                          className={`w-full text-xs font-black rounded-xl h-8 ${
+                            isCurrent ? 'bg-amber-500 text-slate-950' : ''
+                          }`}
+                        >
+                          {isCurrent ? 'اللغة النشطة حالياً ✓' : 'تعديل هذه اللغة'}
+                        </Button>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             </TabsContent>
           </div>
         </Tabs>
 
-        {/* Footer */}
-        <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 flex items-center justify-between sm:justify-between">
-          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-bold">
+        {/* Fixed Footer */}
+        <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-bold w-full sm:w-auto">
             إلغاء
           </Button>
-          <Button onClick={handleSave} className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-6 text-xs shadow-md shadow-amber-500/20 cursor-pointer">
-            حفظ الرحلة والترجمات الـ 5 الآن 💾
-          </Button>
+
+          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+            <Button
+              type="button"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-7 py-2.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer w-full sm:w-auto gap-2"
+            >
+              {isSaving ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>جاري حفظ الرحلة والترجمات...</span>
+                </>
+              ) : (
+                <>
+                  <span>حفظ الرحلة والترجمات الـ 5 الآن 💾</span>
+                </>
+              )}
+            </Button>
+          </div>
         </DialogFooter>
       </DialogContent>
     </Dialog>
