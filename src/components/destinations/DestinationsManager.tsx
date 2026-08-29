@@ -303,7 +303,12 @@ export const DestinationsManager: React.FC = React.memo(() => {
 
   const handleDeleteTrip = useCallback(
     async (tripId: string, tripTitle: string, tripSlug?: string) => {
-      if (confirm(`هل أنت متأكد من حذ        try {
+      if (confirm(`هل أنت متأكد من حذف الرحلة "${tripTitle}"؟`)) {
+        if (!tripSlug) {
+          toast.error('لا يمكن حذف رحلة بدون معرّف backend صالح.');
+          return;
+        }
+        try {
           await removeTourMutation.mutateAsync(tripSlug);
         } catch {
           toast.error('تعذر حذف الرحلة من قاعدة البيانات. لم يتم تطبيق أي تغيير.');
@@ -331,19 +336,11 @@ export const DestinationsManager: React.FC = React.memo(() => {
   }, []);
 
   if (isLoadingDestinations && isLoadingTours) {
-    return (
-      <div className="flex min-h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-      </div>
-    );
+    return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-amber-500" /></div>;
   }
 
   if (!activeDestination) {
-    return (
-      <div className="flex min-h-64 items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-amber-500" />
-      </div>
-    );
+    return <div className="flex min-h-64 items-center justify-center"><Loader2 className="h-8 w-8 animate-spin text-amber-500" /></div>;
   }
 
   return (
@@ -351,7 +348,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
       {/* 8 Destinations Tab Switcher Bar */}
       <div className="bg-card border border-border/80 rounded-3xl p-3 shadow-xs">
         <div className="flex items-center gap-2 overflow-x-auto pb-1">
-          {destinations.map((dest) => {
+          {destinations.map(dest => {
             const isSelected = activeDestId === dest.id;
             const destTripCount = tripCountMap[dest.id] || 0;
             return (
@@ -370,11 +367,9 @@ export const DestinationsManager: React.FC = React.memo(() => {
               >
                 <span className="text-lg">{dest.flag}</span>
                 <span>{dest.nameAr}</span>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
-                    isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
+                <span className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold ${
+                  isSelected ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
+                }`}>
                   {destTripCount}
                 </span>
               </button>
@@ -384,9 +379,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
       </div>
 
       {/* Dynamic Country Banner */}
-      <div
-        className={`relative overflow-hidden rounded-3xl border border-border/80 bg-linear-to-r ${activeDestination.gradient} p-6 sm:p-8 backdrop-blur-md shadow-xs`}
-      >
+      <div className={`relative overflow-hidden rounded-3xl border border-border/80 bg-linear-to-r ${activeDestination.gradient} p-6 sm:p-8 backdrop-blur-md shadow-xs`}>
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div className="flex items-start gap-4">
             <span className="text-5xl sm:text-6xl drop-shadow-md">{activeDestination.flag}</span>
@@ -405,108 +398,11 @@ export const DestinationsManager: React.FC = React.memo(() => {
             </div>
           </div>
 
-          <Button
-            onClick={handleOpenNew}
-            className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 shadow-sm gap-2 shrink-0 cursor-pointer"
-          >
+          <Button onClick={handleOpenNew} className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold px-6 shadow-sm gap-2 shrink-0 cursor-pointer">
             <Plus className="w-4 h-4" /> إضافة رحلة جديدة لوجهة {activeDestination.nameAr}
           </Button>
         </div>
       </div>
-
-      {/* ========================================================================= */}
-      {/* TOP QUICK FILTER BAR: شريط التصفية السريعة للباكدجات والبرامج             */}
-      {/* ========================================================================= */}
-      {activeDestId === 'egypt' && (
-        <div className="bg-card border border-border/80 rounded-3xl p-4 sm:p-5 shadow-xs backdrop-blur-md space-y-3.5 animate-in fade-in duration-300">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/15 border border-amber-500/30 text-amber-500 flex items-center justify-center text-sm font-black shadow-xs shrink-0">
-                <Crown className="w-4 h-4" />
-              </div>
-              <div>
-                <h4 className="text-xs sm:text-sm font-black text-foreground flex items-center gap-2">
-                  <span>تصفية سريعة حسب باكدجات وبرامج مصر</span>
-                  <Badge variant="outline" className="text-[10px] px-2 py-0.2 bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 font-extrabold">
-                    VIP Filters
-                  </Badge>
-                </h4>
-                <p className="text-[11px] text-muted-foreground font-medium">
-                  اختر الباكدج لتصفية الرحلات فورياً في الجدول والبطاقات
-                </p>
-              </div>
-            </div>
-
-            {activePackageId && (
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => setActivePackageId(null)}
-                className="text-xs text-amber-500 hover:text-amber-600 hover:bg-amber-500/10 font-bold gap-1 self-start sm:self-auto cursor-pointer rounded-xl h-8 px-3"
-              >
-                <span>إلغاء التصفية (عرض الكل)</span>
-                <span>✕</span>
-              </Button>
-            )}
-          </div>
-
-          {/* Quick Filter Pills */}
-          <div className="flex flex-wrap items-center gap-2 pt-1">
-            {/* All Tours Pill */}
-            <button
-              type="button"
-              onClick={() => setActivePackageId(null)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                activePackageId === null
-                  ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-[1.02]'
-                  : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/70 border border-border/60'
-              }`}
-            >
-              <span>✨</span>
-              <span>كافة البرامج (All)</span>
-              <span
-                className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                  activePackageId === null ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
-                }`}
-              >
-                {realTrips.filter((t) => t.destination === 'egypt').length}
-              </span>
-            </button>
-
-            {/* Each Egypt Package Pill */}
-            {egyptPackages.map((pkg) => {
-              const isSelected = activePackageId === pkg.id;
-              const count = realTrips.filter((t) => t.destination === 'egypt' && t.packageId === pkg.id).length;
-              return (
-                <button
-                  key={pkg.id}
-                  type="button"
-                  onClick={() => setActivePackageId(isSelected ? null : pkg.id)}
-                  className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl text-xs font-bold transition-all duration-200 cursor-pointer ${
-                    isSelected
-                      ? 'bg-amber-500 text-slate-950 font-black shadow-md scale-[1.02]'
-                      : 'bg-muted/40 text-muted-foreground hover:text-foreground hover:bg-muted/70 border border-border/60'
-                  }`}
-                >
-                  <span className="text-sm">{pkg.icon}</span>
-                  <span>{pkg.type}</span>
-                  <span
-                    className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                      isSelected
-                        ? 'bg-slate-950/20 text-slate-950'
-                        : count > 0
-                        ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400'
-                        : 'bg-muted text-muted-foreground'
-                    }`}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       {/* ========================================================================= */}
       {/* SECTION 1: السكشن الأول - الرحلات الرئيسية (Main Tours & Excursions)       */}
@@ -529,12 +425,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
           </div>
 
           {activePackageId && (
-            <Button
-              size="xs"
-              variant="gold"
-              onClick={() => setActivePackageId(null)}
-              className="text-xs gap-1.5 font-bold cursor-pointer"
-            >
+            <Button size="xs" variant="gold" onClick={() => setActivePackageId(null)} className="text-xs gap-1.5 font-bold cursor-pointer">
               <Filter className="w-3.5 h-3.5" /> عرض كافة رحلات {activeDestination.nameAr}
             </Button>
           )}
@@ -556,21 +447,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
               إضافة رحلة جديدة
             </Button>
           </div>
-        ) : (�اح.');
-      }
-    },
-    [removeTourMutation]
-  );
-
-  const handleOpenTransfer = useCallback((trip: TripModel) => {
-    setTransferringTrip(trip);
-    setIsTransferOpen(true);
-  }, []);
-
-  const handleOpenEdit = useCallback((trip: TripModel) => {
-    if (!trip.slug) return;
-    window.location.assign(`/${locale}/admin/tours/${trip.slug}/edit`);
-  }, [locale]);
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
             {filteredTrips.map(trip => (
               <div
