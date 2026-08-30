@@ -224,10 +224,12 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   // Models available for the currently selected provider in the wizard
   const availableModelsForProvider = useMemo(() => {
-    if (selectedProvider === "custom") {
-      return registryModels.filter((m) => m.provider === "custom");
+    if (!Array.isArray(registryModels)) return [];
+    const prov = (selectedProvider || "").toLowerCase();
+    if (prov === "custom") {
+      return registryModels.filter((m) => (m?.provider || "").toLowerCase() === "custom");
     }
-    return registryModels.filter((m) => m.provider.toLowerCase() === selectedProvider.toLowerCase());
+    return registryModels.filter((m) => (m?.provider || "").toLowerCase() === prov);
   }, [registryModels, selectedProvider]);
 
   // Provider definition lookup
@@ -454,13 +456,16 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   // Filter models for registry table
   const filteredModels = useMemo(() => {
+    if (!Array.isArray(registryModels)) return [];
+    const search = (modelSearch || "").toLowerCase();
+    const filter = (modelProviderFilter || "all").toLowerCase();
     return registryModels.filter((m) => {
       const matchesSearch =
-        m.name.toLowerCase().includes(modelSearch.toLowerCase()) ||
-        m.id.toLowerCase().includes(modelSearch.toLowerCase()) ||
-        (m.nameAr && m.nameAr.includes(modelSearch));
+        (m?.name || "").toLowerCase().includes(search) ||
+        (m?.id || "").toLowerCase().includes(search) ||
+        (m?.nameAr && m.nameAr.includes(modelSearch));
       const matchesProvider =
-        modelProviderFilter === "all" || m.provider.toLowerCase() === modelProviderFilter.toLowerCase();
+        filter === "all" || (m?.provider || "").toLowerCase() === filter;
       return matchesSearch && matchesProvider;
     });
   }, [registryModels, modelSearch, modelProviderFilter]);
@@ -480,19 +485,21 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       }
     > = {};
 
+    const safeKeyPool = Array.isArray(keyPool) ? keyPool : [];
+
     Object.keys(PROVIDER_METADATA).forEach((pId) => {
-      const pKeys = keyPool.filter((k) => k.provider.toLowerCase() === pId.toLowerCase());
-      const healthy = pKeys.filter((k) => k.lastStatus === "HEALTHY");
+      const pKeys = safeKeyPool.filter((k) => (k?.provider || "").toLowerCase() === pId.toLowerCase());
+      const healthy = pKeys.filter((k) => k?.lastStatus === "HEALTHY");
       const failed = pKeys.filter(
         (k) =>
-          k.lastStatus === "FAILED" ||
-          k.lastStatus === "INVALID_CREDENTIAL" ||
-          k.lastStatus === "CONFIGURATION_ERROR"
+          k?.lastStatus === "FAILED" ||
+          k?.lastStatus === "INVALID_CREDENTIAL" ||
+          k?.lastStatus === "CONFIGURATION_ERROR"
       );
-      const rateLimited = pKeys.filter((k) => k.lastStatus === "RATE_LIMITED");
-      const latencies = healthy.map((k) => k.lastLatencyMs || 0).filter((l) => l > 0);
+      const rateLimited = pKeys.filter((k) => k?.lastStatus === "RATE_LIMITED");
+      const latencies = healthy.map((k) => k?.lastLatencyMs || 0).filter((l) => l > 0);
       const avgLat = latencies.length ? Math.round(latencies.reduce((a, b) => a + b, 0) / latencies.length) : 0;
-      const models = Array.from(new Set(pKeys.map((k) => k.model).filter(Boolean)));
+      const models = Array.from(new Set(pKeys.map((k) => k?.model).filter(Boolean)));
 
       stats[pId] = {
         totalKeys: pKeys.length,
@@ -862,8 +869,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                   </td>
                 </tr>
               ) : (
-                keyPool
-                  .sort((a, b) => a.priority - b.priority)
+                (keyPool || [])
+                  .slice()
+                  .sort((a, b) => (a?.priority ?? 99) - (b?.priority ?? 99))
                   .map((entry) => {
                     const isHealthy = entry.lastStatus === "HEALTHY";
                     const isRateLimited = entry.lastStatus === "RATE_LIMITED";

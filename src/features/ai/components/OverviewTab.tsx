@@ -67,18 +67,19 @@ export function OverviewTab({
 }: OverviewTabProps) {
   const [showOnboarding, setShowOnboarding] = useState(true);
 
-  const healthyKeys = keyPool.filter((k) => k.isActive && k.lastStatus === "HEALTHY");
-  const failedKeys = keyPool.filter(
+  const safeKeyPool = Array.isArray(keyPool) ? keyPool : [];
+  const healthyKeys = safeKeyPool.filter((k) => k?.isActive && k?.lastStatus === "HEALTHY");
+  const failedKeys = safeKeyPool.filter(
     (k) =>
-      k.lastStatus === "FAILED" ||
-      k.lastStatus === "INVALID_CREDENTIAL" ||
-      k.lastStatus === "CONFIGURATION_ERROR"
+      k?.lastStatus === "FAILED" ||
+      k?.lastStatus === "INVALID_CREDENTIAL" ||
+      k?.lastStatus === "CONFIGURATION_ERROR"
   );
   const isSystemHealthy = failedKeys.length === 0 && healthyKeys.length > 0;
   const hasNoBackup = healthyKeys.length === 1;
 
   // Onboarding Step Calculations
-  const hasProvider = keyPool.length > 0;
+  const hasProvider = safeKeyPool.length > 0;
   const hasKnowledge = (metrics?.publishedKnowledgeArticles || 0) > 0;
   const hasTested = true; // GuideR is ready
   const isLive = true;

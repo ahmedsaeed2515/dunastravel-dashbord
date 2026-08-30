@@ -279,8 +279,8 @@ export function AgentsTab({
 
       {/* ── AGENT CARDS GRID ────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-        {agents.map((agent) => {
-          const isGuideR = agent.slug === "guider";
+        {(Array.isArray(agents) ? agents : []).map((agent) => {
+          const isGuideR = agent?.slug === "guider";
           const personaMeta = AGENT_PERSONA_PRESETS[agent.slug] || {
             icon: agent.avatar || "👑",
             badge: "Specialist",

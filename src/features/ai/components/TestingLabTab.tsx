@@ -178,9 +178,9 @@ export function TestingLabTab({
             onChange={(e) => setSelectedAgentSlug(e.target.value)}
             className="h-9 px-3 rounded-xl border border-border bg-background text-xs font-bold text-foreground"
           >
-            {agents.map((ag) => (
-              <option key={ag.slug} value={ag.slug}>
-                {ag.avatar || "👑"} {isAr ? ag.nameJsonb?.ar || ag.displayName : ag.nameJsonb?.en || ag.displayName}
+            {(Array.isArray(agents) ? agents : []).map((ag) => (
+              <option key={ag?.slug || ag?.id} value={ag?.slug || "guider"}>
+                {ag?.avatar || "👑"} {isAr ? ag?.nameJsonb?.ar || ag?.displayName || ag?.slug : ag?.nameJsonb?.en || ag?.displayName || ag?.slug}
               </option>
             ))}
           </select>

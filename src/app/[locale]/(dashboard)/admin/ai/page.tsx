@@ -41,6 +41,7 @@ import { ConversationsTab } from "@/features/ai/components/ConversationsTab";
 import { TestingLabTab } from "@/features/ai/components/TestingLabTab";
 import { FinOpsTab } from "@/features/ai/components/FinOpsTab";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export type AiTabKey = 
   | "overview" 
@@ -51,6 +52,56 @@ export type AiTabKey =
   | "settings"
   | "prompts"
   | "finOps";
+
+class TabErrorBoundary extends React.Component<
+  { children: React.ReactNode; isAr: boolean; onReset: () => void },
+  { hasError: boolean; error: Error | null }
+> {
+  constructor(props: any) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+
+  static getDerivedStateFromError(error: Error) {
+    return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error, errorInfo: any) {
+    console.error("AI Tab Rendering Error:", error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="rounded-2xl border border-rose-500/30 bg-rose-500/5 p-8 text-center space-y-4 my-6">
+          <div className="h-12 w-12 rounded-2xl bg-rose-500/10 text-rose-600 dark:text-rose-400 mx-auto flex items-center justify-center text-2xl font-bold">
+            ⚠️
+          </div>
+          <div>
+            <h3 className="text-base font-bold text-foreground">
+              {this.props.isAr ? "حدث خطأ غير متوقع أثناء عرض هذا القسم" : "An unexpected error occurred in this tab"}
+            </h3>
+            <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+              {this.state.error?.message || (this.props.isAr ? "يرجى إعادة المحاولة أو تحديث الصفحة." : "Please retry or refresh the page.")}
+            </p>
+          </div>
+          <Button
+            onClick={() => {
+              this.setState({ hasError: false, error: null });
+              this.props.onReset();
+            }}
+            size="sm"
+            className="bg-rose-600 hover:bg-rose-700 text-white font-bold text-xs h-8 gap-1.5 cursor-pointer shadow-xs"
+          >
+            <RefreshCw className="h-3.5 w-3.5" />
+            {this.props.isAr ? "إعادة المحاولة" : "Retry Section"}
+          </Button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export default function AdminAiControlCenterPage() {
   const t = useTranslations("ai");
@@ -119,7 +170,7 @@ export default function AdminAiControlCenterPage() {
       label: isAr ? "فريق المساعدين" : "AI Assistants", 
       labelEn: "Assistants",
       icon: <Users className="h-4 w-4 text-emerald-500" />, 
-      badge: `${agents.length || 5}` 
+      badge: `${(Array.isArray(agents) ? agents.length : 0) || 5}` 
     },
     { 
       key: "knowledge", 
@@ -145,7 +196,7 @@ export default function AdminAiControlCenterPage() {
       label: isAr ? "المزودون والإعدادات" : "Providers & Settings", 
       labelEn: "Providers & Settings",
       icon: <Settings className="h-4 w-4 text-zinc-400" />, 
-      badge: `${keyPool.filter((k) => k.isActive).length || 1}` 
+      badge: `${(Array.isArray(keyPool) ? keyPool.filter((k) => k?.isActive).length : 0) || 1}` 
     },
   ];
 
@@ -270,83 +321,85 @@ export default function AdminAiControlCenterPage() {
       </div>
 
       {/* ── ACTIVE TAB VIEW RENDERING ──────────────────────────────────── */}
-      <div>
-        {activeTab === "overview" && (
-          <OverviewTab
-            metrics={metrics}
-            analytics={analytics}
-            keyPool={keyPool}
-            activeProvider={activeProvider}
-            activeModel={activeModel}
-            loading={loading}
-            onRefresh={fetchGlobalAiData}
-            onNavigateTab={(tab) => setActiveTab(tab as AiTabKey)}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+      <TabErrorBoundary isAr={isAr} onReset={fetchGlobalAiData}>
+        <div>
+          {activeTab === "overview" && (
+            <OverviewTab
+              metrics={metrics}
+              analytics={analytics}
+              keyPool={keyPool}
+              activeProvider={activeProvider}
+              activeModel={activeModel}
+              loading={loading}
+              onRefresh={fetchGlobalAiData}
+              onNavigateTab={(tab) => setActiveTab(tab as AiTabKey)}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "agents" && (
-          <AgentsTab
-            agents={agents}
-            onRefresh={fetchGlobalAiData}
-            onNavigateToLab={handleNavigateToLab}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "agents" && (
+            <AgentsTab
+              agents={agents}
+              onRefresh={fetchGlobalAiData}
+              onNavigateToLab={handleNavigateToLab}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "knowledge" && (
-          <KnowledgeTab
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "knowledge" && (
+            <KnowledgeTab
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "conversations" && (
-          <ConversationsTab
-            onRefreshOverview={fetchGlobalAiData}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "conversations" && (
+            <ConversationsTab
+              onRefreshOverview={fetchGlobalAiData}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "testingLab" && (
-          <TestingLabTab
-            agents={agents}
-            initialAgentSlug={selectedAgentForLab}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "testingLab" && (
+            <TestingLabTab
+              agents={agents}
+              initialAgentSlug={selectedAgentForLab}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "settings" && (
-          <ModelsTab
-            keyPool={keyPool}
-            onRefresh={fetchGlobalAiData}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "settings" && (
+            <ModelsTab
+              keyPool={keyPool}
+              onRefresh={fetchGlobalAiData}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "prompts" && (
-          <PromptsTab
-            onRefresh={fetchGlobalAiData}
-            onNavigateToLab={handleNavigateToLab}
-            t={t}
-            isAr={isAr}
-          />
-        )}
+          {activeTab === "prompts" && (
+            <PromptsTab
+              onRefresh={fetchGlobalAiData}
+              onNavigateToLab={handleNavigateToLab}
+              t={t}
+              isAr={isAr}
+            />
+          )}
 
-        {activeTab === "finOps" && (
-          <FinOpsTab
-            analytics={analytics}
-            onRefresh={fetchGlobalAiData}
-            t={t}
-            isAr={isAr}
-          />
-        )}
-      </div>
+          {activeTab === "finOps" && (
+            <FinOpsTab
+              analytics={analytics}
+              onRefresh={fetchGlobalAiData}
+              t={t}
+              isAr={isAr}
+            />
+          )}
+        </div>
+      </TabErrorBoundary>
     </div>
   );
 }

@@ -54,8 +54,8 @@ export function ConversationsTab({ onRefreshOverview, t, isAr }: ConversationsTa
         limit: 25,
         status: statusFilter !== "ALL" ? statusFilter : undefined,
       });
-      setConversations(res.items || []);
-      if (res.items?.length > 0 && !selectedConvo) {
+      setConversations(res?.items || []);
+      if (res?.items && res.items.length > 0 && !selectedConvo) {
         handleSelectConversation(res.items[0].id);
       }
     } catch (err: any) {
