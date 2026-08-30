@@ -410,13 +410,17 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
             className="h-9 px-3 rounded-xl border border-border bg-background text-xs font-bold"
           >
             <option value="ALL">{isAr ? "جميع التصنيفات" : "All Categories"}</option>
-            <option value="CUSTOM_TOURS">Custom Tours</option>
-            <option value="DESTINATION_INFO">Destinations</option>
-            <option value="POLICIES">Policies & Terms</option>
-            <option value="FAQS">FAQs</option>
-            <option value="HOTELS">Hotels</option>
-            <option value="TRANSPORTATION">Transportation</option>
+            <option value="CUSTOM_TOURS">{isAr ? "الجولات المخصصة" : "Custom Tours"}</option>
+            <option value="DESTINATION_INFO">{isAr ? "أدلة الوجهات" : "Destination Guides"}</option>
+            <option value="FAQ">{isAr ? "الأسئلة الشائعة (FAQ)" : "FAQs"}</option>
+            <option value="POLICIES">{isAr ? "جميع السياسات والشروط" : "All Policies & Terms"}</option>
+            <option value="BOOKING_POLICY">{isAr ? "سياسة الحجز" : "Booking Policy"}</option>
+            <option value="CANCELLATION_POLICY">{isAr ? "سياسة الإلغاء" : "Cancellation Policy"}</option>
+            <option value="VISA_GUIDANCE">{isAr ? "إرشادات التأشيرة" : "Visa Guidance"}</option>
+            <option value="HOTELS">{isAr ? "الفنادق والإقامة" : "Hotels"}</option>
+            <option value="TRANSPORTATION">{isAr ? "النقل والمواصلات" : "Transportation"}</option>
           </select>
+
 
           {/* Locale Filter */}
           <select
