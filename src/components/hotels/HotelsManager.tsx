@@ -743,7 +743,7 @@ export function HotelsManager() {
 
                 {/* Card Actions */}
                 <div className="px-5 py-3 flex items-center justify-between border-t border-border/60 bg-muted/20">
-                  <span className="text-[11px] font-mono text-muted-foreground truncate max-w-[140px]">/{hotel.slug}</span>
+                  <span className="text-[11px] font-mono text-muted-foreground truncate max-w-35">/{hotel.slug}</span>
 
                   <div className="flex items-center gap-1">
                     <Button

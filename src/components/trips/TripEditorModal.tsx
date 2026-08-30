@@ -563,7 +563,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 type="button"
                 onClick={() => handleAutoTranslate(['en', 'es', 'pt', 'it'])}
                 disabled={isTranslating}
-                className="rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                className="rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
               >
                 {isTranslating ? (
                   <>
