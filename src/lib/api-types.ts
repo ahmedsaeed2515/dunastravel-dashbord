@@ -86,10 +86,16 @@ export function unwrapApiEnvelope<T>(value: unknown): T {
 
   const data = value.data as T;
   if (isRecord(data) && data.success === false) {
-    const error = new Error(typeof data.message === 'string' ? data.message : 'The operation was not completed') as Error & ApiError;
+    const errorMsg = typeof data.message === 'string' && data.message.trim().length > 0
+      ? data.message
+      : typeof data.error === 'string' && data.error.trim().length > 0
+      ? data.error
+      : 'The operation was not completed';
+    const error = new Error(errorMsg) as Error & ApiError;
     error.code = typeof data.code === 'string' ? data.code : 'BUSINESS_OPERATION_FAILED';
     throw error;
   }
+
 
   if ('meta' in value && value.meta !== undefined) {
     return { data, meta: value.meta } as T;
