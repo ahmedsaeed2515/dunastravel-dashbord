@@ -100,7 +100,8 @@
     "allStatus": "All Status",
     "filterBy": "Filter By",
     "clearFilters": "Clear Filters",
-    "noData": "No data available currently"
+    "noData": "No data available currently",
+    "overview": "Overview"
   },
   "navigation": {
     "overview": "Overview",
@@ -314,7 +315,12 @@
     "taxId": "Tax ID",
     "tier": "Tier",
     "noCompanies": "No Companies Found",
-    "noCompaniesDesc": "Corporate and partner agency profiles will appear here."
+    "noCompaniesDesc": "Corporate and partner agency profiles will appear here.",
+    "travelAgencies": "Travel Agencies",
+    "corporateAccounts": "Corporate Accounts",
+    "companyType": "Company Type",
+    "refCode": "Ref Code",
+    "tags": "Tags & Segments"
   },
   "agents": {
     "title": "B2B Travel Agents",
@@ -322,7 +328,7 @@
     "agentName": "Agent Name",
     "commissionRate": "Commission Rate",
     "walletBalance": "Wallet Balance",
-    "noAgents": "No Agents Found",
+    "noAgents": "No travel agents registered for this company yet",
     "noAgentsDesc": "Registered travel agents will be listed here."
   },
   "finance": {
@@ -336,7 +342,10 @@
     "pendingPayout": "Pending Payout",
     "payoutHistory": "Payout History",
     "noCommissions": "No Commissions Found",
-    "noWallets": "No Wallets Found"
+    "noWallets": "No Wallets Found",
+    "outstandingBalance": "Outstanding Balance",
+    "rate": "Rate",
+    "currentBalance": "Current Balance"
   },
   "communications": {
     "title": "Communications & Inbox",

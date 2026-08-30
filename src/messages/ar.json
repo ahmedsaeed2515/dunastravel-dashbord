@@ -100,7 +100,8 @@
     "allStatus": "كافة الحالات",
     "filterBy": "تصفية حسب",
     "clearFilters": "إلغاء التصفية",
-    "noData": "لا توجد بيانات متاحة حالياً"
+    "noData": "لا توجد بيانات متاحة حالياً",
+    "overview": "نظرة عامة"
   },
   "navigation": {
     "overview": "منظومة الإدارة والتحكم",
@@ -314,7 +315,12 @@
     "taxId": "الرقم الضريبي",
     "tier": "الفئة",
     "noCompanies": "لم يتم العثور على شركات",
-    "noCompaniesDesc": "ستظهر حسابات الشركات والوكالات الشريكة هنا."
+    "noCompaniesDesc": "ستظهر حسابات الشركات والوكالات الشريكة هنا.",
+    "travelAgencies": "وكالات السفر",
+    "corporateAccounts": "حسابات الشركات",
+    "companyType": "نوع الشركة",
+    "refCode": "كود المرجع",
+    "tags": "الوسوم والتصنيفات"
   },
   "agents": {
     "title": "وكلاء السفر B2B",
@@ -322,7 +328,7 @@
     "agentName": "اسم الوكيل",
     "commissionRate": "نسبة العمولة",
     "walletBalance": "رصيد المحفظة",
-    "noAgents": "لم يتم العثور على وكلاء",
+    "noAgents": "لا يوجد وكلاء مسجلون لهذه الشركة حتى الآن",
     "noAgentsDesc": "سيتم عرض قائمة وكلاء السفر المسجلين هنا."
   },
   "finance": {
@@ -336,7 +342,10 @@
     "pendingPayout": "مستحقات قيد الصرف",
     "payoutHistory": "سجل الصرف",
     "noCommissions": "لا توجد عمولات registrada",
-    "noWallets": "لا توجد محافظ مفعّلة"
+    "noWallets": "لا توجد محافظ مفعّلة",
+    "outstandingBalance": "الرصيد المستحق / القائم",
+    "rate": "نسبة العمولة",
+    "currentBalance": "الرصيد الحالي"
   },
   "communications": {
     "title": "المراسلات والتنبيهات",

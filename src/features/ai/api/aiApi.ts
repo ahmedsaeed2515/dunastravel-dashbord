@@ -133,11 +133,138 @@ export interface AiSafetyEventItem {
   createdAt: string;
 }
 
+export interface AgentItemData {
+  id: string;
+  slug: string;
+  nameJsonb: Record<string, string>;
+  descriptionJsonb?: Record<string, string>;
+  displayName?: string;
+  displayDescription?: string;
+  role: string;
+  avatar?: string;
+  systemPrompt?: string;
+  personalityGuidelines?: string;
+  tone?: string;
+  primaryModel: string;
+  fallbackModels: string[];
+  temperature: number;
+  maxTokens: number;
+  allowedSources: string[];
+  allowedTools: string[];
+  supportedLanguages: string[];
+  defaultLanguage: string;
+  isActive: boolean;
+  isPublic: boolean;
+  activePromptVersionId?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ModelCapabilityItem {
+  id: string;
+  provider: string;
+  name: string;
+  nameAr: string;
+  badge: 'Flagship' | 'Recommended' | 'Fast' | 'Reasoning' | 'Light' | 'OpenSource';
+  contextWindow: number;
+  inputCostPer1M: number;
+  outputCostPer1M: number;
+  supportsToolCalling: boolean;
+  supportsStructuredOutput: boolean;
+  supportsVision: boolean;
+  multilingualRating: 'EXCELLENT' | 'VERY_GOOD' | 'GOOD';
+  isPopular: boolean;
+}
+
+export interface ProviderItem {
+  id: string;
+  name: string;
+  defaultBaseUrl: string;
+  defaultModel: string;
+  models: string[];
+}
+
+export interface KnowledgeChunkItem {
+  id: string;
+  canonicalEntityId: string;
+  entityType: string;
+  entityId: string;
+  locale: string;
+  chunkIndex?: number;
+  title: string;
+  content: string;
+  contentHash?: string;
+  metadataJsonb?: JsonValue;
+  lastIndexedAt?: string;
+}
+
+export interface DiagnosticTraceResponse {
+  traceId: string;
+  answer: string;
+  agent: {
+    id: string;
+    slug: string;
+    name: string;
+    role: string;
+    avatar?: string;
+  };
+  model: {
+    id: string;
+    provider: string;
+    info: ModelCapabilityItem;
+  };
+  retrieval: {
+    enabled: boolean;
+    latencyMs: number;
+    matchedChunks: KnowledgeChunkItem[];
+    groundedTours: Array<{
+      id: string;
+      slug: string;
+      title: string;
+      country: string;
+      city: string;
+      category: string;
+      durationDays: number;
+      basePriceUsd: number;
+      currency: string;
+      heroImage: string;
+      publicUrl: string;
+    }>;
+    groundedHotels: Array<{
+      name: string;
+      city: string;
+      starRating: number;
+      minPriceUsd: number;
+    }>;
+    groundedTransportation: Array<{
+      name: string;
+      vehicleType: string;
+      priceUsd: number;
+    }>;
+  };
+  prompt: {
+    compiledSystemPrompt: string;
+    versionId: string;
+  };
+  telemetry: {
+    inputTokens: number;
+    outputTokens: number;
+    totalTokens: number;
+    estimatedCostUsd: number;
+    totalLatencyMs: number;
+    providerLatencyMs: number;
+    providerError?: string;
+  };
+}
+
 export interface PromptVersionItem {
   id: string;
   versionNumber: number;
   name: string;
   systemPrompt: string;
+  agentSlug?: string;
+  sections?: Record<string, string>;
+  variables?: Record<string, string>;
   status: 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
   changeNote?: string;
   createdById?: string;

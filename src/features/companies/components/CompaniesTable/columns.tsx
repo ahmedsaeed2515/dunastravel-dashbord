@@ -37,7 +37,7 @@ export const getColumns = (
   },
   {
     accessorKey: "referenceCode",
-    header: "Ref Code",
+    header: tCompanies("refCode"),
     cell: ({ row }) => (
       <div className="font-semibold text-primary cursor-pointer hover:text-amber-500 transition-colors flex items-center gap-1.5 dir-ltr inline-flex" onClick={() => onView(row.original)}>
         {row.original.companyType === 'AGENCY' && <Briefcase className="h-3.5 w-3.5" />}

@@ -35,7 +35,22 @@ export const financeApi = {
   },
 
   getWallet: async (ownerType: 'USER' | 'COMPANY', ownerId: string): Promise<Wallet> => {
-    return apiClient.get<Wallet, Wallet>(`/admin/finance/wallets/${ownerType}/${ownerId}`);
+    try {
+      return await apiClient.get<Wallet, Wallet>(`/admin/finance/wallets/${ownerType}/${ownerId}`);
+    } catch (err: any) {
+      if (err?.response?.status === 404 || err?.status === 404 || err?.message?.includes('not found') || err?.message?.includes('Wallet not found')) {
+        return {
+          id: '',
+          ownerType,
+          ownerId,
+          balance: '0',
+          currency: 'USD',
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        } as Wallet;
+      }
+      throw err;
+    }
   },
 
   getWalletTransactions: async (walletId: string, referenceType?: string): Promise<WalletTransaction[]> => {

@@ -100,7 +100,8 @@
     "allStatus": "Todos os Status",
     "filterBy": "Filtrar Por",
     "clearFilters": "Limpar Filtros",
-    "noData": "Nenhum dado disponível no momento"
+    "noData": "Nenhum dado disponível no momento",
+    "overview": "Visão geral"
   },
   "navigation": {
     "overview": "Visão geral",
@@ -314,7 +315,12 @@
     "taxId": "CNPJ / Registro fiscal",
     "tier": "Categoria",
     "noCompanies": "Nenhuma empresa encontrada",
-    "noCompaniesDesc": "Perfis corporativos e de agências parceiras aparecerão aqui."
+    "noCompaniesDesc": "Perfis corporativos e de agências parceiras aparecerão aqui.",
+    "travelAgencies": "Agências de Viagens",
+    "corporateAccounts": "Contas Corporativas",
+    "companyType": "Tipo de Empresa",
+    "refCode": "Cód. Ref",
+    "tags": "Tags e Segmentos"
   },
   "agents": {
     "title": "Agentes de viagens B2B",
@@ -322,7 +328,7 @@
     "agentName": "Nome do agente",
     "commissionRate": "Taxa de comissão",
     "walletBalance": "Saldo da carteira",
-    "noAgents": "Nenhum agente encontrado",
+    "noAgents": "Nenhum agente registrado para esta empresa ainda",
     "noAgentsDesc": "Os agentes de viagens registrados serão listados aqui."
   },
   "finance": {
@@ -336,7 +342,10 @@
     "pendingPayout": "Pagamento pendente",
     "payoutHistory": "Histórico de pagamentos",
     "noCommissions": "Nenhuma comissão encontrada",
-    "noWallets": "Nenhuma carteira encontrada"
+    "noWallets": "Nenhuma carteira encontrada",
+    "outstandingBalance": "Saldo Pendente",
+    "rate": "Taxa",
+    "currentBalance": "Saldo Atual"
   },
   "communications": {
     "title": "Comunicações e caixa de entrada",
