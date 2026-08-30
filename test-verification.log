@@ -1,0 +1,13 @@
+
+> dunastravel-dashbord@0.1.0 test
+> vitest run
+
+
+ RUN  v4.1.10 D:/@@project/LUXURY-PROJECT/dunastravel-dashbord
+
+
+ Test Files  17 passed (17)
+      Tests  61 passed (61)
+   Start at  20:51:39
+   Duration  419.25s (transform 13.18s, setup 20.97s, import 146.85s, tests 17.53s, environment 199.17s)
+

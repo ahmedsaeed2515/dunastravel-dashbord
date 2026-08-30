@@ -7,6 +7,8 @@ export interface Company {
   name: string;
   companyType: CompanyType;
   status: CompanyStatus;
+  taxId?: string;
+  tier?: string;
   email?: string;
   phone?: string;
   website?: string;

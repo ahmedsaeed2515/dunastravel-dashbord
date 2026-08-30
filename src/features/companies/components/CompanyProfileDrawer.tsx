@@ -64,6 +64,14 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
               <h2 className="text-2xl font-playfair font-bold text-white mb-1 tracking-wide">{company.name}</h2>
               <div className="flex items-center gap-3 text-blue-100 text-xs">
                 <span className="font-mono dir-ltr inline-block">{company.referenceCode}</span>
+                {company.taxId && (
+                  <>
+                    <span className="w-1 h-1 rounded-full bg-blue-300/50"></span>
+                    <span className="font-mono bg-amber-500/20 text-amber-300 px-1.5 py-0.5 rounded text-[11px] font-bold">
+                      IATA: {company.taxId}
+                    </span>
+                  </>
+                )}
                 <span className="w-1 h-1 rounded-full bg-blue-300/50"></span>
                 <span>{(() => {
                   if (!company.createdAt) return "N/A";

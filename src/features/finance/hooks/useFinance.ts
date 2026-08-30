@@ -75,6 +75,26 @@ export function useReconciliationSummary() {
   });
 }
 
+export function useRefundPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: financeApi.refundPayment,
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["finance", "payments"] });
+      queryClient.invalidateQueries({ queryKey: financeKeys.reconciliation() });
+      queryClient.invalidateQueries({ queryKey: financeKeys.commissionMetrics() });
+      queryClient.invalidateQueries({ queryKey: financeKeys.walletMetrics() });
+      toast.success(
+        data.status === "PARTIALLY_REFUNDED"
+          ? "تم استرجاع جزء من المبلغ عبر PayLink بنجاح"
+          : "تم استرجاع كامل المبلغ عبر PayLink بنجاح",
+      );
+    },
+    onError: (error: Error) =>
+      toast.error(error.message || "فشلت عملية الاسترجاع عبر PayLink"),
+  });
+}
+
 export function useCommissions(filters: CommissionQueryFilters) {
   return useQuery({
     queryKey: financeKeys.commissions(filters),

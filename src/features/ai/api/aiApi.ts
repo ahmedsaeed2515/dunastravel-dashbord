@@ -45,18 +45,61 @@ export interface AiOverviewMetrics {
 export interface ApiKeyPoolEntry {
   id: string;
   provider: string;
+  defaultModel?: string;
   model: string;
+  enabledModels?: string[];
   baseUrl?: string;
   label?: string;
   priority: number;
   isActive: boolean;
   failCount: number;
-  lastStatus: 'HEALTHY' | 'RATE_LIMITED' | 'FAILED' | 'UNTESTED';
+  lastStatus: 'HEALTHY' | 'RATE_LIMITED' | 'FAILED' | 'UNTESTED' | 'INVALID_CREDENTIAL' | 'CONFIGURATION_ERROR';
   lastLatencyMs?: number;
   lastTestedAt?: string;
   lastUsedAt?: string;
   maskedKey: string;
   hasKey: boolean;
+}
+
+export interface ProviderTestResult {
+  success: boolean;
+  code: 'SUCCESS' | 'INVALID_KEY' | 'UNAUTHORIZED' | 'MODEL_NOT_FOUND' | 'RATE_LIMITED' | 'PROVIDER_DOWN' | 'INVALID_CONFIGURATION' | 'TIMEOUT' | 'UNKNOWN_ERROR';
+  provider: string;
+  model: string;
+  latencyMs?: number;
+  message?: string;
+  error?: string;
+  diagnosis?: string;
+}
+
+export interface ProviderRegistryItem {
+  id: string;
+  name: string;
+  displayName?: string;
+  defaultBaseUrl: string;
+  defaultModel: string;
+  models: string[];
+  isLegacy?: boolean;
+  isRecommended?: boolean;
+  apiKeyUrl?: string;
+  setupInstructions?: string[];
+  allowCustomBaseUrl?: boolean;
+}
+
+export interface RoutingPolicyData {
+  table: Record<'economy' | 'normal' | 'complex' | 'fallback', {
+    provider: string;
+    model: string;
+    displayName?: string;
+    providerDisplayName?: string;
+  }>;
+  agentPolicies: Array<{
+    agentSlug: string;
+    economy: { provider: string; model: string };
+    normal: { provider: string; model: string };
+    complex: { provider: string; model: string };
+    fallback: { provider: string; model: string };
+  }>;
 }
 
 export interface AiConfigData {
@@ -80,6 +123,75 @@ export interface AiConfigData {
   suggestedQuestions?: Record<string, string[]>;
 }
 
+export interface CanonicalKnowledgeEntity {
+  canonicalEntityId: string;
+  sourceEntityType: 'TOUR' | 'HOTEL' | 'TRANSPORTATION' | 'DESTINATION' | 'POLICY' | 'FAQ' | 'MANUAL';
+  sourceType: 'SOURCE_MANAGED' | 'MANUALLY_MANAGED';
+  sourceEntityId: string;
+  title: string;
+  category: string;
+  syncStatus: 'SYNCED' | 'OUTDATED' | 'SYNCING' | 'FAILED' | 'SOURCE_DELETED';
+  isExcludedFromAi: boolean;
+  isRecommendationAllowed: boolean;
+  aiOverrideInstructions: string | null;
+  aiOverrideContext: string | null;
+  adminNotes: string | null;
+  isManuallyOverridden: boolean;
+  validityStart?: string | null;
+  validityEnd?: string | null;
+  updatedAt: string;
+  languagesCount: number;
+  languages: Array<{
+    locale: string;
+    isComplete: boolean;
+    id?: string;
+    title?: string;
+    isExcludedFromAi: boolean;
+    status: string;
+  }>;
+  locales: Record<string, {
+    id: string;
+    title: string;
+    content: string;
+    locale: string;
+    status: string;
+    isExcludedFromAi: boolean;
+    isManuallyOverridden: boolean;
+    updatedAt: string;
+  }>;
+}
+
+export interface AiKnowledgeVersionItem {
+  id: string;
+  knowledgeItemId: string;
+  versionNumber: number;
+  title: string;
+  content: string;
+  locale: string;
+  aiOverrideInstructions?: string | null;
+  changeSummary?: string | null;
+  changedBy?: string | null;
+  createdAt: string;
+}
+
+export interface KnowledgeProblemItem {
+  id: string;
+  type: 'FAILED_SYNC' | 'EXPIRED_OVERRIDE' | 'MISSING_TRANSLATION' | 'SOURCE_DELETED';
+  title: string;
+  description: string;
+  actionText: string;
+  actionUrl?: string;
+}
+
+export interface KnowledgeProblemsSummary {
+  totalIssues: number;
+  failedSyncCount: number;
+  expiredOverrideCount: number;
+  sourceDeletedCount: number;
+  missingTranslationCount: number;
+  problems: KnowledgeProblemItem[];
+}
+
 export interface KnowledgeItemData {
   id: string;
   title: string;
@@ -92,6 +204,14 @@ export interface KnowledgeItemData {
   sourceType?: string;
   sourceEntityType?: string;
   sourceEntityId?: string;
+  isExcludedFromAi?: boolean;
+  isManuallyOverridden?: boolean;
+  isRecommendationAllowed?: boolean;
+  aiOverrideInstructions?: string | null;
+  aiOverrideContext?: string | null;
+  adminNotes?: string | null;
+  validityStart?: string | null;
+  validityEnd?: string | null;
   priority: number;
   syncStatus?: string;
   lastSyncedAt?: string;
@@ -111,6 +231,10 @@ export interface ConversationItemData {
   visitorPhone?: string;
   visitorNationality?: string;
   locale: string;
+  budgetRange?: string;
+  tripDuration?: string;
+  paxCount?: number;
+  travelPreferences?: any;
   status: 'ACTIVE' | 'HANDED_OFF' | 'HUMAN_ACTIVE' | 'RESOLVED' | 'CLOSED' | 'ARCHIVED' | string;
   leadStatus: 'NEW' | 'QUALIFIED' | 'UNQUALIFIED' | 'CONVERTED';
   leadScore: number;
@@ -176,15 +300,23 @@ export interface ModelCapabilityItem {
   provider: string;
   name: string;
   nameAr: string;
-  badge: 'Flagship' | 'Recommended' | 'Fast' | 'Reasoning' | 'Light' | 'OpenSource';
+  description?: string;
+  recommendation?: 'economy' | 'balanced' | 'premium' | 'fallback' | 'experimental';
+  badge: 'Flagship' | 'Recommended' | 'Fast' | 'Reasoning' | 'Light' | 'OpenSource' | 'Economy' | 'Balanced' | 'Advanced' | 'Premium' | 'Fallback' | 'Experimental';
+  status?: 'AVAILABLE' | 'UNAVAILABLE' | 'DEPRECATED' | 'UNKNOWN';
+  lastVerifiedAt?: string;
   contextWindow: number;
+  maxOutputTokens?: number;
   inputCostPer1M: number;
   outputCostPer1M: number;
+  cachedInputPricePerMillion?: number;
+  supportsStreaming?: boolean;
   supportsToolCalling: boolean;
   supportsStructuredOutput: boolean;
   supportsVision: boolean;
   multilingualRating: 'EXCELLENT' | 'VERY_GOOD' | 'GOOD';
   isPopular: boolean;
+  isDefault?: boolean;
 }
 
 export interface ProviderItem {
@@ -357,8 +489,8 @@ export const aiApi = {
     return apiClient.put<unknown, AiConfigData>("/admin/ai/config", payload);
   },
 
-  testConnection: (payload: { provider?: string; model?: string; apiKey?: string }): Promise<MutationAcknowledgement & { provider?: string; model?: string; latencyMs?: number; error?: string }> => {
-    return apiClient.post<unknown, MutationAcknowledgement & { provider?: string; model?: string; latencyMs?: number; error?: string }>("/admin/ai/config/test", payload);
+  testConnection: (payload: { provider?: string; model?: string; apiKey?: string }): Promise<ProviderTestResult> => {
+    return apiClient.post<unknown, ProviderTestResult>("/admin/ai/config/test", payload);
   },
 
   // Prompt Management
@@ -438,13 +570,13 @@ export const aiApi = {
     return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/keys/${id}`);
   },
 
-  testKeyInPool: async (id: string): Promise<{ success: boolean; latencyMs?: number; message?: string; error?: string }> => {
-    return apiClient.post<unknown, { success: boolean; latencyMs?: number; message?: string; error?: string }>(`/admin/ai/keys/${id}/test`);
+  testKeyInPool: async (id: string): Promise<ProviderTestResult> => {
+    return apiClient.post<unknown, ProviderTestResult>(`/admin/ai/keys/${id}/test`);
   },
 
   addPoolKey: async (payload: {
     provider: string;
-    model: string;
+    model?: string;
     apiKey: string;
     baseUrl?: string;
     label?: string;
@@ -462,8 +594,31 @@ export const aiApi = {
     return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/keys/${id}`);
   },
 
-  testPoolKey: async (id: string): Promise<{ success: boolean; latencyMs?: number; message?: string; error?: string }> => {
-    return apiClient.post<unknown, { success: boolean; latencyMs?: number; message?: string; error?: string }>(`/admin/ai/keys/${id}/test`);
+  testPoolKey: async (id: string): Promise<ProviderTestResult> => {
+    return apiClient.post<unknown, ProviderTestResult>(`/admin/ai/keys/${id}/test`);
+  },
+
+  // Provider Registry & Routing Endpoints (NEW)
+  getProviders: async (): Promise<{ providers: ProviderRegistryItem[]; routingTable: any }> => {
+    return apiClient.get<unknown, { providers: ProviderRegistryItem[]; routingTable: any }>("/admin/ai/providers");
+  },
+
+  getProviderModels: async (providerId: string): Promise<{
+    provider: {
+      id: string;
+      displayName: string;
+      officialBaseUrl: string;
+      apiKeyUrl: string;
+      setupInstructions: string[];
+      allowCustomBaseUrl: boolean;
+    };
+    models: ModelCapabilityItem[];
+  }> => {
+    return apiClient.get<unknown, any>(`/admin/ai/providers/${providerId}/models`);
+  },
+
+  getRoutingPolicy: async (): Promise<RoutingPolicyData> => {
+    return apiClient.get<unknown, RoutingPolicyData>("/admin/ai/routing");
   },
 
 
@@ -525,7 +680,67 @@ export const aiApi = {
     return apiClient.post<unknown, AiSimulatorResponse>("/admin/ai/simulator", payload);
   },
 
-  // Knowledge Base CRUD
+  // Knowledge Base V5 Canonical CRUD & Overrides
+  getCanonicalEntities: async (params?: {
+    page?: number;
+    limit?: number;
+    category?: string;
+    entityType?: string;
+    sourceType?: string;
+    aiStatus?: string;
+    syncStatus?: string;
+    search?: string;
+  }): Promise<{ items: CanonicalKnowledgeEntity[]; total: number; page: number; totalPages: number }> => {
+    return apiClient.get<unknown, { items: CanonicalKnowledgeEntity[]; total: number; page: number; totalPages: number }>(
+      "/admin/ai/knowledge/canonical-entities",
+      { params },
+    );
+  },
+
+  toggleCanonicalAi: async (canonicalId: string, isExcludedFromAi: boolean): Promise<{ success: boolean; isExcludedFromAi: boolean }> => {
+    return apiClient.post<unknown, any>(`/admin/ai/knowledge/canonical/${encodeURIComponent(canonicalId)}/toggle-ai`, {
+      isExcludedFromAi,
+    });
+  },
+
+  toggleItemAi: async (id: string, isExcludedFromAi: boolean): Promise<{ success: boolean; isExcludedFromAi: boolean }> => {
+    return apiClient.patch<unknown, any>(`/admin/ai/knowledge/${id}/toggle-ai`, { isExcludedFromAi });
+  },
+
+  updateCanonicalOverride: async (
+    canonicalId: string,
+    payload: {
+      aiOverrideInstructions: string;
+      aiOverrideContext?: string;
+      isRecommendationAllowed?: boolean;
+      validityStart?: string;
+      validityEnd?: string;
+      adminNotes?: string;
+    },
+  ): Promise<{ success: boolean; aiOverrideInstructions: string }> => {
+    return apiClient.put<unknown, any>(`/admin/ai/knowledge/canonical/${encodeURIComponent(canonicalId)}/override`, payload);
+  },
+
+  clearCanonicalOverride: async (canonicalId: string): Promise<{ success: boolean; message: string }> => {
+    return apiClient.delete<unknown, any>(`/admin/ai/knowledge/canonical/${encodeURIComponent(canonicalId)}/override`);
+  },
+
+  getKnowledgeProblems: async (): Promise<KnowledgeProblemsSummary> => {
+    return apiClient.get<unknown, KnowledgeProblemsSummary>("/admin/ai/knowledge/problems/summary");
+  },
+
+  executeBulkAction: async (action: 'ENABLE_AI' | 'DISABLE_AI' | 'ARCHIVE' | 'PUBLISH', ids: string[]): Promise<{ success: boolean; affectedCount: number }> => {
+    return apiClient.post<unknown, any>("/admin/ai/knowledge/bulk-action", { action, ids });
+  },
+
+  getKnowledgeVersions: async (id: string): Promise<AiKnowledgeVersionItem[]> => {
+    return apiClient.get<unknown, AiKnowledgeVersionItem[]>(`/admin/ai/knowledge/${id}/versions`);
+  },
+
+  restoreKnowledgeVersion: async (id: string, versionId: string): Promise<{ success: boolean; message: string }> => {
+    return apiClient.post<unknown, any>(`/admin/ai/knowledge/${id}/restore-version/${versionId}`);
+  },
+
   getKnowledge: async (params?: { page?: number; limit?: number; category?: string; locale?: string; status?: string; search?: string }): Promise<{ items: KnowledgeItemData[]; total: number; page: number; totalPages: number }> => {
     return apiClient.get<unknown, { items: KnowledgeItemData[]; total: number; page: number; totalPages: number }>("/admin/ai/knowledge", { params });
   },

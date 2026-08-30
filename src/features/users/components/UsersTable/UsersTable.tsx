@@ -1,8 +1,7 @@
- 
 "use client";
 
 import { useState } from "react";
-import { useUsers } from "../../hooks/useUsers";
+import { useUsers, useDeleteUser } from "../../hooks/useUsers";
 import { DataTable } from "@/components/shared/data-table/DataTable";
 import { getColumns } from "./columns";
 import { User, UserRole } from "../../types";
@@ -11,64 +10,121 @@ import { UserDialog } from "../Drawers/UserDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus } from "lucide-react";
+import { Plus, Search, Filter } from "lucide-react";
 import { useTranslations } from "next-intl";
 
-export function UsersTable() {
+interface UsersTableProps {
+  initialStatus?: string;
+}
+
+export function UsersTable({ initialStatus }: UsersTableProps) {
   const tUsers = useTranslations("users");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
 
-  // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
   const [search, setSearch] = useState("");
-  const [activeTab, setActiveTab] = useState<string>("ALL");
+  const [roleTab, setRoleTab] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>(initialStatus || "ALL");
 
   const queryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...(search ? { search } : {}),
-    ...(activeTab !== "ALL" ? { role: activeTab as UserRole } : {})
+    ...(roleTab !== "ALL" ? { role: roleTab as UserRole } : {}),
+    ...(statusFilter !== "ALL" ? { status: statusFilter } : {}),
   };
 
   const { data, isLoading } = useUsers(queryFilters);
+  const { mutate: deleteUser } = useDeleteUser();
 
-  // Drawer states
+  // Drawer & Dialog states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Handlers
   const handleView = (user: User) => {
     setSelectedUser(user);
     setViewDrawerOpen(true);
   };
-  
+
   const handleEdit = (user: User) => {
     setSelectedUser(user);
     setIsDialogOpen(true);
   };
 
-  const handleDelete = () => {};
+  const handleDelete = (user: User) => {
+    if (confirm(tCommon("confirmDelete"))) {
+      deleteUser(user.id);
+    }
+  };
 
   const columns = getColumns(handleView, handleEdit, handleDelete, tUsers, tCommon);
 
   const renderToolbarActions = () => {
     return (
-      <div className="flex items-center gap-2">
-        <Input 
-          aria-label={tCommon("search")}
-          placeholder={`${tCommon("search")}...`} 
-          value={search} 
-          onChange={(e) => setSearch(e.target.value)} 
-          className="h-8 w-[250px]"
-        />
-        <Button size="sm" className="h-8 gap-2" onClick={() => {
-          setSelectedUser(null);
-          setIsDialogOpen(true);
-        }}>
-          <Plus className="h-4 w-4" />
-          {tUsers("addUser")}
+      <div className="flex flex-wrap items-center gap-2">
+        <div className="relative w-full sm:w-64">
+          <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
+          <Input
+            aria-label={tCommon("search")}
+            placeholder={`${tCommon("search")}...`}
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+            }}
+            className="h-8 ps-8 text-xs rounded-lg"
+          />
+        </div>
+
+        {/* Status Quick Filter */}
+        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/80 text-xs">
+          <button
+            type="button"
+            onClick={() => setStatusFilter("ALL")}
+            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+              statusFilter === "ALL"
+                ? "bg-card text-foreground shadow-xs font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tCommon("all")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("ACTIVE")}
+            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+              statusFilter === "ACTIVE"
+                ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tUsers("active")}
+          </button>
+          <button
+            type="button"
+            onClick={() => setStatusFilter("SUSPENDED")}
+            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+              statusFilter === "SUSPENDED"
+                ? "bg-red-500/15 text-red-600 dark:text-red-400 font-bold"
+                : "text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            {tUsers("suspended")}
+          </button>
+        </div>
+
+        <Button
+          size="sm"
+          className="h-8 gap-1.5 font-bold rounded-lg"
+          onClick={() => {
+            setSelectedUser(null);
+            setIsDialogOpen(true);
+          }}
+        >
+          <Plus className="h-3.5 w-3.5" />
+          <span>{tUsers("addUser")}</span>
         </Button>
       </div>
     );
@@ -76,14 +132,24 @@ export function UsersTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-[500px]">
-          <TabsList className="grid w-full grid-cols-5" aria-label={tCommon("role")}>
-            <TabsTrigger value="ALL">{tCommon("all")}</TabsTrigger>
-            <TabsTrigger value="ADMIN">{tStatus("ADMIN", { defaultValue: "Admin" })}</TabsTrigger>
-            <TabsTrigger value="COMPANY">B2B</TabsTrigger>
-            <TabsTrigger value="USER">{tUsers("title")}</TabsTrigger>
-            <TabsTrigger value="GUEST">Guest</TabsTrigger>
+      {/* Role Filter Tabs */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Tabs
+          defaultValue="ALL"
+          value={roleTab}
+          onValueChange={(val: any) => {
+            setRoleTab(val || "ALL");
+            setPagination((prev) => ({ ...prev, pageIndex: 0 }));
+          }}
+          className="w-full sm:w-auto"
+        >
+          <TabsList className="grid grid-cols-6 h-9 p-1 bg-muted/60 rounded-xl" aria-label={tCommon("role")}>
+            <TabsTrigger value="ALL" className="text-xs font-bold rounded-lg">{tCommon("all")}</TabsTrigger>
+            <TabsTrigger value="ADMIN" className="text-xs font-bold rounded-lg">{tStatus("ADMIN")}</TabsTrigger>
+            <TabsTrigger value="AGENT" className="text-xs font-bold rounded-lg">{tStatus("AGENT")}</TabsTrigger>
+            <TabsTrigger value="COMPANY" className="text-xs font-bold rounded-lg">B2B</TabsTrigger>
+            <TabsTrigger value="USER" className="text-xs font-bold rounded-lg">{tUsers("title")}</TabsTrigger>
+            <TabsTrigger value="GUEST" className="text-xs font-bold rounded-lg">Guest</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
@@ -98,14 +164,21 @@ export function UsersTable() {
         onPaginationChange={setPagination}
         manualPagination={true}
       />
-      
-      {/* Modals & Drawers Layer */}
+
+      {/* Deep Inspection Drawer */}
       <UserDetailsDrawer
         user={selectedUser}
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
+        onEdit={(u) => {
+          setSelectedUser(u);
+          setViewDrawerOpen(false);
+          setIsDialogOpen(true);
+        }}
       />
-      <UserDialog 
+
+      {/* Edit/Create User Dialog */}
+      <UserDialog
         user={selectedUser}
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}

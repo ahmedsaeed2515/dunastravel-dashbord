@@ -39,11 +39,18 @@ export const getColumns = (
     accessorKey: "referenceCode",
     header: tCompanies("refCode"),
     cell: ({ row }) => (
-      <div className="font-semibold text-primary cursor-pointer hover:text-amber-500 transition-colors flex items-center gap-1.5 dir-ltr inline-flex" onClick={() => onView(row.original)}>
-        {row.original.companyType === 'AGENCY' && <Briefcase className="h-3.5 w-3.5" />}
-        {row.original.companyType === 'CORPORATE' && <Building2 className="h-3.5 w-3.5" />}
-        {row.original.companyType === 'AFFILIATE' && <Globe className="h-3.5 w-3.5" />}
-        <span>{row.getValue("referenceCode")}</span>
+      <div className="flex flex-col gap-0.5">
+        <div className="font-semibold text-primary cursor-pointer hover:text-amber-500 transition-colors flex items-center gap-1.5 dir-ltr inline-flex" onClick={() => onView(row.original)}>
+          {row.original.companyType === 'AGENCY' && <Briefcase className="h-3.5 w-3.5" />}
+          {row.original.companyType === 'CORPORATE' && <Building2 className="h-3.5 w-3.5" />}
+          {row.original.companyType === 'AFFILIATE' && <Globe className="h-3.5 w-3.5" />}
+          <span className="font-mono">{row.getValue("referenceCode")}</span>
+        </div>
+        {row.original.taxId && (
+          <span className="text-[10px] font-mono text-amber-600 dark:text-amber-400 font-bold dir-ltr inline-block">
+            IATA: {row.original.taxId}
+          </span>
+        )}
       </div>
     ),
   },

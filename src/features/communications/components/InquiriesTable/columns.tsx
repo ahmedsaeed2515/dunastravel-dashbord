@@ -29,12 +29,44 @@ export const columns: ColumnDef<Inquiry>[] = [
   {
     id: "client",
     header: "العميل",
-    cell: ({ row }) => (
-      <div className="flex flex-col">
-        <span className="font-bold text-xs">{`${row.original.firstName} ${row.original.lastName}`.trim()}</span>
-        <span className="text-[10px] text-muted-foreground">{row.original.email}</span>
-      </div>
-    ),
+    cell: ({ row }) => {
+      const name = row.original.fullName || `${row.original.firstName || ''} ${row.original.lastName || ''}`.trim() || 'عميل دوناس';
+      return (
+        <div className="flex flex-col">
+          <span className="font-bold text-xs">{name}</span>
+          <span className="text-[10px] text-muted-foreground">{row.original.email}</span>
+        </div>
+      );
+    },
+  },
+  {
+    id: "partner",
+    header: "الشريك / كود التعاقد",
+    cell: ({ row }) => {
+      const code = row.original.partnerCode;
+      const comp = row.original.company;
+      if (!code && !comp) {
+        return <span className="text-[10px] text-muted-foreground italic">عميل مباشر (B2C)</span>;
+      }
+      return (
+        <div className="flex flex-col gap-0.5">
+          {comp ? (
+            <div className="flex items-center gap-1">
+              <span className="font-bold text-xs text-amber-600 dark:text-amber-400">{comp.name}</span>
+              <Badge variant="outline" className="text-[9px] px-1 py-0 border-amber-500/40 text-amber-600 dark:text-amber-300 font-bold">
+                {comp.tier || 'PLATINUM'}
+              </Badge>
+            </div>
+          ) : null}
+          <div className="font-mono text-[11px] font-bold text-primary flex items-center gap-1 dir-ltr inline-flex">
+            <span className="text-muted-foreground text-[10px]">كود:</span>
+            <span className="text-amber-600 dark:text-amber-400 bg-amber-500/10 px-1 py-0.2 rounded font-mono font-bold">
+              {code || comp?.taxId || comp?.referenceCode}
+            </span>
+          </div>
+        </div>
+      );
+    },
   },
   {
     accessorKey: "destinations",

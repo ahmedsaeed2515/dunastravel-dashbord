@@ -13,6 +13,36 @@ export function useUsers(filters: UserQueryFilters) {
   });
 }
 
+export function useUserMonitoringOverview() {
+  return useQuery({
+    queryKey: queryKeys.users.monitoringOverview(),
+    queryFn: () => usersApi.getMonitoringOverview(),
+    refetchInterval: 30000, // Live poll every 30s
+  });
+}
+
+export function useUserMonitoringDetail(id: string | null | undefined) {
+  return useQuery({
+    queryKey: queryKeys.users.monitoringDetail(id || ""),
+    queryFn: () => usersApi.getUserMonitoringDetail(id!),
+    enabled: Boolean(id),
+  });
+}
+
+export function useLiveActivityStream(params?: {
+  page?: number;
+  limit?: number;
+  category?: string;
+  userId?: string;
+  search?: string;
+}) {
+  return useQuery({
+    queryKey: queryKeys.users.liveStream(params as Record<string, unknown>),
+    queryFn: () => usersApi.getLiveActivityStream(params),
+    refetchInterval: 15000, // Live polling every 15s
+  });
+}
+
 export function useCreateUser() {
   const queryClient = useQueryClient();
 
@@ -52,7 +82,8 @@ export function useSuspendUser() {
     onSuccess: (_, variables) => {
       toast.success("User suspended successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to suspend user");
@@ -68,10 +99,51 @@ export function useActivateUser() {
     onSuccess: (_, variables) => {
       toast.success("User activated successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to activate user");
+    },
+  });
+}
+
+export function useRevokeUserSessions() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (id: string) => usersApi.revokeSessions(id),
+    onSuccess: (_, id) => {
+      toast.success("All user sessions revoked successfully");
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(id) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to revoke user sessions");
+    },
+  });
+}
+
+export function useAddUserMonitoringNote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      id,
+      content,
+      noteType,
+      isPinned,
+    }: {
+      id: string;
+      content: string;
+      noteType?: string;
+      isPinned?: boolean;
+    }) => usersApi.addUserNote(id, content, noteType, isPinned),
+    onSuccess: (_, variables) => {
+      toast.success("Note added successfully");
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "Failed to add note");
     },
   });
 }
@@ -85,6 +157,7 @@ export function useUpdateUser() {
     onSuccess: (_, variables) => {
       toast.success("User updated successfully");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.id) });
     },
     onError: (error: ApiError) => {

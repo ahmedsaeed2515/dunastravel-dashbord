@@ -32,6 +32,9 @@ export const queryKeys = {
     details: () => ['users', 'detail'] as const,
     detail: (id: string) => ['users', 'detail', id] as const,
     crmMetrics: () => ['users', 'crm', 'metrics'] as const,
+    monitoringOverview: () => ['users', 'monitoring', 'overview'] as const,
+    monitoringDetail: (id: string) => ['users', 'monitoring', 'detail', id] as const,
+    liveStream: (filters?: Record<string, unknown>) => ['users', 'monitoring', 'live-stream', filters] as const,
   },
   finance: {
     all: ['finance'] as const,

@@ -14,7 +14,15 @@ import {
   ShieldCheck, 
   Layers, 
   Crown,
-  RefreshCw
+  RefreshCw,
+  Sliders,
+  Settings,
+  Users,
+  Compass,
+  CheckCircle2,
+  HelpCircle,
+  Code2,
+  BookOpen
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -32,15 +40,16 @@ import { PromptsTab } from "@/features/ai/components/PromptsTab";
 import { ConversationsTab } from "@/features/ai/components/ConversationsTab";
 import { TestingLabTab } from "@/features/ai/components/TestingLabTab";
 import { FinOpsTab } from "@/features/ai/components/FinOpsTab";
+import { Badge } from "@/components/ui/badge";
 
-type AiTabKey = 
+export type AiTabKey = 
   | "overview" 
   | "agents" 
   | "knowledge" 
-  | "models" 
-  | "prompts" 
   | "conversations" 
   | "testingLab" 
+  | "settings"
+  | "prompts"
   | "finOps";
 
 export default function AdminAiControlCenterPage() {
@@ -48,7 +57,9 @@ export default function AdminAiControlCenterPage() {
   const locale = useLocale();
   const isAr = locale.startsWith("ar");
 
+  // Navigation State
   const [activeTab, setActiveTab] = useState<AiTabKey>("overview");
+  const [isAdvancedMode, setIsAdvancedMode] = useState<boolean>(false);
   const [selectedAgentForLab, setSelectedAgentForLab] = useState("guider");
 
   // Telemetry & Global AI State
@@ -56,8 +67,8 @@ export default function AdminAiControlCenterPage() {
   const [analytics, setAnalytics] = useState<AiAnalyticsData | null>(null);
   const [keyPool, setKeyPool] = useState<ApiKeyPoolEntry[]>([]);
   const [agents, setAgents] = useState<AgentItemData[]>([]);
-  const [activeProvider, setActiveProvider] = useState("anthropic");
-  const [activeModel, setActiveModel] = useState("claude-3-5-sonnet-20241022");
+  const [activeProvider, setActiveProvider] = useState("google");
+  const [activeModel, setActiveModel] = useState("gemini-2.0-flash");
   const [loading, setLoading] = useState(true);
 
   const fetchGlobalAiData = async () => {
@@ -76,8 +87,8 @@ export default function AdminAiControlCenterPage() {
       if (Array.isArray(keyPoolRes)) setKeyPool(keyPoolRes);
       if (Array.isArray(agentsRes)) setAgents(agentsRes);
       if (configRes) {
-        setActiveProvider(configRes.provider || "anthropic");
-        setActiveModel(configRes.model || "claude-3-5-sonnet-20241022");
+        setActiveProvider(configRes.provider || "google");
+        setActiveModel(configRes.model || "gemini-2.0-flash");
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to load AI Control Center data.");
@@ -95,45 +106,120 @@ export default function AdminAiControlCenterPage() {
     setActiveTab("testingLab");
   };
 
-  const navTabs: Array<{ key: AiTabKey; label: string; icon: React.ReactNode; badge?: string }> = [
-    { key: "overview", label: t("tabs.overview"), icon: <Activity className="h-4 w-4" /> },
-    { key: "agents", label: t("tabs.agents"), icon: <Crown className="h-4 w-4 text-amber-500" />, badge: `${agents.length || 5}` },
-    { key: "knowledge", label: t("tabs.knowledge"), icon: <Database className="h-4 w-4 text-blue-500" /> },
-    { key: "models", label: t("tabs.models"), icon: <Cpu className="h-4 w-4 text-emerald-500" />, badge: `${keyPool.length || 1}` },
-    { key: "prompts", label: t("tabs.prompts"), icon: <FileCode2 className="h-4 w-4" /> },
-    { key: "conversations", label: t("tabs.conversations"), icon: <MessageSquare className="h-4 w-4 text-purple-500" />, badge: metrics?.activeConversations ? `+${metrics.activeConversations}` : undefined },
-    { key: "testingLab", label: t("tabs.testingLab"), icon: <Sparkles className="h-4 w-4 text-amber-500" /> },
-    { key: "finOps", label: t("tabs.finOps"), icon: <DollarSign className="h-4 w-4 text-purple-500" /> },
+  // Human-Friendly Navigation Structure (Simple Mode by Default)
+  const navTabs: Array<{ key: AiTabKey; label: string; labelEn: string; icon: React.ReactNode; badge?: string }> = [
+    { 
+      key: "overview", 
+      label: isAr ? "الرئيسية" : "Overview", 
+      labelEn: "Overview",
+      icon: <Activity className="h-4 w-4 text-amber-500" /> 
+    },
+    { 
+      key: "agents", 
+      label: isAr ? "فريق المساعدين" : "AI Assistants", 
+      labelEn: "Assistants",
+      icon: <Users className="h-4 w-4 text-emerald-500" />, 
+      badge: `${agents.length || 5}` 
+    },
+    { 
+      key: "knowledge", 
+      label: isAr ? "مصادر المعرفة" : "Knowledge", 
+      labelEn: "Knowledge Sources",
+      icon: <Database className="h-4 w-4 text-blue-500" /> 
+    },
+    { 
+      key: "conversations", 
+      label: isAr ? "محادثات العملاء" : "Conversations", 
+      labelEn: "Traveler Chats",
+      icon: <MessageSquare className="h-4 w-4 text-purple-500" />, 
+      badge: metrics?.activeConversations ? `+${metrics.activeConversations}` : undefined 
+    },
+    { 
+      key: "testingLab", 
+      label: isAr ? "جرب GuideR" : "Try GuideR", 
+      labelEn: "Test Assistant",
+      icon: <Sparkles className="h-4 w-4 text-amber-500" /> 
+    },
+    { 
+      key: "settings", 
+      label: isAr ? "المزودون والإعدادات" : "Providers & Settings", 
+      labelEn: "Providers & Settings",
+      icon: <Settings className="h-4 w-4 text-zinc-400" />, 
+      badge: `${keyPool.filter((k) => k.isActive).length || 1}` 
+    },
+  ];
+
+  // Additional tabs for Advanced Mode
+  const advancedTabs: Array<{ key: AiTabKey; label: string; icon: React.ReactNode }> = [
+    { key: "prompts", label: isAr ? "استوديو التعليمات المتقدم (Prompts)" : "Prompt Engineering Studio", icon: <FileCode2 className="h-4 w-4 text-indigo-400" /> },
+    { key: "finOps", label: isAr ? "تحليل التكاليف والتوكنز (FinOps)" : "Token & Cost Attribution", icon: <DollarSign className="h-4 w-4 text-emerald-400" /> },
   ];
 
   return (
-    <div className="space-y-6 pb-12" dir={isAr ? "rtl" : "ltr"}>
-      {/* Page Title & Subtitle */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-border/60 pb-5">
+    <div className="space-y-6 pb-16 max-w-7xl mx-auto" dir={isAr ? "rtl" : "ltr"}>
+      {/* ── HEADER BAR ─────────────────────────────────────────────────── */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 border-b border-border/60 pb-5">
         <div>
-          <div className="flex items-center gap-2.5">
-            <div className="h-9 w-9 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-500 flex items-center justify-center shadow-xs">
-              <Bot className="h-5 w-5" />
+          <div className="flex items-center gap-3">
+            <div className="h-10 w-10 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 flex items-center justify-center shadow-xs">
+              <Compass className="h-5 w-5" />
             </div>
             <div>
-              <h1 className="text-xl sm:text-2xl font-black tracking-tight text-foreground">
-                {t("title")}
-              </h1>
-              <p className="text-xs text-muted-foreground">
-                {t("subtitle")}
+              <div className="flex items-center gap-2">
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
+                  {isAr ? "مركز إدارة الذكاء الاصطناعي" : "AI Management Center"}
+                </h1>
+                <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
+                  ● {isAr ? "جاهز للخدمة" : "Online"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "إدارة GuideR والوكلاء الأذكياء ومصادر معلومات الرحلات من مكان واحد بسهولة."
+                  : "Easily manage GuideR, smart travel assistants, and tour catalog knowledge in one place."}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2">
-          <span className="text-[11px] font-mono font-bold text-muted-foreground bg-muted/60 px-2.5 py-1 rounded-lg border border-border/60">
-            Dunas AI OS v2.0
-          </span>
+        {/* Mode Switcher: Simple vs Advanced */}
+        <div className="flex items-center gap-2.5">
+          <button
+            type="button"
+            onClick={() => setIsAdvancedMode(!isAdvancedMode)}
+            className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 border shadow-2xs ${
+              isAdvancedMode
+                ? "bg-purple-500/15 border-purple-500/40 text-purple-700 dark:text-purple-300"
+                : "bg-muted/50 border-border/80 text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            title={isAr ? "التبديل بين وضع المشرف البسيط ووضع المطور المتقدم" : "Toggle between Simple Admin and Advanced Technical mode"}
+          >
+            {isAdvancedMode ? (
+              <>
+                <Code2 className="h-3.5 w-3.5 text-purple-500" />
+                <span>{isAr ? "الوضع المتقدم (Developer Mode)" : "Developer Mode"}</span>
+              </>
+            ) : (
+              <>
+                <Sliders className="h-3.5 w-3.5 text-amber-500" />
+                <span>{isAr ? "الوضع البسيط (Simple Mode)" : "Simple Mode"}</span>
+              </>
+            )}
+          </button>
+
+          <button
+            type="button"
+            onClick={fetchGlobalAiData}
+            disabled={loading}
+            className="h-8 px-2.5 rounded-xl border border-border/80 bg-background text-xs font-bold text-muted-foreground hover:text-foreground hover:bg-muted transition-all cursor-pointer flex items-center gap-1"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${loading ? "animate-spin text-amber-500" : ""}`} />
+            <span className="hidden sm:inline">{isAr ? "تحديث" : "Refresh"}</span>
+          </button>
         </div>
       </div>
 
-      {/* Subnavigation Tabs Bar */}
+      {/* ── HIGH-LEVEL NAVIGATION BAR ───────────────────────────────────── */}
       <div className="flex items-center gap-1.5 overflow-x-auto pb-1 border-b border-border/60 text-xs font-bold scrollbar-none">
         {navTabs.map((tab) => {
           const isActive = activeTab === tab.key;
@@ -142,17 +228,17 @@ export default function AdminAiControlCenterPage() {
               key={tab.key}
               type="button"
               onClick={() => setActiveTab(tab.key)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              className={`flex items-center gap-2 px-4 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 ${
                 isActive
-                  ? "bg-amber-500/15 text-amber-700 dark:text-amber-300 border border-amber-500/40 shadow-xs"
-                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+                  ? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 shadow-xs font-bold"
+                  : "text-muted-foreground hover:text-foreground hover:bg-muted/60 font-semibold"
               }`}
             >
               {tab.icon}
               <span>{tab.label}</span>
               {tab.badge && (
                 <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-mono font-bold ${
-                  isActive ? "bg-amber-500/30 text-amber-800 dark:text-amber-200" : "bg-muted text-muted-foreground"
+                  isActive ? "bg-amber-500/30 text-amber-900 dark:text-amber-100" : "bg-muted text-muted-foreground"
                 }`}>
                   {tab.badge}
                 </span>
@@ -160,9 +246,30 @@ export default function AdminAiControlCenterPage() {
             </button>
           );
         })}
+
+        {/* Advanced Tabs (Revealed only in Developer Mode) */}
+        {isAdvancedMode &&
+          advancedTabs.map((tab) => {
+            const isActive = activeTab === tab.key;
+            return (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`flex items-center gap-2 px-3.5 py-2.5 rounded-xl transition-all cursor-pointer whitespace-nowrap shrink-0 border-dashed ${
+                  isActive
+                    ? "bg-purple-500/15 text-purple-700 dark:text-purple-300 border border-purple-500/40 shadow-xs font-bold"
+                    : "text-purple-600/70 dark:text-purple-400/70 hover:text-purple-600 hover:bg-purple-500/10 border-purple-500/20 font-semibold"
+                }`}
+              >
+                {tab.icon}
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
       </div>
 
-      {/* Active Tab View Rendering */}
+      {/* ── ACTIVE TAB VIEW RENDERING ──────────────────────────────────── */}
       <div>
         {activeTab === "overview" && (
           <OverviewTab
@@ -196,24 +303,6 @@ export default function AdminAiControlCenterPage() {
           />
         )}
 
-        {activeTab === "models" && (
-          <ModelsTab
-            keyPool={keyPool}
-            onRefresh={fetchGlobalAiData}
-            t={t}
-            isAr={isAr}
-          />
-        )}
-
-        {activeTab === "prompts" && (
-          <PromptsTab
-            onRefresh={fetchGlobalAiData}
-            onNavigateToLab={handleNavigateToLab}
-            t={t}
-            isAr={isAr}
-          />
-        )}
-
         {activeTab === "conversations" && (
           <ConversationsTab
             onRefreshOverview={fetchGlobalAiData}
@@ -226,6 +315,24 @@ export default function AdminAiControlCenterPage() {
           <TestingLabTab
             agents={agents}
             initialAgentSlug={selectedAgentForLab}
+            t={t}
+            isAr={isAr}
+          />
+        )}
+
+        {activeTab === "settings" && (
+          <ModelsTab
+            keyPool={keyPool}
+            onRefresh={fetchGlobalAiData}
+            t={t}
+            isAr={isAr}
+          />
+        )}
+
+        {activeTab === "prompts" && (
+          <PromptsTab
+            onRefresh={fetchGlobalAiData}
+            onNavigateToLab={handleNavigateToLab}
             t={t}
             isAr={isAr}
           />

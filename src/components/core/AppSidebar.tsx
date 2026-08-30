@@ -217,10 +217,11 @@ export const AppSidebar = memo(function AppSidebar() {
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu className="space-y-1">
-                <NavItem href={adminRoutes.customers} icon={Users} label={tNav("customers")} />
+                <NavItem href={adminRoutes.users} icon={Users} label={tNav("usersMonitoring", { defaultValue: "المستخدمين والمراقبة" })} />
+                <NavItem href={adminRoutes.customers} icon={User} label={tNav("customers")} />
                 <NavItem href={adminRoutes.companies} icon={Building2} label={tNav("companies")} />
-                <NavItem href={adminRoutes.agents} icon={Users} label={tNav("agents")} />
-                <NavItem href={adminRoutes.finance.commissions} icon={DollarSign} label={tNav("commissions")} />
+                <NavItem href={adminRoutes.finance.root} icon={DollarSign} label={tNav("finance", { defaultValue: "المالية والمدفوعات" })} />
+                <NavItem href={adminRoutes.finance.commissions} icon={Briefcase} label={tNav("commissions")} />
                 <NavItem href={adminRoutes.finance.wallet} icon={Wallet} label={tNav("wallets")} />
                 {canManageAdmins && (
                   <NavItem href={adminRoutes.audit} icon={ClipboardList} label={tNav("auditLog")} />

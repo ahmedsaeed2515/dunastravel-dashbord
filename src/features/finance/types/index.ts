@@ -78,6 +78,10 @@ export interface PaymentRecord {
   providerEnvironment?: string | null;
   merchantReference: string | null;
   providerPaymentId: string | null;
+  providerStatus?: string | null;
+  providerAuthCode?: string | null;
+  lastProviderCheckAt?: string | null;
+  checkoutExpiresAt?: string | null;
   attemptNumber?: number | null;
   transactionId: string | null;
   status: string;
@@ -86,6 +90,10 @@ export interface PaymentRecord {
   paidAt: string | null;
   refundedAt: string | null;
   failureMessage: string | null;
+  customerName?: string | null;
+  customerEmail?: string | null;
+  invoiceNumber?: string | null;
+  refundedAmount?: string;
 }
 
 export interface PaymentQueryFilters {

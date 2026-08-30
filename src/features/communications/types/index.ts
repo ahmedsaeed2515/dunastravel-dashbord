@@ -42,17 +42,34 @@ export interface PaginatedResponse<T> {
 export interface Inquiry {
   id: string;
   referenceCode: string;
-  firstName: string;
-  lastName: string;
+  fullName?: string;
+  firstName?: string;
+  lastName?: string;
   email: string;
   phone?: string | null;
   destinations: string[];
   departureDate?: string | null;
   returnDate?: string | null;
-  numberOfTravelers: number;
+  startDate?: string | null;
+  adults?: number;
+  children?: number;
+  numberOfTravelers?: number;
+  budgetAmount?: number | null;
+  budgetCurrency?: string | null;
+  notes?: string | null;
   specialRequests?: string | null;
   status: string;
   assigneeId?: string | null;
+  partnerCode?: string | null;
+  companyId?: string | null;
+  company?: {
+    id: string;
+    name: string;
+    referenceCode: string;
+    taxId?: string;
+    tier?: string;
+    commissionRate?: number;
+  } | null;
   createdAt: string;
   updatedAt: string;
 }

@@ -130,14 +130,15 @@ export function CreateCompanyDialog({ isOpen, onClose, onSuccess }: CreateCompan
 
             <div className="space-y-1.5">
               <Label htmlFor="taxId" className="font-semibold text-muted-foreground">
-                {tCompanies("taxId") || "Tax ID / Commercial Reg. (السجل التجاري)"}
+                IATA / TRUE / CLIA Code (رقم الاعتماد - 8 أرقام)
               </Label>
               <Input 
                 id="taxId" 
-                placeholder="TR-123456789" 
-                className="dir-ltr text-start text-xs font-mono"
+                placeholder="8 أرقام (مثال: 12345678)" 
+                maxLength={8}
+                className="dir-ltr text-start text-xs font-mono tracking-wider font-semibold"
                 value={formData.taxId}
-                onChange={(e) => setFormData({ ...formData, taxId: e.target.value })}
+                onChange={(e) => setFormData({ ...formData, taxId: e.target.value.replace(/\D/g, '').slice(0, 8) })}
               />
             </div>
           </div>

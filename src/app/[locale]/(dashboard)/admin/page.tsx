@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { WelcomeBanner } from "@/features/dashboard/components/WelcomeBanner";
 import { DashboardHeader } from "@/features/dashboard/components/DashboardHeader";
 import { KPIGrid } from "@/features/dashboard/components/KPIGrid";
@@ -37,7 +37,7 @@ export default function DashboardPage() {
   const { data: funnelData, isLoading: isLoadingFunnel, refetch: refetchFunnel } = useConversionFunnel(filters);
   const { data: trafficData, isLoading: isLoadingTraffic, refetch: refetchTraffic } = useTrafficAnalytics(filters);
 
-  const handleRefreshAll = () => {
+  const handleRefreshAll = useCallback(() => {
     refetchSummary();
     refetchRevenue();
     refetchDestinations();
@@ -47,7 +47,21 @@ export default function DashboardPage() {
     refetchTours();
     refetchFunnel();
     refetchTraffic();
-  };
+  }, [
+    refetchSummary,
+    refetchRevenue,
+    refetchDestinations,
+    refetchAlerts,
+    refetchBookings,
+    refetchActivity,
+    refetchTours,
+    refetchFunnel,
+    refetchTraffic,
+  ]);
+
+  const handleFilterChange = useCallback((newFilters: DashboardFilters) => {
+    setFilters(newFilters);
+  }, []);
 
   return (
     <div className="space-y-6 pb-16 animate-in fade-in duration-300">
@@ -57,7 +71,7 @@ export default function DashboardPage() {
       {/* 1. Global Header & Filter Bar */}
       <DashboardHeader
         filters={filters}
-        onFilterChange={(newFilters) => setFilters(newFilters)}
+        onFilterChange={handleFilterChange}
         onRefresh={handleRefreshAll}
         isRefreshing={isRefetchingSummary}
       />
