@@ -586,7 +586,7 @@ export function ContentCmsStudio() {
                 </Label>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
                   <div className="space-y-1 bg-muted/40 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-semibold">Years Experience</span>
+                    <span className="text-[10px] text-muted-foreground font-bold">{isAr ? "سنوات الخبرة" : "Years Experience"}</span>
                     <Input
                       type="number"
                       value={heroForm.stats?.experienceYears || 15}
@@ -596,11 +596,11 @@ export function ContentCmsStudio() {
                           stats: { ...heroForm.stats, experienceYears: Number(e.target.value) },
                         })
                       }
-                      className="h-8 text-xs font-bold rounded-lg"
+                      className="h-8 text-xs font-bold rounded-lg font-mono"
                     />
                   </div>
                   <div className="space-y-1 bg-muted/40 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-semibold">Happy Travelers</span>
+                    <span className="text-[10px] text-muted-foreground font-bold">{isAr ? "المسافرون السعداء" : "Happy Travelers"}</span>
                     <Input
                       type="number"
                       value={heroForm.stats?.happyTravelers || 45000}
@@ -610,11 +610,11 @@ export function ContentCmsStudio() {
                           stats: { ...heroForm.stats, happyTravelers: Number(e.target.value) },
                         })
                       }
-                      className="h-8 text-xs font-bold rounded-lg"
+                      className="h-8 text-xs font-bold rounded-lg font-mono"
                     />
                   </div>
                   <div className="space-y-1 bg-muted/40 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-semibold">Satisfaction %</span>
+                    <span className="text-[10px] text-muted-foreground font-bold">{isAr ? "نسبة الرضا %" : "Satisfaction %"}</span>
                     <Input
                       type="number"
                       value={heroForm.stats?.satisfactionRate || 99}
@@ -624,11 +624,11 @@ export function ContentCmsStudio() {
                           stats: { ...heroForm.stats, satisfactionRate: Number(e.target.value) },
                         })
                       }
-                      className="h-8 text-xs font-bold rounded-lg"
+                      className="h-8 text-xs font-bold rounded-lg font-mono"
                     />
                   </div>
                   <div className="space-y-1 bg-muted/40 p-2.5 rounded-xl border border-border">
-                    <span className="text-[10px] text-muted-foreground font-semibold">Destinations</span>
+                    <span className="text-[10px] text-muted-foreground font-bold">{isAr ? "الوجهات السياحية" : "Destinations"}</span>
                     <Input
                       type="number"
                       value={heroForm.stats?.destinationsCount || 12}
@@ -638,7 +638,7 @@ export function ContentCmsStudio() {
                           stats: { ...heroForm.stats, destinationsCount: Number(e.target.value) },
                         })
                       }
-                      className="h-8 text-xs font-bold rounded-lg"
+                      className="h-8 text-xs font-bold rounded-lg font-mono"
                     />
                   </div>
                 </div>
@@ -648,7 +648,7 @@ export function ContentCmsStudio() {
                 <Button
                   onClick={handleSaveHomepage}
                   disabled={updateBlockMutation.isPending}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs gap-2 px-6 h-9"
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl text-xs gap-2 px-6 h-9 cursor-pointer"
                 >
                   {updateBlockMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
                   <span>{tCommon("saveChanges")}</span>
@@ -684,15 +684,15 @@ export function ContentCmsStudio() {
                   <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-3 gap-2 text-center">
                     <div>
                       <span className="block font-black text-amber-400 text-sm">{heroForm.stats?.experienceYears}+</span>
-                      <span className="text-[9px] text-white/60 uppercase">Years Exp</span>
+                      <span className="text-[9px] text-white/60 uppercase">{isAr ? "سنوات خبرة" : "Years Exp"}</span>
                     </div>
                     <div>
                       <span className="block font-black text-amber-400 text-sm">{(heroForm.stats?.happyTravelers || 0) / 1000}k+</span>
-                      <span className="text-[9px] text-white/60 uppercase">Travelers</span>
+                      <span className="text-[9px] text-white/60 uppercase">{isAr ? "مسافر سعيد" : "Travelers"}</span>
                     </div>
                     <div>
                       <span className="block font-black text-amber-400 text-sm">{heroForm.stats?.satisfactionRate}%</span>
-                      <span className="text-[9px] text-white/60 uppercase">Satisfaction</span>
+                      <span className="text-[9px] text-white/60 uppercase">{isAr ? "نسبة الرضا" : "Satisfaction"}</span>
                     </div>
                   </div>
                 </div>

@@ -68,79 +68,85 @@ export function EditPassengersDialog({ referenceCode, initialPassengers, open, o
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[600px] h-[80vh] flex flex-col">
         <DialogHeader>
-          <DialogTitle>Edit Passengers</DialogTitle>
+          <DialogTitle className="font-bold text-lg">تعديل بيانات المسافرين والركاب</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="flex-1 overflow-hidden flex flex-col gap-4 pt-4">
           <ScrollArea className="flex-1 pr-4">
-            <div className="space-y-6">
+            <div className="space-y-4">
               {passengers.map((p, index) => (
-                <div key={index} className="border p-4 rounded-lg relative space-y-4">
+                <div key={index} className="border p-4 rounded-2xl relative space-y-4 bg-muted/20">
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
-                    className="absolute top-2 right-2 text-destructive hover:bg-destructive/10"
+                    className="absolute top-2 right-2 text-destructive hover:bg-destructive/10 rounded-xl"
                     onClick={() => handleRemove(index)}
                   >
                     <Trash2 className="w-4 h-4" />
                   </Button>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label>Full Name</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">الاسم بالكامل</Label>
                       <Input
                         value={p.fullName}
                         onChange={(e) => handleChange(index, "fullName", e.target.value)}
+                        placeholder="اسم المسافر"
                         required
+                        className="rounded-xl"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Type</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">نوع المسافر</Label>
                       <Select value={p.passengerType} onValueChange={(val: any) => handleChange(index, "passengerType", val || "ADULT")}>
-                        <SelectTrigger>
+                        <SelectTrigger className="rounded-xl font-bold text-xs">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="ADULT">Adult</SelectItem>
-                          <SelectItem value="CHILD">Child</SelectItem>
-                          <SelectItem value="INFANT">Infant</SelectItem>
+                          <SelectItem value="ADULT">بالغ (Adult)</SelectItem>
+                          <SelectItem value="CHILD">طفل (Child)</SelectItem>
+                          <SelectItem value="INFANT">رضيع (Infant)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label>Passport Number</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">رقم جواز السفر</Label>
                       <Input
                         value={p.passportNumber || ""}
                         onChange={(e) => handleChange(index, "passportNumber", e.target.value)}
+                        placeholder="A00000000"
+                        className="rounded-xl font-mono"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label>Nationality</Label>
+                    <div className="space-y-1.5">
+                      <Label className="text-xs font-bold">الجنسية</Label>
                       <Input
                         value={p.nationality || ""}
                         onChange={(e) => handleChange(index, "nationality", e.target.value)}
+                        placeholder="Saudi, Spanish, Brazilian..."
+                        className="rounded-xl"
                       />
                     </div>
                   </div>
                 </div>
               ))}
               {passengers.length === 0 && (
-                <div className="text-center text-muted-foreground py-8">
-                  No passengers added yet.
+                <div className="text-center text-muted-foreground py-8 text-xs font-bold">
+                  لا يوجد مسافرون مضافون حتى الآن.
                 </div>
               )}
             </div>
           </ScrollArea>
           
-          <div className="flex justify-between items-center pt-4 border-t">
-            <Button type="button" variant="outline" onClick={handleAdd} className="gap-2">
-              <Plus className="w-4 h-4" /> Add Passenger
+          <div className="flex justify-between items-center pt-4 border-t border-border">
+            <Button type="button" variant="outline" onClick={handleAdd} className="gap-2 rounded-xl font-bold">
+              <Plus className="w-4 h-4" /> إضافة مسافر ➕
             </Button>
-            <div className="space-x-2">
-              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)}>
-                Cancel
+            <div className="flex items-center gap-2">
+              <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="rounded-xl font-bold">
+                إلغاء
               </Button>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Saving..." : "Save Changes"}
+              <Button type="submit" disabled={isPending} className="rounded-xl font-bold">
+                {isPending ? "جاري الحفظ..." : "حفظ التغييرات"}
               </Button>
             </div>
           </div>

@@ -46,26 +46,26 @@ export function AddNoteDialog({ referenceCode, open, onOpenChange }: AddNoteDial
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Add Note</DialogTitle>
+          <DialogTitle className="font-bold text-sm">إضافة ملاحظة على الحجز</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="grid gap-2">
-            <Label htmlFor="content">Note Content</Label>
+            <Label htmlFor="content" className="text-xs font-bold">محتوى الملاحظة</Label>
             <Textarea
               id="content"
               value={content}
               onChange={(e) => setContent(e.target.value)}
-              placeholder="Enter your note here..."
-              className="min-h-[100px]"
+              placeholder="اكتب ملاحظاتك وتفاصيل المتابعة هنا..."
+              className="min-h-[100px] text-xs rounded-xl"
               required
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="font-bold rounded-xl text-xs">
+              إلغاء
             </Button>
-            <Button type="submit" disabled={isPending}>
-              {isPending ? "Adding..." : "Add Note"}
+            <Button type="submit" disabled={isPending} className="font-bold rounded-xl text-xs">
+              {isPending ? "جاري الإضافة..." : "حفظ الملاحظة ✍️"}
             </Button>
           </DialogFooter>
         </form>

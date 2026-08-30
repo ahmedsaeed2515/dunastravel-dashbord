@@ -50,10 +50,10 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
 
   return (
     <div className="space-y-6">
-      <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
+      <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 rounded-2xl">
         <CardContent className="p-6 flex items-center justify-between">
           <div className="space-y-1">
-            <h3 className="text-sm font-medium text-muted-foreground">Current Wallet Balance</h3>
+            <h3 className="text-xs font-bold text-muted-foreground">الرصيد الحالي للمحفظة (Wallet Balance)</h3>
             {walletLoading ? (
               <Skeleton className="h-8 w-32" />
             ) : (
@@ -62,18 +62,18 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
               </p>
             )}
           </div>
-          <div className="h-12 w-12 rounded-full bg-blue-500/10 flex items-center justify-center">
+          <div className="h-12 w-12 rounded-2xl bg-blue-500/10 flex items-center justify-center">
             <Landmark className="h-6 w-6 text-blue-500" />
           </div>
         </CardContent>
       </Card>
 
-      <Card className="border-border/40 shadow-sm">
+      <Card className="border-border/40 shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
-          <CardTitle className="text-base">Transaction History</CardTitle>
-          <Button size="sm" variant="outline" className="h-8 gap-1" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
+          <CardTitle className="text-base font-bold">سجل المعاملات والتحويلات المالية</CardTitle>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 font-bold rounded-xl" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
             <Plus className="h-3.5 w-3.5" />
-            Add Transaction
+            إضافة معاملة يدوية ➕
           </Button>
         </CardHeader>
         <CardContent className="p-0">
@@ -105,8 +105,8 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
 
                 return (
                   <div key={tx.id} className="flex items-center justify-between p-4 hover:bg-muted/50 transition-colors">
-                    <div className="flex items-center space-x-4">
-                      <div className={`p-2 rounded-full ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-xl ${isCredit ? 'bg-emerald-500/10' : 'bg-rose-500/10'}`}>
                         {isCredit ? (
                           <ArrowUpRight className={`h-4 w-4 text-emerald-500`} />
                         ) : (
@@ -114,25 +114,25 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
                         )}
                       </div>
                       <div>
-                        <p className="text-sm font-medium">{tx.referenceType}</p>
+                        <p className="text-xs font-bold">{tx.referenceType}</p>
                         <p className="text-xs text-muted-foreground">{tx.description || tx.referenceId}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">{formatDate(tx.createdAt)}</p>
+                        <p className="text-[10px] text-muted-foreground mt-0.5 font-mono">{formatDate(tx.createdAt)}</p>
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className={`font-semibold ${isCredit ? 'text-emerald-500' : 'text-foreground'}`}>
+                      <p className={`font-bold font-mono text-sm ${isCredit ? 'text-emerald-500' : 'text-foreground'}`}>
                         {isCredit ? "+" : "-"}{amountFormatted}
                       </p>
-                      <Badge variant={tx.status === 'COMPLETED' ? 'outline' : 'secondary'} className="mt-1 text-[10px] px-1.5 py-0">
-                        {tx.status}
+                      <Badge variant={tx.status === 'COMPLETED' ? 'outline' : 'secondary'} className="mt-1 text-[10px] px-1.5 py-0 font-bold">
+                        {tx.status === 'COMPLETED' ? 'مكتمل' : tx.status}
                       </Badge>
                     </div>
                   </div>
                 );
               })
             ) : (
-              <div className="p-8 text-center text-sm text-muted-foreground">
-                No transactions found for this wallet.
+              <div className="p-8 text-center text-xs font-bold text-muted-foreground">
+                لا توجد معاملات مسجلة لهذه المحفظة حتى الآن.
               </div>
             )}
           </div>
@@ -140,48 +140,48 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
       </Card>
 
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent>
+        <DialogContent className="rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Add Manual Transaction</DialogTitle>
+            <DialogTitle className="font-bold">إضافة معاملة وقيد مالي يدوي</DialogTitle>
           </DialogHeader>
           <div className="grid gap-4 py-4">
             <div className="grid grid-cols-4 items-center gap-4">
-              <span className="text-right text-sm">Type</span>
+              <span className="text-right text-xs font-bold">نوع القيد</span>
               <Select value={type} onValueChange={(val: any) => setType(val || "CREDIT")}>
-                <SelectTrigger className="col-span-3">
-                  <SelectValue placeholder="Select type" />
+                <SelectTrigger className="col-span-3 rounded-xl font-bold text-xs">
+                  <SelectValue placeholder="اختر نوع القيد" />
                 </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="CREDIT">Credit (+)</SelectItem>
-                  <SelectItem value="DEBIT">Debit (-)</SelectItem>
+                <SelectContent className="font-bold text-xs">
+                  <SelectItem value="CREDIT">إيداع / دائن Credit (+)</SelectItem>
+                  <SelectItem value="DEBIT">خصم / مدين Debit (-)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <span className="text-right text-sm">Amount</span>
+              <span className="text-right text-xs font-bold">المبلغ</span>
               <Input
                 type="number"
                 value={amount}
                 onChange={(e) => setAmount(e.target.value)}
                 placeholder="0.00"
-                className="col-span-3"
+                className="col-span-3 rounded-xl font-mono"
               />
             </div>
             <div className="grid grid-cols-4 items-center gap-4">
-              <span className="text-right text-sm">Description</span>
+              <span className="text-right text-xs font-bold">الوصف والبيان</span>
               <Input
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
-                placeholder="e.g., Refund or manual adjustment"
-                className="col-span-3"
+                placeholder="مثال: تسوية يدوية أو استرداد مبلغ للعميل"
+                className="col-span-3 rounded-xl"
               />
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-            <Button onClick={handleAddTransaction} disabled={addTransaction.isPending || !amount}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold">إلغاء</Button>
+            <Button onClick={handleAddTransaction} disabled={addTransaction.isPending || !amount} className="rounded-xl font-bold">
               {addTransaction.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Transaction
+              حفظ القيد المالي
             </Button>
           </DialogFooter>
         </DialogContent>

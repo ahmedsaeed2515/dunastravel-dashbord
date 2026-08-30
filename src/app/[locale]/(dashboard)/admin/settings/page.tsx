@@ -76,40 +76,40 @@ export default function SettingsPage() {
         />
 
         <Tabs defaultValue="localization" className="space-y-6">
-          <TabsList className="bg-muted/60 p-1 border border-border/60">
-            <TabsTrigger value="localization" className="gap-2 text-xs font-semibold">
-              <Globe className="h-3.5 w-3.5" /> Language & Localization
+          <TabsList className="bg-muted/60 p-1 border border-border/60 font-bold">
+            <TabsTrigger value="localization" className="gap-2 text-xs font-bold">
+              <Globe className="h-3.5 w-3.5" /> اللغات والترجمة (Localization)
             </TabsTrigger>
-            <TabsTrigger value="currencies" className="gap-2 text-xs font-semibold">
-              <DollarSign className="h-3.5 w-3.5" /> Currencies
+            <TabsTrigger value="currencies" className="gap-2 text-xs font-bold">
+              <DollarSign className="h-3.5 w-3.5" /> العملات وأسعار الصرف (Currencies)
             </TabsTrigger>
-            <TabsTrigger value="authentication" className="gap-2 text-xs font-semibold">
-              <Lock className="h-3.5 w-3.5" /> Security
+            <TabsTrigger value="authentication" className="gap-2 text-xs font-bold">
+              <Lock className="h-3.5 w-3.5" /> الأمان وسياسة الدخول (Security)
             </TabsTrigger>
           </TabsList>
 
           <TabsContent value="localization" className="m-0">
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle className="text-base font-semibold">Supported Locales</CardTitle>
+                    <CardTitle className="text-base font-bold">اللغات المدعومة في النظام والموقع</CardTitle>
                     <CardDescription className="text-xs text-muted-foreground mt-1">
-                      Toggle active languages across the website and dashboard. At least one language must remain active.
+                      تفعيل وتعطيل اللغات المتاحة عبر الموقع والداشبورد. يجب إبقاء لغة واحدة على الأقل مفعلة دائماً.
                     </CardDescription>
                   </div>
-                  <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                    {activeCount} / 5 Active
+                  <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                    {activeCount} / 5 مفعل
                   </span>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
                 {[
-                  { code: "en", name: "English (en)", info: "Default (LTR)", flag: "🇬🇧" },
-                  { code: "ar", name: "Arabic (ar)", info: "العربية (RTL)", flag: "🇪🇬" },
-                  { code: "es", name: "Spanish (es)", info: "Español", flag: "🇪🇸" },
-                  { code: "pt", name: "Portuguese (pt)", info: "Português", flag: "🇧🇷" },
-                  { code: "it", name: "Italian (it)", info: "Italiano", flag: "🇮🇹" },
+                  { code: "ar", name: "العربية (Arabic)", info: "العربية (RTL - الأساسية)", flag: "🇪🇬" },
+                  { code: "en", name: "English (en)", info: "الإنجليزية (LTR)", flag: "🇬🇧" },
+                  { code: "es", name: "Spanish (es)", info: "الإسبانية Español", flag: "🇪🇸" },
+                  { code: "pt", name: "Portuguese (pt)", info: "البرتغالية Português", flag: "🇧🇷" },
+                  { code: "it", name: "Italian (it)", info: "الإيطالية Italiano", flag: "🇮🇹" },
                 ].map((lang) => {
                   const isLocaleActive = activeLocales[lang.code] ?? true;
                   const isOnlyActive = isLocaleActive && activeCount <= 1;
@@ -117,7 +117,7 @@ export default function SettingsPage() {
                   return (
                     <div
                       key={lang.code}
-                      className={`flex justify-between items-center p-3.5 border rounded-lg transition-colors ${
+                      className={`flex justify-between items-center p-3.5 border rounded-xl transition-colors ${
                         isLocaleActive
                           ? "border-border/80 bg-muted/20"
                           : "border-border/40 bg-muted/5 opacity-70"
@@ -127,7 +127,7 @@ export default function SettingsPage() {
                         <span className="text-2xl">{lang.flag}</span>
                         <div>
                           <div className="flex items-center gap-2">
-                            <h4 className="font-semibold text-sm">{lang.name}</h4>
+                            <h4 className="font-bold text-sm">{lang.name}</h4>
                             <span
                               className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
                                 isLocaleActive
@@ -135,10 +135,10 @@ export default function SettingsPage() {
                                   : "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/30"
                               }`}
                             >
-                              {isLocaleActive ? "Active" : "Disabled"}
+                              {isLocaleActive ? "مفعل" : "معطل"}
                             </span>
                           </div>
-                          <p className="text-xs text-muted-foreground">{lang.info}</p>
+                          <p className="text-xs text-muted-foreground font-medium">{lang.info}</p>
                         </div>
                       </div>
                       <div className="flex items-center gap-3">
@@ -146,7 +146,7 @@ export default function SettingsPage() {
                           checked={isLocaleActive}
                           disabled={isLoadingLocales || isUpdatingSetting || isOnlyActive}
                           onCheckedChange={(checked) => handleToggleLocale(lang.code, checked)}
-                          title={isOnlyActive ? "At least one language must remain active" : undefined}
+                          title={isOnlyActive ? "يجب إبقاء لغة واحدة على الأقل مفعلة" : undefined}
                         />
                       </div>
                     </div>
@@ -157,34 +157,34 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="currencies" className="m-0">
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardHeader>
                 <div className="flex justify-between items-center">
                   <div>
-                    <CardTitle className="text-base font-semibold">Exchange Rates</CardTitle>
+                    <CardTitle className="text-base font-bold">أسعار صرف العملات اللحظية</CardTitle>
                   </div>
-                  <Button variant="outline" size="xs" className="gap-1.5">
-                    <RefreshCw className="h-3.5 w-3.5" /> Sync
+                  <Button variant="outline" size="xs" className="gap-1.5 font-bold rounded-xl">
+                    <RefreshCw className="h-3.5 w-3.5" /> مزامنة وتحديث
                   </Button>
                 </div>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-semibold uppercase text-muted-foreground">USD (Base)</label>
-                    <Input value="1.0000" disabled className="dir-ltr text-start font-mono" />
+                    <label className="text-xs font-bold uppercase text-muted-foreground">USD (العملة الأساسية $)</label>
+                    <Input value="1.0000" disabled className="dir-ltr text-start font-mono rounded-xl font-bold" />
                   </div>
                   {isLoadingRates ? (
-                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm">{tCommon("loading")}</div>
+                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm font-bold">{tCommon("loading")}</div>
                   ) : ratesData?.rates ? (
                     Object.entries(ratesData.rates).map(([currency, rate]) => (
                       <div key={currency} className="space-y-1">
-                        <label className="text-xs font-semibold uppercase text-muted-foreground">{currency}</label>
-                        <Input value={rate as number} disabled className="dir-ltr text-start font-mono" />
+                        <label className="text-xs font-bold uppercase text-muted-foreground">{currency}</label>
+                        <Input value={rate as number} disabled className="dir-ltr text-start font-mono rounded-xl font-bold" />
                       </div>
                     ))
                   ) : (
-                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm">—</div>
+                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm font-bold">—</div>
                   )}
                 </div>
               </CardContent>
@@ -192,18 +192,18 @@ export default function SettingsPage() {
           </TabsContent>
 
           <TabsContent value="authentication" className="m-0">
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base font-semibold">Security Policy</CardTitle>
+                <CardTitle className="text-base font-bold">سياسات الأمان والحماية</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-4 border border-border/70 rounded-lg bg-muted/20">
+                <div className="flex items-center justify-between p-4 border border-border/70 rounded-xl bg-muted/20">
                   <div className="space-y-1 pe-6">
-                    <h4 className="font-semibold text-sm">Require Email Verification</h4>
+                    <h4 className="font-bold text-sm">اشتراط تأكيد البريد الإلكتروني للتسجيل</h4>
                     <p className="text-xs text-muted-foreground">
                       {requireEmailVerification
-                        ? 'New accounts must confirm their email before they can sign in.'
-                        : 'New accounts are activated immediately. Enable this only after email delivery is verified.'}
+                        ? 'يجب على الحسابات الجديدة تأكيد بريدهم الإلكتروني قبل تسجيل الدخول.'
+                        : 'يتم تفعيل الحسابات الجديدة فورياً بدون انتظار رابط التحقق.'}
                     </p>
                   </div>
                   <Switch 

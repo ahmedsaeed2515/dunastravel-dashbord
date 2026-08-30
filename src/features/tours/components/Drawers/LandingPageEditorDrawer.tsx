@@ -48,10 +48,33 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
   const [selectedTourToAdd, setSelectedTourToAdd] = useState("");
   const [tourRelations, setTourRelations] = useState<NonNullable<TourLandingPage["tours"]>>([]);
   const [sectionsRaw, setSectionsRaw] = useState("{}");
+  const [customSections, setCustomSections] = useState<Array<{ id: string; type: string; title: string; subtitle: string; content?: string }>>([]);
 
   useEffect(() => {
     if (landingPage) {
-      setSectionsRaw(JSON.stringify(landingPage.sectionsJsonb || {}, null, 2));
+      const raw = JSON.stringify(landingPage.sectionsJsonb || {}, null, 2);
+      setSectionsRaw(raw);
+      
+      // Parse structured sections if available
+      const secObj = landingPage.sectionsJsonb as any;
+      if (secObj && Array.isArray(secObj.sections)) {
+        setCustomSections(secObj.sections);
+      } else if (Array.isArray(secObj)) {
+        setCustomSections(secObj);
+      } else if (secObj && typeof secObj === "object" && Object.keys(secObj).length > 0) {
+        setCustomSections(
+          Object.entries(secObj).map(([k, v]: [string, any], idx) => ({
+            id: v?.id || `sec-${idx}-${k}`,
+            type: v?.type || k || "custom",
+            title: typeof v === "string" ? v : v?.title || k,
+            subtitle: v?.subtitle || "",
+            content: v?.content || (typeof v === "object" ? JSON.stringify(v) : ""),
+          }))
+        );
+      } else {
+        setCustomSections([]);
+      }
+
       setFormData({
         slug: landingPage.slug,
         expectedUpdatedAt: landingPage.updatedAt || undefined,
@@ -72,6 +95,39 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
       setTourRelations(landingPage.tours || []);
     }
   }, [landingPage]);
+
+  const syncSectionsToFormData = (newSections: Array<{ id: string; type: string; title: string; subtitle: string; content?: string }>) => {
+    setCustomSections(newSections);
+    const sectionsPayload = { sections: newSections };
+    setFormData((prev) => ({ ...prev, sectionsJsonb: sectionsPayload }));
+    setSectionsRaw(JSON.stringify(sectionsPayload, null, 2));
+  };
+
+  const moveSection = (index: number, direction: -1 | 1) => {
+    const list = [...customSections];
+    const target = index + direction;
+    if (target < 0 || target >= list.length) return;
+    [list[index], list[target]] = [list[target], list[index]];
+    syncSectionsToFormData(list);
+    toast.success("تم تحديث ترتيب القسم بنجاح");
+  };
+
+  const addCustomSection = (type: string = "highlight") => {
+    const newSec = {
+      id: `sec-${Date.now()}`,
+      type,
+      title: type === "faq" ? "الأسئلة الشائعة" : type === "promo" ? "عروض حصرية VIP" : "مميزات الوجهة الفريدة",
+      subtitle: "نص توضيحي للأعضاء والزوار",
+      content: "",
+    };
+    syncSectionsToFormData([...customSections, newSec]);
+    toast.success("تمت إضافة قسم جديد");
+  };
+
+  const removeCustomSection = (id: string) => {
+    syncSectionsToFormData(customSections.filter((s) => s.id !== id));
+    toast.success("تم حذف القسم");
+  };
 
   if (!landingPage) return null;
 
@@ -223,63 +279,65 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
 
         <ScrollArea className="flex-1 px-6 py-4">
           <Tabs defaultValue="general" className="w-full">
-            <TabsList className="grid grid-cols-7 mb-6 text-xs h-auto p-1 bg-muted">
-              <TabsTrigger value="general">General</TabsTrigger>
+            <TabsList className="grid grid-cols-7 mb-6 text-xs h-auto p-1 bg-muted rounded-xl font-bold">
+              <TabsTrigger value="general">عام</TabsTrigger>
               <TabsTrigger value="translations" className="flex items-center gap-1">
-                <Globe className="w-3 h-3" /> Locales
+                <Globe className="w-3 h-3" /> اللغات
               </TabsTrigger>
               <TabsTrigger value="hero" className="flex items-center gap-1">
-                <ImageIcon className="w-3 h-3" /> Hero
+                <ImageIcon className="w-3 h-3" /> الغلاف
               </TabsTrigger>
               <TabsTrigger value="sections" className="flex items-center gap-1">
-                <Layers className="w-3 h-3" /> Sections
+                <Layers className="w-3 h-3" /> الأقسام
               </TabsTrigger>
               <TabsTrigger value="tours" className="flex items-center gap-1">
-                <Package className="w-3 h-3" /> Tours ({tourRelations.length})
+                <Package className="w-3 h-3" /> الرحلات ({tourRelations.length})
               </TabsTrigger>
               <TabsTrigger value="seo" className="flex items-center gap-1">
-                <SearchCheck className="w-3 h-3" /> SEO
+                <SearchCheck className="w-3 h-3" /> السيو SEO
               </TabsTrigger>
-              <TabsTrigger value="publishing">Status</TabsTrigger>
+              <TabsTrigger value="publishing">النشر</TabsTrigger>
             </TabsList>
 
             {/* 1. GENERAL TAB */}
             <TabsContent value="general" className="space-y-4">
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Slug (Route identifier)</label>
+                  <label className="text-xs font-bold mb-1 block">الرابط الدائم (Slug)</label>
                   <Input
                     value={formData.slug || ""}
                     onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
+                    className="font-mono text-xs rounded-xl"
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">Interface Type</label>
+                  <label className="text-xs font-bold mb-1 block">نوع الواجهة / الصفحة</label>
                   <select
-                    className="w-full h-10 px-3 rounded-md border border-input bg-background text-sm"
+                    className="w-full h-10 px-3 rounded-xl border border-input bg-background text-xs font-bold"
                     value={formData.type || "DESTINATION"}
                     onChange={(e) => setFormData({ ...formData, type: e.target.value as LandingPageType })}
                   >
-                    <option value="DESTINATION">Destination Page</option>
-                    <option value="THEME">Theme Collection</option>
-                    <option value="COLLECTION">Custom Collection</option>
+                    <option value="DESTINATION">صفحة وجهة سياحية (Destination)</option>
+                    <option value="THEME">مجموعة تصنيفية (Theme)</option>
+                    <option value="COLLECTION">مجموعة مخصصة (Custom)</option>
                   </select>
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="text-sm font-medium">Sort Order</label>
+                  <label className="text-xs font-bold mb-1 block">ترتيب العرض (Sort Order)</label>
                   <Input
                     type="number"
                     value={formData.sortOrder ?? 0}
                     onChange={(e) => setFormData({ ...formData, sortOrder: parseInt(e.target.value) || 0 })}
+                    className="font-mono text-xs rounded-xl"
                   />
                 </div>
-                <div className="flex items-center justify-between p-3 border rounded-md">
+                <div className="flex items-center justify-between p-3 border rounded-xl bg-card">
                   <div>
-                    <div className="text-sm font-medium">Is Active</div>
-                    <div className="text-xs text-muted-foreground">Visible on site when published</div>
+                    <div className="text-xs font-bold">الحالة نشطة</div>
+                    <div className="text-[10px] text-muted-foreground">تظهر للزوار في الموقع عند النشر</div>
                   </div>
                   <Switch
                     checked={formData.isActive ?? true}
@@ -374,25 +432,176 @@ export function LandingPageEditorDrawer({ landingPage, open, onOpenChange }: Lan
 
             {/* 4. SECTIONS TAB */}
             <TabsContent value="sections" className="space-y-4">
-              <div className="p-4 border rounded-md bg-muted/20">
-                <h4 className="text-sm font-semibold mb-2">Custom Page Content & Promotional Blocks</h4>
-                <p className="text-xs text-muted-foreground mb-4">
-                  Configure extra hero highlights, FAQs, or promotional banners rendered below the tour listings.
-                </p>
-                <Textarea
-                  rows={8}
-                  className="font-mono text-xs"
-                  value={sectionsRaw}
-                  onChange={(e) => {
-                    setSectionsRaw(e.target.value);
-                    try {
-                      const parsed = JSON.parse(e.target.value);
-                      setFormData((prev) => ({ ...prev, sectionsJsonb: parsed }));
-                    } catch {
-                      // allow fluid typing in buffer
-                    }
-                  }}
-                />
+              <div className="p-4 border rounded-2xl bg-card space-y-4">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                  <div>
+                    <h4 className="text-sm font-bold flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-amber-500" />
+                      الأقسام المخصصة وترتيب الظهور (Custom Sections)
+                    </h4>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      قم بإضافة وترتيب الأقسام الترويجية، المميزات، والأسئلة الشائعة مع المعاينة اللحظية.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addCustomSection("highlight")}
+                      className="text-xs font-bold rounded-xl gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> مميزات الوجهة
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addCustomSection("faq")}
+                      className="text-xs font-bold rounded-xl gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> الأسئلة الشائعة
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => addCustomSection("promo")}
+                      className="text-xs font-bold rounded-xl gap-1 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> بانر ترويجي VIP
+                    </Button>
+                  </div>
+                </div>
+
+                {customSections.length === 0 ? (
+                  <div className="p-8 border-2 border-dashed rounded-2xl text-center text-muted-foreground text-xs space-y-2 bg-muted/10">
+                    <Layers className="w-8 h-8 mx-auto text-amber-500/50" />
+                    <p className="font-bold text-foreground">لا توجد أقسام مخصصة مضافة حالياً</p>
+                    <p>انقر على أحد الأزرار بالأعلى لإضافة قسم جديد وترتيبه بالصفحة.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {customSections.map((sec, index) => (
+                      <div
+                        key={sec.id}
+                        className="p-4 border rounded-2xl bg-muted/20 hover:border-amber-500/40 transition-colors space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="font-mono text-xs bg-background">
+                              #{index + 1}
+                            </Badge>
+                            <Badge className="bg-amber-500/10 text-amber-600 border-amber-500/20 font-bold text-xs">
+                              {sec.type === "faq" ? "أسئلة شائعة" : sec.type === "promo" ? "بانر ترويجي" : "مميزات الوجهة"}
+                            </Badge>
+                            <span className="font-bold text-xs text-foreground">{sec.title}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg"
+                              title="تحريك لأعلى"
+                              onClick={() => moveSection(index, -1)}
+                              disabled={index === 0}
+                            >
+                              <ArrowUp className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg"
+                              title="تحريك لأسفل"
+                              onClick={() => moveSection(index, 1)}
+                              disabled={index === customSections.length - 1}
+                            >
+                              <ArrowDown className="w-3.5 h-3.5" />
+                            </Button>
+                            <Button
+                              type="button"
+                              size="icon"
+                              variant="ghost"
+                              className="h-7 w-7 rounded-lg text-destructive hover:bg-destructive/10"
+                              title="حذف القسم"
+                              onClick={() => removeCustomSection(sec.id)}
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </Button>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                              عنوان القسم
+                            </label>
+                            <Input
+                              value={sec.title}
+                              onChange={(e) => {
+                                const list = [...customSections];
+                                list[index].title = e.target.value;
+                                syncSectionsToFormData(list);
+                              }}
+                              className="h-8 text-xs rounded-xl"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                              الوصف التوضيحي للقسم
+                            </label>
+                            <Input
+                              value={sec.subtitle}
+                              onChange={(e) => {
+                                const list = [...customSections];
+                                list[index].subtitle = e.target.value;
+                                syncSectionsToFormData(list);
+                              }}
+                              className="h-8 text-xs rounded-xl"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Visual Preview Box */}
+                        <div className="p-3 bg-background/80 rounded-xl border border-border/60 text-xs">
+                          <span className="text-[10px] font-bold text-amber-500 uppercase tracking-widest block mb-1">
+                            معاينة حية لشكل القسم في الموقع 👁️
+                          </span>
+                          <div className="font-bold text-foreground">{sec.title || "عنوان القسم"}</div>
+                          <div className="text-muted-foreground text-[11px] mt-0.5">
+                            {sec.subtitle || "الوصف التوضيحي الذي سيظهر للعملاء في واجهة الصفحة."}
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                <div className="pt-2">
+                  <details className="text-xs text-muted-foreground cursor-pointer">
+                    <summary className="font-bold hover:text-foreground">
+                      محرر البيانات المتقدم (Raw JSON Schema) ⚙️
+                    </summary>
+                    <Textarea
+                      rows={6}
+                      className="font-mono text-xs mt-2 rounded-xl"
+                      value={sectionsRaw}
+                      onChange={(e) => {
+                        setSectionsRaw(e.target.value);
+                        try {
+                          const parsed = JSON.parse(e.target.value);
+                          setFormData((prev) => ({ ...prev, sectionsJsonb: parsed }));
+                        } catch {
+                          // typing buffer
+                        }
+                      }}
+                    />
+                  </details>
+                </div>
               </div>
             </TabsContent>
 

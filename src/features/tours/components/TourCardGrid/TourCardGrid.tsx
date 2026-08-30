@@ -4,7 +4,9 @@ import { Tour } from "../../types";
 import { getTourTitle } from "../ToursTable/columns";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Star, MapPin, Users, Eye, Edit3, MoreVertical, Sparkles, Image as ImageIcon, ArrowRightLeft } from "lucide-react";
+import { Star, MapPin, Users, Eye, Edit3, MoreVertical, Sparkles, Image as ImageIcon, ArrowRightLeft, ExternalLink, Globe } from "lucide-react";
+import Link from "next/link";
+import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -164,11 +166,11 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
               </div>
 
               {/* Footer Actions */}
-              <div className="flex items-center gap-2 pt-2">
+              <div className="flex items-center gap-1.5 pt-2">
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 h-9 gap-1.5 text-xs font-semibold"
+                  className="flex-1 h-9 gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => onView(tour)}
                 >
                   <Eye className="h-3.5 w-3.5" />
@@ -177,37 +179,61 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
                 <Button
                   variant="secondary"
                   size="sm"
-                  className="flex-1 h-9 gap-1.5 text-xs font-semibold"
+                  className="flex-1 h-9 gap-1.5 text-xs font-semibold cursor-pointer"
                   onClick={() => onEdit(tour)}
                 >
                   <Edit3 className="h-3.5 w-3.5" />
                   {tCommon("edit")}
                 </Button>
 
+                <a
+                  href={getFrontendTourUrl(tour.slug)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center h-9 w-9 hover:bg-sky-500/15 hover:text-sky-400 text-sky-500 rounded-xl border border-border/80 transition-colors cursor-pointer shrink-0"
+                  title={isAr ? "عرض في الموقع المباشر (الفرونت)" : "View on Live Website (Frontend)"}
+                  aria-label={isAr ? "عرض في الموقع" : "View on Website"}
+                >
+                  <Globe className="h-4 w-4" />
+                </a>
+
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-9 w-9">
+                    <Button variant="ghost" size="icon" className="h-9 w-9 shrink-0 cursor-pointer">
                       <MoreVertical className="h-4 w-4" />
                     </Button>
                   </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-52">
+                  <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
+                    <DropdownMenuItem asChild className="cursor-pointer font-bold text-sky-500 focus:text-sky-500">
+                      <a href={getFrontendTourUrl(tour.slug)} target="_blank" rel="noopener noreferrer">
+                        <Globe className="h-4 w-4 mr-2 text-sky-500" />
+                        {isAr ? "عرض في الموقع (الفرونت)" : "View on Live Website"}
+                      </a>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem asChild className="cursor-pointer font-bold text-emerald-500 focus:text-emerald-500">
+                      <Link href={`/${currentLocale}/admin/tours/${tour.slug}/preview`} target="_blank">
+                        <ExternalLink className="h-4 w-4 mr-2 text-emerald-500" />
+                        {isAr ? "معاينة كزائر في الداشبورد" : "Admin Visitor Preview"}
+                      </Link>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
                     {onMove && (
-                      <DropdownMenuItem onClick={() => onMove(tour)} className="font-bold text-primary focus:text-primary">
+                      <DropdownMenuItem onClick={() => onMove(tour)} className="font-bold text-primary focus:text-primary cursor-pointer">
                         <ArrowRightLeft className="h-4 w-4 mr-2 text-primary" />
                         {isAr ? "نقل الرحلة (Move)" : "Move Tour"}
                       </DropdownMenuItem>
                     )}
-                    <DropdownMenuItem onClick={() => handleTogglePublish(tour)}>
+                    <DropdownMenuItem onClick={() => handleTogglePublish(tour)} className="cursor-pointer">
                       {tour.status === "PUBLISHED" ? tStatus("DRAFT") : tStatus("PUBLISHED")}
                     </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleToggleFeatured(tour)}>
+                    <DropdownMenuItem onClick={() => handleToggleFeatured(tour)} className="cursor-pointer">
                       {tTours("title")}
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
                       onClick={() => onDelete(tour)}
-                      className="text-red-600 focus:text-red-600"
+                      className="text-red-600 focus:text-red-600 cursor-pointer"
                     >
                       {tCommon("delete")}
                     </DropdownMenuItem>

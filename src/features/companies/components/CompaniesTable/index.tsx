@@ -81,11 +81,11 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
                 {isUpdating ? <Loader2 className="h-3.5 w-3.5 me-2 animate-spin" /> : null}
                 {tCommon("actions")} ({selectedIds.length})
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48">
+              <DropdownMenuContent align="end" className="w-56 font-bold text-xs">
                 <DropdownMenuLabel>{tCommon("status")}</DropdownMenuLabel>
-                <DropdownMenuItem onClick={() => handleBulkStatus('ACTIVE')}>Set as Active</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkStatus('INACTIVE')}>Set as Inactive</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleBulkStatus('BLACKLISTED')} className="text-rose-600">Blacklist</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatus('ACTIVE')}>تعيين كنشط (Set Active)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatus('INACTIVE')}>تعيين كغير نشط (Set Inactive)</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => handleBulkStatus('BLACKLISTED')} className="text-rose-600">إدراج بالقائمة السوداء (Blacklist)</DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (

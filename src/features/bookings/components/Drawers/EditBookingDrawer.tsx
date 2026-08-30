@@ -118,17 +118,17 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
           <SheetTitle className="text-2xl font-bold flex items-center gap-2">
             Edit Booking {booking.referenceCode}
           </SheetTitle>
-          <SheetDescription className="mt-1 text-base">
-            Modify enterprise properties, passenger records, and assignment workflow.
+          <SheetDescription className="mt-1 text-xs">
+            تعديل بيانات الحجز وسجلات المسافرين وتعيين الفريق المسؤول.
           </SheetDescription>
         </SheetHeader>
 
         <Tabs defaultValue="general" className="w-full">
-          <TabsList className="w-full grid grid-cols-4 h-12">
-            <TabsTrigger value="general">General</TabsTrigger>
-            <TabsTrigger value="status">Status</TabsTrigger>
-            <TabsTrigger value="assignee">Assignee</TabsTrigger>
-            <TabsTrigger value="passengers">Passengers</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-4 h-11 font-bold rounded-xl bg-muted/60 p-1">
+            <TabsTrigger value="general" className="text-xs font-bold">عام</TabsTrigger>
+            <TabsTrigger value="status" className="text-xs font-bold">الحالة</TabsTrigger>
+            <TabsTrigger value="assignee" className="text-xs font-bold">المسؤول</TabsTrigger>
+            <TabsTrigger value="passengers" className="text-xs font-bold">المسافرون</TabsTrigger>
           </TabsList>
 
           <ScrollArea className="h-[calc(100vh-200px)] mt-4 pr-4">
@@ -136,26 +136,27 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
             <TabsContent value="general" className="space-y-6 pt-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Priority</Label>
+                  <Label className="text-xs font-bold">درجة الأولوية</Label>
                   <Select onValueChange={(val) => val && setPriority(val)} defaultValue={priority}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select priority" />
+                    <SelectTrigger className="w-full rounded-xl font-bold text-xs">
+                      <SelectValue placeholder="اختر مستوى الأولوية" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="LOW">Low</SelectItem>
-                      <SelectItem value="NORMAL">Normal</SelectItem>
-                      <SelectItem value="HIGH">High</SelectItem>
-                      <SelectItem value="URGENT">Urgent</SelectItem>
+                    <SelectContent className="font-bold text-xs">
+                      <SelectItem value="LOW">منخفضة (Low)</SelectItem>
+                      <SelectItem value="NORMAL">عادية (Normal)</SelectItem>
+                      <SelectItem value="HIGH">عالية (High)</SelectItem>
+                      <SelectItem value="URGENT">عاجلة جداً (Urgent ⚡)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Tags (Comma separated)</Label>
+                  <Label className="text-xs font-bold">الوسوم والتصنيفات (مفصولة بفواصل)</Label>
                   <Input 
-                    placeholder="e.g. VIP, honeymoon, flight-included" 
+                    placeholder="مثال: VIP, شهر عسل, طيران خاص" 
                     value={tagsString} 
                     onChange={(e) => setTagsString(e.target.value)}
+                    className="rounded-xl text-xs"
                   />
                 </div>
 
@@ -174,36 +175,37 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
             <TabsContent value="status" className="space-y-6 pt-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Booking Status</Label>
+                  <Label className="text-xs font-bold">حالة الحجز</Label>
                   <Select onValueChange={(val) => val && setStatus(val as BookingStatus)} defaultValue={status}>
-                    <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select status" />
+                    <SelectTrigger className="w-full font-bold text-xs rounded-xl">
+                      <SelectValue placeholder="اختر حالة الحجز" />
                     </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="CONFIRMED">Confirmed</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                    <SelectContent className="font-bold text-xs">
+                      <SelectItem value="PENDING">قيد الانتظار (Pending)</SelectItem>
+                      <SelectItem value="CONFIRMED">مؤكد ومقبول (Confirmed)</SelectItem>
+                      <SelectItem value="CANCELLED">ملغي (Cancelled)</SelectItem>
+                      <SelectItem value="COMPLETED">مكتمل ومنتهي (Completed)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Reason / Status Note (Optional)</Label>
+                  <Label className="text-xs font-bold">سبب التغيير / ملاحظة الحالة (اختياري)</Label>
                   <Input 
-                    placeholder="e.g. Customer requested cancellation / Payment verified" 
+                    placeholder="مثال: طلب العميل الإلغاء / تم التحقق من الدفع..." 
                     value={statusReason} 
                     onChange={(e) => setStatusReason(e.target.value)}
+                    className="text-xs rounded-xl"
                   />
                 </div>
 
                 <Button 
                   onClick={handleSaveStatus} 
                   disabled={updateStatus.isPending}
-                  className="w-full mt-4"
+                  className="w-full mt-4 font-bold rounded-xl"
                 >
                   {updateStatus.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Update Status
+                  تحديث حالة الحجز
                 </Button>
               </div>
             </TabsContent>
@@ -212,24 +214,25 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
             <TabsContent value="assignee" className="space-y-6 pt-4">
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>Assignee User ID</Label>
+                  <Label className="text-xs font-bold">معرّف الموظف المسؤول (Assignee ID)</Label>
                   <Input 
-                    placeholder="Enter Admin User ID (leave blank to unassign)" 
+                    placeholder="أدخل معرّف المشرف المسؤول (اتركه فارغاً لإلغاء التعيين)" 
                     value={assigneeId} 
                     onChange={(e) => setAssigneeId(e.target.value)}
+                    className="text-xs rounded-xl font-mono"
                   />
                   <p className="text-xs text-muted-foreground mt-1">
-                    Assigns this booking to a staff member for dedicated processing.
+                    تعيين هذا الحجز لأحد أعضاء الفريق لمتابعته وإدارته بشكل مخصص.
                   </p>
                 </div>
 
                 <Button 
                   onClick={handleSaveAssignee} 
                   disabled={assignBooking.isPending}
-                  className="w-full mt-4"
+                  className="w-full mt-4 font-bold rounded-xl"
                 >
                   {assignBooking.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save Assignee
+                  حفظ تعيين المسؤول
                 </Button>
               </div>
             </TabsContent>
@@ -238,84 +241,89 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
             <TabsContent value="passengers" className="space-y-6 pt-4">
               <div className="space-y-4">
                 <div className="flex justify-between items-center">
-                  <Label className="text-base font-semibold">Passenger Roster</Label>
-                  <Button variant="outline" size="sm" onClick={addPassenger}>
-                    <Plus className="mr-1 h-4 w-4" /> Add Passenger
+                  <Label className="text-sm font-bold">قائمة وبيانات المسافرين</Label>
+                  <Button variant="outline" size="sm" onClick={addPassenger} className="font-bold text-xs rounded-xl">
+                    <Plus className="mr-1 h-4 w-4" /> إضافة مسافر ➕
                   </Button>
                 </div>
 
                 {passengers.length === 0 ? (
-                  <div className="text-center py-8 text-muted-foreground border rounded-lg">
-                    No passengers defined. Click add passenger above.
+                  <div className="text-center py-8 text-muted-foreground border rounded-xl text-xs font-bold">
+                    لا يوجد مسافرون مضافون. اضغط إضافة مسافر بالأعلى.
                   </div>
                 ) : (
                   <div className="space-y-6">
                     {passengers.map((p, index) => (
-                      <div key={index} className="border rounded-lg p-4 space-y-4 bg-muted/20">
+                      <div key={index} className="border rounded-xl p-4 space-y-4 bg-muted/20">
                         <div className="flex justify-between items-center border-b pb-2">
-                          <span className="font-medium text-sm">Passenger #{index + 1}</span>
-                          <Button variant="ghost" size="sm" className="text-red-500 h-8 w-8 p-0" onClick={() => removePassenger(index)}>
+                          <span className="font-bold text-xs">المسافر #{index + 1}</span>
+                          <Button variant="ghost" size="sm" className="text-red-500 h-8 w-8 p-0 rounded-xl cursor-pointer" onClick={() => removePassenger(index)}>
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
 
                         <div className="grid grid-cols-2 gap-4">
                           <div className="space-y-1">
-                            <Label className="text-xs">Full Name</Label>
+                            <Label className="text-xs font-bold">الاسم الكامل</Label>
                             <Input 
                               value={p.fullName} 
                               onChange={(e) => updatePassenger(index, "fullName", e.target.value)}
-                              placeholder="John Doe"
+                              placeholder="الاسم الثلاثي"
+                              className="text-xs rounded-xl"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <Label className="text-xs">Type</Label>
+                            <Label className="text-xs font-bold">الفئة العمرية</Label>
                             <Select onValueChange={(val) => val && updatePassenger(index, "passengerType", val)} defaultValue={p.passengerType}>
-                              <SelectTrigger className="w-full h-9">
-                                <SelectValue placeholder="Type" />
+                              <SelectTrigger className="w-full h-9 font-bold text-xs rounded-xl">
+                                <SelectValue placeholder="الفئة" />
                               </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="ADULT">Adult</SelectItem>
-                                <SelectItem value="CHILD">Child</SelectItem>
-                                <SelectItem value="INFANT">Infant</SelectItem>
+                              <SelectContent className="font-bold text-xs">
+                                <SelectItem value="ADULT">بالغ (Adult)</SelectItem>
+                                <SelectItem value="CHILD">طفل (Child)</SelectItem>
+                                <SelectItem value="INFANT">رضيع (Infant)</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
 
                           <div className="space-y-1">
-                            <Label className="text-xs">Passport Number</Label>
+                            <Label className="text-xs font-bold">رقم جواز السفر</Label>
                             <Input 
                               value={p.passportNumber || ""} 
                               onChange={(e) => updatePassenger(index, "passportNumber", e.target.value)}
                               placeholder="A1234567"
+                              className="text-xs rounded-xl font-mono"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <Label className="text-xs">Passport Expiry</Label>
+                            <Label className="text-xs font-bold">تاريخ انتهاء الجواز</Label>
                             <Input 
                               type="date"
                               value={p.passportExpiry ? p.passportExpiry.split("T")[0] : ""} 
                               onChange={(e) => updatePassenger(index, "passportExpiry", e.target.value)}
+                              className="text-xs rounded-xl font-mono"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <Label className="text-xs">Nationality</Label>
+                            <Label className="text-xs font-bold">الجنسية</Label>
                             <Input 
                               value={p.nationality || ""} 
                               onChange={(e) => updatePassenger(index, "nationality", e.target.value)}
-                              placeholder="US"
+                              placeholder="مثال: EG, SA, AE"
+                              className="text-xs rounded-xl"
                             />
                           </div>
 
                           <div className="space-y-1">
-                            <Label className="text-xs">Date of Birth</Label>
+                            <Label className="text-xs font-bold">تاريخ الميلاد</Label>
                             <Input 
                               type="date"
                               value={p.dateOfBirth ? p.dateOfBirth.split("T")[0] : ""} 
                               onChange={(e) => updatePassenger(index, "dateOfBirth", e.target.value)}
+                              className="text-xs rounded-xl font-mono"
                             />
                           </div>
                         </div>
@@ -327,10 +335,10 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
                 <Button 
                   onClick={handleSavePassengers} 
                   disabled={upsertPassengers.isPending}
-                  className="w-full mt-6"
+                  className="w-full mt-4 font-bold rounded-xl"
                 >
                   {upsertPassengers.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
-                  Save All Passengers
+                  حفظ بيانات المسافرين
                 </Button>
               </div>
             </TabsContent>

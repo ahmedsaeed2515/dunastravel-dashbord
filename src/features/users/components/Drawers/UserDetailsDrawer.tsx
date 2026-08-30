@@ -72,9 +72,9 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
           </div>
           <div className="ml-auto">
             {user.status === "SUSPENDED" ? (
-              <Badge variant="destructive" className="mb-2 block text-center">Suspended</Badge>
+              <Badge variant="destructive" className="mb-2 block text-center font-bold">حساب موقوف</Badge>
             ) : (
-              <Badge variant="outline" className="mb-2 block text-center border-green-500 text-green-600">Active</Badge>
+              <Badge variant="outline" className="mb-2 block text-center border-green-500 text-green-600 font-bold">حساب نشط</Badge>
             )}
           </div>
         </div>
@@ -82,18 +82,18 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
         {/* Info Grid */}
         <div className="grid grid-cols-2 gap-4">
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <Shield className="h-3 w-3" /> Role
+            <span className="text-xs text-muted-foreground flex items-center gap-1 font-bold">
+              <Shield className="h-3 w-3" /> الصلاحية والدور
             </span>
-            <Badge variant={user.role === "ADMIN" ? "default" : "secondary"}>
-              {user.role}
+            <Badge variant={user.role === "ADMIN" ? "default" : "secondary"} className="font-bold">
+              {user.role === "ADMIN" ? "مدير نظام (Admin)" : user.role === "AGENT" ? "وكيل سياحي (Agent)" : user.role === "COMPANY" ? "شركة سياحية (Company)" : user.role}
             </Badge>
           </div>
           <div className="space-y-1">
-            <span className="text-xs text-muted-foreground flex items-center gap-1">
-              <CalendarDays className="h-3 w-3" /> Joined
+            <span className="text-xs text-muted-foreground flex items-center gap-1 font-bold">
+              <CalendarDays className="h-3 w-3" /> تاريخ الانضمام
             </span>
-            <span className="text-sm font-medium">
+            <span className="text-sm font-bold font-mono">
               {formatDateSafe(user.createdAt)}
             </span>
           </div>
@@ -101,18 +101,18 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
 
         {/* Audit Timeline */}
         <div>
-          <h4 className="text-sm font-semibold mb-4 border-b pb-2">Audit Timeline</h4>
+          <h4 className="text-sm font-bold mb-4 border-b pb-2">سجل العمليات والتدقيق</h4>
           <Timeline>
             <TimelineItem
               icon={<Shield className="h-4 w-4 text-primary" />}
-              title="Account Created"
-              description={`Role assigned: ${user.role}`}
+              title="تم إنشاء الحساب"
+              description={`الدور المسند: ${user.role}`}
               time={formatDateSafe(user.createdAt, "PPp")}
             />
             {user.updatedAt !== user.createdAt && (
               <TimelineItem
                 icon={<Clock className="h-4 w-4 text-muted-foreground" />}
-                title="Profile Updated"
+                title="تم تحديث الملف الشخصي"
                 time={formatDateSafe(user.updatedAt, "PPp")}
               />
             )}
@@ -124,22 +124,22 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
       <div className="mt-8 pt-6 border-t border-border">
         {user.status === "SUSPENDED" ? (
           <div className="space-y-4">
-            <div className="bg-destructive/10 text-destructive p-3 rounded-lg text-sm flex items-start gap-2">
+            <div className="bg-destructive/10 text-destructive p-3 rounded-xl text-sm flex items-start gap-2">
               <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" />
               <div>
-                <strong>Account Suspended</strong>
-                <p className="mt-1">{user.suspendReason || "No reason provided."}</p>
-                <p className="mt-1 text-xs opacity-80">Suspended on: {formatDateSafe(user.suspendedAt, "PPp")}</p>
+                <strong className="font-bold">الحساب موقوف حالياً</strong>
+                <p className="mt-1 font-medium">{user.suspendReason || "لا يوجد سبب مسجل."}</p>
+                <p className="mt-1 text-xs opacity-80 font-mono">تاريخ الإيقاف: {formatDateSafe(user.suspendedAt, "PPp")}</p>
               </div>
             </div>
             <Button 
               variant="outline" 
-              className="w-full border-green-500 text-green-600 hover:bg-green-50"
+              className="w-full border-green-500 text-green-600 hover:bg-green-50 font-bold rounded-xl"
               onClick={() => activateUser(user.id)}
               disabled={isActivating}
             >
               <CheckCircle className="h-4 w-4 mr-2" />
-              {isActivating ? "Activating..." : "Activate Account"}
+              {isActivating ? "جاري التفعيل..." : "إعادة تفعيل الحساب"}
             </Button>
           </div>
         ) : (
@@ -147,30 +147,31 @@ export function UserDetailsDrawer({ user, open, onOpenChange }: UserDetailsDrawe
             {!showSuspendDialog ? (
               <Button 
                 variant="destructive" 
-                className="w-full"
+                className="w-full font-bold rounded-xl"
                 onClick={() => setShowSuspendDialog(true)}
               >
                 <AlertTriangle className="h-4 w-4 mr-2" />
-                Suspend Account
+                إيقاف الحساب مؤقتاً
               </Button>
             ) : (
               <div className="p-4 border border-destructive/20 rounded-xl bg-destructive/5 space-y-3">
-                <h4 className="text-sm font-semibold text-destructive">Suspend User</h4>
+                <h4 className="text-sm font-bold text-destructive">إيقاف حساب المستخدم</h4>
                 <textarea 
-                  className="w-full min-h-[80px] p-2 text-sm border rounded-md"
-                  placeholder="Reason for suspension (required)"
+                  className="w-full min-h-[80px] p-2 text-sm border rounded-xl"
+                  placeholder="سبب الإيقاف (مطلوب)"
                   value={suspendReason}
                   onChange={e => setSuspendReason(e.target.value)}
                 />
                 <div className="flex gap-2">
-                  <Button variant="ghost" size="sm" onClick={() => setShowSuspendDialog(false)}>Cancel</Button>
+                  <Button variant="ghost" size="sm" onClick={() => setShowSuspendDialog(false)} className="rounded-xl font-bold">إلغاء</Button>
                   <Button 
                     variant="destructive" 
                     size="sm" 
                     disabled={!suspendReason || isSuspending}
                     onClick={handleSuspend}
+                    className="rounded-xl font-bold"
                   >
-                    Confirm Suspend
+                    تأكيد الإيقاف
                   </Button>
                 </div>
               </div>

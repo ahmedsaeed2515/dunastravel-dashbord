@@ -65,6 +65,7 @@ export interface AiConfigData {
   model: string;
   isEnabled: boolean;
   isPublicEnabled: boolean;
+  isInChatBookingEnabled?: boolean;
   apiKey?: string;
   encryptedApiKey?: string | null;
   temperature: number;

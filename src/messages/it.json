@@ -80,7 +80,27 @@
     "permissionDeniedDescription": "Non disponi dei permessi per eseguire questa azione o visualizzare questa risorsa.",
     "returnToDashboard": "Torna alla Dashboard",
     "somethingWentWrong": "Qualcosa è andato storto",
-    "unexpectedErrorOccurred": "Si è verificato un errore imprevisto durante il caricamento dei dati."
+    "unexpectedErrorOccurred": "Si è verificato un errore imprevisto durante il caricamento dei dati.",
+    "superAdmin": "Super Amministratore",
+    "adminRole": "Amministratore",
+    "last30Days": "Ultimi 30 giorni",
+    "last90Days": "Ultimi 90 giorni",
+    "last12Months": "Ultimi 12 mesi",
+    "allDestinations": "Tutte le Destinazioni",
+    "desktop": "Desktop",
+    "mobile": "Dispositivi Mobili",
+    "tablet": "Tablet",
+    "views": "Visualizzazioni",
+    "clicks": "Clic",
+    "toursCount": "Tour",
+    "refresh": "Aggiorna",
+    "published": "Pubblicato",
+    "draft": "Bozza",
+    "archive": "Archivio",
+    "allStatus": "Tutti gli Stati",
+    "filterBy": "Filtra Per",
+    "clearFilters": "Cancella Filtri",
+    "noData": "Nessun dato disponibile al momento"
   },
   "navigation": {
     "overview": "Panoramica",
@@ -119,7 +139,8 @@
     "reviews": "Recensioni",
     "activeClientDatabase": "Database clienti attivi",
     "vipConciergeClub": "Club Concierge VIP",
-    "outstandingLedger": "Mastro sospesi"
+    "outstandingLedger": "Mastro sospesi",
+    "blogs": "Blog e Articoli"
   },
   "auth": {
     "welcomeBack": "Bentornato",

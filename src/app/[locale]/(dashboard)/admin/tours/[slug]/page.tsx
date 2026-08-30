@@ -8,11 +8,12 @@ import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Loader2, ArrowLeft, Edit, Eye, Star, ShieldAlert, Layers, Sparkles } from "lucide-react";
+import { Loader2, ArrowLeft, Edit, Eye, Star, ShieldAlert, Layers, Sparkles, Globe, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
 import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
 import { destinationForCountry } from "@/lib/tour-destinations";
+import { getFrontendTourUrl } from "@/lib/frontend-urls";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 
@@ -102,7 +103,7 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-primary mb-2" />
-        <p className="text-sm text-muted-foreground">Loading tour details...</p>
+        <p className="text-xs font-bold text-muted-foreground">جاري تحميل تفاصيل وبيانات الرحلة...</p>
       </div>
     );
   }
@@ -111,12 +112,12 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
     return (
       <div className="p-8 text-center max-w-lg mx-auto space-y-4">
         <ShieldAlert className="w-12 h-12 text-destructive mx-auto" />
-        <h2 className="text-xl font-bold">Tour Not Found</h2>
-        <p className="text-sm text-muted-foreground">
-          Could not find tour with slug <code className="bg-muted px-1 rounded">{slug}</code>.
+        <h2 className="text-xl font-bold">الرحلة غير موجودة</h2>
+        <p className="text-xs text-muted-foreground">
+          تعذر العثور على الرحلة ذات الرابط <code className="bg-muted px-1 rounded font-mono">{slug}</code>.
         </p>
         <Link href={`/${locale}/admin/tours`}>
-          <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> Back to Tours Catalog</Button>
+          <Button variant="outline" className="rounded-xl font-bold"><ArrowLeft className="w-4 h-4 mr-2" /> العودة إلى كتالوج الرحلات</Button>
         </Link>
       </div>
     );
@@ -134,145 +135,158 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
         slug: tour.slug,
         data: { status: newStatus as any },
       });
-      toast.success(`Tour status changed to ${newStatus}`);
+      toast.success(newStatus === "PUBLISHED" ? "تم نشر الرحلة بنجاح" : "تم إلغاء نشر الرحلة وتحويلها لمسودة");
     } catch (err: any) {
-      toast.error(err.message || "Failed to update status");
+      toast.error(err.message || "فشل تحديث حالة النشر");
     }
   };
 
-  const capacity = tour.capacity ?? null;
-  const remainingSeats = tour.remainingSeats ?? null;
-  const occupiedSeats = capacity !== null && remainingSeats !== null ? capacity - remainingSeats : null;
-  const occupancyRate = capacity !== null && capacity > 0 && occupiedSeats !== null
-    ? Math.round((occupiedSeats / capacity) * 100)
+  const occupancyRate = tour.capacity && tour.capacity > 0 && tour.remainingSeats !== undefined && tour.remainingSeats !== null
+    ? Math.round(((tour.capacity - tour.remainingSeats) / tour.capacity) * 100)
     : null;
+  const occupiedSeats = tour.capacity && tour.remainingSeats !== undefined && tour.remainingSeats !== null
+    ? Math.max(0, tour.capacity - tour.remainingSeats)
+    : null;
+  const capacity = tour.capacity;
 
   return (
-    <div className="space-y-6 pb-16 animate-in fade-in duration-300">
-      {/* Navigation Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b pb-4">
-        <div>
-          <Link href={`/${locale}/admin/tours`} className="text-xs text-muted-foreground hover:text-primary flex items-center gap-1 mb-2">
-            <ArrowLeft className="w-3.5 h-3.5" /> Back to Tours & Products
-          </Link>
-          <div className="flex items-center gap-3">
-            <h1 className="text-2xl font-bold tracking-tight">{titleEn}</h1>
-            <Badge variant={tour.status === "PUBLISHED" ? "default" : "secondary"}>
-              {tour.status}
-            </Badge>
-            {tour.isFeatured && (
-              <Badge variant="outline" className="bg-amber-500/10 text-amber-600 border-amber-500/20">
-                <Star className="w-3 h-3 mr-1 fill-amber-500" /> Featured
-              </Badge>
-            )}
-          </div>
-          <p className="text-xs font-mono text-muted-foreground mt-1">
-            Slug: /{tour.slug} • Category: {tour.category || "General"}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-2">
-          <Link href={`/${locale}/admin/tours/${tour.slug}/preview`} target="_blank">
-            <Button variant="outline" size="sm" className="gap-1.5">
-              <Eye className="w-4 h-4 text-emerald-500" /> Preview as Visitor (معاينة كزائر)
+    <div className="space-y-6 max-w-7xl mx-auto pb-16">
+      {/* Top Breadcrumb & Actions Bar */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-2xl border">
+        <div className="flex items-center gap-3">
+          <Link href={`/${locale}/admin/tours`}>
+            <Button variant="ghost" size="icon" className="h-8 w-8 rounded-xl cursor-pointer">
+              <ArrowLeft className="w-4 h-4" />
             </Button>
           </Link>
-          <Button
-            size="sm"
+          <div>
+            <div className="flex items-center gap-2">
+              <h1 className="text-xl font-bold font-serif">{tour.titleJsonb?.ar || activeTitle}</h1>
+              <Badge variant={tour.status === "PUBLISHED" ? "default" : "secondary"} className="font-bold text-xs">
+                {tour.status === "PUBLISHED" ? "منشور" : "مسودة"}
+              </Badge>
+              {tour.isFeatured && (
+                <Badge variant="outline" className="border-amber-400 bg-amber-500/10 text-amber-600 font-bold text-xs">
+                  مميز ⭐
+                </Badge>
+              )}
+            </div>
+            <p className="text-xs font-mono text-muted-foreground mt-0.5">/{tour.slug}</p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 flex-wrap">
+          <a
+            href={getFrontendTourUrl(tour.slug)}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl border-amber-500/30 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 cursor-pointer">
+              <Eye className="w-4 h-4" /> عرض في الموقع 🌐
+            </Button>
+          </a>
+          <Link href={`/${locale}/admin/tours/${tour.slug}/preview`}>
+            <Button size="sm" variant="outline" className="gap-1.5 font-bold rounded-xl cursor-pointer">
+              <ExternalLink className="w-4 h-4" /> معاينة الرحلة
+            </Button>
+          </Link>
+          <Button 
+            size="sm" 
+            variant="default"
+            className="gap-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-black cursor-pointer"
             onClick={() => setIsEditModalOpen(true)}
-            className="gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 font-black cursor-pointer shadow-sm"
           >
             <Sparkles className="w-4 h-4" /> تعديل الرحلة (5 لغات)
           </Button>
-          <Button size="sm" variant={tour.status === "PUBLISHED" ? "secondary" : "default"} onClick={togglePublishStatus} disabled={updateMutation.isPending}>
-            {tour.status === "PUBLISHED" ? "Unpublish" : "Publish"}
+          <Button size="sm" variant={tour.status === "PUBLISHED" ? "secondary" : "default"} onClick={togglePublishStatus} disabled={updateMutation.isPending} className="font-bold rounded-xl cursor-pointer">
+            {tour.status === "PUBLISHED" ? "إلغاء النشر" : "نشر الرحلة"}
           </Button>
         </div>
       </div>
 
       {/* Metrics Summary Bar */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-        <Card className="p-4 bg-card">
-          <div className="text-xs text-muted-foreground">Base Price (USD)</div>
+        <Card className="p-4 bg-card rounded-2xl">
+          <div className="text-xs text-muted-foreground font-bold">السعر الأساسي ($)</div>
           <div className="text-2xl font-bold font-mono mt-1 text-primary">${tour.basePriceUsd} USD</div>
         </Card>
-        <Card className="p-4 bg-card">
-          <div className="text-xs text-muted-foreground">Capacity & Occupancy</div>
-          <div className="text-2xl font-bold mt-1">
+        <Card className="p-4 bg-card rounded-2xl">
+          <div className="text-xs text-muted-foreground font-bold">السعة ومعدل الإشغال</div>
+          <div className="text-2xl font-bold mt-1 font-mono">
             {occupiedSeats ?? "—"} / {capacity ?? "—"} <span className="text-xs font-normal text-muted-foreground">({occupancyRate === null ? "—" : `${occupancyRate}%`})</span>
           </div>
         </Card>
-        <Card className="p-4 bg-card">
-          <div className="text-xs text-muted-foreground">Interfaces Assigned</div>
-          <div className="text-2xl font-bold mt-1 flex items-center gap-1.5">
+        <Card className="p-4 bg-card rounded-2xl">
+          <div className="text-xs text-muted-foreground font-bold">الواجهات والصفحات المرتبطة</div>
+          <div className="text-2xl font-bold mt-1 flex items-center gap-1.5 font-mono">
             <Layers className="w-5 h-5 text-primary" />
             {tour.landingPages?.length || 0}
           </div>
         </Card>
-        <Card className="p-4 bg-card">
-          <div className="text-xs text-muted-foreground">Itinerary & Media</div>
-          <div className="text-2xl font-bold mt-1">
-            {tour.itineraries?.length || 0} Days • {tour.images?.length || 0} Photos
+        <Card className="p-4 bg-card rounded-2xl">
+          <div className="text-xs text-muted-foreground font-bold">البرنامج والوسائط</div>
+          <div className="text-2xl font-bold mt-1 font-bold">
+            {tour.itineraries?.length || 0} أيام • {tour.images?.length || 0} صور
           </div>
         </Card>
       </div>
 
       {/* Tabs Detail View */}
       <Tabs defaultValue="overview" className="w-full">
-        <TabsList className="grid w-full grid-cols-6 mb-6">
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="translations">Locales & Content</TabsTrigger>
-          <TabsTrigger value="itinerary">Itinerary ({tour.itineraries?.length || 0})</TabsTrigger>
-          <TabsTrigger value="media">Gallery ({tour.images?.length || 0})</TabsTrigger>
-          <TabsTrigger value="interfaces">Interfaces ({tour.landingPages?.length || 0})</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings ({tour.bookings?.length || 0})</TabsTrigger>
+        <TabsList className="grid w-full grid-cols-6 mb-6 font-bold rounded-xl bg-muted/60 p-1">
+          <TabsTrigger value="overview" className="text-xs font-bold">نظرة عامة</TabsTrigger>
+          <TabsTrigger value="translations" className="text-xs font-bold">اللغات والمحتوى</TabsTrigger>
+          <TabsTrigger value="itinerary" className="text-xs font-bold">البرنامج ({tour.itineraries?.length || 0})</TabsTrigger>
+          <TabsTrigger value="media" className="text-xs font-bold">الصور ({tour.images?.length || 0})</TabsTrigger>
+          <TabsTrigger value="interfaces" className="text-xs font-bold">الواجهات ({tour.landingPages?.length || 0})</TabsTrigger>
+          <TabsTrigger value="bookings" className="text-xs font-bold">الحجوزات ({tour.bookings?.length || 0})</TabsTrigger>
         </TabsList>
 
         {/* 1. OVERVIEW */}
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <Card className="md:col-span-2">
+            <Card className="md:col-span-2 rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base">Tour Overview ({activeLocale.toUpperCase()})</CardTitle>
+                <CardTitle className="text-base font-bold">ملخص ونظرة عامة للرحلة ({activeLocale.toUpperCase()})</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase">Title</h4>
-                  <p className="text-lg font-medium">{activeTitle}</p>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">عنوان الرحلة</h4>
+                  <p className="text-lg font-bold">{activeTitle}</p>
                 </div>
                 <div>
-                  <h4 className="text-xs font-semibold text-muted-foreground uppercase">Overview</h4>
+                  <h4 className="text-xs font-bold text-muted-foreground uppercase">الوصف والملخص</h4>
                   <p className="text-sm text-foreground leading-relaxed whitespace-pre-line">
-                    {activeOverview || "No overview provided for this language."}
+                    {activeOverview || "لا يوجد وصف مسجل لهذه اللغة حالياً."}
                   </p>
                 </div>
               </CardContent>
             </Card>
 
-            <Card>
+            <Card className="rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base">Specifications</CardTitle>
+                <CardTitle className="text-base font-bold">المواصفات الفنية</CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
+              <CardContent className="space-y-3 text-xs">
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">Category:</span>
-                  <span className="font-medium">{tour.category || "General"}</span>
+                  <span className="text-muted-foreground font-bold">التصنيف:</span>
+                  <span className="font-bold">{tour.category || "عام"}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">Country:</span>
-                  <span className="font-medium">{tour.country || "Not specified"}</span>
+                  <span className="text-muted-foreground font-bold">الدولة:</span>
+                  <span className="font-bold">{tour.country || "مصر (Egypt)"}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">City:</span>
-                  <span className="font-medium">{tour.city || "Not specified"}</span>
+                  <span className="text-muted-foreground font-bold">المدينة:</span>
+                  <span className="font-bold">{tour.city || "غير محددة"}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">Duration:</span>
-                  <span className="font-medium">{activeDuration || "Not specified"}</span>
+                  <span className="text-muted-foreground font-bold">المدة:</span>
+                  <span className="font-bold">{activeDuration || "غير محددة"}</span>
                 </div>
                 <div className="flex justify-between border-b pb-2">
-                  <span className="text-muted-foreground">Capacity:</span>
-                  <span className="font-medium">{tour.capacity} seats</span>
+                  <span className="text-muted-foreground font-bold">السعة الكلية:</span>
+                  <span className="font-bold font-mono">{tour.capacity} مقاعد</span>
                 </div>
               </CardContent>
             </Card>
@@ -282,34 +296,34 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
         {/* 2. TRANSLATIONS */}
         <TabsContent value="translations" className="space-y-4">
           <div className="flex gap-2 mb-4 border-b pb-2">
-            {["en", "ar", "es", "pt", "it"].map((loc) => (
+            {["ar", "en", "es", "pt", "it"].map((loc) => (
               <Button
                 key={loc}
                 variant={activeLocale === loc ? "default" : "outline"}
                 size="sm"
                 onClick={() => setActiveLocale(loc)}
-                className="uppercase"
+                className="uppercase font-bold rounded-xl"
               >
                 {loc}
               </Button>
             ))}
           </div>
 
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-base">Multilingual Content for [{activeLocale.toUpperCase()}]</CardTitle>
+              <CardTitle className="text-base font-bold">المحتوى متعدد اللغات للغة [{activeLocale.toUpperCase()}]</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Title</span>
-                <p className="text-sm font-medium">{tour.titleJsonb?.[activeLocale] || "—"}</p>
+                <span className="text-xs font-bold text-muted-foreground uppercase">عنوان الرحلة</span>
+                <p className="text-sm font-bold">{tour.titleJsonb?.[activeLocale] || "—"}</p>
               </div>
               <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Subtitle</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase">العنوان الفرعي</span>
                 <p className="text-sm font-medium">{tour.subtitleJsonb?.[activeLocale] || "—"}</p>
               </div>
               <div>
-                <span className="text-xs font-semibold text-muted-foreground uppercase">Overview</span>
+                <span className="text-xs font-bold text-muted-foreground uppercase">الملخص والوصف</span>
                 <p className="text-sm text-muted-foreground">{tour.overviewJsonb?.[activeLocale] || "—"}</p>
               </div>
             </CardContent>
@@ -318,29 +332,29 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
 
         {/* 3. ITINERARY */}
         <TabsContent value="itinerary" className="space-y-4">
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-base">Day-by-Day Itinerary</CardTitle>
+              <CardTitle className="text-base font-bold">تفاصيل البرنامج اليومي للرحلة</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               {tour.itineraries && tour.itineraries.length > 0 ? (
                 tour.itineraries.map((day, idx) => (
-                  <div key={day.id || idx} className="p-4 border rounded-lg bg-card space-y-2">
-                    <div className="flex justify-between items-center font-semibold text-sm">
-                      <span>{day.dayLabel || `Day ${idx + 1}`}</span>
+                  <div key={day.id || idx} className="p-4 border rounded-xl bg-card space-y-2">
+                    <div className="flex justify-between items-center font-bold text-sm">
+                      <span>{day.dayLabel || `اليوم ${idx + 1}`}</span>
                       {day.mealsJsonb?.[activeLocale] && (
-                        <Badge variant="outline" className="text-xs">
+                        <Badge variant="outline" className="text-xs font-bold">
                           {day.mealsJsonb[activeLocale]}
                         </Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground leading-relaxed">
-                      {day.descriptionJsonb?.[activeLocale] || day.descriptionJsonb?.en || "No description."}
+                      {day.descriptionJsonb?.[activeLocale] || day.descriptionJsonb?.en || "لا يوجد وصف متوفر لهذا اليوم."}
                     </p>
                   </div>
                 ))
               ) : (
-                <div className="p-8 text-center text-muted-foreground text-sm">No itinerary steps created.</div>
+                <div className="p-8 text-center text-muted-foreground text-xs font-bold">لم يتم إنشاء أيام للبرنامج بعد.</div>
               )}
             </CardContent>
           </Card>
@@ -351,40 +365,40 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
             {tour.images && tour.images.length > 0 ? (
               tour.images.map((img) => (
-                <div key={img.id || img.imageUrl} className="relative h-40 rounded-lg overflow-hidden border group bg-muted">
+                <div key={img.id || img.imageUrl} className="relative h-40 rounded-xl overflow-hidden border group bg-muted">
                   <img src={img.imageUrl} alt="" className="w-full h-full object-cover" />
                   {img.isHero && (
-                    <Badge className="absolute top-2 left-2 text-[10px]" variant="default">Hero Image</Badge>
+                    <Badge className="absolute top-2 right-2 text-[10px] font-bold" variant="default">صورة الغلاف الرئيسية</Badge>
                   )}
                 </div>
               ))
             ) : (
-              <div className="col-span-full p-8 text-center text-muted-foreground text-sm">No images linked to this tour.</div>
+              <div className="col-span-full p-8 text-center text-muted-foreground text-xs font-bold">لا توجد صور مرتبطة بهذه الرحلة.</div>
             )}
           </div>
         </TabsContent>
 
         {/* 5. INTERFACES */}
         <TabsContent value="interfaces" className="space-y-4">
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-base">Tour Interfaces / Landing Pages Using This Tour</CardTitle>
+              <CardTitle className="text-base font-bold">الواجهات وصفحات الهبوط المرتبطة بهذه الرحلة</CardTitle>
             </CardHeader>
             <CardContent>
               {tour.landingPages && tour.landingPages.length > 0 ? (
-                <div className="divide-y border rounded-md">
+                <div className="divide-y border rounded-xl">
                   {tour.landingPages.map((lp: any) => (
                     <div key={lp.id} className="p-3 flex items-center justify-between">
                       <div>
-                        <div className="font-semibold text-sm">{lp.landingPage?.titleJsonb?.en || lp.landingPage?.slug}</div>
+                        <div className="font-bold text-sm">{lp.landingPage?.titleJsonb?.ar || lp.landingPage?.titleJsonb?.en || lp.landingPage?.slug}</div>
                         <div className="text-xs font-mono text-muted-foreground">/{lp.landingPage?.slug}</div>
                       </div>
-                      <Badge variant="outline">{lp.landingPage?.type}</Badge>
+                      <Badge variant="outline" className="font-bold">{lp.landingPage?.type}</Badge>
                     </div>
                   ))}
                 </div>
               ) : (
-                <div className="p-8 text-center text-muted-foreground text-sm">This tour is not assigned to any landing page interface yet.</div>
+                <div className="p-8 text-center text-muted-foreground text-xs font-bold">هذه الرحلة غير مخصصة لأي واجهة بعد.</div>
               )}
             </CardContent>
           </Card>
@@ -392,34 +406,34 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
 
         {/* 6. BOOKINGS */}
         <TabsContent value="bookings" className="space-y-4">
-          <Card>
+          <Card className="rounded-2xl">
             <CardHeader>
-              <CardTitle className="text-base">Customer Bookings for This Tour</CardTitle>
+              <CardTitle className="text-base font-bold">سجل الحجوزات الخاصة بهذه الرحلة</CardTitle>
             </CardHeader>
             <CardContent>
               {tour.bookings && tour.bookings.length > 0 ? (
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Reference</TableHead>
-                      <TableHead>Customer</TableHead>
-                      <TableHead>Status</TableHead>
-                      <TableHead>Total (USD)</TableHead>
+                      <TableHead>المرجع</TableHead>
+                      <TableHead>العميل</TableHead>
+                      <TableHead>الحالة</TableHead>
+                      <TableHead>الإجمالي ($)</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {tour.bookings.map((b: any) => (
                       <TableRow key={b.id}>
-                        <TableCell className="font-mono text-xs">{b.referenceCode}</TableCell>
-                        <TableCell>{b.billingInfo?.fullName || "—"}</TableCell>
-                        <TableCell><Badge variant="outline">{b.status}</Badge></TableCell>
-                        <TableCell className="font-mono">${b.totalAmountUsd}</TableCell>
+                        <TableCell className="font-mono text-xs font-bold">{b.referenceCode}</TableCell>
+                        <TableCell className="font-medium">{b.billingInfo?.fullName || "—"}</TableCell>
+                        <TableCell><Badge variant="outline" className="font-bold">{b.status}</Badge></TableCell>
+                        <TableCell className="font-mono font-bold text-emerald-600">${b.totalAmountUsd}</TableCell>
                       </TableRow>
                     ))}
                   </TableBody>
                 </Table>
               ) : (
-                <div className="p-8 text-center text-muted-foreground text-sm">No bookings recorded for this tour yet.</div>
+                <div className="p-8 text-center text-muted-foreground text-xs font-bold">لا توجد حجوزات مسجلة لهذه الرحلة حتى الآن.</div>
               )}
             </CardContent>
           </Card>

@@ -510,27 +510,27 @@ export function ToursTable() {
 
             {/* Market / Category Filter */}
             <Select value={selectedMarket} onValueChange={(val: any) => setSelectedMarket(val || "ALL")}>
-              <SelectTrigger className="h-9 w-37.5 text-xs font-medium">
+              <SelectTrigger className="h-9 w-40 text-xs font-medium">
                 <div className="flex items-center gap-1.5 truncate">
                   <Globe className="h-3.5 w-3.5 text-primary shrink-0" />
-                  <SelectValue placeholder="Market" />
+                  <SelectValue placeholder="السوق المستهدف" />
                 </div>
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="ALL">{tCommon("all")} Markets</SelectItem>
-                <SelectItem value="Brasil">Brasil (PT)</SelectItem>
-                <SelectItem value="España">España (ES)</SelectItem>
-                <SelectItem value="Global">Global</SelectItem>
-                <SelectItem value="Multi-Country">Multi-Country</SelectItem>
+                <SelectItem value="ALL">{tCommon("all")} (كافة الأسواق)</SelectItem>
+                <SelectItem value="Brasil">البرازيل Brasil (PT)</SelectItem>
+                <SelectItem value="España">إسبانيا España (ES)</SelectItem>
+                <SelectItem value="Global">عالمي Global (EN)</SelectItem>
+                <SelectItem value="Multi-Country">متعدد الوجهات Multi-Country</SelectItem>
               </SelectContent>
             </Select>
 
             {/* Status Tabs */}
             <Tabs defaultValue="ALL" value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="w-auto">
               <TabsList className="h-9">
-                <TabsTrigger value="ALL" className="text-xs h-7">{tCommon("all")}</TabsTrigger>
-                <TabsTrigger value="PUBLISHED" className="text-xs h-7">{tStatus("PUBLISHED")}</TabsTrigger>
-                <TabsTrigger value="DRAFT" className="text-xs h-7">{tStatus("DRAFT")}</TabsTrigger>
+                <TabsTrigger value="ALL" className="text-xs h-7 font-bold">{tCommon("all")}</TabsTrigger>
+                <TabsTrigger value="PUBLISHED" className="text-xs h-7 font-bold">{tStatus("PUBLISHED")}</TabsTrigger>
+                <TabsTrigger value="DRAFT" className="text-xs h-7 font-bold">{tStatus("DRAFT")}</TabsTrigger>
               </TabsList>
             </Tabs>
 
@@ -541,10 +541,10 @@ export function ToursTable() {
                 variant="ghost"
                 size="sm"
                 onClick={resetFilters}
-                className="h-9 text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2.5"
+                className="h-9 text-xs text-muted-foreground hover:text-foreground gap-1.5 px-2.5 font-bold cursor-pointer"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                <span>Reset</span>
+                <span>{tCommon("reset")}</span>
               </Button>
             )}
           </div>
@@ -558,38 +558,38 @@ export function ToursTable() {
         {/* Results Counter & Active Filter Badges */}
         <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-border/60 text-xs">
           <div className="flex flex-wrap items-center gap-2 text-muted-foreground">
-            <span className="font-semibold flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
+            <span className="font-bold flex items-center gap-1.5 bg-primary/10 text-primary px-2.5 py-1 rounded-md">
               <Filter className="h-3.5 w-3.5" />
-              <span>{isLoading ? "Loading..." : `${totalCount} ${totalCount === 1 ? "Tour" : "Tours"} Found (${totalCount} رحلة)`}</span>
+              <span>{isLoading ? tCommon("loading") : `${totalCount} رحلة سياحية (${totalCount} Tours)`}</span>
             </span>
             {search && (
-              <Badge variant="secondary" className="gap-1 text-xs font-normal">
-                Search: &quot;{search}&quot;
+              <Badge variant="secondary" className="gap-1 text-xs font-semibold">
+                بحث: &quot;{search}&quot;
                 <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSearch("")} />
               </Badge>
             )}
             {selectedDestination !== "ALL" && (
-              <Badge variant="secondary" className="gap-1 text-xs font-normal">
-                Destination: {selectedDestination}
+              <Badge variant="secondary" className="gap-1 text-xs font-semibold">
+                الوجهة: {selectedDestination}
                 <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedDestination("ALL")} />
               </Badge>
             )}
             {selectedMarket !== "ALL" && (
-              <Badge variant="secondary" className="gap-1 text-xs font-normal">
-                Market: {selectedMarket}
+              <Badge variant="secondary" className="gap-1 text-xs font-semibold">
+                السوق: {selectedMarket}
                 <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setSelectedMarket("ALL")} />
               </Badge>
             )}
             {activeTab !== "ALL" && (
-              <Badge variant="secondary" className="gap-1 text-xs font-normal">
-                Status: {tStatus(activeTab)}
+              <Badge variant="secondary" className="gap-1 text-xs font-semibold">
+                الحالة: {tStatus(activeTab)}
                 <X className="h-3 w-3 cursor-pointer hover:text-foreground" onClick={() => setActiveTab("ALL")} />
               </Badge>
             )}
           </div>
 
-          <div className="text-xs text-muted-foreground font-mono">
-            Showing {toursList.length} of {totalCount}
+          <div className="text-xs text-muted-foreground font-bold">
+            عرض {toursList.length} من أصل {totalCount} رحلة
           </div>
         </div>
       </div>
@@ -597,10 +597,10 @@ export function ToursTable() {
       {/* Body View Rendering */}
       {error ? (
         <div data-testid="tours-load-error" className="rounded-2xl border border-destructive/30 bg-destructive/5 p-6 text-sm text-destructive">
-          <p className="font-semibold">Tours could not be loaded.</p>
+          <p className="font-bold">تعذر تحميل بيانات الرحلات.</p>
           <p className="mt-1 text-destructive/90">{queryErrorMessage(error)}</p>
-          <Button variant="outline" className="mt-4" onClick={() => void refetch()}>
-            Retry
+          <Button variant="outline" className="mt-4 font-bold" onClick={() => void refetch()}>
+            {tCommon("retry")}
           </Button>
         </div>
       ) : isLoading ? (

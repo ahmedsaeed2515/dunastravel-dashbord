@@ -171,10 +171,10 @@ export function ManualWalletTransactionDialog({
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Processing...</span>
+                  <span>جاري المعالجة...</span>
                 </>
               ) : (
-                <span>Confirm {type === "CREDIT" ? "Deposit" : "Deduction"}</span>
+                <span>تأكيد {type === "CREDIT" ? "إيداع الرصيد ➕" : "خصم الرصيد ➖"}</span>
               )}
             </Button>
           </DialogFooter>

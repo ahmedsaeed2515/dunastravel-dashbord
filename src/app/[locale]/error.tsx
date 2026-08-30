@@ -21,16 +21,16 @@ export default function ErrorPage({
       <div className="rounded-full bg-destructive/10 p-4 mb-4">
         <AlertCircle className="w-12 h-12 text-destructive" />
       </div>
-      <h2 className="text-3xl font-display font-bold tracking-tight mb-2">Something went wrong!</h2>
-      <p className="text-muted-foreground mb-8 max-w-[500px]">
-        An unexpected error occurred in the dashboard application. Our engineering team has been notified.
+      <h2 className="text-3xl font-display font-bold tracking-tight mb-2">عذراً، حدث خطأ غير متوقع!</h2>
+      <p className="text-muted-foreground mb-8 max-w-[500px] text-sm">
+        حدث خطأ أثناء معالجة الطلب في لوحة التحكم. تم تسجيل الخطأ وإخطار الفريق الفني.
       </p>
       <div className="flex gap-4">
-        <Button onClick={() => reset()} variant="default">
-          Try again
+        <Button onClick={() => reset()} variant="default" className="font-bold rounded-xl">
+          إعادة المحاولة 🔄
         </Button>
-        <Button onClick={() => window.location.href = '/dashboard'} variant="outline">
-          Return to Dashboard
+        <Button onClick={() => window.location.href = '/ar/admin'} variant="outline" className="font-bold rounded-xl">
+          العودة للوحة التحكم 🏠
         </Button>
       </div>
     </div>

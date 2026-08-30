@@ -46,11 +46,11 @@ export function CurrencyConverterWidget() {
   const availableCurrencies = ratesMap && typeof ratesMap === "object" ? Object.keys(ratesMap) : ["USD", "EUR", "GBP", "AED", "SAR", "EGP"];
 
   return (
-    <Card className="shadow-lg border-primary/10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md w-full max-w-sm">
+    <Card className="shadow-lg border-primary/10 bg-white/80 dark:bg-gray-900/80 backdrop-blur-md w-full max-w-sm rounded-2xl">
       <CardHeader className="pb-3 border-b border-gray-100 dark:border-gray-800">
-        <CardTitle className="text-sm font-semibold flex items-center gap-2 text-gray-900 dark:text-white">
+        <CardTitle className="text-sm font-bold flex items-center gap-2 text-gray-900 dark:text-white">
           <Calculator className="h-4 w-4 text-primary" />
-          Live Exchange Calculator
+          حاسبة تحويل العملات اللحظية
         </CardTitle>
       </CardHeader>
       <CardContent className="pt-4 space-y-4">
@@ -63,22 +63,22 @@ export function CurrencyConverterWidget() {
             <div className="space-y-3">
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Amount</span>
+                  <span className="text-[10px] font-bold text-muted-foreground ml-1">المبلغ المراد تحويله</span>
                   <Input 
                     type="number" 
                     value={amount} 
                     onChange={(e) => setAmount(e.target.value)} 
-                    className="h-9 mt-1 text-sm font-medium"
+                    className="h-9 mt-1 text-sm font-bold rounded-xl font-mono"
                     placeholder="0.00"
                   />
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground ml-1">From</span>
+                  <span className="text-[10px] font-bold text-muted-foreground ml-1">من عملة</span>
                   <Select value={fromCurrency} onValueChange={(val) => val && setFromCurrency(val)}>
-                    <SelectTrigger className="h-9 mt-1 text-xs">
+                    <SelectTrigger className="h-9 mt-1 text-xs font-bold rounded-xl">
                       <SelectValue placeholder="USD" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="font-bold">
                       {availableCurrencies.map(c => (
                         <SelectItem key={`from-${c}`} value={c}>{c}</SelectItem>
                       ))}
@@ -91,7 +91,7 @@ export function CurrencyConverterWidget() {
                 <Button 
                   variant="outline" 
                   size="icon" 
-                  className="h-7 w-7 rounded-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm"
+                  className="h-7 w-7 rounded-full bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-sm cursor-pointer"
                   onClick={handleSwap}
                 >
                   <ArrowRightLeft className="h-3.5 w-3.5 text-muted-foreground rotate-90" />
@@ -100,20 +100,20 @@ export function CurrencyConverterWidget() {
 
               <div className="grid grid-cols-3 gap-2">
                 <div className="col-span-2">
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground ml-1">Converted</span>
-                  <div className="h-9 mt-1 flex items-center px-3 bg-gray-50 dark:bg-gray-900/50 rounded-md border border-gray-200 dark:border-gray-800">
-                    <span className="text-lg font-bold font-mono text-gray-900 dark:text-white">
+                  <span className="text-[10px] font-bold text-muted-foreground ml-1">المبلغ المحول الناتج</span>
+                  <div className="h-9 mt-1 flex items-center px-3 bg-gray-50 dark:bg-gray-900/50 rounded-xl border border-gray-200 dark:border-gray-800">
+                    <span className="text-lg font-bold font-mono text-emerald-600 dark:text-emerald-400">
                       {calculateConversion()}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] uppercase font-bold text-muted-foreground ml-1">To</span>
+                  <span className="text-[10px] font-bold text-muted-foreground ml-1">إلى عملة</span>
                   <Select value={toCurrency} onValueChange={(val) => val && setToCurrency(val)}>
-                    <SelectTrigger className="h-9 mt-1 text-xs">
+                    <SelectTrigger className="h-9 mt-1 text-xs font-bold rounded-xl">
                       <SelectValue placeholder="EUR" />
                     </SelectTrigger>
-                    <SelectContent>
+                    <SelectContent className="font-bold">
                       {availableCurrencies.map(c => (
                         <SelectItem key={`to-${c}`} value={c}>{c}</SelectItem>
                       ))}
@@ -123,8 +123,8 @@ export function CurrencyConverterWidget() {
               </div>
             </div>
 
-            <div className="text-[10px] text-center text-muted-foreground">
-              Rates updated {ratesData?.timestamp ? new Date(ratesData.timestamp).toLocaleTimeString() : 'recently'}
+            <div className="text-[10px] text-center text-muted-foreground font-semibold">
+              تم تحديث أسعار الصرف {ratesData?.timestamp ? new Date(ratesData.timestamp).toLocaleTimeString() : 'مؤخراً'}
             </div>
           </>
         )}

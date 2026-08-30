@@ -57,10 +57,25 @@ export function DashboardHeader({ filters, onFilterChange, onRefresh, isRefreshi
           </span>
         </div>
         <div className="flex items-center gap-2 pt-2">
-          <select aria-label="Dashboard period" value={filters?.preset ?? 'all'} onChange={(event) => onFilterChange?.({ ...filters, preset: event.target.value as DashboardFilters['preset'] })} className="rounded-md border bg-background px-2 py-1 text-xs">
-            <option value="all">Last 12 months</option><option value="30d">Last 30 days</option><option value="90d">Last 90 days</option><option value="12m">Last 12 months</option>
+          <select
+            aria-label={isAr ? "فترة لوحة التحكم" : "Dashboard period"}
+            value={filters?.preset ?? 'all'}
+            onChange={(event) => onFilterChange?.({ ...filters, preset: event.target.value as DashboardFilters['preset'] })}
+            className="rounded-xl border border-border bg-card px-3 py-1.5 text-xs font-bold text-foreground focus:outline-hidden"
+          >
+            <option value="all">{isAr ? "آخر 12 شهراً (الكل)" : "Last 12 months (All)"}</option>
+            <option value="30d">{isAr ? "آخر 30 يوماً" : "Last 30 days"}</option>
+            <option value="90d">{isAr ? "آخر 90 يوماً" : "Last 90 days"}</option>
+            <option value="12m">{isAr ? "آخر 12 شهراً" : "Last 12 months"}</option>
           </select>
-          <button type="button" onClick={onRefresh} disabled={isRefreshing} className="rounded-md border px-2 py-1 text-xs disabled:opacity-50">{isRefreshing ? 'Refreshing…' : 'Refresh'}</button>
+          <button
+            type="button"
+            onClick={onRefresh}
+            disabled={isRefreshing}
+            className="rounded-xl border border-border bg-card hover:bg-muted/80 px-3 py-1.5 text-xs font-bold text-foreground disabled:opacity-50 cursor-pointer transition-colors"
+          >
+            {isRefreshing ? (isAr ? 'جاري التحديث…' : 'Refreshing…') : (isAr ? 'تحديث البيانات 🔄' : 'Refresh')}
+          </button>
         </div>
       </div>
     </div>

@@ -155,65 +155,65 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
             </SheetHeader>
 
             <Tabs defaultValue="overview" className="w-full">
-              <TabsList className="w-full grid grid-cols-8 h-11 bg-gray-100 dark:bg-gray-800 p-1 rounded-lg mb-4">
-                <TabsTrigger value="overview" className="text-xs font-medium">Overview</TabsTrigger>
-                <TabsTrigger value="bookings" className="text-xs font-medium">Bookings</TabsTrigger>
-                <TabsTrigger value="payments" className="text-xs font-medium">Payments</TabsTrigger>
-                <TabsTrigger value="notes" className="text-xs font-medium">Notes ({detail.notes?.length || 0})</TabsTrigger>
-                <TabsTrigger value="documents" className="text-xs font-medium">Docs ({detail.documents?.length || 0})</TabsTrigger>
-                <TabsTrigger value="timeline" className="text-xs font-medium">Timeline</TabsTrigger>
-                <TabsTrigger value="future" className="text-xs font-medium">Marketing</TabsTrigger>
-                <TabsTrigger value="ai-insights" className="text-xs font-medium text-indigo-600 dark:text-indigo-400">AI ✨</TabsTrigger>
+              <TabsList className="w-full grid grid-cols-8 h-11 bg-gray-100 dark:bg-gray-800 p-1 rounded-xl mb-4 font-bold">
+                <TabsTrigger value="overview" className="text-xs font-bold">نظرة عامة</TabsTrigger>
+                <TabsTrigger value="bookings" className="text-xs font-bold">الحجوزات</TabsTrigger>
+                <TabsTrigger value="payments" className="text-xs font-bold">المدفوعات</TabsTrigger>
+                <TabsTrigger value="notes" className="text-xs font-bold">الملاحظات ({detail.notes?.length || 0})</TabsTrigger>
+                <TabsTrigger value="documents" className="text-xs font-bold">المستندات ({detail.documents?.length || 0})</TabsTrigger>
+                <TabsTrigger value="timeline" className="text-xs font-bold">السجل</TabsTrigger>
+                <TabsTrigger value="future" className="text-xs font-bold">التسويق</TabsTrigger>
+                <TabsTrigger value="ai-insights" className="text-xs font-bold text-indigo-600 dark:text-indigo-400">تحليل الذكاء ✨</TabsTrigger>
               </TabsList>
 
               <ScrollArea className="h-[calc(100vh-220px)] pr-6">
                 {/* 1. OVERVIEW TAB */}
                 <TabsContent value="overview" className="space-y-6">
                   {/* VIP & Key Actions */}
-                  <div className="p-4 rounded-xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 flex items-center justify-between">
+                  <div className="p-4 rounded-2xl bg-gradient-to-r from-amber-500/10 via-amber-500/5 to-transparent border border-amber-500/20 flex items-center justify-between">
                     <div>
-                      <h4 className="font-semibold text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
+                      <h4 className="font-bold text-amber-800 dark:text-amber-400 flex items-center gap-1.5">
                         <Star className="h-4 w-4 fill-amber-500 text-amber-500" />
-                        VIP Concierge Status
+                        حالة خدمة كبار الشخصيات (VIP Concierge)
                       </h4>
-                      <p className="text-xs text-muted-foreground mt-0.5">
-                        {detail.isVip ? "Customer is enrolled in the VIP luxury tier." : "Customer is currently in the standard tier."}
+                      <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                        {detail.isVip ? "العميل مسجل حالياً ضمن باقة كبار الشخصيات (VIP)." : "العميل مسجل حالياً ضمن الفئة القياسية."}
                       </p>
                     </div>
-                    <Button variant={detail.isVip ? "outline" : "default"} size="sm" onClick={handleToggleVip}>
-                      {detail.isVip ? "Demote from VIP" : "Upgrade to VIP"}
+                    <Button variant={detail.isVip ? "outline" : "default"} size="sm" onClick={handleToggleVip} className="rounded-xl font-bold">
+                      {detail.isVip ? "إلغاء فئة VIP" : "ترقية إلى VIP 👑"}
                     </Button>
                   </div>
 
                   {/* Personal Information */}
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
-                      <Shield className="h-4 w-4 text-primary" /> Personal & Identification
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-primary" /> البيانات الشخصية وإثبات الهوية
                     </h3>
-                    <div className="grid grid-cols-3 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="grid grid-cols-3 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Passport Number</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.passportNumber || "N/A"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">رقم جواز السفر</span>
+                        <span className="font-bold font-mono text-gray-900 dark:text-gray-100">{detail.passportNumber || "غير متوفر"}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Nationality</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.nationality || "N/A"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">الجنسية</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{detail.nationality || "غير محددة"}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Date of Birth</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatDateSafe(detail.dateOfBirth)}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">تاريخ الميلاد</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{formatDateSafe(detail.dateOfBirth)}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Gender</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.gender || "N/A"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">النوع</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{detail.gender === "MALE" ? "ذكر" : detail.gender === "FEMALE" ? "أنثى" : detail.gender || "غير محدد"}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Phone Verified</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.phoneVerified ? "Yes" : "No"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">توثيق الهاتف</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{detail.phoneVerified ? "مؤكد ومفعل ✅" : "غير مؤكد"}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Registered</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{formatDateSafe(detail.createdAt)}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">تاريخ التسجيل</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{formatDateSafe(detail.createdAt)}</span>
                       </div>
                     </div>
                   </div>
@@ -222,35 +222,35 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
 
                   {/* Preferences */}
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
-                      <MapPin className="h-4 w-4 text-primary" /> Travel Preferences
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white flex items-center gap-2">
+                      <MapPin className="h-4 w-4 text-primary" /> تفضيلات السفر والرحلات
                     </h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Preferred Destination</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">الوجهة المفضلة</span>
                         <Input 
-                          placeholder="e.g. Red Sea / Luxor" 
+                          placeholder="مثال: الأقصر وأسوان / البحر الأحمر" 
                           defaultValue={detail.preferredDestination || ""}
                           onBlur={(e) => handleUpdatePreference("preferredDestination", e.target.value)}
-                          className="h-8 text-xs mt-1"
+                          className="h-8 text-xs mt-1 rounded-xl"
                         />
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Preferred Travel Type</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">نوع الرحلة المفضل</span>
                         <Input 
-                          placeholder="e.g. Private Luxury Charter" 
+                          placeholder="مثال: رحلة نيلية فاخرة خاصة" 
                           defaultValue={detail.preferredTravelType || ""}
                           onBlur={(e) => handleUpdatePreference("preferredTravelType", e.target.value)}
-                          className="h-8 text-xs mt-1"
+                          className="h-8 text-xs mt-1 rounded-xl"
                         />
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Language / Currency</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.preferredLanguage?.toUpperCase() || "EN"} / {detail.preferredCurrency || "USD"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">اللغة والعملة المفضلة</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{detail.preferredLanguage?.toUpperCase() || "AR"} / {detail.preferredCurrency || "USD"}</span>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Favorite Tour</span>
-                        <span className="font-medium text-gray-900 dark:text-gray-100">{detail.favoriteTour || "None"}</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">الرحلة المفضلة</span>
+                        <span className="font-bold text-gray-900 dark:text-gray-100">{detail.favoriteTour || "لا توجد"}</span>
                       </div>
                     </div>
                   </div>
@@ -259,28 +259,28 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
 
                   {/* Emergency & Contacts */}
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Emergency Contact & Address</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white">بيانات الطوارئ والعنوان</h3>
+                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-2xl border border-gray-100 dark:border-gray-800">
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Emergency Contact</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">جهة الاتصال في الطوارئ</span>
                         {detail.emergencyContact ? (
                           <div className="space-y-0.5">
-                            <div className="font-medium text-gray-900 dark:text-gray-100">{detail.emergencyContact.name || "Unknown"}</div>
-                            <div className="text-xs text-muted-foreground">{detail.emergencyContact.relationship || "Relationship"} • {detail.emergencyContact.phone || "No Phone"}</div>
+                            <div className="font-bold text-gray-900 dark:text-gray-100">{detail.emergencyContact.name || "غير محدد"}</div>
+                            <div className="text-xs text-muted-foreground">{detail.emergencyContact.relationship || "صلة القرابة"} • {detail.emergencyContact.phone || "لا يوجد رقم"}</div>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-xs">No emergency contact specified.</span>
+                          <span className="text-muted-foreground text-xs font-semibold">لم يتم تحديد جهة اتصال للطوارئ.</span>
                         )}
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Address</span>
+                        <span className="text-muted-foreground block text-xs mb-1 font-bold">العنوان</span>
                         {detail.address ? (
-                          <div className="text-xs text-gray-900 dark:text-gray-100 space-y-0.5">
+                          <div className="text-xs text-gray-900 dark:text-gray-100 space-y-0.5 font-medium">
                             <div>{detail.address.street}</div>
                             <div>{[detail.address.city, detail.address.state, detail.address.country].filter(Boolean).join(", ")}</div>
                           </div>
                         ) : (
-                          <span className="text-muted-foreground text-xs">No address specified.</span>
+                          <span className="text-muted-foreground text-xs font-semibold">لا يوجد عنوان مسجل.</span>
                         )}
                       </div>
                     </div>
@@ -344,27 +344,27 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                 {/* 3. PAYMENTS TAB */}
                 <TabsContent value="payments" className="space-y-6">
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Detailed Payment Ledger</h3>
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white text-sm">سجل المعاملات والمدفوعات التفصيلي</h3>
                     <div className="space-y-3">
                       {detail.bookings?.flatMap(b => b.payments || []).length > 0 ? (
                         detail.bookings.flatMap(b => b.payments || []).map((p: any, i: number) => (
                           <div key={p.id || i} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
                             <div className="space-y-0.5">
-                              <div className="font-medium text-sm text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                                <span>{p.isRefund ? 'Refund' : 'Payment'} via {p.method}</span>
-                                <Badge variant="outline" className="text-[10px] uppercase">{p.currency || 'USD'}</Badge>
+                              <div className="font-bold text-xs text-gray-900 dark:text-gray-100 flex items-center gap-2">
+                                <span>{p.isRefund ? 'استرداد مالي' : 'دفعة مؤكدة'} عبر {p.method}</span>
+                                <Badge variant="outline" className="text-[10px] uppercase font-bold">{p.currency || 'USD'}</Badge>
                               </div>
-                              <div className="text-xs font-mono text-muted-foreground">{p.transactionId || "No Transaction ID"}</div>
-                              <div className="text-xs text-muted-foreground">{formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}</div>
+                              <div className="text-[10px] font-mono text-muted-foreground">{p.transactionId || "بدون معرّف عملية"}</div>
+                              <div className="text-[10px] text-muted-foreground font-mono">{formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}</div>
                             </div>
-                            <div className={`text-base font-bold ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
+                            <div className={`text-sm font-bold font-mono ${p.isRefund ? 'text-red-500' : 'text-green-600'}`}>
                               {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
                             </div>
                           </div>
                         ))
                       ) : (
-                        <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                          No payments recorded in the ledger.
+                        <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-xs font-bold">
+                          لا توجد مدفوعات مسجلة في السجل حتى الآن.
                         </div>
                       )}
                     </div>
@@ -376,28 +376,28 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                   {/* Add Note Form */}
                   <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 space-y-3">
                     <div className="flex items-center justify-between">
-                      <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Add Customer Note</h4>
+                      <h4 className="font-bold text-xs text-gray-900 dark:text-white">إضافة ملاحظة جديدة للعميل</h4>
                       <Select defaultValue={newNoteType} onValueChange={(val) => val && setNewNoteType(val)}>
-                        <SelectTrigger className="w-36 h-8 text-xs bg-white dark:bg-gray-800">
-                          <SelectValue placeholder="Type" />
+                        <SelectTrigger className="w-36 h-8 text-xs bg-white dark:bg-gray-800 font-bold rounded-xl">
+                          <SelectValue placeholder="نوع الملاحظة" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="INTERNAL">Internal Note</SelectItem>
-                          <SelectItem value="SALES">Sales Note</SelectItem>
-                          <SelectItem value="OPERATIONS">Operations Note</SelectItem>
+                        <SelectContent className="font-bold text-xs">
+                          <SelectItem value="INTERNAL">ملاحظة داخلية</SelectItem>
+                          <SelectItem value="SALES">ملاحظة مبيعات</SelectItem>
+                          <SelectItem value="OPERATIONS">ملاحظة تشغيلية</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <Textarea 
-                      placeholder="Type notes regarding custom requests, sales discussions, or support interactions..." 
+                      placeholder="اكتب ملاحظات حول متطلبات العميل، محادثات المبيعات أو الدعم..." 
                       value={newNoteContent}
                       onChange={(e) => setNewNoteContent(e.target.value)}
-                      className="text-xs bg-white dark:bg-gray-800 resize-none h-20"
+                      className="text-xs bg-white dark:bg-gray-800 resize-none h-20 rounded-xl"
                     />
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={handleAddNote} disabled={isAddingNote || !newNoteContent.trim()} className="h-8 text-xs flex items-center gap-1.5">
+                      <Button size="sm" onClick={handleAddNote} disabled={isAddingNote || !newNoteContent.trim()} className="h-8 text-xs flex items-center gap-1.5 font-bold rounded-xl">
                         {isAddingNote ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                        <span>Save Note</span>
+                        <span>حفظ الملاحظة</span>
                       </Button>
                     </div>
                   </div>
@@ -409,10 +409,10 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                         <div key={n.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-2">
                           <div className="flex items-center justify-between">
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="text-[10px] font-medium">{n.noteType}</Badge>
-                              <span className="text-xs font-medium text-gray-900 dark:text-gray-100">{n.authorName}</span>
+                              <Badge variant="secondary" className="text-[10px] font-bold">{n.noteType === 'INTERNAL' ? 'داخلية' : n.noteType === 'SALES' ? 'مبيعات' : 'تشغيل'}</Badge>
+                              <span className="text-xs font-bold text-gray-900 dark:text-gray-100">{n.authorName}</span>
                             </div>
-                            <span className="text-[11px] text-muted-foreground">{formatDateSafe(n.createdAt, "MMM do, yyyy h:mm a")}</span>
+                            <span className="text-[10px] text-muted-foreground font-mono">{formatDateSafe(n.createdAt, "MMM do, yyyy h:mm a")}</span>
                           </div>
                           <p className="text-xs text-gray-700 dark:text-gray-200 leading-relaxed whitespace-pre-wrap">
                             {n.content}
@@ -420,8 +420,8 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                         </div>
                       ))
                     ) : (
-                      <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                        No internal notes saved for this customer profile yet.
+                      <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-xs font-bold">
+                        لا توجد ملاحظات داخلية محفوظة لهذا العميل بعد.
                       </div>
                     )}
                   </div>
@@ -431,36 +431,36 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                 <TabsContent value="documents" className="space-y-6">
                   {/* Upload Document Form */}
                   <div className="p-4 rounded-xl bg-gray-50 dark:bg-gray-900/60 border border-gray-200 dark:border-gray-800 space-y-3">
-                    <h4 className="font-semibold text-sm text-gray-900 dark:text-white">Attach Customer Document</h4>
+                    <h4 className="font-bold text-xs text-gray-900 dark:text-white">إرفاق مستند للعميل</h4>
                     <div className="grid grid-cols-2 gap-3">
                       <Input 
-                        placeholder="Document Title (e.g. Passport Copy)" 
+                        placeholder="عنوان المستند (مثال: نسخة جواز السفر)" 
                         value={docTitle}
                         onChange={(e) => setDocTitle(e.target.value)}
-                        className="text-xs bg-white dark:bg-gray-800 h-9"
+                        className="text-xs bg-white dark:bg-gray-800 h-9 rounded-xl font-medium"
                       />
                       <Select defaultValue={docType} onValueChange={(val) => val && setDocType(val)}>
-                        <SelectTrigger className="h-9 text-xs bg-white dark:bg-gray-800">
-                          <SelectValue placeholder="Doc Type" />
+                        <SelectTrigger className="h-9 text-xs bg-white dark:bg-gray-800 font-bold rounded-xl">
+                          <SelectValue placeholder="نوع المستند" />
                         </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="PASSPORT">Passport</SelectItem>
-                          <SelectItem value="VISA">Visa Document</SelectItem>
-                          <SelectItem value="CONTRACT">B2B Contract</SelectItem>
-                          <SelectItem value="OTHER">Other Attachment</SelectItem>
+                        <SelectContent className="font-bold text-xs">
+                          <SelectItem value="PASSPORT">جواز سفر (Passport)</SelectItem>
+                          <SelectItem value="VISA">تأشيرة دخول (Visa)</SelectItem>
+                          <SelectItem value="CONTRACT">عقد شركات (B2B Contract)</SelectItem>
+                          <SelectItem value="OTHER">مستند آخر (Other)</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
                     <Input 
-                      placeholder="Media Asset ID or URL" 
+                      placeholder="رابط أو معرّف الملف المرفوع" 
                       value={mediaAssetId}
                       onChange={(e) => setMediaAssetId(e.target.value)}
                       className="text-xs bg-white dark:bg-gray-800 h-9"
                     />
                     <div className="flex justify-end">
-                      <Button size="sm" onClick={handleAddDocument} disabled={isAddingDoc || !docTitle.trim() || !mediaAssetId.trim()} className="h-8 text-xs flex items-center gap-1.5">
+                      <Button size="sm" onClick={handleAddDocument} disabled={isAddingDoc || !docTitle.trim() || !mediaAssetId.trim()} className="h-8 text-xs flex items-center gap-1.5 font-bold rounded-xl">
                         {isAddingDoc ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Plus className="h-3.5 w-3.5" />}
-                        <span>Attach Document</span>
+                        <span>إرفاق المستند</span>
                       </Button>
                     </div>
                   </div>
@@ -471,28 +471,28 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       detail.documents.map((d) => (
                         <div key={d.id} className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 flex items-center justify-between">
                           <div className="flex items-center gap-3">
-                            <div className="p-2 bg-primary/10 rounded-lg text-primary">
+                            <div className="p-2 bg-primary/10 rounded-xl text-primary">
                               <FileText className="h-5 w-5" />
                             </div>
                             <div className="space-y-0.5">
-                              <div className="font-medium text-sm text-gray-900 dark:text-white flex items-center gap-2">
+                              <div className="font-bold text-xs text-gray-900 dark:text-white flex items-center gap-2">
                                 <span>{d.title}</span>
-                                <Badge variant="outline" className="text-[10px]">{d.documentType}</Badge>
+                                <Badge variant="outline" className="text-[10px] font-bold">{d.documentType}</Badge>
                               </div>
-                              <div className="text-xs text-muted-foreground">
-                                Attached {formatDateSafe(d.createdAt)} • Asset ID: <span className="font-mono">{d.mediaAssetId}</span>
+                              <div className="text-[10px] text-muted-foreground font-mono">
+                                أُرفق في {formatDateSafe(d.createdAt)} • معرّف الملف: <span className="font-mono">{d.mediaAssetId}</span>
                               </div>
                             </div>
                           </div>
-                          <Button variant="outline" size="sm" className="h-8 text-xs flex items-center gap-1" onClick={() => window.open(`/api/media/${d.mediaAssetId}`, '_blank')}>
-                            <span>View File</span>
+                          <Button variant="outline" size="sm" className="h-8 text-xs flex items-center gap-1 font-bold rounded-xl" onClick={() => window.open(`/api/media/${d.mediaAssetId}`, '_blank')}>
+                            <span>معاينة الملف</span>
                             <ExternalLink className="h-3 w-3" />
                           </Button>
                         </div>
                       ))
                     ) : (
-                      <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                        No documents attached to this customer profile yet.
+                      <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-xs font-bold">
+                        لا توجد مستندات مرفقة لهذا العميل بعد.
                       </div>
                     )}
                   </div>
@@ -500,22 +500,22 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
 
                 {/* 6. TIMELINE TAB */}
                 <TabsContent value="timeline" className="space-y-4">
-                  <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Customer Action Timeline</h3>
+                  <h3 className="font-bold text-gray-900 dark:text-white mb-4 text-sm">سجل وحركات نشاط العميل</h3>
                   {detail.timeline && detail.timeline.length > 0 ? (
-                    <div className="relative border-l border-gray-200 dark:border-gray-800 ml-3 space-y-6 py-2">
+                    <div className="relative border-r border-gray-200 dark:border-gray-800 mr-3 space-y-6 py-2">
                       {detail.timeline.map((log) => (
-                        <div key={log.id} className="relative pl-6">
-                          <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5 ring-4 ring-white dark:ring-gray-900" />
+                        <div key={log.id} className="relative pr-6">
+                          <div className="absolute w-3 h-3 bg-primary rounded-full -right-[6.5px] top-1.5 ring-4 ring-white dark:ring-gray-900" />
                           <div className="flex items-center justify-between">
-                            <div className="font-medium text-sm text-gray-900 dark:text-white">{(log.action || "UPDATE").replace(/_/g, ' ')}</div>
-                            <span className="text-[11px] text-muted-foreground">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</span>
+                            <div className="font-bold text-xs text-gray-900 dark:text-white">{(log.action || "UPDATE").replace(/_/g, ' ')}</div>
+                            <span className="text-[10px] text-muted-foreground font-mono">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</span>
                           </div>      
-                          <div className="text-xs text-muted-foreground mt-0.5">Performed by {log.authorName}</div>
+                          <div className="text-[10px] text-muted-foreground mt-0.5">بواسطة: {log.authorName}</div>
                           {log.details && Object.keys(log.details).length > 0 && (
-                            <div className="mt-2 flex flex-wrap gap-1.5 p-2 bg-muted/40 rounded-lg border border-border/50 text-[11px]">
+                            <div className="mt-2 flex flex-wrap gap-1.5 p-2 bg-muted/40 rounded-xl border border-border/50 text-[10px]">
                               {Object.entries(log.details).map(([k, v]) => (
                                 <span key={k} className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-background/80 border text-muted-foreground">
-                                  <span className="font-semibold text-foreground">{k}:</span>
+                                  <span className="font-bold text-foreground">{k}:</span>
                                   <span className="font-mono truncate max-w-[200px]">{typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
                                 </span>
                               ))}
@@ -525,8 +525,8 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                       ))}
                     </div>
                   ) : (
-                    <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800">
-                      No activity events recorded yet.
+                    <div className="text-center text-muted-foreground py-12 bg-gray-50 dark:bg-gray-900/40 rounded-xl border border-dashed border-gray-200 dark:border-gray-800 text-xs font-bold">
+                      لا توجد حركات أو أحداث مسجلة بعد.
                     </div>
                   )}
                 </TabsContent>
@@ -534,35 +534,35 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                 {/* 7. FUTURE RELATIONS & MARKETING TAB */}
                 <TabsContent value="future" className="space-y-6">
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Marketing & Referral Attribution</h3>
-                    <div className="grid grid-cols-2 gap-4 text-sm bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white text-sm">التسويق ومصدر الإحالة (Marketing & Referral)</h3>
+                    <div className="grid grid-cols-2 gap-4 text-xs bg-gray-50 dark:bg-gray-900/50 p-4 rounded-xl border border-gray-100 dark:border-gray-800">
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Marketing Consent</span>
+                        <span className="text-muted-foreground block text-xs font-bold mb-1">الموافقة على الرسائل التسويقية</span>
                         <div className="flex items-center gap-2 mt-1">
-                          <Badge variant={detail.marketingConsent ? "default" : "secondary"}>
-                            {detail.marketingConsent ? "Subscribed" : "Opted Out"}
+                          <Badge variant={detail.marketingConsent ? "default" : "secondary"} className="font-bold text-[10px]">
+                            {detail.marketingConsent ? "مشترك" : "غير مشترك"}
                           </Badge>
-                          <Button variant="ghost" size="sm" className="h-7 text-xs" onClick={() => handleUpdatePreference("marketingConsent", !detail.marketingConsent)}>
-                            Toggle
+                          <Button variant="ghost" size="sm" className="h-7 text-xs font-bold rounded-xl" onClick={() => handleUpdatePreference("marketingConsent", !detail.marketingConsent)}>
+                            تبديل
                           </Button>
                         </div>
                       </div>
                       <div>
-                        <span className="text-muted-foreground block text-xs mb-1">Customer Source</span>
+                        <span className="text-muted-foreground block text-xs font-bold mb-1">مصدر العميل (Source)</span>
                         <Input 
-                          placeholder="e.g. WEB / REFERRAL / AGENT" 
+                          placeholder="مثال: WEB / REFERRAL / AGENT" 
                           defaultValue={detail.customerSource || "WEB"}
                           onBlur={(e) => handleUpdatePreference("customerSource", e.target.value)}
-                          className="h-8 text-xs mt-1"
+                          className="h-8 text-xs mt-1 rounded-xl"
                         />
                       </div>
                       <div className="col-span-2">
-                        <span className="text-muted-foreground block text-xs mb-1">Referral Attribution Source</span>
+                        <span className="text-muted-foreground block text-xs font-bold mb-1">مصدر الإحالة الترويجي (Referral)</span>
                         <Input 
-                          placeholder="e.g. VIP Concierge Referral Program 2026" 
+                          placeholder="مثال: VIP Concierge Referral Program 2026" 
                           defaultValue={detail.referralSource || ""}
                           onBlur={(e) => handleUpdatePreference("referralSource", e.target.value)}
-                          className="h-8 text-xs mt-1"
+                          className="h-8 text-xs mt-1 rounded-xl"
                         />
                       </div>
                     </div>
@@ -571,19 +571,19 @@ export function CustomerProfileDrawer({ customer, open, onOpenChange }: Customer
                   <Separator />
 
                   <div>
-                    <h3 className="font-semibold mb-3 text-gray-900 dark:text-white">Future System Relations (Phases 6, 7 & 8)</h3>
+                    <h3 className="font-bold mb-3 text-gray-900 dark:text-white text-sm">علاقات النظام وشركاء الأعمال B2B</h3>
                     <div className="space-y-3">
                       <div className="p-4 rounded-xl border border-gray-200 dark:border-gray-800 bg-white dark:bg-gray-900 space-y-1">
                         <div className="flex items-center justify-between">
-                          <span className="font-semibold text-sm text-gray-900 dark:text-white">Future Company Relation (B2B Agency)</span>
-                          <Badge variant="outline" className="text-[10px] bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">Phase 6 Ready</Badge>
+                          <span className="font-bold text-xs text-gray-900 dark:text-white">الشركة السياحية المرتبطة (B2B Agency)</span>
+                          <Badge variant="outline" className="text-[10px] font-bold bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800">جاهز B2B</Badge>
                         </div>
-                        <p className="text-xs text-muted-foreground">Linked company or corporate partner managing this traveler.</p>
+                        <p className="text-[10px] text-muted-foreground">الشركة أو الوكالة الشريكة التي تدير حجوزات هذا المسافر.</p>
                         <Input 
-                          placeholder="Link Company UUID..." 
+                          placeholder="معرّف الشركة UUID..." 
                           defaultValue={detail.futureCompanyId || ""}
                           onBlur={(e) => handleUpdatePreference("futureCompanyId", e.target.value)}
-                          className="h-8 text-xs mt-2 font-mono"
+                          className="h-8 text-xs mt-2 font-mono rounded-xl"
                         />
                       </div>
 

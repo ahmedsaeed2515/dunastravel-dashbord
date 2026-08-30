@@ -22,7 +22,7 @@ export function CommunicationsView() {
     <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 p-6">
       <div className="flex flex-col md:flex-row justify-between items-center mb-6 gap-4">
         <div className="flex items-center gap-2">
-          <h2 className="text-lg font-semibold tracking-tight">Delivery Logs</h2>
+          <h2 className="text-lg font-bold tracking-tight">سجلات إرسال الرسائل والإشعارات (Delivery Logs)</h2>
           {isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
         </div>
 
@@ -30,8 +30,8 @@ export function CommunicationsView() {
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input 
-              placeholder="Search recipient email..." 
-              className="pl-9 bg-background/50"
+              placeholder="بحث ببريد المستلم..." 
+              className="pl-9 bg-background/50 rounded-xl"
               onChange={(e) => setFilters(f => ({ ...f, recipientEmail: e.target.value || undefined, page: 1 }))}
             />
           </div>
@@ -40,15 +40,15 @@ export function CommunicationsView() {
             value={filters.status || "ALL"}
             onValueChange={(val) => setFilters(f => ({ ...f, status: val === "ALL" || !val ? undefined : val as NotificationDeliveryStatus, page: 1 }))}
           >
-            <SelectTrigger className="w-[140px] bg-background/50">
-              <SelectValue placeholder="Status" />
+            <SelectTrigger className="w-[160px] bg-background/50 rounded-xl font-bold text-xs">
+              <SelectValue placeholder="الحالة" />
             </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="ALL">All Status</SelectItem>
-              <SelectItem value="PENDING">Pending</SelectItem>
-              <SelectItem value="SENT">Sent</SelectItem>
-              <SelectItem value="FAILED">Failed</SelectItem>
-              <SelectItem value="EXHAUSTED">Exhausted</SelectItem>
+            <SelectContent className="font-bold text-xs">
+              <SelectItem value="ALL">كافة الحالات</SelectItem>
+              <SelectItem value="PENDING">قيد الإرسال (Pending)</SelectItem>
+              <SelectItem value="SENT">تم الإرسال (Sent)</SelectItem>
+              <SelectItem value="FAILED">فشل الإرسال (Failed)</SelectItem>
+              <SelectItem value="EXHAUSTED">استنفدت المحاولات (Exhausted)</SelectItem>
             </SelectContent>
           </Select>
         </div>

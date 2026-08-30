@@ -923,12 +923,12 @@ export default function AiAgentsPage() {
         {/* Tab 1: Overview & Telemetry */}
         <TabsContent value="overview" className="m-0 space-y-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Total Chat Sessions</p>
-                  <p className="text-2xl font-bold mt-1">{metrics?.totalConversations ?? 0}</p>
-                  <span className="text-[11px] text-emerald-600 font-medium">{metrics?.activeConversations ?? 0} active currently</span>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">إجمالي جلسات المحادثة</p>
+                  <p className="text-2xl font-bold mt-1 font-mono">{metrics?.totalConversations ?? 0}</p>
+                  <span className="text-[11px] text-emerald-600 font-bold">{metrics?.activeConversations ?? 0} جلسات نشطة حالياً</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
                   <MessageSquare className="h-5 w-5 text-primary" />
@@ -936,12 +936,12 @@ export default function AiAgentsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Qualified Leads</p>
-                  <p className="text-2xl font-bold mt-1">{metrics?.qualifiedLeads ?? 0}</p>
-                  <span className="text-[11px] text-amber-600 font-medium">{metrics?.handedOffConversations ?? 0} VIP handoffs</span>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">العملاء المؤهلون (Leads)</p>
+                  <p className="text-2xl font-bold mt-1 font-mono">{metrics?.qualifiedLeads ?? 0}</p>
+                  <span className="text-[11px] text-amber-600 font-bold">{metrics?.handedOffConversations ?? 0} تحويلات VIP للمبيعات</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-amber-500/10 flex items-center justify-center">
                   <Users className="h-5 w-5 text-amber-600" />
@@ -949,12 +949,12 @@ export default function AiAgentsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">API Failover Pool</p>
-                  <p className="text-2xl font-bold mt-1">{keyPool.length} Keys</p>
-                  <span className="text-[11px] text-emerald-600 font-medium">{keyPool.filter((k) => k.isActive).length} Active & Failover Ready</span>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">مجمع مفاتيح الذكاء البديلة</p>
+                  <p className="text-2xl font-bold mt-1 font-mono">{keyPool.length} مفاتيح</p>
+                  <span className="text-[11px] text-emerald-600 font-bold">{keyPool.filter((k) => k.isActive).length} نشط وجاهز للتبديل الفوري</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-emerald-500/10 flex items-center justify-center">
                   <Key className="h-5 w-5 text-emerald-600" />
@@ -962,12 +962,12 @@ export default function AiAgentsPage() {
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardContent className="p-5 flex items-center justify-between">
                 <div>
-                  <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider">Avg Latency / Cost</p>
-                  <p className="text-2xl font-bold mt-1">{metrics?.avgLatencyMs ?? 0} ms</p>
-                  <span className="text-[11px] text-purple-600 font-medium">Est. Cost: ${metrics?.estimatedCostUsd ?? '0.0000'}</span>
+                  <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">متوسط الاستجابة والتكلفة</p>
+                  <p className="text-2xl font-bold mt-1 font-mono">{metrics?.avgLatencyMs ?? 0} ms</p>
+                  <span className="text-[11px] text-purple-600 font-mono font-bold">التكلفة التقديرية: ${metrics?.estimatedCostUsd ?? '0.0000'}</span>
                 </div>
                 <div className="h-10 w-10 rounded-full bg-purple-500/10 flex items-center justify-center">
                   <Zap className="h-5 w-5 text-purple-600" />
@@ -977,55 +977,55 @@ export default function AiAgentsPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <ShieldCheck className="h-5 w-5 text-emerald-600" />
-                  GuideR Engine Status
+                  حالة محرك المساعد الذكي GuideR
                 </CardTitle>
-                <CardDescription>Live multi-provider resilience and system health status</CardDescription>
+                <CardDescription className="text-xs">حالة صحة النظام واستقرار مزودي الذكاء الاصطناعي المتعددين</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Public GuideR Status</span>
-                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">ONLINE & PROTECTED</span>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/40 text-xs">
+                  <span className="font-bold text-muted-foreground">حالة المساعد الذكي العام</span>
+                  <span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 font-bold">متصل ومحمي 🟢</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Active Primary Provider</span>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/40 text-xs">
+                  <span className="font-bold text-muted-foreground">المزود الرئيسي النشط</span>
                   <span className="font-mono font-bold uppercase text-primary">{config.provider} ({config.model})</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">Failover Circuit Breaker</span>
-                  <span className="font-bold text-emerald-600">Zero-Latency Instant Fallback Enabled</span>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/40 text-xs">
+                  <span className="font-bold text-muted-foreground">نظام قاطع التحويل التلقائي</span>
+                  <span className="font-bold text-emerald-600">التبديل الفوري التلقائي مفعّل ⚡</span>
                 </div>
-                <div className="flex justify-between items-center p-3 rounded-lg bg-muted/40 text-xs">
-                  <span className="font-semibold text-muted-foreground">RAG Catalog Grounding</span>
-                  <span className="font-bold text-blue-600">5-Language Synchronized DB Store</span>
+                <div className="flex justify-between items-center p-3 rounded-xl bg-muted/40 text-xs">
+                  <span className="font-bold text-muted-foreground">ربط كتالوج الرحلات (RAG)</span>
+                  <span className="font-bold text-blue-600">قاعدة بيانات متزامنة بـ 5 لغات</span>
                 </div>
               </CardContent>
             </Card>
 
-            <Card className="border-border/80 shadow-xs bg-card">
+            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
               <CardHeader>
-                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <CardTitle className="text-base font-bold flex items-center gap-2">
                   <RefreshCw className="h-5 w-5 text-amber-600" />
-                  Instant Operations
+                  العمليات والإجراءات الفورية
                 </CardTitle>
-                <CardDescription>Direct control actions for RAG sync and telemetry refresh</CardDescription>
+                <CardDescription className="text-xs">إجراءات التحكم المباشرة لمزامنة المعرفة الذكية وتحديث المقاييس</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
                 <Button 
                   onClick={handleSyncCatalog} 
                   disabled={syncingCatalog} 
-                  className="w-full justify-start gap-2 text-xs font-semibold"
+                  className="w-full justify-start gap-2 text-xs font-bold rounded-xl"
                   variant="gold"
                 >
                   <RefreshCw className={`h-4 w-4 ${syncingCatalog ? 'animate-spin' : ''}`} />
-                  {syncingCatalog ? "Syncing Database Tours to RAG..." : "Sync Database Tours & Guides into RAG Store"}
+                  {syncingCatalog ? "جاري مزامنة الرحلات مع قاعدة المعرفة الذكية..." : "مزامنة الرحلات والأدلة مع قاعدة المعرفة (RAG) 🔄"}
                 </Button>
                 <Button 
                   onClick={() => setShowMultiLangModal(true)} 
-                  className="w-full justify-start gap-2 text-xs"
+                  className="w-full justify-start gap-2 text-xs font-bold rounded-xl"
                   variant="outline"
                 >
                   <Languages className="h-4 w-4 text-blue-500" /> Open 5-Language AI Ingestion Generator
@@ -1072,32 +1072,32 @@ export default function AiAgentsPage() {
               {loadingKeyPool ? (
                 <div className="py-12 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
                   <RefreshCw className="h-4 w-4 animate-spin text-amber-500" />
-                  <span>Loading API Key Failover Pool...</span>
+                  <span>جاري تحميل مجمع مفاتيح الذكاء البديلة...</span>
                 </div>
               ) : sortedKeyPool.length === 0 ? (
                 <div className="py-12 border-2 border-dashed border-border/80 rounded-2xl text-center text-xs text-muted-foreground space-y-3 bg-muted/10">
                   <Key className="h-10 w-10 mx-auto text-amber-500/60" />
-                  <p className="font-bold text-sm text-foreground">No API keys configured in the failover pool.</p>
+                  <p className="font-bold text-sm text-foreground">لا توجد مفاتيح ذكاء اصطناعي مضافة في مجمع التبديل بعد.</p>
                   <p className="text-xs max-w-md mx-auto text-muted-foreground">
                     أضف مفاتيحك لمزودي الخدمة (Google Gemini, Anthropic Claude, OpenAI, DeepSeek, OpenRouter) لضمان استمرارية الردود بدون توقف.
                   </p>
-                  <Button onClick={handleOpenAddKeyModal} variant="gold" size="sm" className="font-bold gap-1.5 mt-2">
-                    <Plus className="h-4 w-4" /> Add First API Key
+                  <Button onClick={handleOpenAddKeyModal} variant="gold" size="sm" className="font-bold gap-1.5 mt-2 rounded-xl">
+                    <Plus className="h-4 w-4" /> إضافة أول مفتاح API ➕
                   </Button>
                 </div>
               ) : (
                 <div className="border border-border/60 rounded-2xl overflow-hidden shadow-xs">
-                  <table className="w-full text-xs text-left">
+                  <table className="w-full text-xs text-right">
                     <thead className="bg-muted/60 font-bold text-muted-foreground uppercase tracking-wider text-[11px] border-b border-border/60">
                       <tr>
-                        <th className="p-3.5 w-32">Priority / الترتيب</th>
-                        <th className="p-3.5">Provider & Model</th>
-                        <th className="p-3.5">Masked Key</th>
-                        <th className="p-3.5">Health Status</th>
-                        <th className="p-3.5">Latency</th>
-                        <th className="p-3.5">Failures</th>
-                        <th className="p-3.5">Active State</th>
-                        <th className="p-3.5 text-right">Actions</th>
+                        <th className="p-3.5 w-32">الترتيب والأولوية</th>
+                        <th className="p-3.5">المزود والنموذج</th>
+                        <th className="p-3.5">المفتاح المشفر</th>
+                        <th className="p-3.5">حالة الصحة</th>
+                        <th className="p-3.5">زمن الاستجابة</th>
+                        <th className="p-3.5">مرات الإخفاق</th>
+                        <th className="p-3.5">حالة التفعيل</th>
+                        <th className="p-3.5 text-left">إجراءات</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-border/60 bg-card">
@@ -1269,6 +1269,104 @@ export default function AiAgentsPage() {
 
         {/* Tab 3: Core Prompts & Personality */}
         <TabsContent value="config" className="m-0 space-y-6">
+          {/* Master Toggles & In-Chat Booking Feature Control */}
+          <Card className="border-border/80 shadow-xs bg-card">
+            <CardHeader className="pb-3">
+              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                <Zap className="h-5 w-5 text-amber-500" />
+                تحكم الخصائص وتفعيل الحجز المباشر (Feature Controls & In-Chat Booking)
+              </CardTitle>
+              <CardDescription>
+                تحكم في تفعيل أو إيقاف ميزة الحجز الفوري من داخل الشات وإتاحة الشات بوت للجمهور العام.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* In-Chat Booking Master Toggle */}
+                <div className="p-4 rounded-xl border border-border/80 bg-background flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">
+                        ⚡ الحجز المباشر عبر الشات (In-Chat Booking)
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        (config.isInChatBookingEnabled ?? true)
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-muted text-muted-foreground border border-border'
+                      }`}>
+                        {(config.isInChatBookingEnabled ?? true) ? 'مفعّل (Active)' : 'معطّل (Disabled)'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      إتاحة زر "احجز الآن" ونافذة الحجز الفوري للعملاء من داخل محادثة GuideR وإنشاء حجوزات وفواتير مباشرة.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={(config.isInChatBookingEnabled ?? true) ? "gold" : "outline"}
+                    size="sm"
+                    onClick={() => setConfig((prev) => ({
+                      ...prev,
+                      isInChatBookingEnabled: !(prev.isInChatBookingEnabled ?? true),
+                    }))}
+                    className="shrink-0 text-xs font-bold gap-1.5 h-9"
+                  >
+                    {(config.isInChatBookingEnabled ?? true) ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-950" /> مفعّل (شغال)
+                      </>
+                    ) : (
+                      <>
+                        <PowerOff className="h-3.5 w-3.5 text-rose-500" /> معطّل (مفصول)
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Public Availability Master Toggle */}
+                <div className="p-4 rounded-xl border border-border/80 bg-background flex items-center justify-between gap-4">
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold text-sm text-foreground">
+                        🌐 ظهور الشات بوت للزوار (Public Availability)
+                      </span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${
+                        config.isPublicEnabled
+                          ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30'
+                          : 'bg-muted text-muted-foreground border border-border'
+                      }`}>
+                        {config.isPublicEnabled ? 'ظاهر للجمهور' : 'مخفي مؤقتاً'}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      تفعيل ظهور أيقونة ونافذة GuideR للزوار في الموقع الرئيسي أو إخفاؤها للصيانة.
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant={config.isPublicEnabled ? "gold" : "outline"}
+                    size="sm"
+                    onClick={() => setConfig((prev) => ({
+                      ...prev,
+                      isPublicEnabled: !prev.isPublicEnabled,
+                    }))}
+                    className="shrink-0 text-xs font-bold gap-1.5 h-9"
+                  >
+                    {config.isPublicEnabled ? (
+                      <>
+                        <Check className="h-3.5 w-3.5 text-emerald-950" /> مفعّل (ظاهر)
+                      </>
+                    ) : (
+                      <>
+                        <PowerOff className="h-3.5 w-3.5 text-rose-500" /> مخفي
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
           {/* Quick Prompt Template Selector Bar */}
           <Card className="border-amber-500/30 bg-amber-500/5 shadow-xs">
             <CardHeader className="pb-3">

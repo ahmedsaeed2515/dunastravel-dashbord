@@ -50,9 +50,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Full Name</FormLabel>
+              <FormLabel className="font-bold">الاسم بالكامل</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input placeholder="الاسم ثلاثي أو ثنائي" {...field} className="rounded-xl" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -63,9 +63,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email Address</FormLabel>
+              <FormLabel className="font-bold">البريد الإلكتروني</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="john@example.com" {...field} />
+                <Input type="email" placeholder="user@dunastravel.com" {...field} className="rounded-xl font-mono text-xs" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -76,9 +76,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="phone"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Phone Number</FormLabel>
+              <FormLabel className="font-bold">رقم الهاتف</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="+1 234 567 8900" {...field} />
+                <Input type="tel" placeholder="+20 100 000 0000" {...field} className="rounded-xl font-mono text-xs" />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -89,19 +89,19 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Role</FormLabel>
+              <FormLabel className="font-bold">الدور والصلاحية</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
+                  <SelectTrigger className="rounded-xl font-bold">
+                    <SelectValue placeholder="اختر الدور" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent>
-                  <SelectItem value="ADMIN">Administrator</SelectItem>
-                  <SelectItem value="USER">Standard User</SelectItem>
-                  <SelectItem value="COMPANY">Company Partner</SelectItem>
-                  <SelectItem value="AGENT">Travel Agent</SelectItem>
-                  <SelectItem value="GUEST">Guest</SelectItem>
+                <SelectContent className="font-bold">
+                  <SelectItem value="ADMIN">مدير نظام (Administrator)</SelectItem>
+                  <SelectItem value="USER">مستخدم عادي (Standard User)</SelectItem>
+                  <SelectItem value="COMPANY">شركة سياحية (Company Partner)</SelectItem>
+                  <SelectItem value="AGENT">وكيل سياحي (Travel Agent)</SelectItem>
+                  <SelectItem value="GUEST">زائر (Guest)</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -114,7 +114,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{isEdit ? "Password (Leave blank to keep unchanged)" : "Password"}</FormLabel>
+              <FormLabel className="font-bold">{isEdit ? "كلمة المرور (اتركها فارغة للإبقاء عليها)" : "كلمة المرور"}</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -122,6 +122,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     placeholder="••••••••"
                     autoComplete="new-password"
                     {...field}
+                    className="rounded-xl font-mono"
                   />
                   <Button
                     type="button"
@@ -129,7 +130,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                   >
                     {showPassword ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />
@@ -149,7 +150,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>{isEdit ? "Confirm Password" : "Confirm Password"}</FormLabel>
+              <FormLabel className="font-bold">تأكيد كلمة المرور</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -157,6 +158,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     placeholder="••••••••"
                     autoComplete="new-password"
                     {...field}
+                    className="rounded-xl font-mono"
                   />
                   <Button
                     type="button"
@@ -164,7 +166,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     size="sm"
                     className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    aria-label={showConfirmPassword ? "Hide confirm password" : "Show confirm password"}
+                    aria-label={showConfirmPassword ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
                   >
                     {showConfirmPassword ? (
                       <EyeOff className="h-4 w-4" aria-hidden="true" />

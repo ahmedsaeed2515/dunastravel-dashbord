@@ -204,7 +204,7 @@ export function BookingDetailsDrawer({ booking, open, onOpenChange }: BookingDet
                     <div className="flex justify-between items-start">
                       <div className="flex items-center gap-2">
                         <FileText className="w-4 h-4 text-muted-foreground" />
-                        <span className="font-semibold text-sm">Note</span>
+                        <span className="font-bold text-xs">ملاحظة مسجلة</span>
                       </div>
                       <span className="text-xs text-muted-foreground">{formatDateSafe(n.createdAt)}</span>
                     </div>

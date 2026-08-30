@@ -46,25 +46,26 @@ export function AddAttachmentDialog({ referenceCode, open, onOpenChange }: AddAt
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
-          <DialogTitle>Link Uploaded Attachment</DialogTitle>
+          <DialogTitle className="font-bold text-sm">ربط مرفق أو مستند بالحجز</DialogTitle>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 pt-4">
           <div className="grid gap-2">
-            <Label htmlFor="mediaAssetId">Media asset ID</Label>
+            <Label htmlFor="mediaAssetId" className="text-xs font-bold">معرّف الملف المرفوع (Asset ID)</Label>
             <Input
               id="mediaAssetId"
               value={mediaAssetId}
               onChange={(e) => setMediaAssetId(e.target.value)}
-              placeholder="UUID returned by the media upload"
+              placeholder="معرّف UUID للملف المرفوع"
+              className="text-xs font-mono rounded-xl"
               required
             />
           </div>
-          <DialogFooter>
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
-              Cancel
+          <DialogFooter className="gap-2">
+            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="font-bold rounded-xl text-xs">
+              إلغاء
             </Button>
-            <Button type="submit" disabled={isPending || !mediaAssetId.trim()}>
-              {isPending ? "Linking..." : "Link Attachment"}
+            <Button type="submit" disabled={isPending || !mediaAssetId.trim()} className="font-bold rounded-xl text-xs">
+              {isPending ? "جاري الربط..." : "ربط المرفق 📎"}
             </Button>
           </DialogFooter>
         </form>

@@ -28,10 +28,12 @@ export function RequirePermission({
     if (fallback) return <>{fallback}</>;
     
     return (
-      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4">
-        <h1 className="text-4xl font-display font-bold text-destructive">403 Forbidden</h1>
-        <p className="text-xl text-muted-foreground">You do not have permission to access this page.</p>
-        <Link href="/dashboard" className="text-primary hover:underline">Return to Dashboard</Link>
+      <div className="flex flex-col items-center justify-center min-h-[60vh] gap-4 text-center p-6">
+        <h1 className="text-4xl font-display font-bold text-destructive">403 غير مصرح بالدخول</h1>
+        <p className="text-sm font-medium text-muted-foreground max-w-md">
+          عذراً، ليس لديك الصلاحيات الكافية للوصول إلى هذه الصفحة أو المورد. You do not have permission to access this resource.
+        </p>
+        <Link href="/ar/admin" className="text-primary hover:underline font-bold text-sm">العودة إلى لوحة التحكم الرئيسية 🏠</Link>
       </div>
     );
   }

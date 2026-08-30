@@ -73,40 +73,41 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
   };
 
   const sortedItineraries = [...(tour.itineraries || [])].sort((a, b) => a.sortOrder - b.sortOrder);
+  const isAr = true; // Dashboard default / Arabic preferred
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-semibold text-lg">Itinerary Management</h3>
+        <h3 className="font-bold text-lg">إدارة البرنامج اليومي (Itinerary Management)</h3>
         {!isAddingNew && !editingId && (
-          <Button size="sm" onClick={() => setIsAddingNew(true)}>
-            <Plus className="h-4 w-4 mr-2" /> Add Day
+          <Button size="sm" onClick={() => setIsAddingNew(true)} className="font-bold gap-1.5">
+            <Plus className="h-4 w-4" /> إضافة يوم ➕
           </Button>
         )}
       </div>
 
       {isAddingNew && (
-        <form onSubmit={handleAddSubmit} className="border rounded-xl p-4 bg-muted/30 space-y-4 shadow-sm relative">
+        <form onSubmit={handleAddSubmit} className="border rounded-2xl p-4 bg-muted/30 space-y-4 shadow-sm relative">
           <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={resetForm}>
             <X className="h-4 w-4" />
           </Button>
-          <h4 className="font-semibold text-sm">Add New Day</h4>
+          <h4 className="font-bold text-sm">إضافة يوم جديد للبرنامج</h4>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1">
-              <label className="text-xs font-medium">Day Label</label>
-              <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} placeholder="e.g. Day 1: Arrival" />
+              <label className="text-xs font-bold">عنوان اليوم (Day Label)</label>
+              <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} placeholder="مثال: اليوم الأول: الوصول والاستقبال" className="rounded-xl" />
             </div>
             <div className="space-y-1">
-              <label className="text-xs font-medium">Sort Order</label>
-              <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
+              <label className="text-xs font-bold">الترتيب (Sort Order)</label>
+              <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="rounded-xl" />
             </div>
           </div>
           <div className="space-y-1">
-            <label className="text-xs font-medium">Description (EN)</label>
-            <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} placeholder="Describe the day's events..." />
+            <label className="text-xs font-bold">وصف وتفاصيل اليوم</label>
+            <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} placeholder="اكتب الأنشطة والجولات السياحية لهذا اليوم بالتفصيل..." className="rounded-xl" />
           </div>
-          <Button size="sm" type="submit" disabled={isAdding}>
-            <Save className="h-4 w-4 mr-2" /> Save Day
+          <Button size="sm" type="submit" disabled={isAdding} className="font-bold gap-1.5 rounded-xl">
+            <Save className="h-4 w-4" /> حفظ اليوم
           </Button>
         </form>
       )}
@@ -115,27 +116,27 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
         {sortedItineraries.length > 0 ? (
           sortedItineraries.map((it, i) => (
             editingId === it.id ? (
-              <form key={it.id} onSubmit={(e) => handleEditSubmit(e, it.id!)} className="border-2 border-primary/20 rounded-xl p-4 bg-muted/10 space-y-4 shadow-sm relative">
+              <form key={it.id} onSubmit={(e) => handleEditSubmit(e, it.id!)} className="border-2 border-primary/20 rounded-2xl p-4 bg-muted/10 space-y-4 shadow-sm relative">
                 <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={resetForm}>
                   <X className="h-4 w-4" />
                 </Button>
-                <h4 className="font-semibold text-sm">Edit Day</h4>
+                <h4 className="font-bold text-sm">تعديل بيانات اليوم</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-1">
-                    <label className="text-xs font-medium">Day Label</label>
-                    <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} />
+                    <label className="text-xs font-bold">عنوان اليوم</label>
+                    <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="rounded-xl" />
                   </div>
                   <div className="space-y-1">
-                    <label className="text-xs font-medium">Sort Order</label>
-                    <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} />
+                    <label className="text-xs font-bold">الترتيب</label>
+                    <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="rounded-xl" />
                   </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Description (EN)</label>
-                  <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} />
+                  <label className="text-xs font-bold">الوصف والتفاصيل</label>
+                  <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} className="rounded-xl" />
                 </div>
-                <Button size="sm" type="submit" disabled={isUpdating}>
-                  <Save className="h-4 w-4 mr-2" /> Update Day
+                <Button size="sm" type="submit" disabled={isUpdating} className="font-bold gap-1.5 rounded-xl">
+                  <Save className="h-4 w-4" /> تحديث اليوم
                 </Button>
               </form>
             ) : (

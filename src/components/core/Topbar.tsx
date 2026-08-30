@@ -191,7 +191,7 @@ export const Topbar = memo(function Topbar() {
               </Avatar>
               <div className="text-right hidden sm:block">
                 <span className="text-xs font-bold text-slate-800 dark:text-white block leading-none">{user?.name || "Attia Yamany"}</span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">Super Admin</span>
+                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{tCommon("superAdmin")}</span>
               </div>
             </button>
           </DropdownMenuTrigger>
@@ -203,7 +203,7 @@ export const Topbar = memo(function Topbar() {
               <div className="flex flex-col space-y-1">
                 <p className="text-sm font-semibold leading-none text-foreground">{user?.name || "Attia Yamany"}</p>
                 <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@dunastravel.com"}</p>
-                <p className="text-[10px] text-amber-500 font-semibold mt-0.5">Super Admin</p>
+                <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{tCommon("superAdmin")}</p>
               </div>
             </DropdownMenuLabel>
             <DropdownMenuSeparator />

@@ -1,13 +1,19 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { TripModel, LanguageCode, AccommodationItem, ItineraryItem } from '@/types/dunas-suite';
+import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import { buildTripEditorPayload } from '@/features/tours/lib/tripEditorPayload';
-import { ALL_LOCALES, autoTranslateFullTrip, translateToAllLocales } from '@/lib/translationService';
+import {
+  ALL_LOCALES,
+  TARGET_LOCALES,
+  autoTranslateFullTrip,
+  translateToAllLocales,
+  clearLocaleContent,
+} from '@/lib/translationService';
 import {
   Dialog,
   DialogContent,
@@ -42,6 +48,8 @@ import {
   Loader2,
   Wand2,
   Languages,
+  RotateCcw,
+  RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -119,6 +127,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const [formData, setFormData] = useState<Partial<TripModel>>(DEFAULT_TRIP);
   const [activeTab, setActiveTab] = useState<string>('basic');
   const [activeLang, setActiveLang] = useState<LanguageCode>('ar');
+  const [selectedTargetLocales, setSelectedTargetLocales] = useState<LanguageCode[]>(['en', 'es', 'pt', 'it']);
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateStatus, setTranslateStatus] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
@@ -141,14 +150,14 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
-  const getLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration'): string => {
+  const getLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures'): string => {
     if (activeLang === 'ar') {
       return (formData[field] as string) || (formData.translations?.ar?.[field] as string) || '';
     }
     return (formData.translations?.[activeLang]?.[field] as string) || '';
   };
 
-  const setLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration', value: string) => {
+  const setLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures', value: string) => {
     setFormData(prev => {
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
@@ -366,22 +375,85 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     });
   }, [formData]);
 
-  const handleAutoTranslateAll = async () => {
+  // Target locale checkbox toggle
+  const toggleTargetLocale = (code: LanguageCode) => {
+    setSelectedTargetLocales(prev =>
+      prev.includes(code) ? prev.filter(c => c !== code) : [...prev, code]
+    );
+  };
+
+  const selectAllTargetLocales = () => {
+    setSelectedTargetLocales(['en', 'es', 'pt', 'it']);
+  };
+
+  const deselectAllTargetLocales = () => {
+    setSelectedTargetLocales([]);
+  };
+
+  // Clear single language
+  const handleClearSingleLanguage = (lang: LanguageCode) => {
+    const locInfo = ALL_LOCALES.find(l => l.code === lang);
+    const name = locInfo?.name || lang;
+    if (!window.confirm(`هل أنت متأكد من حذف وتفريغ كافة بيانات لغة (${name})؟ ستتمكن بعد ذلك من إعادة كتابتها أو ترجمتها من جديد من المحتوى العربي.`)) {
+      return;
+    }
+    const updated = clearLocaleContent(formData as TripModel, [lang]);
+    setFormData(updated);
+    toast.success(`تم تفريغ وحذف محتوى لغة (${name}) بنجاح.`);
+  };
+
+  // Clear selected languages
+  const handleClearSelectedLanguages = () => {
+    if (selectedTargetLocales.length === 0) {
+      toast.error('يرجى تحديد لغة واحدة على الأقل من القائمة لتفريغ محتواها.');
+      return;
+    }
+    const names = selectedTargetLocales.map(c => ALL_LOCALES.find(l => l.code === c)?.name || c).join(', ');
+    if (!window.confirm(`هل أنت متأكد من تفريغ كافة بيانات اللغات المحددة (${names}) بالكامل؟`)) {
+      return;
+    }
+    const updated = clearLocaleContent(formData as TripModel, selectedTargetLocales);
+    setFormData(updated);
+    toast.success(`تم تفريغ وحذف محتوى اللغات المحددة (${names}) بنجاح.`);
+  };
+
+  // Clear all non-Arabic translations
+  const handleClearAllNonArabic = () => {
+    if (!window.confirm('هل أنت متأكد من تفريغ كافة الترجمات غير العربية (EN, ES, PT, IT) للبدء بترجمة نظيفة جديدة؟')) {
+      return;
+    }
+    const updated = clearLocaleContent(formData as TripModel, ['en', 'es', 'pt', 'it']);
+    setFormData(updated);
+    toast.success('تم تفريغ كافة الترجمات الأجنبية الأربعة بنجاح.');
+  };
+
+  // Auto-translate selected or all target languages
+  const handleAutoTranslate = async (targetLocalesToUse?: LanguageCode[]) => {
     const sourceTitle = formData.title || formData.translations?.ar?.title || '';
     if (!sourceTitle.trim()) {
-      toast.error('يرجى إدخال العنوان الرئيسي للرحلة أولاً للتمكن من الترجمة.');
+      toast.error('يرجى إدخال العنوان الرئيسي للرحلة بالعربي أولاً لتتمكن من الترجمة.');
+      return;
+    }
+
+    const actualTargets = (targetLocalesToUse || selectedTargetLocales).filter(l => l !== 'ar');
+    if (actualTargets.length === 0) {
+      toast.error('يرجى تحديد اللغات المستهدفة للترجمة (EN, ES, PT, IT).');
       return;
     }
 
     setIsTranslating(true);
-    setTranslateStatus('جاري تحليل المحتوى والترجمة للغات الـ 5...');
+    const targetNames = actualTargets.map(c => ALL_LOCALES.find(l => l.code === c)?.name).join(', ');
+    setTranslateStatus(`جاري الترجمة لـ (${targetNames})...`);
 
     try {
-      const translated = await autoTranslateFullTrip(formData as TripModel, activeLang, (step) => {
-        setTranslateStatus(step);
-      });
+      const translated = await autoTranslateFullTrip(
+        formData as TripModel,
+        'ar',
+        actualTargets,
+        (step) => setTranslateStatus(step)
+      );
       setFormData(translated);
-      toast.success('✨ تم توليد وترجمة كامل بيانات الرحلة للغات الخمس (AR, EN, ES, PT, IT) بنجاح!');
+      toast.success(`✨ تم توليد وترجمة كامل بيانات الرحلة بنجاح لـ: ${targetNames}!`);
     } catch (err: any) {
       console.error('Translation error:', err);
       toast.error('حدث خطأ أثناء الترجمة التلقائية: ' + (err.message || 'يرجى المحاولة لاحقاً'));
@@ -391,7 +463,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     }
   };
 
-  const handleTranslateSingleField = async (field: 'title' | 'subtitle' | 'overview') => {
+  const handleTranslateSingleField = async (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures') => {
     const val = getLocalizedText(field);
     if (!val.trim()) {
       toast.error('يرجى كتابة نص في هذا الحقل أولاً.');
@@ -399,7 +471,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     }
     setIsTranslating(true);
     try {
-      const translations = await translateToAllLocales(val, activeLang);
+      const translations = await translateToAllLocales(val, activeLang, TARGET_LOCALES);
       setFormData(prev => {
         const trans = { ...(prev.translations || {}) };
         ALL_LOCALES.forEach(loc => {
@@ -412,7 +484,14 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           translations: trans,
         };
       });
-      toast.success(`تمت ترجمة ${field === 'title' ? 'العنوان' : field === 'subtitle' ? 'العنوان الفرعي' : 'الوصف'} للغات الـ 5!`);
+      const fieldNames: Record<string, string> = {
+        title: 'العنوان',
+        subtitle: 'العنوان الفرعي',
+        overview: 'الوصف',
+        duration: 'المدة',
+        departures: 'المغادرات',
+      };
+      toast.success(`تمت ترجمة ${fieldNames[field] || field} للغات الـ 5!`);
     } catch (e: any) {
       toast.error('تعذر ترجمة الحقل.');
     } finally {
@@ -479,10 +558,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
             </div>
 
             {/* AI Auto-Translate Header Button */}
-            <div className="flex items-center gap-2.5 shrink-0">
+            <div className="flex flex-wrap items-center gap-2 shrink-0">
               <Button
                 type="button"
-                onClick={handleAutoTranslateAll}
+                onClick={() => handleAutoTranslate(['en', 'es', 'pt', 'it'])}
                 disabled={isTranslating}
                 className="rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
               >
@@ -494,7 +573,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 ) : (
                   <>
                     <Wand2 className="w-4 h-4 stroke-[2.5]" />
-                    <span>✨ ترجمة الرحلة كاملة للـ 5 لغات تلقائياً</span>
+                    <span>✨ ترجمة الرحلة كاملة للـ 4 لغات من العربي</span>
                   </>
                 )}
               </Button>
@@ -533,8 +612,36 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               })}
             </div>
 
-            <div className="text-[11px] font-bold text-muted-foreground hidden sm:block">
-              تعديل مباشر في: <span className="text-amber-500 font-extrabold uppercase">{activeLang}</span>
+            {/* Quick Actions for Current Language */}
+            <div className="flex items-center gap-2">
+              {activeLang !== 'ar' ? (
+                <>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleAutoTranslate([activeLang])}
+                    disabled={isTranslating}
+                    className="text-xs text-amber-500 hover:bg-amber-500/10 gap-1 font-bold h-8 rounded-xl cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5" /> ترجمة هذه اللغة ({activeLang.toUpperCase()})
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => handleClearSingleLanguage(activeLang)}
+                    className="text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 gap-1 font-bold h-8 rounded-xl cursor-pointer"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" /> تفريغ محتوى ({activeLang.toUpperCase()})
+                  </Button>
+                </>
+              ) : (
+                <div className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
+                  <span>🇸🇦</span>
+                  <span>اللغة المصدر الأساسية (اكتب بالعربي ثم ترجم)</span>
+                </div>
+              )}
             </div>
           </div>
         </DialogHeader>
@@ -736,7 +843,16 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">المدة (Duration)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground">المدة (Duration)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleTranslateSingleField('duration')}
+                      className="text-[10px] text-amber-500 hover:underline font-bold"
+                    >
+                      ترجمة
+                    </button>
+                  </div>
                   <Input
                     value={getLocalizedText('duration')}
                     onChange={e => setLocalizedText('duration', e.target.value)}
@@ -745,11 +861,20 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">مواعيد المغادرة (Departures)</label>
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-bold text-foreground">مواعيد المغادرة (Departures)</label>
+                    <button
+                      type="button"
+                      onClick={() => handleTranslateSingleField('departures')}
+                      className="text-[10px] text-amber-500 hover:underline font-bold"
+                    >
+                      ترجمة
+                    </button>
+                  </div>
                   <Input
-                    value={formData.departures || ''}
-                    onChange={e => handleChange('departures', e.target.value)}
-                    placeholder="Daily / Diário"
+                    value={getLocalizedText('departures')}
+                    onChange={e => setLocalizedText('departures', e.target.value)}
+                    placeholder={activeLang === 'ar' ? 'مغادرات يومية منتظمة' : 'Daily Departures'}
                     className="rounded-xl"
                   />
                 </div>
@@ -1188,31 +1313,141 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               </div>
             </TabsContent>
 
-            {/* TAB 6: 5-LANG TRANSLATIONS MATRIX */}
+            {/* TAB 6: 5-LANG TRANSLATIONS MATRIX & MANAGEMENT */}
             <TabsContent value="matrix" className="space-y-5 m-0">
-              <div className="p-4.5 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-3">
+              {/* Management & Selection Control Box */}
+              <div className="p-5 rounded-3xl bg-card border border-amber-500/30 space-y-4 shadow-sm">
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 border-b border-border/40 pb-3">
                   <div>
                     <h3 className="text-sm font-black text-foreground flex items-center gap-2">
-                      <Globe2 className="w-4 h-4 text-amber-500" />
-                      مصفوفة مراجعة اللغات الـ 5 للرحلة
+                      <Languages className="w-4 h-4 text-amber-500" />
+                      إدارة وحذف الترجمات وتحديد اللغات المستهدفة (Translation Management)
                     </h3>
                     <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
-                      نظرة عامة فورية على اكتمال الترجمة عبر كافة اللغات مع إمكانية التبديل والتعديل اللحظي.
+                      حدد لغة أو عدة لغات لحذف بياناتها بالكامل وإعادة توليدها من النص العربي، أو ترجمة لغات محددة بضغطة زر.
                     </p>
                   </div>
 
-                  <Button
-                    size="sm"
-                    onClick={handleAutoTranslateAll}
-                    disabled={isTranslating}
-                    className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 shrink-0"
-                  >
-                    <Wand2 className="w-3.5 h-3.5" /> ترجمة الحقول الناقصة الآن
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={selectAllTargetLocales}
+                      className="text-xs font-bold rounded-xl h-8"
+                    >
+                      تحديد كل اللغات (4)
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={deselectAllTargetLocales}
+                      className="text-xs text-muted-foreground font-bold rounded-xl h-8"
+                    >
+                      إلغاء التحديد
+                    </Button>
+                  </div>
                 </div>
 
-                {/* Matrix Table */}
+                {/* Target Language Selection Checkboxes */}
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  {TARGET_LOCALES.map(locCode => {
+                    const loc = ALL_LOCALES.find(l => l.code === locCode)!;
+                    const isSelected = selectedTargetLocales.includes(locCode);
+                    const stat = localeStats.find(s => s.code === locCode);
+                    return (
+                      <div
+                        key={locCode}
+                        onClick={() => toggleTargetLocale(locCode)}
+                        className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
+                          isSelected
+                            ? 'bg-amber-500/10 border-amber-500 shadow-xs ring-1 ring-amber-500/40'
+                            : 'bg-muted/20 border-border hover:border-border/80'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={() => toggleTargetLocale(locCode)}
+                          />
+                          <div>
+                            <span className="text-xs font-black flex items-center gap-1">
+                              <span>{loc.flag}</span> {loc.name} ({loc.code.toUpperCase()})
+                            </span>
+                            <span className="text-[10px] text-muted-foreground block font-bold">
+                              مكتمل بنسبة {stat?.percent}%
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Batch Action Buttons */}
+                <div className="flex flex-wrap items-center justify-between gap-3 pt-3 border-t border-border/40">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => handleAutoTranslate(selectedTargetLocales)}
+                      disabled={isTranslating || selectedTargetLocales.length === 0}
+                      className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 px-4 h-9 shadow-xs cursor-pointer"
+                    >
+                      {isTranslating ? (
+                        <>
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                          <span>{translateStatus || 'جاري الترجمة...'}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Wand2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                          <span>✨ ترجمة اللغات المحددة ({selectedTargetLocales.length}) من العربي</span>
+                        </>
+                      )}
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAutoTranslate(['en', 'es', 'pt', 'it'])}
+                      disabled={isTranslating}
+                      className="rounded-xl text-xs font-black gap-1.5 h-9 border-amber-500/40 hover:bg-amber-500/10 text-amber-500 cursor-pointer"
+                    >
+                      <Globe2 className="w-3.5 h-3.5" />
+                      <span>✨ ترجمة كافة اللغات (الكل) 🌐</span>
+                    </Button>
+                  </div>
+
+                  <div className="flex flex-wrap items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={handleClearSelectedLanguages}
+                      disabled={selectedTargetLocales.length === 0}
+                      className="rounded-xl text-xs font-black gap-1.5 h-9 border-rose-500/40 text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>حذف محتوى اللغات المحددة ({selectedTargetLocales.length})</span>
+                    </Button>
+
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      onClick={handleClearAllNonArabic}
+                      className="rounded-xl text-xs font-black gap-1.5 h-9 text-rose-600 hover:bg-rose-500/10 cursor-pointer"
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span>تفريغ كافة الترجمات غير العربية</span>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
+              {/* 5-Language Status & Details Grid */}
+              <div className="space-y-3">
+                <h4 className="text-xs font-black text-muted-foreground uppercase tracking-wider">
+                  مصفوفة بطاقات اللغات الخمس (5-Language Overview & Quick Edit):
+                </h4>
+
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-3.5">
                   {ALL_LOCALES.map(loc => {
                     const trans = loc.code === 'ar'
@@ -1221,6 +1456,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           subtitle: formData.subtitle,
                           overview: formData.overview,
                           duration: formData.duration,
+                          departures: formData.departures,
                           highlights: formData.highlights,
                           included: formData.included,
                           excluded: formData.excluded,
@@ -1234,8 +1470,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     return (
                       <div
                         key={loc.code}
-                        onClick={() => setActiveLang(loc.code)}
-                        className={`p-4 rounded-2xl border transition-all cursor-pointer flex flex-col justify-between space-y-3 ${
+                        className={`p-4 rounded-2xl border transition-all flex flex-col justify-between space-y-3 ${
                           isCurrent
                             ? 'bg-amber-500/10 border-amber-500 shadow-md ring-1 ring-amber-500/50'
                             : 'bg-muted/20 border-border hover:border-amber-500/40'
@@ -1269,15 +1504,40 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           </div>
                         </div>
 
-                        <Button
-                          size="sm"
-                          variant={isCurrent ? 'default' : 'outline'}
-                          className={`w-full text-xs font-black rounded-xl h-8 ${
-                            isCurrent ? 'bg-amber-500 text-slate-950' : ''
-                          }`}
-                        >
-                          {isCurrent ? 'اللغة النشطة حالياً ✓' : 'تعديل هذه اللغة'}
-                        </Button>
+                        <div className="space-y-1.5 pt-2 border-t border-border/40">
+                          <Button
+                            size="sm"
+                            variant={isCurrent ? 'default' : 'outline'}
+                            onClick={() => setActiveLang(loc.code)}
+                            className={`w-full text-xs font-black rounded-xl h-8 cursor-pointer ${
+                              isCurrent ? 'bg-amber-500 text-slate-950' : ''
+                            }`}
+                          >
+                            {isCurrent ? 'اللغة النشطة حالياً ✓' : 'تعديل هذه اللغة'}
+                          </Button>
+
+                          {loc.code !== 'ar' && (
+                            <div className="grid grid-cols-2 gap-1.5">
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleAutoTranslate([loc.code])}
+                                disabled={isTranslating}
+                                className="text-[10px] text-amber-500 hover:bg-amber-500/10 font-bold h-7 rounded-lg cursor-pointer px-1"
+                              >
+                                <Wand2 className="w-3 h-3 me-1" /> ترجمة
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => handleClearSingleLanguage(loc.code)}
+                                className="text-[10px] text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 font-bold h-7 rounded-lg cursor-pointer px-1"
+                              >
+                                <Trash2 className="w-3 h-3 me-1" /> تفريغ
+                              </Button>
+                            </div>
+                          )}
+                        </div>
                       </div>
                     );
                   })}

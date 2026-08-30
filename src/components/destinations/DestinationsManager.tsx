@@ -2,6 +2,7 @@
 
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
+import Link from 'next/link';
 import { useDataContext } from '@/context/DataContext';
 import { TripModel } from '@/types/dunas-suite';
 import { TripEditorModal } from '@/components/trips/TripEditorModal';
@@ -16,6 +17,7 @@ import {
   DEST_GRADIENTS,
 } from '@/lib/tour-destinations';
 import { extractToursList } from '@/lib/extract-tours';
+import { getFrontendTourUrl } from '@/lib/frontend-urls';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card } from '@/components/ui/card';
@@ -42,6 +44,7 @@ import {
   ArrowUpDown,
   X,
   SlidersHorizontal,
+  ExternalLink,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -862,21 +865,48 @@ export const DestinationsManager: React.FC = React.memo(() => {
                     </Button>
 
                     <div className="flex items-center gap-1">
+                      {trip.slug && (
+                        <>
+                          <a
+                            href={getFrontendTourUrl(trip.slug)}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center justify-center h-8 w-8 hover:bg-sky-500/15 hover:text-sky-400 text-sky-500 rounded-xl transition-colors cursor-pointer"
+                            title={isAr ? 'عرض الرحلة في الموقع المباشر (الفرونت)' : 'View Tour on Live Website (Frontend)'}
+                            aria-label={isAr ? 'عرض الرحلة في الموقع' : 'View Tour on Website'}
+                          >
+                            <Eye className="w-4 h-4" />
+                          </a>
+
+                          <Link
+                            href={`/${locale}/admin/tours/${trip.slug}/preview`}
+                            target="_blank"
+                            className="inline-flex items-center justify-center h-8 w-8 hover:bg-emerald-500/15 hover:text-emerald-400 text-emerald-500 rounded-xl transition-colors"
+                            title={isAr ? 'معاينة كزائر في الداشبورد' : 'Admin Visitor Preview'}
+                            aria-label={isAr ? 'معاينة كزائر' : 'Visitor Preview'}
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Link>
+                        </>
+                      )}
+
                       <Button
                         size="icon-sm"
                         variant="ghost"
                         onClick={() => handleOpenEdit(trip)}
-                        className="hover:bg-amber-500/10 hover:text-amber-500 rounded-xl"
+                        className="hover:bg-amber-500/10 hover:text-amber-500 rounded-xl cursor-pointer"
                         title={isAr ? 'تعديل الرحلة' : 'Edit Tour'}
+                        aria-label={isAr ? 'تعديل الرحلة' : 'Edit Tour'}
                       >
-                        <Edit className="w-4 h-4" />
+                        <Edit className="w-4 h-4 text-amber-500" />
                       </Button>
                       <Button
                         size="icon-sm"
                         variant="ghost"
                         onClick={() => handleDeleteTrip(trip.id, trip.title, trip.slug)}
-                        className="hover:bg-destructive/10 text-destructive rounded-xl"
+                        className="hover:bg-destructive/10 text-destructive rounded-xl cursor-pointer"
                         title={isAr ? 'حذف' : 'Delete'}
+                        aria-label={isAr ? 'حذف' : 'Delete'}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>

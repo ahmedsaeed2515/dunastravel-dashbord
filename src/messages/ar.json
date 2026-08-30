@@ -80,7 +80,27 @@
     "permissionDeniedDescription": "ليس لديك الإذن الكافي للوصول إلى هذا المورد أو تنفيذ هذا الإجراء.",
     "returnToDashboard": "العودة إلى لوحة التحكم",
     "somethingWentWrong": "حدث خطأ ما",
-    "unexpectedErrorOccurred": "حدث خطأ غير متوقع أثناء تحميل البيانات."
+    "unexpectedErrorOccurred": "حدث خطأ غير متوقع أثناء تحميل البيانات.",
+    "superAdmin": "المدير العام (Super Admin)",
+    "adminRole": "مسؤول النظام (Admin)",
+    "last30Days": "آخر 30 يوماً",
+    "last90Days": "آخر 90 يوماً",
+    "last12Months": "آخر 12 شهراً",
+    "allDestinations": "كافة الوجهات السياحية",
+    "desktop": "أجهزة الكمبيوتر",
+    "mobile": "الهواتف المحمولة",
+    "tablet": "الأجهزة اللوحية",
+    "views": "المشاهدات",
+    "clicks": "النقرات",
+    "toursCount": "الرحلات",
+    "refresh": "تحديث",
+    "published": "منشور",
+    "draft": "مسودة",
+    "archive": "أرشيف",
+    "allStatus": "كافة الحالات",
+    "filterBy": "تصفية حسب",
+    "clearFilters": "إلغاء التصفية",
+    "noData": "لا توجد بيانات متاحة حالياً"
   },
   "navigation": {
     "overview": "منظومة الإدارة والتحكم",
@@ -119,7 +139,8 @@
     "reviews": "التعليقات والتقييمات",
     "activeClientDatabase": "قاعدة بيانات العملاء النشطين",
     "vipConciergeClub": "نادي كبار الشخصيات VIP",
-    "outstandingLedger": "دفتر الحسابات المعلقة"
+    "outstandingLedger": "دفتر الحسابات المعلقة",
+    "blogs": "المدونة والمقالات"
   },
   "auth": {
     "welcomeBack": "مرحباً بعودتك",

@@ -80,23 +80,23 @@ export function AiCustomerInsightsTab({ customerId, customerName }: AiCustomerIn
               </div>
 
               {/* Churn Risk */}
-              <div className="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md p-5 rounded-lg border border-white/20 dark:border-gray-800/50">
+              <div className="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md p-5 rounded-2xl border border-white/20 dark:border-gray-800/50">
                 <h4 className="text-xs font-bold uppercase tracking-wider text-rose-600 dark:text-rose-400 mb-2 flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4" /> Churn Risk Assessment
+                  <AlertTriangle className="h-4 w-4" /> تقييم احتمالية فقدان العميل (Churn Risk)
                 </h4>
                 <div className="flex items-center gap-3">
                   <span className="text-2xl font-bold font-playfair">{data.churnRisk}</span>
                   {data.churnRisk.toLowerCase().includes("high") && (
-                    <span className="text-xs text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md">Requires immediate attention</span>
+                    <span className="text-xs font-bold text-rose-500 bg-rose-500/10 px-2 py-1 rounded-md">يتطلب تدخلاً فورياً من المبيعات ⚠️</span>
                   )}
                 </div>
               </div>
             </div>
 
             {/* Sales Strategy */}
-            <div className="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md p-5 rounded-lg border border-white/20 dark:border-gray-800/50">
+            <div className="bg-white/60 dark:bg-gray-900/40 backdrop-blur-md p-5 rounded-2xl border border-white/20 dark:border-gray-800/50">
               <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 mb-2 flex items-center gap-2">
-                <TrendingUp className="h-4 w-4" /> Recommended Sales Strategy
+                <TrendingUp className="h-4 w-4" /> استراتيجية المبيعات المقترحة بالذكاء الاصطناعي 💡
               </h4>
               <p className="text-sm leading-relaxed text-gray-700 dark:text-gray-300 italic">
                 &quot;{data.salesStrategy}&quot;

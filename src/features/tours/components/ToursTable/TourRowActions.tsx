@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useParams } from "next/navigation";
-import { MoreHorizontal, Eye, Edit, Trash, ExternalLink, ArrowRightLeft, Archive, RotateCcw, Send, Undo2 } from "lucide-react";
+import { MoreHorizontal, Eye, Edit, Trash, ExternalLink, ArrowRightLeft, Archive, RotateCcw, Send, Undo2, Globe } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,6 +13,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Tour } from "../../types";
 import { useTourLifecycleAction } from "../../hooks/useTours";
+import { getFrontendTourUrl } from "@/lib/frontend-urls";
 
 interface TourRowActionsProps {
   tour: Tour;
@@ -50,6 +51,16 @@ export function TourRowActions({
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56 z-50">
         <DropdownMenuLabel>{isAr ? "إدارة الرحلة" : "Tour Management"}</DropdownMenuLabel>
+        <DropdownMenuItem asChild className="cursor-pointer font-bold text-sky-500 focus:text-sky-500">
+          <a href={getFrontendTourUrl(tour.slug)} target="_blank" rel="noopener noreferrer">
+            <Globe className="mr-2 h-4 w-4 text-sky-500" /> {isAr ? "عرض في الموقع المباشر (الفرونت)" : "View on Live Website"}
+          </a>
+        </DropdownMenuItem>
+        <DropdownMenuItem asChild className="cursor-pointer font-bold text-emerald-500 focus:text-emerald-500">
+          <Link href={`/${locale}/admin/tours/${tour.slug}/preview`} target="_blank">
+            <ExternalLink className="mr-2 h-4 w-4 text-emerald-500" /> {isAr ? "معاينة كزائر في الداشبورد" : "Admin Visitor Preview"}
+          </Link>
+        </DropdownMenuItem>
         {onEdit && (
           <DropdownMenuItem onClick={() => onEdit(tour)} className="font-semibold text-amber-500 focus:text-amber-500 cursor-pointer">
             <Edit className="mr-2 h-4 w-4 text-amber-500" /> {isAr ? "تعديل الرحلة والترجمات" : "Edit Tour & Translations"}
@@ -69,11 +80,6 @@ export function TourRowActions({
         <DropdownMenuItem asChild className="cursor-pointer">
           <Link href={`/${locale}/admin/tours/${tour.slug}/edit`}>
             <Edit className="mr-2 h-4 w-4" /> {isAr ? "محرر الرحلة المتقدم" : "Advanced Tour Editor"}
-          </Link>
-        </DropdownMenuItem>
-        <DropdownMenuItem asChild className="cursor-pointer">
-          <Link href={`/${locale}/admin/tours/${tour.slug}/preview`} target="_blank">
-            <ExternalLink className="mr-2 h-4 w-4 text-emerald-500" /> {isAr ? "معاينة كزائر" : "Preview as Visitor"}
           </Link>
         </DropdownMenuItem>
         {tour.status === "DRAFT" && (

@@ -156,33 +156,33 @@ export function BlogsManager() {
   return (
     <div className="space-y-6">
       {/* Action Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-xl border border-border">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-card p-4 rounded-2xl border border-border">
         <div className="relative flex-1 max-w-md w-full">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
           <Input
-            placeholder="Search articles by title, slug, or category..."
+            placeholder="بحث في مقالات المدونة بالعنوان أو الرابط أو التصنيف..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="pl-9 bg-background"
+            className="pl-9 bg-background rounded-xl"
           />
         </div>
-        <Button onClick={handleOpenCreate} className="gap-2 shrink-0 bg-amber-500 hover:bg-amber-600 text-black font-semibold">
+        <Button onClick={handleOpenCreate} className="gap-2 shrink-0 bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl cursor-pointer">
           <Plus className="h-4 w-4" />
-          New Article
+          مقال جديد ➕
         </Button>
       </div>
 
       {/* Loading & Error States */}
       {isLoading && (
-        <div className="flex items-center justify-center py-20 text-muted-foreground gap-2">
+        <div className="flex items-center justify-center py-20 text-muted-foreground gap-2 font-bold text-xs">
           <Loader2 className="h-6 w-6 animate-spin text-amber-500" />
-          <span>Loading articles...</span>
+          <span>جاري تحميل المقالات...</span>
         </div>
       )}
 
       {error && (
-        <Card className="p-6 text-destructive border-destructive/20 bg-destructive/5">
-          Failed to load blog articles from backend.
+        <Card className="p-6 text-destructive border-destructive/20 bg-destructive/5 font-bold rounded-2xl">
+          تعذر تحميل مقالات المدونة من الخادم.
         </Card>
       )}
 
@@ -192,7 +192,7 @@ export function BlogsManager() {
           {filteredArticles.map((article) => (
             <Card
               key={article.id || article.slug}
-              className="overflow-hidden border border-border hover:border-amber-500/40 transition-all duration-300 flex flex-col group"
+              className="overflow-hidden border border-border hover:border-amber-500/40 transition-all duration-300 flex flex-col group rounded-2xl"
             >
               <div className="relative h-48 bg-muted overflow-hidden">
                 {article.coverImage ? (
@@ -206,29 +206,29 @@ export function BlogsManager() {
                     <BookOpen className="h-10 w-10 opacity-30" />
                   </div>
                 )}
-                <div className="absolute top-3 left-3 flex gap-2">
-                  <Badge variant="secondary" className="bg-background/90 backdrop-blur-xs text-xs font-semibold">
-                    {article.category || "Journal"}
+                <div className="absolute top-3 right-3 flex gap-2">
+                  <Badge variant="secondary" className="bg-background/90 backdrop-blur-xs text-xs font-bold">
+                    {article.category || "مقالات سياحية"}
                   </Badge>
                   {article.status === "PUBLISHED" ? (
-                    <Badge className="bg-emerald-500/90 text-white text-[10px]">Published</Badge>
+                    <Badge className="bg-emerald-500/90 text-white text-[10px] font-bold">منشور</Badge>
                   ) : (
-                    <Badge variant="outline" className="bg-background/90 text-xs">Draft</Badge>
+                    <Badge variant="outline" className="bg-background/90 text-xs font-bold">مسودة</Badge>
                   )}
                 </div>
               </div>
 
               <CardHeader className="p-5 flex-1">
-                <CardTitle className="text-base line-clamp-2 leading-snug group-hover:text-amber-500 transition-colors">
+                <CardTitle className="text-base line-clamp-2 leading-snug group-hover:text-amber-500 transition-colors font-bold">
                   {typeof article.title === "string" ? article.title : article.slug}
                 </CardTitle>
                 <CardDescription className="line-clamp-2 text-xs mt-2">
-                  {article.excerpt || "No summary provided."}
+                  {article.excerpt || "لا يوجد ملخص متوفر للمقال."}
                 </CardDescription>
-                <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50">
+                <div className="flex items-center gap-4 text-xs text-muted-foreground mt-4 pt-4 border-t border-border/50 font-medium">
                   <span className="flex items-center gap-1">
                     <User className="h-3 w-3 text-amber-500" />
-                    {article.author || "Editorial"}
+                    {article.author || "فريق التحرير"}
                   </span>
                   {article.publishedAt && (
                     <span className="flex items-center gap-1">
@@ -243,16 +243,16 @@ export function BlogsManager() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 gap-1.5 text-xs font-medium"
+                  className="flex-1 gap-1.5 text-xs font-bold rounded-xl cursor-pointer"
                   onClick={() => handleOpenEdit(article)}
                 >
                   <Edit3 className="h-3.5 w-3.5" />
-                  Edit
+                  تعديل
                 </Button>
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs px-2.5"
+                  className="text-destructive hover:text-destructive hover:bg-destructive/10 text-xs px-2.5 rounded-xl cursor-pointer"
                   onClick={() => handleDelete(article)}
                   disabled={deleteBlog.isPending}
                 >
@@ -262,8 +262,8 @@ export function BlogsManager() {
             </Card>
           ))}
           {filteredArticles.length === 0 && (
-            <div className="col-span-full py-16 text-center text-muted-foreground">
-              No blog articles found. Click "New Article" to create your first post.
+            <div className="col-span-full py-16 text-center text-muted-foreground text-xs font-bold">
+              لا توجد مقالات مدونة مسجلة حالياً. اضغط على 'مقال جديد' لنشر أول مقال.
             </div>
           )}
         </div>
@@ -271,102 +271,108 @@ export function BlogsManager() {
 
       {/* Create / Edit Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto rounded-2xl">
           <DialogHeader>
-            <DialogTitle>{editingArticle ? "Edit Blog Article" : "Create New Blog Article"}</DialogTitle>
-            <DialogDescription>
-              Write content for your luxury travel journal. Published articles appear on the main website.
+            <DialogTitle className="font-bold">{editingArticle ? "تعديل مقال المدونة" : "كتابة ونشر مقال جديد"}</DialogTitle>
+            <DialogDescription className="text-xs">
+              كتابة محتوى لمجلة السفر والمدونة السياحية. تظهر المقالات المنشورة في الموقع الرئيسي مباشرة.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold">Slug (URL identifier) *</label>
+                <label className="text-xs font-bold">الرابط الدائم (Slug) *</label>
                 <Input
                   value={draft.slug}
                   onChange={(e) => setDraft({ ...draft, slug: e.target.value })}
-                  placeholder="e.g. nile-cruise-guide"
+                  placeholder="مثال: nile-cruise-guide"
+                  className="rounded-xl font-mono text-xs"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold">Category</label>
+                <label className="text-xs font-bold">التصنيف (Category)</label>
                 <Input
                   value={draft.category}
                   onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-                  placeholder="e.g. Egypt Travel, Cruises"
+                  placeholder="مثال: Egypt Travel, Nile Cruises"
+                  className="rounded-xl"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold">Author</label>
+                <label className="text-xs font-bold">اسم الكاتب / المحرر</label>
                 <Input
                   value={draft.author}
                   onChange={(e) => setDraft({ ...draft, author: e.target.value })}
-                  placeholder="e.g. Dunas Editorial"
+                  placeholder="مثال: Dunas Editorial"
+                  className="rounded-xl"
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-semibold">Cover Image URL (HTTPS)</label>
+                <label className="text-xs font-bold">رابط صورة الغلاف (Cover Image URL)</label>
                 <Input
                   value={draft.coverImage}
                   onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })}
                   placeholder="https://images.unsplash.com/..."
+                  className="rounded-xl font-mono text-xs"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold">Title (English) *</label>
+              <label className="text-xs font-bold">عنوان المقال (Title) *</label>
               <Input
                 value={draft.titleEn}
                 onChange={(e) => setDraft({ ...draft, titleEn: e.target.value })}
-                placeholder="Enter compelling article title"
+                placeholder="اكتب عنواناً جذاباً ومعبراً للمقال"
+                className="rounded-xl"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold">Excerpt / Summary</label>
+              <label className="text-xs font-bold">الملخص والمقدمة (Excerpt)</label>
               <Textarea
                 value={draft.excerptEn}
                 onChange={(e) => setDraft({ ...draft, excerptEn: e.target.value })}
-                placeholder="Brief 1-2 sentence description"
+                placeholder="وصف مختصر في جملة أو جملتين يلخص فكرة المقال"
                 rows={2}
+                className="rounded-xl text-xs"
               />
             </div>
 
             <div className="space-y-1.5">
-              <label className="text-xs font-semibold">Article Content (HTML or Markdown) *</label>
+              <label className="text-xs font-bold">محتوى وتفاصيل المقال (Content) *</label>
               <Textarea
                 value={draft.contentEn}
                 onChange={(e) => setDraft({ ...draft, contentEn: e.target.value })}
-                placeholder="<p>Write your article content here...</p>"
+                placeholder="اكتب تفاصيل ومحتوى المقال كاملاً هنا..."
                 rows={8}
-                className="font-mono text-xs"
+                className="font-mono text-xs rounded-xl"
               />
             </div>
           </div>
 
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
-              Cancel
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} className="rounded-xl font-bold">
+              إلغاء
             </Button>
             <Button
               onClick={handleSave}
               disabled={createBlog.isPending || updateBlog.isPending}
-              className="bg-amber-500 hover:bg-amber-600 text-black font-semibold"
+              className="bg-amber-500 hover:bg-amber-600 text-black font-bold rounded-xl"
             >
               {createBlog.isPending || updateBlog.isPending ? (
                 <>
                   <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
-                  Saving...
+                  جاري الحفظ...
                 </>
               ) : editingArticle ? (
-                "Save Changes"
+                "حفظ التعديلات"
               ) : (
-                "Publish Article"
+                "نشر المقال"
               )}
             </Button>
           </DialogFooter>

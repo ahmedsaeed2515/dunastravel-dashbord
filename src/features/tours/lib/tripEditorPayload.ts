@@ -34,7 +34,7 @@ function translation(
 
 function localizedText(
   translations: TripModel['translations'] | undefined,
-  field: 'title' | 'subtitle' | 'overview' | 'duration',
+  field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures',
   arabicValue: unknown,
 ): Record<LanguageCode, string> {
   return Object.fromEntries(LOCALES.map((locale) => [
@@ -123,7 +123,7 @@ export function buildTripEditorPayload(
     isFeatured: Boolean(formData.popular),
     ...(isNew ? { status: 'DRAFT' as const, isActive: false } : {}),
     hotelInfoJsonb,
-    departureInfoJsonb: formData.departures ? { ar: text(formData.departures), en: text(formData.departures) } : undefined,
+    departureInfoJsonb: formData.departures ? localizedText(translations, 'departures', formData.departures) : undefined,
     includedServicesJsonb: localizedList(translations, 'included', formData.included),
     excludedServicesJsonb: localizedList(translations, 'excluded', formData.excluded),
     highlightsJsonb: localizedList(translations, 'highlights', formData.highlights),

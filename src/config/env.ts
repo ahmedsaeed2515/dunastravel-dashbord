@@ -5,8 +5,13 @@ const envSchema = z.object({
     .string()
     .min(1)
     .default(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api'),
+  NEXT_PUBLIC_FRONTEND_URL: z
+    .string()
+    .optional()
+    .default(process.env.NEXT_PUBLIC_FRONTEND_URL || 'http://localhost:5173'),
 });
 
 export const env = envSchema.parse({
   NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+  NEXT_PUBLIC_FRONTEND_URL: process.env.NEXT_PUBLIC_FRONTEND_URL,
 });

@@ -305,7 +305,7 @@ export function ManageCategoriesDialog({
                     <div key={cat.slug} className="p-3.5 bg-muted/40 space-y-3">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                         <div className="space-y-1">
-                          <Label className="text-[10px] font-bold">English Name</Label>
+                          <Label className="text-[10px] font-bold">الاسم بالإنجليزية (English)</Label>
                           <Input
                             value={editCat.nameEn}
                             onChange={(e) => setEditCat((prev) => ({ ...prev, nameEn: e.target.value }))}
@@ -313,7 +313,7 @@ export function ManageCategoriesDialog({
                           />
                         </div>
                         <div className="space-y-1">
-                          <Label className="text-[10px] font-bold">Arabic Name</Label>
+                          <Label className="text-[10px] font-bold">الاسم بالعربية</Label>
                           <Input
                             value={editCat.nameAr}
                             onChange={(e) => setEditCat((prev) => ({ ...prev, nameAr: e.target.value }))}

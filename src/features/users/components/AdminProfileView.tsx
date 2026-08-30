@@ -163,7 +163,7 @@ export function AdminProfileView() {
           </div>
 
           <div className="flex items-center gap-2 sm:pb-1">
-            <Button variant="outline" size="sm" onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10">
+            <Button variant="outline" size="sm" onClick={handleLogout} className="text-destructive hover:text-destructive hover:bg-destructive/10 font-bold rounded-xl">
               <LogOut className="w-4 h-4 mr-1.5" />
               {tNav("logOut")}
             </Button>
@@ -174,11 +174,11 @@ export function AdminProfileView() {
       {/* Tabs Section */}
       <Tabs defaultValue="details" className="w-full">
         <TabsList className="grid w-full grid-cols-2 max-w-md bg-muted/60">
-          <TabsTrigger value="details" className="gap-2">
-            <User className="w-4 h-4" /> Personal Details
+          <TabsTrigger value="details" className="gap-2 font-bold">
+            <User className="w-4 h-4" /> البيانات الشخصية
           </TabsTrigger>
-          <TabsTrigger value="security" className="gap-2">
-            <Lock className="w-4 h-4" /> Security & Password
+          <TabsTrigger value="security" className="gap-2 font-bold">
+            <Lock className="w-4 h-4" /> الأمان وكلمة المرور
           </TabsTrigger>
         </TabsList>
 
@@ -186,46 +186,46 @@ export function AdminProfileView() {
         <TabsContent value="details" className="mt-6 space-y-6">
           <Card className="shadow-sm border">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <User className="w-5 h-5 text-primary" /> Profile Information
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <User className="w-5 h-5 text-primary" /> معلومات الملف الشخصي
               </CardTitle>
               <CardDescription>
-                Update your account info, contact details, and system preferences.
+                تحديث بيانات الحساب الشخصي ومعلومات الاتصال وتفضيلات النظام.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleUpdateProfile} className="space-y-6">
                 <div className="grid gap-6 md:grid-cols-2">
                   <div className="space-y-2">
-                    <Label htmlFor="name" className="text-sm font-medium">Full Name</Label>
+                    <Label htmlFor="name" className="text-sm font-bold">الاسم بالكامل</Label>
                     <div className="relative">
                       <User className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
                         id="name"
                         value={name}
                         onChange={(e) => setName(e.target.value)}
-                        placeholder="Super Admin"
-                        className="pl-9"
+                        placeholder="الاسم ثلاثي"
+                        className="pl-9 rounded-xl"
                         required
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email" className="text-sm font-medium">Email Address (Read-only)</Label>
+                    <Label htmlFor="email" className="text-sm font-bold">البريد الإلكتروني (للقراءة فقط)</Label>
                     <div className="relative">
                       <Mail className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
                         id="email"
                         value={user?.email || ""}
                         disabled
-                        className="pl-9 bg-muted/50 cursor-not-allowed"
+                        className="pl-9 bg-muted/50 cursor-not-allowed rounded-xl font-mono text-xs"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="phone" className="text-sm font-medium">Phone Number</Label>
+                    <Label htmlFor="phone" className="text-sm font-bold">رقم الهاتف</Label>
                     <div className="relative">
                       <Phone className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
@@ -233,27 +233,27 @@ export function AdminProfileView() {
                         value={phone}
                         onChange={(e) => setPhone(e.target.value)}
                         placeholder="+20 100 000 0000"
-                        className="pl-9"
+                        className="pl-9 rounded-xl font-mono text-xs"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="nationality" className="text-sm font-medium">Nationality</Label>
+                    <Label htmlFor="nationality" className="text-sm font-bold">الجنسية</Label>
                     <div className="relative">
                       <MapPin className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
                         id="nationality"
                         value={nationality}
                         onChange={(e) => setNationality(e.target.value)}
-                        placeholder="e.g. Egyptian, Spanish, American"
-                        className="pl-9"
+                        placeholder="مثال: مصري، سعودي، إسباني"
+                        className="pl-9 rounded-xl"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="passportNumber" className="text-sm font-medium">Passport Number</Label>
+                    <Label htmlFor="passportNumber" className="text-sm font-bold">رقم جواز السفر</Label>
                     <div className="relative">
                       <CreditCard className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
@@ -261,23 +261,23 @@ export function AdminProfileView() {
                         value={passportNumber}
                         onChange={(e) => setPassportNumber(e.target.value)}
                         placeholder="A12345678"
-                        className="pl-9"
+                        className="pl-9 rounded-xl font-mono text-xs"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="preferredLanguage" className="text-sm font-medium">Preferred System Language</Label>
+                    <Label htmlFor="preferredLanguage" className="text-sm font-bold">اللغة المفضلة للنظام</Label>
                     <div className="relative">
                       <Globe className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <select
                         id="preferredLanguage"
                         value={preferredLanguage}
                         onChange={(e) => setPreferredLanguage(e.target.value)}
-                        className="w-full h-10 pl-9 pr-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="w-full h-10 pl-9 pr-3 rounded-xl border border-input bg-background text-sm font-bold ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       >
-                        <option value="en">English (US)</option>
                         <option value="ar">العربية (Arabic)</option>
+                        <option value="en">English (US)</option>
                         <option value="es">Español (Spanish)</option>
                         <option value="pt">Português (Portuguese)</option>
                         <option value="it">Italiano (Italian)</option>
@@ -286,30 +286,30 @@ export function AdminProfileView() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="preferredCurrency" className="text-sm font-medium">Preferred Currency</Label>
+                    <Label htmlFor="preferredCurrency" className="text-sm font-bold">العملة المفضلة</Label>
                     <div className="relative">
                       <CreditCard className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <select
                         id="preferredCurrency"
                         value={preferredCurrency}
                         onChange={(e) => setPreferredCurrency(e.target.value)}
-                        className="w-full h-10 pl-9 pr-3 rounded-md border border-input bg-background text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
+                        className="w-full h-10 pl-9 pr-3 rounded-xl border border-input bg-background text-sm font-bold ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2"
                       >
-                        <option value="USD">USD ($)</option>
-                        <option value="EUR">EUR (€)</option>
-                        <option value="EGP">EGP (ج.م)</option>
+                        <option value="USD">USD ($ - دولار أمريكي)</option>
+                        <option value="EUR">EUR (€ - يورو)</option>
+                        <option value="EGP">EGP (ج.م - جنيه مصري)</option>
                       </select>
                     </div>
                   </div>
 
                   <div className="space-y-2">
-                    <Label className="text-sm font-medium">Account Created</Label>
+                    <Label className="text-sm font-bold">تاريخ إنشاء الحساب</Label>
                     <div className="relative">
                       <Calendar className="w-4 h-4 absolute left-3 top-3 text-muted-foreground" />
                       <Input
                         value={user?.createdAt ? new Date(user.createdAt).toLocaleDateString() : "N/A"}
                         disabled
-                        className="pl-9 bg-muted/50 cursor-not-allowed text-xs font-mono"
+                        className="pl-9 bg-muted/50 cursor-not-allowed text-xs font-mono rounded-xl"
                       />
                     </div>
                   </div>
@@ -318,9 +318,9 @@ export function AdminProfileView() {
                 <Separator />
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isUpdatingProfile} className="gap-2">
+                  <Button type="submit" disabled={isUpdatingProfile} className="gap-2 font-bold rounded-xl">
                     <Save className="w-4 h-4" />
-                    {isUpdatingProfile ? "Saving Changes..." : "Save Profile Details"}
+                    {isUpdatingProfile ? "جاري الحفظ..." : "حفظ بيانات الملف الشخصي"}
                   </Button>
                 </div>
               </form>
@@ -332,17 +332,17 @@ export function AdminProfileView() {
         <TabsContent value="security" className="mt-6 space-y-6">
           <Card className="shadow-sm border">
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <KeyRound className="w-5 h-5 text-primary" /> Change Password
+              <CardTitle className="text-lg font-bold flex items-center gap-2">
+                <KeyRound className="w-5 h-5 text-primary" /> تغيير كلمة المرور
               </CardTitle>
               <CardDescription>
-                Ensure your account is using a long, random password to stay secure.
+                تأكد من استخدام كلمة مرور قوية وغير مكررة لحماية حسابك وصلاحياتك الإدارية.
               </CardDescription>
             </CardHeader>
             <CardContent>
               <form onSubmit={handleChangePassword} className="space-y-6 max-w-xl">
                 <div className="space-y-2">
-                  <Label htmlFor="currentPassword">Current Password</Label>
+                  <Label htmlFor="currentPassword" className="text-xs font-bold">كلمة المرور الحالية</Label>
                   <Input
                     id="currentPassword"
                     type="password"
@@ -350,11 +350,12 @@ export function AdminProfileView() {
                     onChange={(e) => setCurrentPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    className="rounded-xl font-mono"
                   />
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="newPassword">New Password</Label>
+                  <Label htmlFor="newPassword" className="text-xs font-bold">كلمة المرور الجديدة</Label>
                   <Input
                     id="newPassword"
                     type="password"
@@ -362,12 +363,13 @@ export function AdminProfileView() {
                     onChange={(e) => setNewPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    className="rounded-xl font-mono"
                   />
-                  <p className="text-[11px] text-muted-foreground">Minimum 8 characters with a mix of letters and numbers.</p>
+                  <p className="text-[11px] text-muted-foreground font-semibold">على الأقل 8 أحرف وأرقام مدمجة.</p>
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="confirmPassword">Confirm New Password</Label>
+                  <Label htmlFor="confirmPassword" className="text-xs font-bold">تأكيد كلمة المرور الجديدة</Label>
                   <Input
                     id="confirmPassword"
                     type="password"
@@ -375,15 +377,16 @@ export function AdminProfileView() {
                     onChange={(e) => setConfirmPassword(e.target.value)}
                     placeholder="••••••••"
                     required
+                    className="rounded-xl font-mono"
                   />
                 </div>
 
                 <Separator />
 
                 <div className="flex justify-end">
-                  <Button type="submit" disabled={isChangingPassword} className="gap-2">
+                  <Button type="submit" disabled={isChangingPassword} className="gap-2 font-bold rounded-xl">
                     <Lock className="w-4 h-4" />
-                    {isChangingPassword ? "Updating Password..." : "Update Password"}
+                    {isChangingPassword ? "جاري التحديث..." : "تحديث كلمة المرور"}
                   </Button>
                 </div>
               </form>

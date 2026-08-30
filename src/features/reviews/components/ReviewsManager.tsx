@@ -719,9 +719,9 @@ export function ReviewsManager() {
                               className="text-[10px] font-bold text-amber-500 hover:underline cursor-pointer flex items-center gap-0.5"
                             >
                               {isExpanded ? (
-                                <>Show Less <ChevronUp className="w-3 h-3" /></>
+                                <>عرض أقل <ChevronUp className="w-3 h-3" /></>
                               ) : (
-                                <>Read More <ChevronDown className="w-3 h-3" /></>
+                                <>قراءة المزيد <ChevronDown className="w-3 h-3" /></>
                               )}
                             </button>
                           )}
@@ -731,7 +731,7 @@ export function ReviewsManager() {
                             <div className="mt-1.5 p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs">
                               <div className="flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 mb-0.5">
                                 <CornerDownRight className="w-3 h-3" />
-                                <span>Dunas Travel Reply:</span>
+                                <span>رد إدارة دوناس ترافيل:</span>
                               </div>
                               <p className="text-foreground/90 text-[11px] leading-relaxed">
                                 {review.adminReply}

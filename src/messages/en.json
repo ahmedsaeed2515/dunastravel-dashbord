@@ -80,7 +80,27 @@
     "permissionDeniedDescription": "You do not have permission to perform this action or view this resource.",
     "returnToDashboard": "Return to Dashboard",
     "somethingWentWrong": "Something went wrong",
-    "unexpectedErrorOccurred": "An unexpected error occurred while loading data."
+    "unexpectedErrorOccurred": "An unexpected error occurred while loading data.",
+    "superAdmin": "Super Admin",
+    "adminRole": "Admin",
+    "last30Days": "Last 30 days",
+    "last90Days": "Last 90 days",
+    "last12Months": "Last 12 months",
+    "allDestinations": "All Destinations",
+    "desktop": "Desktop",
+    "mobile": "Mobile",
+    "tablet": "Tablet",
+    "views": "Views",
+    "clicks": "Clicks",
+    "toursCount": "Tours",
+    "refresh": "Refresh",
+    "published": "Published",
+    "draft": "Draft",
+    "archive": "Archive",
+    "allStatus": "All Status",
+    "filterBy": "Filter By",
+    "clearFilters": "Clear Filters",
+    "noData": "No data available currently"
   },
   "navigation": {
     "overview": "Overview",
@@ -119,7 +139,8 @@
     "reviews": "Reviews",
     "activeClientDatabase": "Active Client Database",
     "vipConciergeClub": "VIP Concierge Club",
-    "outstandingLedger": "Outstanding Ledger"
+    "outstandingLedger": "Outstanding Ledger",
+    "blogs": "Blogs & Articles"
   },
   "auth": {
     "welcomeBack": "Welcome Back",
@@ -249,38 +270,6 @@
     "videoTitle": "Video Title",
     "videoUrl": "Video URL",
     "tagLabel": "Tag / Category",
-    "noMediaDesc": "Upload high-resolution images for tour packages and marketing."
-  },
-  "customers": {
-    "title": "Customer CRM",
-    "description": "View client profiles, booking history, preferences, and contact details.",
-    "addCustomer": "Add Customer",
-    "customerName": "Customer Name",
-    "nationality": "Nationality",
-    "totalBookings": "Total Bookings",
-    "totalSpent": "Total Spent",
-    "lastBooking": "Last Booking",
-    "noCustomers": "No Customers Found",
-    "noCustomersDesc": "Customer client profiles will appear here when bookings are placed."
-  },
-  "users": {
-    "title": "User Management",
-    "description": "Manage admin system accounts, security roles, and permissions.",
-    "addUser": "Add User",
-    "userName": "User Name",
-    "role": "Role",
-    "lastLogin": "Last Login",
-    "noUsers": "No Users Found",
-    "noUsersDesc": "Manage staff and partner system access."
-  },
-  "roles": {
-    "title": "Roles & Permissions",
-    "description": "Configure fine-grained security permissions for administrative roles.",
-    "roleName": "Role Name",
-    "permissions": "Permissions",
-    "memberCount": "Members"
-  },
-  "inquiries": {
     "noMediaDesc": "Upload high-resolution images for tour packages and marketing."
   },
   "customers": {

@@ -1,6 +1,5 @@
 "use client";
 
- 
 import { useState } from "react";
 import { Tour } from "../../types";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from "@/components/ui/sheet";
@@ -114,54 +113,54 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
         </SheetHeader>
 
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="w-full grid grid-cols-5 h-12 mb-4 bg-muted/40 p-1 rounded-lg">
-            <TabsTrigger value="overview">Overview</TabsTrigger>
-            <TabsTrigger value="itinerary">Itinerary</TabsTrigger>
-            <TabsTrigger value="media">Media & Assets</TabsTrigger>
-            <TabsTrigger value="pricing">Pricing & Rules</TabsTrigger>
-            <TabsTrigger value="audit">Audit Logs</TabsTrigger>
+          <TabsList className="w-full grid grid-cols-5 h-11 mb-4 bg-muted/60 p-1 rounded-xl font-bold">
+            <TabsTrigger value="overview" className="text-xs font-bold">نظرة عامة</TabsTrigger>
+            <TabsTrigger value="itinerary" className="text-xs font-bold">البرنامج اليومي</TabsTrigger>
+            <TabsTrigger value="media" className="text-xs font-bold">الصور والوسائط</TabsTrigger>
+            <TabsTrigger value="pricing" className="text-xs font-bold">الأسعار</TabsTrigger>
+            <TabsTrigger value="audit" className="text-xs font-bold">سجل التعديلات</TabsTrigger>
           </TabsList>
 
           <ScrollArea className="h-[calc(100vh-250px)] pr-4">
             {/* OVERVIEW TAB */}
             <TabsContent value="overview" className="space-y-6">
-              <div className="bg-card p-5 rounded-xl border shadow-sm space-y-3" dir={currentLangObj.dir}>
+              <div className="bg-card p-5 rounded-2xl border shadow-sm space-y-3" dir={currentLangObj.dir}>
                 <div className="flex items-center justify-between">
-                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Overview & Summary ({selectedLang.toUpperCase()})</h3>
-                  <Badge variant="outline" className="text-[10px]">{duration}</Badge>
+                  <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">نظرة عامة وملخص ({selectedLang.toUpperCase()})</h3>
+                  <Badge variant="outline" className="text-[10px] font-bold">{duration}</Badge>
                 </div>
                 <p className="text-sm leading-relaxed text-foreground whitespace-pre-wrap">{overview}</p>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-card p-4 rounded-xl border shadow-sm space-y-3">
+                <div className="bg-card p-4 rounded-2xl border shadow-sm space-y-3">
                   <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <MapPin className="h-4 w-4 text-primary" /> Geography & Destination
+                    <MapPin className="h-4 w-4 text-primary" /> الموقع الجغرافي والوجهة
                   </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground text-xs block">Country</span>
-                      <span className="font-medium">{tour.country || "N/A"}</span>
+                      <span className="text-muted-foreground text-xs block font-bold">الدولة</span>
+                      <span className="font-bold">{tour.country || "غير محدد"}</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs block">City</span>
-                      <span className="font-medium">{tour.city || "N/A"}</span>
+                      <span className="text-muted-foreground text-xs block font-bold">المدينة</span>
+                      <span className="font-bold">{tour.city || "غير محدد"}</span>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-card p-4 rounded-xl border shadow-sm space-y-3">
+                <div className="bg-card p-4 rounded-2xl border shadow-sm space-y-3">
                   <h3 className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
-                    <Layers className="h-4 w-4 text-primary" /> Logistics & Capacity
+                    <Layers className="h-4 w-4 text-primary" /> السعة والمقاعد المتاحة
                   </h3>
                   <div className="grid grid-cols-2 gap-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground text-xs block">Total Capacity</span>
-                      <span className="font-medium">{tour.capacity ?? "—"} Seats</span>
+                      <span className="text-muted-foreground text-xs block font-bold">السعة الكلية</span>
+                      <span className="font-bold">{tour.capacity ?? "—"} مقعد</span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground text-xs block">Remaining Seats</span>
-                      <span className="font-medium text-emerald-600 font-semibold">{tour.remainingSeats ?? "—"} Seats</span>
+                      <span className="text-muted-foreground text-xs block font-bold">المقاعد المتبقية</span>
+                      <span className="font-bold text-emerald-600 font-mono">{tour.remainingSeats ?? "—"} مقعد</span>
                     </div>
                   </div>
                 </div>
@@ -199,13 +198,13 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                   </div>
                 ) : (
                   <div className="grid grid-cols-2 gap-3 text-xs">
-                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
-                      <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold mb-1">Default Margin</span>
-                      <span className="font-mono font-medium text-foreground">25%</span>
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
+                      <span className="text-muted-foreground block text-[11px] font-bold mb-1">هامش الربح الافتراضي</span>
+                      <span className="font-mono font-bold text-foreground">25%</span>
                     </div>
-                    <div className="p-3 bg-muted/40 rounded-lg border border-border/50">
-                      <span className="text-muted-foreground block text-[11px] uppercase tracking-wider font-semibold mb-1">Dynamic Surge</span>
-                      <span className="font-mono font-medium text-foreground">Standard Tier</span>
+                    <div className="p-3 bg-muted/40 rounded-xl border border-border/50">
+                      <span className="text-muted-foreground block text-[11px] font-bold mb-1">التسعير الديناميكي</span>
+                      <span className="font-bold text-foreground">المستوى القياسي</span>
                     </div>
                   </div>
                 )}

@@ -239,20 +239,20 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
             </div>
 
             <div className="space-y-1.5">
-              <Label className="font-semibold text-muted-foreground">Source (المصدر)</Label>
+              <Label className="font-semibold text-muted-foreground">مصدر استقطاب العميل (Source)</Label>
               <Select
                 value={formData.customerSource}
                 onValueChange={(val) => setFormData({ ...formData, customerSource: val || 'ADMIN' })}
               >
                 <SelectTrigger className="text-xs font-semibold">
-                  <SelectValue placeholder="Source" />
+                  <SelectValue placeholder="اختر المصدر" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="ADMIN">Concierge / Admin</SelectItem>
-                  <SelectItem value="WEB">Website Booking</SelectItem>
-                  <SelectItem value="REFERRAL">VIP Referral</SelectItem>
-                  <SelectItem value="PHONE">Phone Inquiry</SelectItem>
-                  <SelectItem value="PARTNER">B2B Travel Partner</SelectItem>
+                  <SelectItem value="ADMIN">إدارة النظام / VIP Concierge</SelectItem>
+                  <SelectItem value="WEB">حجز مباشر من الموقع (Website Booking)</SelectItem>
+                  <SelectItem value="REFERRAL">توصية وترشيح خاص (VIP Referral)</SelectItem>
+                  <SelectItem value="PHONE">استفسار هاتفي / واتساب (Phone Inquiry)</SelectItem>
+                  <SelectItem value="PARTNER">شريك سياحي (B2B Travel Partner)</SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -262,11 +262,11 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
               <Label htmlFor="cust-pref-dest" className="font-semibold text-muted-foreground">
-                Preferred Destination (الوجهة المفضلة)
+                الوجهة المفضلة (Preferred Destination)
               </Label>
               <Input
                 id="cust-pref-dest"
-                placeholder="e.g. Nile Cruise & Luxor Dahabiya"
+                placeholder="مثال: القاهرة، الأقصر، نايل كروز..."
                 value={formData.preferredDestination}
                 onChange={(e) => setFormData({ ...formData, preferredDestination: e.target.value })}
                 className="text-xs"
@@ -275,11 +275,11 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
 
             <div className="space-y-1.5">
               <Label htmlFor="cust-pref-type" className="font-semibold text-muted-foreground">
-                Travel Style (نمط الرحلة)
+                نمط ونوع الرحلة (Travel Style)
               </Label>
               <Input
                 id="cust-pref-type"
-                placeholder="e.g. Luxury Private, Historical, Honeymoon"
+                placeholder="مثال: رحلات خاصة فاخرة، شهر عسل، تاريخي"
                 value={formData.preferredTravelType}
                 onChange={(e) => setFormData({ ...formData, preferredTravelType: e.target.value })}
                 className="text-xs"
@@ -291,7 +291,7 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
             <div className="space-y-1.5">
               <Label htmlFor="cust-tags" className="font-semibold text-muted-foreground">
-                CRM Tags (الوسوم - مفصولة بفواصل)
+                وسوم العميل في النظام CRM (مفصولة بفواصل)
               </Label>
               <Input
                 id="cust-tags"
@@ -304,7 +304,7 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
 
             <div className="space-y-1.5">
               <Label htmlFor="cust-passport" className="font-semibold text-muted-foreground">
-                Passport / ID Number (رقم الجواز - اختياري)
+                رقم جواز السفر / الهوية (اختياري)
               </Label>
               <Input
                 id="cust-passport"
@@ -319,12 +319,12 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
           {/* Initial Sales Note */}
           <div className="space-y-1.5">
             <Label htmlFor="cust-note" className="font-semibold text-muted-foreground flex items-center gap-1">
-              <FileText className="h-3 w-3 text-primary" /> Initial Concierge Notes (ملاحظات الحجز والاستقبال الأولى)
+              <FileText className="h-3 w-3 text-primary" /> الملاحظات الأولية للعميل
             </Label>
             <Textarea
               id="cust-note"
               rows={3}
-              placeholder="e.g. VIP client requesting private dahabiya charter with presidential suite, airport fast-track meet & assist..."
+              placeholder="اكتب ملاحظات الاستقبال وتفضيلات العميل الخاصة هنا..."
               value={formData.initialNote}
               onChange={(e) => setFormData({ ...formData, initialNote: e.target.value })}
               className="text-xs leading-relaxed"
@@ -339,12 +339,12 @@ export function CreateCustomerDialog({ isOpen, onClose, onSuccess }: CreateCusto
               {isSubmitting ? (
                 <>
                   <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                  <span>Saving to CRM...</span>
+                  <span>جاري حفظ ملف العميل...</span>
                 </>
               ) : (
                 <>
                   <Sparkles className="h-3.5 w-3.5" />
-                  <span>Create Customer Profile</span>
+                  <span>إنشاء وحفظ ملف العميل</span>
                 </>
               )}
             </Button>

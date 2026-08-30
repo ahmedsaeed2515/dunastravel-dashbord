@@ -37,13 +37,13 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
-            <CalendarCheck className="w-4 h-4 text-primary" /> Operations Bookings Feed
+            <CalendarCheck className="w-4 h-4 text-primary" /> {isAr ? "أحدث الحجوزات والعمليات" : "Operations Bookings Feed"}
           </CardTitle>
-          <p className="text-xs text-muted-foreground">Recent customer reservations and payment state</p>
+          <p className="text-xs text-muted-foreground">{isAr ? "متابعة فورية لأحدث حجوزات العملاء وحالة الدفع" : "Recent customer reservations and payment state"}</p>
         </div>
 
         <Link href={`/${locale}/admin/bookings`}>
-          <Button variant="outline" size="xs" className="text-xs">View All Bookings</Button>
+          <Button variant="outline" size="xs" className="text-xs font-bold">{isAr ? "عرض كافة الحجوزات 📋" : "View All Bookings"}</Button>
         </Link>
       </CardHeader>
 
@@ -91,7 +91,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
                   </TableCell>
                   <TableCell className="text-right">
                     <Link href={`/${locale}/admin/bookings/${b.referenceCode}`}>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title="View Booking Details">
+                      <Button size="icon" variant="ghost" className="h-7 w-7" title={isAr ? "عرض تفاصيل الحجز" : "View Booking Details"}>
                         <Eye className="w-3.5 h-3.5" />
                       </Button>
                     </Link>
