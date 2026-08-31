@@ -151,7 +151,7 @@ export function OverviewTab({
             </span>
             <span className="font-bold text-foreground flex items-center gap-1.5">
               <Users className="h-3.5 w-3.5 text-emerald-500" />
-              5 {isAr ? "وكلاء أذكياء متاحين" : "Specialists Active"}
+              1 {isAr ? "مساعد نشط على الموقع" : "Live Active Persona"}
             </span>
           </div>
 
