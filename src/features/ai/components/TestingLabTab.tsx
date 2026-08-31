@@ -57,7 +57,7 @@ export function TestingLabTab({
     {
       role: "assistant",
       text: isAr
-        ? "أهلاً بك في دونس ترافيل! يسعدني جداً مساعدتك في تصميم رحلتك الفاخرة القادمة في مصر. كيف يمكنني خدمتك اليوم؟"
+        ? "أهلاً بك في دوناس ترافيل! يسعدني جداً مساعدتك في تصميم رحلتك الفاخرة القادمة في مصر. كيف يمكنني خدمتك اليوم؟"
         : "Welcome to Dunas Travel! I am delighted to curate your bespoke luxury journey in Egypt. How may I assist you today?",
       time: "10:00 AM",
     },
