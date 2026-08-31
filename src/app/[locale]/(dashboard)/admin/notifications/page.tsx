@@ -89,12 +89,16 @@ export default function AdminNotificationsPage() {
       handleMarkAsRead(item.id);
     }
     if (item.deepLink) {
+      let link = item.deepLink;
+      if (link.includes("/admin/crm/inquiries")) {
+        link = link.replace("/admin/crm/inquiries", "/admin/inquiries");
+      }
       const validLocale = ["en", "ar", "es", "pt", "it"].includes(currentLocale)
         ? currentLocale
         : "ar";
-      const targetUrl = item.deepLink.startsWith("/")
-        ? `/${validLocale}${item.deepLink}`
-        : item.deepLink;
+      const targetUrl = link.startsWith("/")
+        ? `/${validLocale}${link}`
+        : link;
       router.push(targetUrl);
     }
   };
