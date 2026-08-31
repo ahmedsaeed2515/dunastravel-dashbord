@@ -310,3 +310,98 @@ export async function autoTranslateFullTrip(
   onProgress?.('تمت الترجمة بنجاح!', 100);
   return cloned;
 }
+
+/**
+ * Universal auto-translator for entities with 5 language fields (like Hotels, Vehicles, Services).
+ * Detects the first populated language for Name and Description, and translates only the empty fields.
+ */
+export async function autoTranslateMissingEntityFields<T extends Record<string, any>>(
+  currentData: T,
+  options?: {
+    nameKeys?: { ar: string; en: string; es: string; pt: string; it: string };
+    descKeys?: { ar: string; en: string; es: string; pt: string; it: string };
+    fallbackName?: string;
+    fallbackDesc?: string;
+  }
+): Promise<T> {
+  const result: T = { ...currentData };
+  const nameKeys = options?.nameKeys || { ar: 'nameAr', en: 'nameEn', es: 'nameEs', pt: 'namePt', it: 'nameIt' };
+  const descKeys = options?.descKeys || { ar: 'descAr', en: 'descEn', es: 'descEs', pt: 'descPt', it: 'descIt' };
+
+  // 1. Detect Source for Name
+  const allLangs: LanguageCode[] = ['ar', 'en', 'es', 'pt', 'it'];
+  let sourceName = '';
+  let sourceNameLang: LanguageCode = 'ar';
+
+  for (const lang of allLangs) {
+    const key = (nameKeys as any)[lang];
+    const val = (result[key] || '').trim();
+    if (val) {
+      sourceName = val;
+      sourceNameLang = lang;
+      break;
+    }
+  }
+
+  if (!sourceName && options?.fallbackName?.trim()) {
+    sourceName = options.fallbackName.trim();
+    // Detect if fallbackName is Arabic or English
+    const hasArabicChars = /[\u0600-\u06FF]/.test(sourceName);
+    sourceNameLang = hasArabicChars ? 'ar' : 'en';
+    const primaryKey = (nameKeys as any)[sourceNameLang];
+    if (primaryKey && !result[primaryKey]) {
+      (result as any)[primaryKey] = sourceName;
+    }
+  }
+
+  // 2. Translate Missing Names
+  if (sourceName) {
+    await Promise.all(
+      allLangs.map(async (lang) => {
+        const key = (nameKeys as any)[lang];
+        if (!result[key] || !String(result[key]).trim()) {
+          (result as any)[key] = await translateText(sourceName, lang, sourceNameLang);
+        }
+      })
+    );
+  }
+
+  // 3. Detect Source for Description
+  let sourceDesc = '';
+  let sourceDescLang: LanguageCode = 'ar';
+
+  for (const lang of allLangs) {
+    const key = (descKeys as any)[lang];
+    const val = (result[key] || '').trim();
+    if (val) {
+      sourceDesc = val;
+      sourceDescLang = lang;
+      break;
+    }
+  }
+
+  if (!sourceDesc && options?.fallbackDesc?.trim()) {
+    sourceDesc = options.fallbackDesc.trim();
+    const hasArabicChars = /[\u0600-\u06FF]/.test(sourceDesc);
+    sourceDescLang = hasArabicChars ? 'ar' : 'en';
+    const primaryKey = (descKeys as any)[sourceDescLang];
+    if (primaryKey && !result[primaryKey]) {
+      (result as any)[primaryKey] = sourceDesc;
+    }
+  }
+
+  // 4. Translate Missing Descriptions
+  if (sourceDesc) {
+    await Promise.all(
+      allLangs.map(async (lang) => {
+        const key = (descKeys as any)[lang];
+        if (!result[key] || !String(result[key]).trim()) {
+          (result as any)[key] = await translateText(sourceDesc, lang, sourceDescLang);
+        }
+      })
+    );
+  }
+
+  return result;
+}
+

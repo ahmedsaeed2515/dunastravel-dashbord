@@ -429,15 +429,30 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   // Auto-translate selected or all target languages
   const handleAutoTranslate = async (targetLocalesToUse?: LanguageCode[]) => {
-    const sourceTitle = formData.title || formData.translations?.ar?.title || '';
+    // 1. Determine Source Language & Content
+    let detectedSourceLang: LanguageCode = activeLang;
+    let sourceTitle = (activeLang === 'ar' ? formData.title : formData.translations?.[activeLang]?.title) || formData.title || '';
+
     if (!sourceTitle.trim()) {
-      toast.error('يرجى إدخال العنوان الرئيسي للرحلة بالعربي أولاً لتتمكن من الترجمة.');
+      // Find the first available title
+      const foundLang = ALL_LOCALES.find(l => {
+        const t = (l.code === 'ar' ? formData.title : formData.translations?.[l.code]?.title);
+        return t && t.trim().length > 0;
+      });
+      if (foundLang) {
+        detectedSourceLang = foundLang.code;
+        sourceTitle = (foundLang.code === 'ar' ? formData.title : formData.translations?.[foundLang.code]?.title) || '';
+      }
+    }
+
+    if (!sourceTitle.trim()) {
+      toast.error('يرجى إدخال عنوان الرحلة في لغة واحدة على الأقل لتتمكن من الترجمة.');
       return;
     }
 
-    const actualTargets = (targetLocalesToUse || selectedTargetLocales).filter(l => l !== 'ar');
+    const actualTargets = (targetLocalesToUse || selectedTargetLocales).filter(l => l !== detectedSourceLang);
     if (actualTargets.length === 0) {
-      toast.error('يرجى تحديد اللغات المستهدفة للترجمة (EN, ES, PT, IT).');
+      toast.error('يرجى تحديد لغة مستهدفة للترجمة.');
       return;
     }
 
@@ -448,7 +463,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     try {
       const translated = await autoTranslateFullTrip(
         formData as TripModel,
-        'ar',
+        detectedSourceLang,
         actualTargets,
         (step) => setTranslateStatus(step)
       );

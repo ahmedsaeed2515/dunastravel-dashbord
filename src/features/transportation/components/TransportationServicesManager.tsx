@@ -32,6 +32,7 @@ import {
   FolderOpen,
   Link as LinkIcon,
   Image as ImageIcon,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -55,6 +56,7 @@ import { DEFAULT_FLEET, AVAILABLE_FEATURES } from "../data/default-fleet";
 import { MediaLibraryPickerModal, SelectedMediaAsset } from "@/components/media/MediaLibraryPickerModal";
 import { useUploadMedia } from "@/features/media/hooks/useMedia";
 import { MediaEntityType } from "@/features/media/types";
+import { autoTranslateMissingEntityFields } from "@/lib/translationService";
 
 interface CategoryMeta {
   labelAr: string;
@@ -353,43 +355,47 @@ export function TransportationServicesManager() {
 
   const saveMutation = useMutation({
     mutationFn: async (payload: ServiceDraft) => {
+      const fallbackNameEn = payload.vehicleType?.trim() || payload.nameEn?.trim() || payload.name?.trim() || "VIP Luxury Vehicle";
+      const fallbackNameAr = payload.nameAr?.trim() || (payload.vehicleType?.trim() ? `مركبة فاخرة (${payload.vehicleType.trim()})` : "مركبة سياحية فاخرة");
+
       const nameJsonb = {
-        en: payload.nameEn || payload.name || "VIP Luxury Vehicle",
-        ar: payload.nameAr || payload.nameEn || payload.name || "مركبة سياحية فاخرة",
-        es: payload.nameEs || payload.nameEn || payload.name || "Vehículo Turístico VIP",
-        pt: payload.namePt || payload.nameEn || payload.name || "Veículo Turístico VIP",
-        it: payload.nameIt || payload.nameEn || payload.name || "Veicolo Turistico VIP",
+        en: payload.nameEn?.trim() || fallbackNameEn,
+        ar: payload.nameAr?.trim() || fallbackNameAr,
+        es: payload.nameEs?.trim() || payload.nameEn?.trim() || fallbackNameEn,
+        pt: payload.namePt?.trim() || payload.nameEn?.trim() || fallbackNameEn,
+        it: payload.nameIt?.trim() || payload.nameEn?.trim() || fallbackNameEn,
       };
 
+      const baseDesc = payload.descriptionEn?.trim() || payload.description?.trim() || "Executive luxury transport service.";
       const descriptionJsonb = {
-        en: payload.descriptionEn || payload.description || "Executive luxury transport service.",
-        ar: payload.descriptionAr || payload.description || "خدمة نقل سياحية فاخرة ومريحة.",
-        es: payload.descriptionEs || payload.descriptionEn || payload.description || "Servicio de transporte turístico VIP.",
-        pt: payload.descriptionPt || payload.descriptionEn || payload.description || "Serviço de transporte turístico VIP.",
-        it: payload.descriptionIt || payload.descriptionEn || payload.description || "Servizio di trasporto turistico VIP.",
+        en: payload.descriptionEn?.trim() || baseDesc,
+        ar: payload.descriptionAr?.trim() || payload.description?.trim() || "خدمة نقل سياحية فاخرة ومريحة مع سائق معتمد.",
+        es: payload.descriptionEs?.trim() || baseDesc,
+        pt: payload.descriptionPt?.trim() || baseDesc,
+        it: payload.descriptionIt?.trim() || baseDesc,
       };
 
       const backendPayload = {
-        name: payload.nameEn || payload.name || payload.nameAr || "VIP Vehicle",
+        name: fallbackNameEn,
         nameJsonb,
-        nameAr: payload.nameAr,
-        nameEn: payload.nameEn,
+        nameAr: payload.nameAr?.trim() || fallbackNameAr,
+        nameEn: payload.nameEn?.trim() || fallbackNameEn,
         serviceType: payload.serviceType || "AIRPORT",
-        description: payload.descriptionEn || payload.description || "",
+        description: baseDesc,
         descriptionJsonb,
         vehicleCategory: payload.vehicleCategory || "bus",
-        vehicleType: payload.vehicleType || "VIP Tour Coach",
-        capacity: Number(payload.capacity) || 50,
-        doors: Number(payload.doors) || 2,
+        vehicleType: payload.vehicleType?.trim() || fallbackNameEn,
+        capacity: Number(payload.capacity) > 0 ? Number(payload.capacity) : 50,
+        doors: Number(payload.doors) > 0 ? Number(payload.doors) : 2,
         transmission: payload.transmission || "AUTO",
-        heroImageUrl: payload.heroImageUrl || getFallbackImage(String(payload.vehicleCategory)),
+        heroImageUrl: payload.heroImageUrl?.trim() || getFallbackImage(String(payload.vehicleCategory)),
         heroMediaId: payload.heroMediaId && payload.heroMediaId.trim() ? payload.heroMediaId.trim() : undefined,
         isPrivate: Boolean(payload.isPrivate),
         isActive: Boolean(payload.isActive),
-        pickupInstructions: payload.pickupInstructions || undefined,
-        dropoffInstructions: payload.dropoffInstructions || undefined,
+        pickupInstructions: payload.pickupInstructions?.trim() || undefined,
+        dropoffInstructions: payload.dropoffInstructions?.trim() || undefined,
         features: Array.isArray(payload.features) ? payload.features : [],
-        basePriceUsd: Number(payload.basePriceUsd) || 150,
+        basePriceUsd: Number(payload.basePriceUsd) >= 0 ? Number(payload.basePriceUsd) : 150,
       };
 
       if (editingItem?.id && !editingItem.id.startsWith("tr-custom-")) {
@@ -409,7 +415,16 @@ export function TransportationServicesManager() {
       setEditingItem(null);
     },
     onError: (err: any) => {
-      toast.error(err?.response?.data?.message || (isAr ? "تعذر حفظ بيانات المركبة." : "Failed to save vehicle."));
+      const serverMessage = err?.response?.data?.message;
+      let displayError = "";
+      if (Array.isArray(serverMessage)) {
+        displayError = serverMessage.join(", ");
+      } else if (typeof serverMessage === "string") {
+        displayError = serverMessage;
+      } else if (err?.message) {
+        displayError = err.message;
+      }
+      toast.error(displayError || (isAr ? "تعذر حفظ بيانات المركبة." : "Failed to save vehicle."));
     },
   });
 
@@ -495,24 +510,28 @@ export function TransportationServicesManager() {
     setIsMediaPickerOpen(false);
   };
 
-  const handleSmartFillTranslations = () => {
-    const baseName = draft.nameEn || draft.name || draft.nameAr || "VIP Luxury Transport";
-    const baseDesc = draft.descriptionEn || draft.description || draft.descriptionAr || "Premium chauffeur and transfer service.";
+  const [isTranslating, setIsTranslating] = useState(false);
 
-    setDraft((prev) => ({
-      ...prev,
-      nameEn: prev.nameEn || baseName,
-      nameAr: prev.nameAr || (baseName.includes("Bus") ? "حافلة سياحية فاخرة" : baseName.includes("Coaster") ? "كوستر ميني باص فاخر" : "سيارة خاصة VIP"),
-      nameEs: prev.nameEs || baseName,
-      namePt: prev.namePt || baseName,
-      nameIt: prev.nameIt || baseName,
-      descriptionEn: prev.descriptionEn || baseDesc,
-      descriptionAr: prev.descriptionAr || "خدمة نقل سياحية فاخرة ومريحة مع سائق معتمد.",
-      descriptionEs: prev.descriptionEs || baseDesc,
-      descriptionPt: prev.descriptionPt || baseDesc,
-      descriptionIt: prev.descriptionIt || baseDesc,
-    }));
-    toast.success(isAr ? "تم ملء اللغات الشاغرة بالذكاء الاصطناعي! 🌐" : "Empty translation fields populated! 🌐");
+  const handleSmartFillTranslations = async () => {
+    setIsTranslating(true);
+    try {
+      const fallbackName = draft.vehicleType || draft.name || "VIP Luxury Vehicle";
+      const fallbackDesc = draft.description || (draft.vehicleCategory === "bus" ? "حافلة سياحية فاخرة 50 مقعداً مجهزة لنقل المجموعات والرحلات الطويلة بأعلى درجات الراحة." : "خدمة نقل سياحية فاخرة ومريحة مع سائق محترف ومعتمد.");
+
+      const updated = await autoTranslateMissingEntityFields(draft, {
+        nameKeys: { ar: "nameAr", en: "nameEn", es: "nameEs", pt: "namePt", it: "nameIt" },
+        descKeys: { ar: "descriptionAr", en: "descriptionEn", es: "descriptionEs", pt: "descriptionPt", it: "descriptionIt" },
+        fallbackName,
+        fallbackDesc,
+      });
+
+      setDraft(updated);
+      toast.success(isAr ? "✨ تمت ترجمة الحقول الشاغرة للغات الخمس بنجاح!" : "✨ Empty fields translated across 5 languages successfully!");
+    } catch (err: any) {
+      toast.error(isAr ? "تعذر إكمال الترجمة التلقائية." : "Auto-translation failed.");
+    } finally {
+      setIsTranslating(false);
+    }
   };
 
   const openCreateModal = () => {
@@ -1496,10 +1515,20 @@ export function TransportationServicesManager() {
                     size="sm"
                     variant="outline"
                     onClick={handleSmartFillTranslations}
-                    className="h-8 text-xs font-bold gap-1 rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shrink-0"
+                    disabled={isTranslating}
+                    className="h-8 text-xs font-bold gap-1.5 rounded-xl border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shrink-0 shadow-xs"
                   >
-                    <Copy className="w-3 h-3" />
-                    <span>{isAr ? "نسخ ذكي للغات الشاغرة" : "Smart Fill"}</span>
+                    {isTranslating ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        <span>{isAr ? "جاري الترجمة الذكية..." : "Translating..."}</span>
+                      </>
+                    ) : (
+                      <>
+                        <Wand2 className="w-3.5 h-3.5" />
+                        <span>{isAr ? "✨ ترجمة الحقول الشاغرة بالذكاء الاصطناعي" : "✨ AI Auto-Translate Missing"}</span>
+                      </>
+                    )}
                   </Button>
                 </div>
 

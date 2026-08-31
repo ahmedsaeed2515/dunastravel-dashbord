@@ -53,6 +53,7 @@ import {
   Archive,
   ArchiveRestore,
   RotateCcw,
+  Wand2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -79,6 +80,7 @@ import {
 import { AdminHotel, HotelPayload, HotelRoomPayload, HotelStatus } from "@/features/hotels/types";
 import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
 import { MediaAsset, MediaEntityType } from "@/features/media/types";
+import { autoTranslateMissingEntityFields } from "@/lib/translationService";
 
 // ----------------------------------------------------
 // Constants & Presets
@@ -1456,27 +1458,29 @@ function HotelEditorDialog({
     });
   };
 
+  const [isTranslating, setIsTranslating] = useState(false);
+
   // Smart translation fill helper
-  const handleSmartFillTranslations = () => {
-    const baseName = form.nameEn || form.nameAr;
-    const baseDesc = form.descEn || form.descAr;
+  const handleSmartFillTranslations = async () => {
+    setIsTranslating(true);
+    try {
+      const fallbackName = form.nameEn || form.nameAr || "Luxury Hotel & Resort";
+      const fallbackDesc = form.descAr || form.descEn || "إقامة فندقية فاخرة من فئة 5 نجوم مع مرافق متكاملة وخدمة استثنائية.";
 
-    if (!baseName) {
-      toast.error(isAr ? "يرجى كتابة الاسم بالإنجليزية أو العربية أولاً." : "Please enter English or Arabic name first.");
-      return;
+      const updated = await autoTranslateMissingEntityFields(form, {
+        nameKeys: { ar: "nameAr", en: "nameEn", es: "nameEs", pt: "namePt", it: "nameIt" },
+        descKeys: { ar: "descAr", en: "descEn", es: "descEs", pt: "descPt", it: "descIt" },
+        fallbackName,
+        fallbackDesc,
+      });
+
+      setForm(updated);
+      toast.success(isAr ? "✨ تمت ترجمة الحقول الشاغرة للغات الخمس بنجاح!" : "✨ Empty fields translated across 5 languages successfully!");
+    } catch (err: any) {
+      toast.error(isAr ? "تعذر إكمال الترجمة التلقائية." : "Auto-translation failed.");
+    } finally {
+      setIsTranslating(false);
     }
-
-    setForm((prev) => ({
-      ...prev,
-      nameEs: prev.nameEs || baseName,
-      namePt: prev.namePt || baseName,
-      nameIt: prev.nameIt || baseName,
-      descEs: prev.descEs || baseDesc,
-      descPt: prev.descPt || baseDesc,
-      descIt: prev.descIt || baseDesc,
-    }));
-
-    toast.success(isAr ? "تم ملء الحقول الشاغرة في اللغات الخمس بنجاح!" : "5-Language fields populated successfully!");
   };
 
   // Destination change & Auto-city select
@@ -2368,10 +2372,20 @@ function HotelEditorDialog({
                   size="sm"
                   variant="outline"
                   onClick={handleSmartFillTranslations}
-                  className="h-8 text-xs font-bold gap-1 rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shrink-0"
+                  disabled={isTranslating}
+                  className="h-8 text-xs font-bold gap-1.5 rounded-xl border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shrink-0 shadow-xs"
                 >
-                  <Copy className="w-3 h-3" />
-                  <span>{isAr ? "نسخ ذكي للغات الشاغرة" : "Smart Fill"}</span>
+                  {isTranslating ? (
+                    <>
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      <span>{isAr ? "جاري الترجمة الذكية..." : "Translating..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Wand2 className="w-3.5 h-3.5" />
+                      <span>{isAr ? "✨ ترجمة الحقول الشاغرة بالذكاء الاصطناعي" : "✨ AI Auto-Translate Missing"}</span>
+                    </>
+                  )}
                 </Button>
               </div>
 
