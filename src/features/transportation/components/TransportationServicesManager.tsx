@@ -188,7 +188,7 @@ export function TransportationServicesManager() {
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<"ACTIVE" | "ARCHIVED" | "ALL">("ACTIVE");
+  const [selectedStatus, setSelectedStatus] = useState<"ACTIVE" | "ARCHIVED" | "ALL">("ALL");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
@@ -216,7 +216,7 @@ export function TransportationServicesManager() {
       try {
         const list = await transportationApi.list({
           category: selectedCategory !== "ALL" ? selectedCategory : undefined,
-          status: selectedStatus,
+          status: selectedStatus !== "ALL" ? selectedStatus : undefined,
           search: search.trim() || undefined,
           locale,
         });
@@ -716,6 +716,21 @@ export function TransportationServicesManager() {
           <div className="flex items-center gap-1.5 overflow-x-auto">
             <button
               type="button"
+              onClick={() => setSelectedStatus("ALL")}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                selectedStatus === "ALL"
+                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <span>{isAr ? "جميع المركبات 📋" : "All Vehicles 📋"}</span>
+              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                {stats.total}
+              </Badge>
+            </button>
+
+            <button
+              type="button"
               onClick={() => setSelectedStatus("ACTIVE")}
               className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
                 selectedStatus === "ACTIVE"
@@ -743,21 +758,6 @@ export function TransportationServicesManager() {
               <span>{isAr ? "الأرشيف 📦" : "Archived 📦"}</span>
               <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
                 {stats.archived}
-              </Badge>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setSelectedStatus("ALL")}
-              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-                selectedStatus === "ALL"
-                  ? "bg-amber-500 text-slate-950 shadow-xs"
-                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
-              }`}
-            >
-              <span>{isAr ? "جميع المركبات 📋" : "All Vehicles 📋"}</span>
-              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
-                {stats.total}
               </Badge>
             </button>
           </div>

@@ -282,7 +282,7 @@ export function HotelsManager() {
   const [search, setSearch] = useState("");
   const [selectedDestination, setSelectedDestination] = useState("all");
   const [selectedStars, setSelectedStars] = useState<number | "ALL">("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<HotelStatus | "ACTIVE" | "ALL">("ACTIVE");
+  const [selectedStatus, setSelectedStatus] = useState<HotelStatus | "ACTIVE" | "ALL">("ALL");
 
   const [selectedHotel, setSelectedHotel] = useState<AdminHotel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -303,16 +303,20 @@ export function HotelsManager() {
   // Filter hotels
   const filteredHotels = useMemo(() => {
     return hotels.filter((h) => {
-      if (selectedDestination !== "all" && h.destinationSlug?.toLowerCase() !== selectedDestination.toLowerCase()) {
+      if (selectedDestination !== "all" && (h.destinationSlug || "").toLowerCase() !== selectedDestination.toLowerCase()) {
         return false;
       }
       if (selectedStars !== "ALL" && h.stars !== selectedStars) {
         return false;
       }
       if (selectedStatus === "ACTIVE") {
-        if (h.status === "ARCHIVED") return false;
-      } else if (selectedStatus !== "ALL" && h.status !== selectedStatus) {
-        return false;
+        if (h.status === "ARCHIVED" || !h.isActive) return false;
+      } else if (selectedStatus === "PUBLISHED") {
+        if (h.status !== "PUBLISHED" || !h.isActive) return false;
+      } else if (selectedStatus === "DRAFT") {
+        if (h.status !== "DRAFT") return false;
+      } else if (selectedStatus === "ARCHIVED") {
+        if (h.status !== "ARCHIVED" && h.isActive) return false;
       }
       if (search.trim()) {
         const q = search.toLowerCase();
@@ -416,12 +420,13 @@ export function HotelsManager() {
 
   // Live Counts for statuses
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = { ALL: hotels.length, PUBLISHED: 0, DRAFT: 0, ARCHIVED: 0 };
-    for (const h of hotels) {
-      if (h.status === "PUBLISHED") counts.PUBLISHED = (counts.PUBLISHED || 0) + 1;
-      else if (h.status === "DRAFT") counts.DRAFT = (counts.DRAFT || 0) + 1;
-      else if (h.status === "ARCHIVED") counts.ARCHIVED = (counts.ARCHIVED || 0) + 1;
-    }
+    const counts: Record<string, number> = {
+      ALL: hotels.length,
+      ACTIVE: hotels.filter((h) => h.status !== "ARCHIVED" && h.isActive).length,
+      PUBLISHED: hotels.filter((h) => h.status === "PUBLISHED" && h.isActive).length,
+      DRAFT: hotels.filter((h) => h.status === "DRAFT").length,
+      ARCHIVED: hotels.filter((h) => h.status === "ARCHIVED" || !h.isActive).length,
+    };
     return counts;
   }, [hotels]);
 
@@ -599,7 +604,7 @@ export function HotelsManager() {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground shrink-0">{isAr ? "الحالة:" : "Status:"}</span>
               <div className="flex items-center gap-1 flex-wrap">
-                {(["ACTIVE", "PUBLISHED", "DRAFT", "ARCHIVED", "ALL"] as const).map((st) => {
+                {(["ALL", "ACTIVE", "PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((st) => {
                   const count = statusCounts[st] || 0;
                   return (
                     <button
@@ -607,20 +612,20 @@ export function HotelsManager() {
                       onClick={() => setSelectedStatus(st)}
                       className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${
                         selectedStatus === st
-                          ? "bg-amber-500 text-slate-950 border-amber-500"
-                          : "bg-muted/30 text-muted-foreground border-border"
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                          : "bg-muted/30 text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
                       <span>
-                        {st === "ACTIVE"
+                        {st === "ALL"
+                          ? (isAr ? "الكل" : "All")
+                          : st === "ACTIVE"
                           ? (isAr ? "النشطة ✨" : "Active ✨")
                           : st === "PUBLISHED"
                           ? (isAr ? "منشور 🌐" : "Live")
                           : st === "DRAFT"
                           ? (isAr ? "مسودة" : "Draft")
-                          : st === "ARCHIVED"
-                          ? (isAr ? "مؤرشف 📦" : "Archived 📦")
-                          : (isAr ? "الكل" : "All")}
+                          : (isAr ? "مؤرشف 📦" : "Archived 📦")}
                       </span>
                       <span className={`text-[10px] font-mono font-bold ${
                         selectedStatus === st ? "text-slate-950" : "text-muted-foreground"
