@@ -79,6 +79,8 @@ export interface HotelPayload {
   amenitiesJsonb?: Record<string, any>;
   policiesJsonb?: Record<string, any>;
   heroMediaId?: string;
+  heroImageUrl?: string;
+  images?: Array<{ id?: string; url: string; altText?: string; isHero?: boolean; sortOrder?: number }>;
   status: HotelStatus;
   isActive: boolean;
   rooms?: HotelRoomPayload[];

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { useParams } from "next/navigation";
 import {
   Hotel,
@@ -47,6 +47,9 @@ import {
   ChevronDown,
   RefreshCw,
   X,
+  UploadCloud,
+  FolderOpen,
+  Link as LinkIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -70,6 +73,8 @@ import {
   useUpdateHotel,
 } from "@/features/hotels/hooks/useHotels";
 import { AdminHotel, HotelPayload, HotelRoomPayload, HotelStatus } from "@/features/hotels/types";
+import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
+import { MediaAsset, MediaEntityType } from "@/features/media/types";
 
 // ----------------------------------------------------
 // Constants & Presets
@@ -650,6 +655,16 @@ export function HotelsManager() {
               ? Math.min(...hotel.rooms.map((r: any) => r.ratePerNight))
               : null;
             const heroImg = hotel.heroImageUrl;
+            const destinationFallbackImg =
+              hotel.destinationSlug?.toLowerCase().includes("dubai") || hotel.city?.toLowerCase().includes("dubai")
+                ? "https://images.unsplash.com/photo-1582719508461-905c673771fd?q=80&w=1200"
+                : hotel.destinationSlug?.toLowerCase().includes("turkey") || hotel.city?.toLowerCase().includes("istanbul")
+                ? "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200"
+                : hotel.destinationSlug?.toLowerCase().includes("jordan") || hotel.city?.toLowerCase().includes("petra")
+                ? "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=1200"
+                : "https://images.unsplash.com/photo-1572252821143-035a0f6700c2?q=80&w=1200";
+
+            const displayImg = heroImg || destinationFallbackImg;
             const ratingVal = hotel.rating !== null ? Number(hotel.rating).toFixed(1) : "4.9";
             const isPub = hotel.status === "PUBLISHED" && hotel.isActive;
 
@@ -661,20 +676,14 @@ export function HotelsManager() {
                 <div>
                   {/* Hero Image & Top Badges */}
                   <div className="h-48 relative overflow-hidden bg-slate-950">
-                    {heroImg ? (
-                      <img
-                        src={heroImg}
-                        alt={name}
-                        className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
-                        onError={(e) => {
-                          e.currentTarget.style.display = "none";
-                        }}
-                      />
-                    ) : (
-                      <div className="flex h-full items-center justify-center text-xs font-semibold text-muted-foreground">
-                        {isAr ? "لا توجد صورة رئيسية" : "No hotel image"}
-                      </div>
-                    )}
+                    <img
+                      src={displayImg}
+                      alt={name}
+                      className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500"
+                      onError={(e) => {
+                        e.currentTarget.src = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200";
+                      }}
+                    />
                     <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/20 to-black/40" />
 
                     {/* Stars Badge */}
@@ -784,6 +793,335 @@ export function HotelsManager() {
 }
 
 // ----------------------------------------------------
+// Media Library Picker Modal for Hotels
+// ----------------------------------------------------
+function MediaLibraryPickerModal({
+  open,
+  onClose,
+  onSelect,
+  selectedAssetId,
+  selectedAssetUrl,
+  locale = "ar",
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSelect: (asset: { id: string; url: string; altText?: string }) => void;
+  selectedAssetId?: string;
+  selectedAssetUrl?: string;
+  locale?: string;
+}) {
+  const isAr = locale === "ar";
+  const [searchQuery, setSearchQuery] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
+  const [selectedAsset, setSelectedAsset] = useState<{ id: string; url: string; altText?: string } | null>(
+    selectedAssetId || selectedAssetUrl ? { id: selectedAssetId || "", url: selectedAssetUrl || "" } : null
+  );
+
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const { data: mediaData, isLoading } = useMediaAssets({
+    page: 1,
+    limit: 60,
+    category: categoryFilter,
+    search: searchQuery.trim() || undefined,
+  });
+
+  const uploadMutation = useUploadMedia();
+  const assets: MediaAsset[] = mediaData?.data || [];
+
+  const filteredAssets = useMemo(() => {
+    if (!searchQuery.trim()) return assets;
+    const q = searchQuery.toLowerCase();
+    return assets.filter(
+      (a) =>
+        a.publicId?.toLowerCase().includes(q) ||
+        a.altText?.toLowerCase().includes(q) ||
+        a.url?.toLowerCase().includes(q) ||
+        a.entityType?.toLowerCase().includes(q)
+    );
+  }, [assets, searchQuery]);
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image size must not exceed 10MB.");
+      return;
+    }
+
+    try {
+      const res = await uploadMutation.mutateAsync({
+        file,
+        entityType: "HOTEL" as MediaEntityType,
+        categorySlug: "hotels",
+      });
+      const chosen = {
+        id: res.id,
+        url: res.secureUrl || res.url,
+        altText: res.altText || file.name,
+      };
+      setSelectedAsset(chosen);
+      onSelect(chosen);
+      toast.success(isAr ? "تم رفع الصورة واختيارها بنجاح! ⭐" : "Image uploaded and selected successfully! ⭐");
+      onClose();
+    } catch {
+      // Handled by mutation hook
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleConfirmSelection = () => {
+    if (selectedAsset) {
+      onSelect(selectedAsset);
+      toast.success(isAr ? "تم تعيين الصورة للفندق بنجاح!" : "Image selected for hotel!");
+      onClose();
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="max-w-4xl p-0 overflow-hidden border border-amber-500/30 rounded-3xl bg-background shadow-2xl">
+        <DialogHeader className="p-6 pb-4 border-b border-border/80 bg-muted/30">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/30 text-amber-500">
+                <FolderOpen className="w-6 h-6 stroke-[2.2]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
+                  <span>{isAr ? "مكتبة الوسائط — اختيار صورة الفندق" : "Media Library — Pick Hotel Photo"}</span>
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-semibold">
+                  {isAr
+                    ? "اختر صورة عالية الجودة من المكتبة أو قم برفع صورة جديدة مباشرة."
+                    : "Choose a high-resolution photo from the library or upload a new one directly."}
+                </DialogDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp"
+                className="hidden"
+                onChange={handleFileUpload}
+              />
+              <Button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadMutation.isPending}
+                className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+              >
+                {uploadMutation.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <UploadCloud className="w-4 h-4" />
+                )}
+                <span>{uploadMutation.isPending ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع صورة جديدة 📸" : "Upload New 📸")}</span>
+              </Button>
+            </div>
+          </div>
+
+          <div className="mt-4 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="w-4 h-4 text-muted-foreground absolute right-3 rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2" />
+              <Input
+                placeholder={isAr ? "البحث في مكتبة الصور (بالاسم أو المعرف)..." : "Search photos by name or tag..."}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="h-9 text-xs pr-9 rtl:pr-9 ltr:pl-9 rounded-xl font-medium"
+              />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="absolute left-3 rtl:left-3 ltr:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="flex items-center gap-1 overflow-x-auto pb-0.5">
+              {[
+                { id: undefined, labelEn: "All Media", labelAr: "جميع الصور" },
+                { id: "hotels", labelEn: "Hotels", labelAr: "فنادق 🏨" },
+                { id: "tours", labelEn: "رحلات ✈️", labelAr: "رحلات ✈️" },
+                { id: "general", labelEn: "General", labelAr: "عام 🌐" },
+              ].map((tab) => {
+                const isActive = categoryFilter === tab.id;
+                return (
+                  <button
+                    key={tab.labelEn}
+                    type="button"
+                    onClick={() => setCategoryFilter(tab.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                      isActive
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                        : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    {isAr ? tab.labelAr : tab.labelEn}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </DialogHeader>
+
+        <div className="p-6 max-h-[55vh] overflow-y-auto min-h-[300px]">
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+              <span className="text-xs font-bold">{isAr ? "جاري تحميل الصور من مكتبة الوسائط..." : "Loading media assets..."}</span>
+            </div>
+          ) : filteredAssets.length === 0 ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3 text-center border-2 border-dashed rounded-3xl p-8">
+              <ImageIcon className="w-12 h-12 text-muted-foreground/50" />
+              <div className="space-y-1">
+                <h4 className="text-sm font-black text-foreground">
+                  {isAr ? "لم يتم العثور على صور مطابقة" : "No photos found"}
+                </h4>
+                <p className="text-xs text-muted-foreground font-medium">
+                  {isAr
+                    ? "يمكنك رفع صورة جديدة من جهازك مباشرة بالضغط على الزر بالأعلى."
+                    : "You can upload a new photo directly from your device using the upload button above."}
+                </p>
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => fileInputRef.current?.click()}
+                className="mt-2 text-xs font-bold border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 rounded-xl"
+              >
+                <UploadCloud className="w-3.5 h-3.5 mr-1" />
+                <span>{isAr ? "رفع صورة الآن" : "Upload Photo Now"}</span>
+              </Button>
+            </div>
+          ) : (
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3.5">
+              {filteredAssets.map((asset) => {
+                const imgUrl = asset.secureUrl || asset.url;
+                const isSelected =
+                  selectedAsset?.id === asset.id ||
+                  selectedAsset?.url === imgUrl ||
+                  selectedAssetId === asset.id ||
+                  selectedAssetUrl === imgUrl;
+
+                return (
+                  <div
+                    key={asset.id}
+                    onClick={() =>
+                      setSelectedAsset({
+                        id: asset.id,
+                        url: imgUrl,
+                        altText: asset.altText || "",
+                      })
+                    }
+                    onDoubleClick={() => {
+                      const chosen = {
+                        id: asset.id,
+                        url: imgUrl,
+                        altText: asset.altText || "",
+                      };
+                      setSelectedAsset(chosen);
+                      onSelect(chosen);
+                      onClose();
+                    }}
+                    className={`group relative rounded-2xl overflow-hidden border-2 cursor-pointer transition-all duration-200 aspect-4/3 bg-slate-950 flex flex-col justify-end shadow-xs hover:shadow-md ${
+                      isSelected
+                        ? "border-amber-500 ring-2 ring-amber-500/40 scale-[1.02]"
+                        : "border-border/80 hover:border-amber-500/50"
+                    }`}
+                  >
+                    <img
+                      src={imgUrl}
+                      alt={asset.altText || "Media Asset"}
+                      className="absolute inset-0 w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
+
+                    {isSelected && (
+                      <div className="absolute top-2 right-2 rtl:right-2 ltr:left-2 p-1.5 rounded-full bg-amber-500 text-slate-950 shadow-md">
+                        <Check className="w-3.5 h-3.5 stroke-3" />
+                      </div>
+                    )}
+
+                    <div className="absolute top-2 left-2 rtl:left-2 ltr:right-2">
+                      <Badge
+                        variant="secondary"
+                        className="text-[9px] font-bold px-1.5 py-0 bg-slate-950/80 text-amber-400 border border-amber-400/20 backdrop-blur-xs"
+                      >
+                        {asset.entityType || "MEDIA"}
+                      </Badge>
+                    </div>
+
+                    <div className="relative p-2 text-slate-200 text-[10px] space-y-0.5">
+                      <div className="font-bold truncate" title={asset.altText || asset.publicId}>
+                        {asset.altText || asset.publicId.split("/").pop()}
+                      </div>
+                      <div className="flex items-center justify-between text-muted-foreground text-[9px] font-mono">
+                        <span>{asset.format?.toUpperCase() || "JPG"}</span>
+                        {asset.bytes > 0 && <span>{(asset.bytes / 1024).toFixed(0)} KB</span>}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </div>
+
+        <div className="p-4 border-t border-border/80 bg-muted/30 flex items-center justify-between gap-3">
+          <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5 truncate">
+            {selectedAsset ? (
+              <span className="flex items-center gap-1.5 text-amber-500 font-bold">
+                <Check className="w-4 h-4" />
+                <span>{isAr ? "تم تحديد صورة" : "Photo Selected"}</span>
+                <span className="text-muted-foreground text-[10px] font-mono truncate max-w-[200px]">({selectedAsset.id ? `ID: ${selectedAsset.id.slice(0, 8)}...` : selectedAsset.url.slice(0, 30)})</span>
+              </span>
+            ) : (
+              <span>{isAr ? "انقر على صورة لتحديدها، أو انقر نقراً مزدوجاً للتأكيد الفوري." : "Click a photo to select, or double-click to confirm."}</span>
+            )}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={onClose}
+              className="text-xs rounded-xl"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              disabled={!selectedAsset}
+              onClick={handleConfirmSelection}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 rounded-xl shadow-xs cursor-pointer"
+            >
+              <Check className="w-4 h-4 mr-1 stroke-3" />
+              <span>{isAr ? "تأكيد واستخدام الصورة" : "Confirm Selection"}</span>
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ----------------------------------------------------
 // Hotel Editor Modal Component
 // ----------------------------------------------------
 function HotelEditorDialog({
@@ -804,6 +1142,12 @@ function HotelEditorDialog({
   const [langSubTab, setLangSubTab] = useState<"en" | "ar" | "es" | "pt" | "it">("en");
   const [isSlugManual, setIsSlugManual] = useState(false);
 
+  // Hero Image Management State
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
+  const heroFileInputRef = useRef<HTMLInputElement | null>(null);
+
   const [isAddingRoom, setIsAddingRoom] = useState(false);
   const [newRoom, setNewRoom] = useState<FormRoomItem>({
     slug: "",
@@ -821,7 +1165,58 @@ function HotelEditorDialog({
 
   const createMutation = useCreateHotel();
   const updateMutation = useUpdateHotel();
+  const uploadHeroMutation = useUploadMedia();
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image size must not exceed 10MB.");
+      return;
+    }
+
+    setIsUploadingHero(true);
+    try {
+      const res = await uploadHeroMutation.mutateAsync({
+        file,
+        entityType: "HOTEL" as MediaEntityType,
+        categorySlug: "hotels",
+      });
+      const secureUrl = res.secureUrl || res.url;
+      setForm((prev) => ({
+        ...prev,
+        heroMediaId: res.id,
+        heroImageUrl: secureUrl,
+      }));
+      toast.success(isAr ? "تم رفع الصورة وربطها بالفندق بنجاح! 📸" : "Photo uploaded and attached to hotel! 📸");
+    } catch {
+      toast.error(isAr ? "تعذر رفع الصورة، يرجى المحاولة مرة أخرى." : "Failed to upload image.");
+    } finally {
+      setIsUploadingHero(false);
+      if (heroFileInputRef.current) heroFileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectMediaFromPicker = (asset: { id: string; url: string; altText?: string }) => {
+    setForm((prev) => ({
+      ...prev,
+      heroMediaId: asset.id,
+      heroImageUrl: asset.url,
+    }));
+    setIsMediaPickerOpen(false);
+  };
+
+  const handleRemoveHeroImage = () => {
+    setForm((prev) => ({
+      ...prev,
+      heroMediaId: "",
+      heroImageUrl: "",
+    }));
+    toast.info(isAr ? "تمت إزالة صورة الفندق." : "Hotel image removed.");
+  };
 
   useEffect(() => {
     if (open) {
@@ -1082,7 +1477,11 @@ function HotelEditorDialog({
       ...(form.email.trim() ? { email: form.email.trim() } : {}),
       ...(form.website.trim() ? { website: form.website.trim() } : {}),
       ...(form.heroMediaId.trim() ? { heroMediaId: form.heroMediaId.trim() } : {}),
-      amenitiesJsonb: form.amenities,
+      ...(form.heroImageUrl.trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+      amenitiesJsonb: {
+        ...form.amenities,
+        ...(form.heroImageUrl.trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+      },
       policiesJsonb: {
         checkIn: form.checkIn,
         checkOut: form.checkOut,
@@ -1158,7 +1557,221 @@ function HotelEditorDialog({
             </TabsList>
 
             {/* TAB 1: BASIC INFORMATION */}
-            <TabsContent value="basic" className="space-y-4">
+            <TabsContent value="basic" className="space-y-5">
+              {/* HOTEL HERO IMAGE & MEDIA INTEGRATION */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-black text-foreground flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-amber-500" />
+                      <span>{isAr ? "صورة الفندق الرئيسية ومعرض الوسائط" : "Hotel Hero Image & Media"}</span>
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                      {isAr
+                        ? "الصورة الأساسية التي تظهر في بطاقة الفندق وصفحة التفاصيل بالموقع العام ومعرض الصور."
+                        : "Main featured image displayed on catalog cards, header banners, and details."}
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    {form.heroImageUrl ? (
+                      <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold gap-1">
+                        <Check className="w-3 h-3 stroke-3" />
+                        <span>{isAr ? "الصورة محددة ✓" : "Image Configured ✓"}</span>
+                      </Badge>
+                    ) : (
+                      <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[10px] font-bold">
+                        {isAr ? "لم تحدد صورة رئيسية" : "No image selected"}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                {/* Hidden File Input */}
+                <input
+                  ref={heroFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleHeroFileUpload}
+                />
+
+                {/* Image Preview & Actions */}
+                {form.heroImageUrl ? (
+                  <div className="space-y-3">
+                    <div className="relative aspect-21/9 sm:aspect-24/9 rounded-2xl overflow-hidden border border-border/80 bg-slate-950 shadow-md group">
+                      <img
+                        src={form.heroImageUrl}
+                        alt="Hotel Preview"
+                        className="w-full h-full object-cover group-hover:scale-103 transition-transform duration-500"
+                        onError={(e) => {
+                          e.currentTarget.src = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200";
+                        }}
+                      />
+                      <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-black/30" />
+
+                      <div className="absolute top-2 right-2 rtl:right-2 ltr:left-2 flex items-center gap-1 bg-slate-950/80 text-amber-400 backdrop-blur-md px-2.5 py-1 rounded-xl border border-amber-400/20 text-[10px] font-black">
+                        <Sparkles className="w-3 h-3 text-amber-400" />
+                        <span>{isAr ? "الصورة المعتمدة للفندق ⭐" : "Hotel Hero Media ⭐"}</span>
+                      </div>
+
+                      {form.heroMediaId && (
+                        <div className="absolute bottom-2 right-2 rtl:right-2 ltr:left-2 text-[9px] font-mono text-slate-300 bg-slate-950/70 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                          Media ID: {form.heroMediaId.slice(0, 16)}...
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Quick Actions Buttons */}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => heroFileInputRef.current?.click()}
+                        disabled={isUploadingHero}
+                        className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        {isUploadingHero ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <UploadCloud className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isUploadingHero ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع صورة بديلة 📸" : "Upload New 📸")}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsMediaPickerOpen(true)}
+                        className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>{isAr ? "اختيار من مكتبة الوسائط 🖼️" : "Choose from Library 🖼️"}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                        className="rounded-xl text-xs font-bold gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        <span>{isAr ? "تعديل الرابط 🔗" : "Edit URL 🔗"}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveHeroImage}
+                        className="rounded-xl text-xs font-bold gap-1 text-destructive hover:bg-destructive/10 cursor-pointer ml-auto rtl:ml-0 rtl:mr-auto"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                        <span>{isAr ? "إزالة الصورة" : "Remove"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  /* Empty Image State */
+                  <div className="p-6 border-2 border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center gap-3">
+                    <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      <ImageIcon className="w-6 h-6 stroke-[2]" />
+                    </div>
+                    <div className="space-y-1 max-w-md">
+                      <h5 className="text-xs font-black text-foreground">
+                        {isAr ? "لم يتم تعيين صورة رئيسية لهذا الفندق" : "No Hero Image Configured"}
+                      </h5>
+                      <p className="text-[11px] text-muted-foreground font-medium leading-relaxed">
+                        {isAr
+                          ? "يمكنك رفع صورة مباشرة من جهازك أو استرداد صورة من مكتبة الوسائط المتوفرة أو إدخال رابط مباشر."
+                          : "Upload directly from device, pick an asset from your Media Library, or paste an image URL."}
+                      </p>
+                    </div>
+
+                    <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => heroFileInputRef.current?.click()}
+                        disabled={isUploadingHero}
+                        className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                      >
+                        {isUploadingHero ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                        ) : (
+                          <UploadCloud className="w-3.5 h-3.5" />
+                        )}
+                        <span>{isUploadingHero ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع صورة من الجهاز 📸" : "Upload Photo 📸")}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setIsMediaPickerOpen(true)}
+                        className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                      >
+                        <FolderOpen className="w-3.5 h-3.5" />
+                        <span>{isAr ? "اختيار من مكتبة الوسائط 🖼️" : "Pick from Library 🖼️"}</span>
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                        className="rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                      >
+                        <LinkIcon className="w-3.5 h-3.5" />
+                        <span>{isAr ? "إدخال رابط مباشر 🔗" : "Direct URL 🔗"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {/* Direct URL Expander Input */}
+                {showCustomUrlInput && (
+                  <div className="p-3.5 rounded-2xl bg-card border border-amber-500/30 space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-extrabold text-foreground flex items-center gap-1.5">
+                        <LinkIcon className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{isAr ? "رابط الصورة الخارجي المباشر (URL)" : "Direct Image URL (External / Cloudinary)"}</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowCustomUrlInput(false)}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="https://res.cloudinary.com/... or https://images.unsplash.com/..."
+                        value={form.heroImageUrl}
+                        onChange={(e) => setForm((prev) => ({ ...prev, heroImageUrl: e.target.value }))}
+                        className="h-9 text-xs font-mono"
+                      />
+                      {form.heroImageUrl && (
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setShowCustomUrlInput(false);
+                            toast.success(isAr ? "تم تحديث الرابط بنجاح!" : "URL updated!");
+                          }}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-3 rounded-xl cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Hotel Name EN */}
                 <div className="space-y-1.5">
@@ -1975,6 +2588,16 @@ function HotelEditorDialog({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      {/* Media Library Picker Modal */}
+      <MediaLibraryPickerModal
+        open={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={handleSelectMediaFromPicker}
+        selectedAssetId={form.heroMediaId}
+        selectedAssetUrl={form.heroImageUrl}
+        locale={locale}
+      />
     </Dialog>
   );
 }
