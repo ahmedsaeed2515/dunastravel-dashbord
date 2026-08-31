@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import {
@@ -14,31 +14,26 @@ import {
   Trash2,
   CheckCircle2,
   Sparkles,
-  Wifi,
-  Wind,
-  Coffee,
-  Tv,
-  Navigation,
   RefreshCw,
-  Armchair,
   X,
   Loader2,
   Check,
   AlertTriangle,
-  Fuel,
   LayoutGrid,
   Table as TableIcon,
   DoorClosed,
   Plane,
-  Building2,
-  MapPin,
-  HelpCircle,
-  Eye,
-  CheckCircle,
-  XCircle,
+  DollarSign,
+  Globe2,
+  Copy,
+  Archive,
+  RotateCcw,
+  UploadCloud,
+  FolderOpen,
+  Link as LinkIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
-import { apiClient } from "@/lib/axios";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -53,16 +48,13 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 
 import { TransportationService, ServiceDraft, VehicleCategory } from "../types";
-import {
-  DEFAULT_FLEET,
-  PRESET_VEHICLE_IMAGES,
-  AVAILABLE_FEATURES,
-  resolveLocalizedFeature,
-} from "../data/default-fleet";
+import { transportationApi } from "../api/transportationApi";
+import { DEFAULT_FLEET, AVAILABLE_FEATURES } from "../data/default-fleet";
+import { MediaLibraryPickerModal, SelectedMediaAsset } from "@/components/media/MediaLibraryPickerModal";
+import { useUploadMedia } from "@/features/media/hooks/useMedia";
+import { MediaEntityType } from "@/features/media/types";
 
 interface CategoryMeta {
   labelAr: string;
@@ -101,22 +93,27 @@ const CATEGORY_MAP: Record<string, CategoryMeta> = {
     badgeClass: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30",
     dotColor: "bg-emerald-500",
   },
-};
-
-const FEATURE_ICONS: Record<string, React.ElementType> = {
-  ac: Wind,
-  wifi: Wifi,
-  driver: ShieldCheck,
-  leather: Armchair,
-  restroom: Coffee,
-  usb: Sparkles,
-  fridge: Coffee,
-  sound: Tv,
-  tv: Tv,
-  luggage: Bus,
-  gps: Navigation,
-  airbag: ShieldCheck,
-  reclining: Armchair,
+  luxury_van: {
+    labelAr: "فان سياحي VIP",
+    labelEn: "VIP Luxury Van",
+    icon: Car,
+    badgeClass: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/30",
+    dotColor: "bg-indigo-500",
+  },
+  sedan: {
+    labelAr: "سيدان رجال أعمال",
+    labelEn: "Executive Sedan",
+    icon: Car,
+    badgeClass: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30",
+    dotColor: "bg-rose-500",
+  },
+  suv: {
+    labelAr: "دفع رباعي VIP SUV",
+    labelEn: "VIP Luxury SUV",
+    icon: Car,
+    badgeClass: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/30",
+    dotColor: "bg-teal-500",
+  },
 };
 
 function inferCategory(item: Partial<TransportationService>): string {
@@ -124,13 +121,12 @@ function inferCategory(item: Partial<TransportationService>): string {
   if (cat === "bus" || cat.includes("bus")) return "bus";
   if (cat === "coaster" || cat.includes("coaster") || cat.includes("mini")) return "coaster";
   if (cat === "private" || cat.includes("private") || cat.includes("sedan") || cat.includes("suv")) return "private";
+  if (cat === "luxury_van" || cat.includes("van")) return "luxury_van";
 
   const st = (item.serviceType || "").toUpperCase().trim();
   if (st === "AIRPORT" || st === "CITY_TO_CITY" || st === "HOTEL") return "transfer";
   if (st === "COASTER") return "coaster";
   if (st === "BUS") return "bus";
-  if (st === "PRIVATE") return "private";
-
   return "bus";
 }
 
@@ -140,6 +136,9 @@ function getFallbackImage(category: string): string {
       return "/imgs/transportation/costar.jpeg";
     case "private":
     case "transfer":
+    case "sedan":
+    case "suv":
+    case "luxury_van":
       return "/imgs/transportation/privte.jpeg";
     case "bus":
     default:
@@ -151,21 +150,30 @@ const emptyDraft = (): ServiceDraft => ({
   name: "",
   nameAr: "",
   nameEn: "",
+  nameEs: "",
+  namePt: "",
+  nameIt: "",
   serviceType: "AIRPORT",
   vehicleCategory: "bus",
-  vehicleType: "",
+  vehicleType: "VIP Tour Bus 50-Seater",
   capacity: 50,
   doors: 2,
   transmission: "AUTO",
   basePriceUsd: 150,
   heroImageUrl: "/imgs/transportation/bus1.jpeg",
   heroMediaId: null,
+  heroImageAlt: null,
   isPrivate: false,
   isActive: true,
   rating: 5.0,
   reviews: 50,
   features: ["Air Conditioning", "WiFi", "Professional Driver"],
   description: "",
+  descriptionAr: "",
+  descriptionEn: "",
+  descriptionEs: "",
+  descriptionPt: "",
+  descriptionIt: "",
   pickupInstructions: "",
   dropoffInstructions: "",
 });
@@ -178,183 +186,380 @@ export function TransportationServicesManager() {
 
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<"ALL" | "ACTIVE" | "INACTIVE">("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<"ACTIVE" | "ARCHIVED" | "ALL">("ACTIVE");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
 
-  const [localFleet, setLocalFleet] = useState<TransportationService[]>(DEFAULT_FLEET);
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TransportationService | null>(null);
   const [draft, setDraft] = useState<ServiceDraft>(emptyDraft());
-  const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [deleteConfirmItem, setDeleteConfirmItem] = useState<TransportationService | null>(null);
   const [activeTab, setActiveTab] = useState("basic");
+  const [langSubTab, setLangSubTab] = useState<"en" | "ar" | "es" | "pt" | "it">("en");
 
-  // Fetch live services from backend
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
+  const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const uploadHeroMutation = useUploadMedia();
+
   const {
     data: apiServices,
     isLoading,
     isFetching,
     refetch,
-    isError,
   } = useQuery({
-    queryKey: ["transportation-services"],
+    queryKey: ["admin-transportation-services", selectedCategory, selectedStatus, search],
     queryFn: async () => {
       try {
-        const res = await apiClient.get<any, any>("/admin/transportation/services");
-        const list = Array.isArray(res) ? res : res?.data ? res.data : [];
+        const list = await transportationApi.list({
+          category: selectedCategory !== "ALL" ? selectedCategory : undefined,
+          status: selectedStatus,
+          search: search.trim() || undefined,
+          locale,
+        });
         return Array.isArray(list) ? list : [];
       } catch (err) {
-        console.warn("Using default fleet fallback for transportation services:", err);
+        console.warn("Error fetching admin transportation services:", err);
         return [];
       }
     },
-    retry: 1,
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
 
-  // Normalize API data with rich fallbacks & multi-language keys
   const fleetData = useMemo(() => {
-    if (apiServices && apiServices.length > 0) {
-      return apiServices.map((apiItem: any) => {
-        const fallback = DEFAULT_FLEET.find((d) => d.id === apiItem.id);
-        const resolvedCategory = inferCategory(apiItem);
-        const rawFeatures =
-          (Array.isArray(apiItem.featuresJsonb) && apiItem.featuresJsonb.length > 0
-            ? apiItem.featuresJsonb
-            : Array.isArray(apiItem.features) && apiItem.features.length > 0
-            ? apiItem.features
-            : fallback?.features) || [
-            isAr ? "تكييف هوائي" : "Air Conditioning",
-            isAr ? "واي فاي" : "WiFi",
-            isAr ? "سائق محترف" : "Professional Driver",
-          ];
+    const sourceList = apiServices && apiServices.length > 0 ? apiServices : DEFAULT_FLEET;
+    return sourceList.map((item: any) => {
+      const resolvedCategory = inferCategory(item);
+      const rawFeatures =
+        (Array.isArray(item.featuresJsonb) && item.featuresJsonb.length > 0
+          ? item.featuresJsonb
+          : Array.isArray(item.features) && item.features.length > 0
+          ? item.features
+          : ["Air Conditioning", "WiFi", "Professional Driver"]);
 
-        const defaultPrice =
-          resolvedCategory === "private" || resolvedCategory === "transfer"
-            ? 150
+      const defaultPrice =
+        resolvedCategory === "private" || resolvedCategory === "transfer"
+          ? 150
+          : resolvedCategory === "coaster"
+          ? 250
+          : 350;
+
+      const nameJsonb = item.nameJsonb || item.featuresJsonb?.nameJsonb || {
+        en: item.nameEn || item.name,
+        ar: item.nameAr || item.name,
+        es: item.nameEs || item.name,
+        pt: item.namePt || item.name,
+        it: item.nameIt || item.name,
+      };
+
+      const descriptionJsonb = item.descriptionJsonb || item.featuresJsonb?.descriptionJsonb || {
+        en: item.descriptionEn || item.description || "",
+        ar: item.descriptionAr || item.description || "",
+        es: item.descriptionEs || item.description || "",
+        pt: item.descriptionPt || item.description || "",
+        it: item.descriptionIt || item.description || "",
+      };
+
+      return {
+        ...item,
+        id: item.id,
+        name: isAr ? (nameJsonb.ar || item.name) : (nameJsonb.en || item.name),
+        nameAr: nameJsonb.ar || item.nameAr || item.name,
+        nameEn: nameJsonb.en || item.nameEn || item.name,
+        nameEs: nameJsonb.es || item.name,
+        namePt: nameJsonb.pt || item.name,
+        nameIt: nameJsonb.it || item.name,
+        nameJsonb,
+        description: isAr ? (descriptionJsonb.ar || item.description) : (descriptionJsonb.en || item.description),
+        descriptionAr: descriptionJsonb.ar || item.description || "",
+        descriptionEn: descriptionJsonb.en || item.description || "",
+        descriptionEs: descriptionJsonb.es || item.description || "",
+        descriptionPt: descriptionJsonb.pt || item.description || "",
+        descriptionIt: descriptionJsonb.it || item.description || "",
+        descriptionJsonb,
+        heroImageUrl: item.heroImageUrl || getFallbackImage(resolvedCategory),
+        capacity: item.capacity ?? (resolvedCategory === "private" ? 4 : resolvedCategory === "coaster" ? 24 : 50),
+        doors: item.doors ?? (resolvedCategory === "private" ? 4 : 2),
+        transmission: item.transmission || "AUTO",
+        basePriceUsd: Number(item.basePriceUsd) || defaultPrice,
+        vehicleCategory: resolvedCategory,
+        vehicleType:
+          item.vehicleType ||
+          (resolvedCategory === "private"
+            ? "Luxury Sedan & SUV"
             : resolvedCategory === "coaster"
-            ? 250
-            : 350;
+            ? "Toyota Coaster Executive"
+            : resolvedCategory === "transfer"
+            ? "VIP Chauffeur & Transfer"
+            : "VIP Tour Coach"),
+        serviceType: item.serviceType || "AIRPORT",
+        features: rawFeatures,
+        featuresJsonb: rawFeatures,
+        isActive: item.isActive !== undefined ? Boolean(item.isActive) : true,
+        isArchived: item.isArchived !== undefined ? Boolean(item.isArchived) : !item.isActive,
+        isPrivate: item.isPrivate !== undefined ? Boolean(item.isPrivate) : resolvedCategory === "private",
+        pickupInstructions: item.pickupInstructions || "",
+        dropoffInstructions: item.dropoffInstructions || "",
+      } as TransportationService;
+    });
+  }, [apiServices, isAr]);
 
-        return {
-          ...fallback,
-          ...apiItem,
-          id: apiItem.id,
-          name: apiItem.name || fallback?.name || (isAr ? "مركبة Dunas Travel" : "Dunas Travel Vehicle"),
-          nameAr: apiItem.nameAr || fallback?.nameAr || apiItem.name,
-          nameEn: apiItem.nameEn || fallback?.nameEn || apiItem.name,
-          heroImageUrl: apiItem.heroImageUrl || fallback?.heroImageUrl || getFallbackImage(resolvedCategory),
-          capacity: apiItem.capacity ?? fallback?.capacity ?? (resolvedCategory === "private" ? 4 : resolvedCategory === "coaster" ? 24 : 50),
-          doors: apiItem.doors ?? fallback?.doors ?? (resolvedCategory === "private" ? 4 : 2),
-          transmission: apiItem.transmission || fallback?.transmission || "AUTO",
-          basePriceUsd: Number(apiItem.basePriceUsd) || fallback?.basePriceUsd || defaultPrice,
-          vehicleCategory: resolvedCategory,
-          vehicleType:
-            apiItem.vehicleType ||
-            fallback?.vehicleType ||
-            (resolvedCategory === "private"
-              ? "Luxury Sedan & SUV"
-              : resolvedCategory === "coaster"
-              ? "Toyota Coaster Executive"
-              : resolvedCategory === "transfer"
-              ? "VIP Chauffeur & Transfer"
-              : "VIP Tour Coach"),
-          serviceType: apiItem.serviceType || fallback?.serviceType || "AIRPORT",
-          features: rawFeatures,
-          featuresJsonb: rawFeatures,
-          isActive: apiItem.isActive !== undefined ? Boolean(apiItem.isActive) : true,
-          isPrivate: apiItem.isPrivate !== undefined ? Boolean(apiItem.isPrivate) : resolvedCategory === "private",
-          description: apiItem.description || fallback?.description || "",
-          pickupInstructions: apiItem.pickupInstructions || fallback?.pickupInstructions || "",
-          dropoffInstructions: apiItem.dropoffInstructions || fallback?.dropoffInstructions || "",
-        } as TransportationService;
-      });
-    }
-    return localFleet;
-  }, [apiServices, localFleet, isAr]);
-
-  // Key fleet metrics
   const stats = useMemo(() => {
     const total = fleetData.length;
-    const active = fleetData.filter((v) => v.isActive).length;
+    const active = fleetData.filter((v) => v.isActive && !v.isArchived).length;
+    const archived = fleetData.filter((v) => !v.isActive || v.isArchived).length;
     const buses = fleetData.filter((v) => (v.vehicleCategory || "").toLowerCase() === "bus").length;
     const coasters = fleetData.filter((v) => (v.vehicleCategory || "").toLowerCase() === "coaster").length;
     const privates = fleetData.filter((v) => {
       const cat = (v.vehicleCategory || "").toLowerCase();
-      return cat === "private" || cat === "transfer";
+      return cat === "private" || cat === "transfer" || cat === "luxury_van" || cat === "sedan" || cat === "suv";
     }).length;
-    const totalCapacity = fleetData.reduce((acc, v) => acc + (Number(v.capacity) || 0), 0);
-    return { total, active, buses, coasters, privates, totalCapacity };
+    const totalCapacity = fleetData
+      .filter((v) => v.isActive && !v.isArchived)
+      .reduce((acc, v) => acc + (Number(v.capacity) || 0), 0);
+
+    return { total, active, archived, buses, coasters, privates, totalCapacity };
   }, [fleetData]);
 
-  // Filtered dataset
   const filteredFleet = useMemo(() => {
     return fleetData.filter((item) => {
-      const cat = (item.vehicleCategory || "bus").toLowerCase();
+      if (selectedStatus === "ACTIVE" && (!item.isActive || item.isArchived)) return false;
+      if (selectedStatus === "ARCHIVED" && (item.isActive && !item.isArchived)) return false;
 
-      // Category filter
+      const cat = (item.vehicleCategory || "bus").toLowerCase();
       if (selectedCategory !== "ALL") {
         if (selectedCategory === "private") {
-          if (cat !== "private" && cat !== "transfer") return false;
+          if (cat !== "private" && cat !== "transfer" && cat !== "luxury_van" && cat !== "sedan" && cat !== "suv") return false;
         } else if (cat !== selectedCategory.toLowerCase()) {
           return false;
         }
       }
 
-      // Status filter
-      if (selectedStatus === "ACTIVE" && !item.isActive) return false;
-      if (selectedStatus === "INACTIVE" && item.isActive) return false;
-
-      // Search query
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const matchName = (item.name || "").toLowerCase().includes(q);
-        const matchType = (item.vehicleType || "").toLowerCase().includes(q);
-        const matchDesc = (item.description || "").toLowerCase().includes(q);
-        const matchService = (item.serviceType || "").toLowerCase().includes(q);
-        const matchFeatures = (item.features || []).some((f) => f.toLowerCase().includes(q));
-        if (!matchName && !matchType && !matchDesc && !matchFeatures && !matchService) {
-          return false;
-        }
+        const matchName =
+          item.name.toLowerCase().includes(q) ||
+          (item.nameAr && item.nameAr.toLowerCase().includes(q)) ||
+          (item.nameEn && item.nameEn.toLowerCase().includes(q));
+        const matchType = item.vehicleType && item.vehicleType.toLowerCase().includes(q);
+        const matchDesc = item.description && item.description.toLowerCase().includes(q);
+        if (!matchName && !matchType && !matchDesc) return false;
       }
+
       return true;
     });
   }, [fleetData, selectedCategory, selectedStatus, search]);
 
-  const handleOpenCreate = useCallback(() => {
+  const saveMutation = useMutation({
+    mutationFn: async (payload: ServiceDraft) => {
+      const nameJsonb = {
+        en: payload.nameEn || payload.name || "VIP Luxury Vehicle",
+        ar: payload.nameAr || payload.nameEn || payload.name || "مركبة سياحية فاخرة",
+        es: payload.nameEs || payload.nameEn || payload.name || "Vehículo Turístico VIP",
+        pt: payload.namePt || payload.nameEn || payload.name || "Veículo Turístico VIP",
+        it: payload.nameIt || payload.nameEn || payload.name || "Veicolo Turistico VIP",
+      };
+
+      const descriptionJsonb = {
+        en: payload.descriptionEn || payload.description || "Executive luxury transport service.",
+        ar: payload.descriptionAr || payload.description || "خدمة نقل سياحية فاخرة ومريحة.",
+        es: payload.descriptionEs || payload.descriptionEn || payload.description || "Servicio de transporte turístico VIP.",
+        pt: payload.descriptionPt || payload.descriptionEn || payload.description || "Serviço de transporte turístico VIP.",
+        it: payload.descriptionIt || payload.descriptionEn || payload.description || "Servizio di trasporto turistico VIP.",
+      };
+
+      const backendPayload = {
+        name: payload.nameEn || payload.name || payload.nameAr || "VIP Vehicle",
+        nameJsonb,
+        nameAr: payload.nameAr,
+        nameEn: payload.nameEn,
+        serviceType: payload.serviceType || "AIRPORT",
+        description: payload.descriptionEn || payload.description || "",
+        descriptionJsonb,
+        vehicleCategory: payload.vehicleCategory || "bus",
+        vehicleType: payload.vehicleType || "VIP Tour Coach",
+        capacity: Number(payload.capacity) || 50,
+        doors: Number(payload.doors) || 2,
+        transmission: payload.transmission || "AUTO",
+        heroImageUrl: payload.heroImageUrl || getFallbackImage(String(payload.vehicleCategory)),
+        heroMediaId: payload.heroMediaId && payload.heroMediaId.trim() ? payload.heroMediaId.trim() : undefined,
+        isPrivate: Boolean(payload.isPrivate),
+        isActive: Boolean(payload.isActive),
+        pickupInstructions: payload.pickupInstructions || undefined,
+        dropoffInstructions: payload.dropoffInstructions || undefined,
+        features: Array.isArray(payload.features) ? payload.features : [],
+        basePriceUsd: Number(payload.basePriceUsd) || 150,
+      };
+
+      if (editingItem?.id && !editingItem.id.startsWith("tr-custom-")) {
+        return await transportationApi.update(editingItem.id, backendPayload);
+      } else {
+        return await transportationApi.create(backendPayload);
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-transportation-services"] });
+      toast.success(
+        editingItem
+          ? (isAr ? "تم تحديث بيانات المركبة بنجاح! ✨" : "Vehicle updated successfully! ✨")
+          : (isAr ? "تمت إضافة المركبة الجديدة إلى الأسطول بنجاح! 🚗" : "New vehicle added to fleet! 🚗")
+      );
+      setIsEditorOpen(false);
+      setEditingItem(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || (isAr ? "تعذر حفظ بيانات المركبة." : "Failed to save vehicle."));
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await transportationApi.delete(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-transportation-services"] });
+      toast.success(isAr ? "تم حذف المركبة بنجاح! 🗑️" : "Vehicle deleted successfully! 🗑️");
+      setDeleteConfirmItem(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || (isAr ? "تعذر حذف المركبة." : "Failed to delete vehicle."));
+    },
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await transportationApi.archive(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-transportation-services"] });
+      toast.success(isAr ? "تم نقل المركبة إلى الأرشيف! 📦" : "Vehicle moved to archives! 📦");
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || (isAr ? "تعذر أرشفة المركبة." : "Failed to archive vehicle."));
+    },
+  });
+
+  const unarchiveMutation = useMutation({
+    mutationFn: async (id: string) => {
+      return await transportationApi.unarchive(id);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-transportation-services"] });
+      toast.success(isAr ? "تم استعادة المركبة إلى الأسطول النشط! 🔄" : "Vehicle restored to active fleet! 🔄");
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || (isAr ? "تعذر استعادة المركبة." : "Failed to restore vehicle."));
+    },
+  });
+
+  const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image size must not exceed 10MB.");
+      return;
+    }
+
+    setIsUploadingHero(true);
+    try {
+      const res = await uploadHeroMutation.mutateAsync({
+        file,
+        entityType: "GENERAL" as MediaEntityType,
+        categorySlug: "fleet",
+      });
+      const secureUrl = res.secureUrl || res.url;
+      setDraft((prev) => ({
+        ...prev,
+        heroMediaId: res.id,
+        heroImageUrl: secureUrl,
+      }));
+      toast.success(isAr ? "تم رفع صورة المركبة بنجاح! 📸" : "Vehicle photo uploaded! 📸");
+    } catch {
+      toast.error(isAr ? "تعذر رفع الصورة." : "Failed to upload image.");
+    } finally {
+      setIsUploadingHero(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectMediaFromPicker = (asset: SelectedMediaAsset) => {
+    setDraft((prev) => ({
+      ...prev,
+      heroMediaId: asset.id,
+      heroImageUrl: asset.url,
+      heroImageAlt: asset.altText,
+    }));
+    setIsMediaPickerOpen(false);
+  };
+
+  const handleSmartFillTranslations = () => {
+    const baseName = draft.nameEn || draft.name || draft.nameAr || "VIP Luxury Transport";
+    const baseDesc = draft.descriptionEn || draft.description || draft.descriptionAr || "Premium chauffeur and transfer service.";
+
+    setDraft((prev) => ({
+      ...prev,
+      nameEn: prev.nameEn || baseName,
+      nameAr: prev.nameAr || (baseName.includes("Bus") ? "حافلة سياحية فاخرة" : baseName.includes("Coaster") ? "كوستر ميني باص فاخر" : "سيارة خاصة VIP"),
+      nameEs: prev.nameEs || baseName,
+      namePt: prev.namePt || baseName,
+      nameIt: prev.nameIt || baseName,
+      descriptionEn: prev.descriptionEn || baseDesc,
+      descriptionAr: prev.descriptionAr || "خدمة نقل سياحية فاخرة ومريحة مع سائق معتمد.",
+      descriptionEs: prev.descriptionEs || baseDesc,
+      descriptionPt: prev.descriptionPt || baseDesc,
+      descriptionIt: prev.descriptionIt || baseDesc,
+    }));
+    toast.success(isAr ? "تم ملء اللغات الشاغرة بالذكاء الاصطناعي! 🌐" : "Empty translation fields populated! 🌐");
+  };
+
+  const openCreateModal = () => {
     setEditingItem(null);
     setDraft(emptyDraft());
     setActiveTab("basic");
+    setLangSubTab("en");
     setIsEditorOpen(true);
-  }, []);
+  };
 
-  const handleOpenEdit = useCallback((item: TransportationService) => {
+  const openEditModal = (item: TransportationService) => {
     setEditingItem(item);
     setDraft({
-      id: item.id,
-      name: item.name || "",
-      nameAr: item.nameAr || item.name || "",
-      nameEn: item.nameEn || item.name || "",
+      name: item.name,
+      nameAr: item.nameAr || item.nameJsonb?.ar || item.name,
+      nameEn: item.nameEn || item.nameJsonb?.en || item.name,
+      nameEs: item.nameEs || item.nameJsonb?.es || item.name,
+      namePt: item.namePt || item.nameJsonb?.pt || item.name,
+      nameIt: item.nameIt || item.nameJsonb?.it || item.name,
       serviceType: item.serviceType || "AIRPORT",
-      vehicleCategory: item.vehicleCategory || "bus",
-      vehicleType: item.vehicleType || "",
+      vehicleCategory: inferCategory(item),
+      vehicleType: item.vehicleType || "VIP Tour Coach",
       capacity: item.capacity ?? 50,
       doors: item.doors ?? 2,
       transmission: item.transmission || "AUTO",
       basePriceUsd: Number(item.basePriceUsd) || 150,
       heroImageUrl: item.heroImageUrl || getFallbackImage(inferCategory(item)),
       heroMediaId: item.heroMediaId || null,
+      heroImageAlt: item.heroImageAlt || null,
       isPrivate: item.isPrivate ?? false,
       isActive: item.isActive ?? true,
       rating: item.rating || 5.0,
       reviews: item.reviews || 50,
       features: item.features ? [...item.features] : ["Air Conditioning", "WiFi"],
       description: item.description || "",
+      descriptionAr: item.descriptionAr || item.descriptionJsonb?.ar || item.description || "",
+      descriptionEn: item.descriptionEn || item.descriptionJsonb?.en || item.description || "",
+      descriptionEs: item.descriptionEs || item.descriptionJsonb?.es || item.description || "",
+      descriptionPt: item.descriptionPt || item.descriptionJsonb?.pt || item.description || "",
+      descriptionIt: item.descriptionIt || item.descriptionJsonb?.it || item.description || "",
       pickupInstructions: item.pickupInstructions || "",
       dropoffInstructions: item.dropoffInstructions || "",
     });
     setActiveTab("basic");
+    setLangSubTab("en");
     setIsEditorOpen(true);
-  }, []);
+  };
 
   const toggleFeature = (featId: string) => {
     const featDef = AVAILABLE_FEATURES.find((f) => f.id === featId);
@@ -399,718 +604,502 @@ export function TransportationServicesManager() {
     });
   };
 
-  const saveMutation = useMutation({
-    mutationFn: async (payload: ServiceDraft) => {
-      const backendPayload = {
-        name: payload.name || payload.nameAr || payload.nameEn,
-        serviceType: payload.serviceType || "AIRPORT",
-        description: payload.description || undefined,
-        vehicleCategory: payload.vehicleCategory || undefined,
-        vehicleType: payload.vehicleType || undefined,
-        capacity: Number(payload.capacity) || 4,
-        doors: Number(payload.doors) || 2,
-        transmission: payload.transmission || "AUTO",
-        heroImageUrl: payload.heroImageUrl || undefined,
-        isPrivate: Boolean(payload.isPrivate),
-        pickupInstructions: payload.pickupInstructions || undefined,
-        dropoffInstructions: payload.dropoffInstructions || undefined,
-        features: Array.isArray(payload.features) ? payload.features : [],
-        heroMediaId: payload.heroMediaId && payload.heroMediaId.trim() ? payload.heroMediaId.trim() : undefined,
-        basePriceUsd: Number(payload.basePriceUsd) || 0,
-        isActive: Boolean(payload.isActive),
-      };
-
-      if (editingItem?.id) {
-        return await apiClient.put(`/admin/transportation/services/${editingItem.id}`, backendPayload);
-      } else {
-        return await apiClient.post("/admin/transportation/services", backendPayload);
-      }
-    },
-    onSuccess: () => {
-      const finalItem: TransportationService = {
-        id: editingItem?.id || `tr-custom-${Date.now()}`,
-        name: draft.name || draft.nameAr || draft.nameEn || (isAr ? "مركبة جديدة" : "New Vehicle"),
-        nameAr: draft.nameAr || draft.name,
-        nameEn: draft.nameEn || draft.name,
-        serviceType: draft.serviceType,
-        vehicleCategory: draft.vehicleCategory,
-        vehicleType: draft.vehicleType || (draft.vehicleCategory === "private" ? "Luxury Sedan & SUV" : "Tour Coach"),
-        capacity: Number(draft.capacity) || 4,
-        doors: Number(draft.doors) || 4,
-        transmission: draft.transmission || "AUTO",
-        basePriceUsd: Number(draft.basePriceUsd) || 150,
-        heroImageUrl: draft.heroImageUrl || getFallbackImage(String(draft.vehicleCategory)),
-        heroMediaId: draft.heroMediaId,
-        isPrivate: draft.isPrivate,
-        isActive: draft.isActive,
-        rating: 5.0,
-        reviews: 24,
-        features: draft.features,
-        featuresJsonb: draft.features,
-        description: draft.description,
-        pickupInstructions: draft.pickupInstructions,
-        dropoffInstructions: draft.dropoffInstructions,
-      };
-
-      setLocalFleet((prev) => {
-        if (editingItem?.id) {
-          return prev.map((item) => (item.id === editingItem.id ? finalItem : item));
-        }
-        return [finalItem, ...prev];
-      });
-
-      queryClient.invalidateQueries({ queryKey: ["transportation-services"] });
-      toast.success(
-        editingItem
-          ? isAr
-            ? "تم تحديث بيانات المركبة بنجاح ✨"
-            : "Vehicle updated successfully ✨"
-          : isAr
-          ? "تمت إضافة المركبة الجديدة إلى الأسطول بنجاح 🚍"
-          : "Vehicle added to fleet successfully 🚍"
-      );
-      setIsEditorOpen(false);
-    },
-    onError: (err: any) => {
-      toast.error(err?.message || (isAr ? "فشل حفظ بيانات المركبة" : "Failed to save vehicle"));
-    },
-  });
-
-  const toggleActiveStatus = async (item: TransportationService) => {
-    const updated = !item.isActive;
-    try {
-      await apiClient.put(`/admin/transportation/services/${item.id}`, { isActive: updated });
-    } catch {
-      // optimistic fallback
-    }
-    setLocalFleet((prev) =>
-      prev.map((v) => (v.id === item.id ? { ...v, isActive: updated } : v))
-    );
-    queryClient.invalidateQueries({ queryKey: ["transportation-services"] });
-    toast.success(
-      updated
-        ? isAr
-          ? `تم تفعيل ${item.name}`
-          : `${item.name} activated`
-        : isAr
-        ? `تم تعطيل ${item.name}`
-        : `${item.name} deactivated`
-    );
-  };
-
-  const deleteMutation = useMutation({
-    mutationFn: async (id: string) => {
-      try {
-        await apiClient.delete(`/admin/transportation/services/${id}`);
-      } catch (err) {
-        console.warn("Backend delete skipped, updating local state:", err);
-      }
-      return id;
-    },
-    onSuccess: (id) => {
-      setLocalFleet((prev) => prev.filter((v) => v.id !== id));
-      queryClient.invalidateQueries({ queryKey: ["transportation-services"] });
-      toast.success(isAr ? "تم حذف المركبة من الأسطول بنجاح" : "Vehicle removed from fleet");
-      setDeleteConfirmId(null);
-    },
-  });
-
-  const handleSave = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!draft.name && !draft.nameAr && !draft.nameEn) {
-      toast.error(isAr ? "يرجى كتابة اسم المركبة" : "Please enter vehicle name");
-      return;
-    }
-    saveMutation.mutate(draft);
-  };
-
   return (
-    <div className="space-y-6 pb-16">
-      {/* 1. Header & Quick Actions */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/70">
+    <div className="space-y-6 animate-in fade-in duration-300" dir={isAr ? "rtl" : "ltr"}>
+      {/* 1. Header & Quick Action Bar */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 rounded-3xl bg-linear-to-r from-amber-500/10 via-card to-card border border-border shadow-xs">
         <div className="space-y-1">
-          <div className="flex items-center gap-3">
-            <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 shadow-xs">
-              <Bus className="h-6 w-6" />
+          <div className="flex items-center gap-2.5">
+            <div className="p-2.5 rounded-2xl bg-amber-500/20 text-amber-500 shrink-0">
+              <Bus className="w-6 h-6 stroke-[2.5]" />
             </div>
             <div>
-              <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
-                  {isAr ? "إدارة أسطول النقل والسيارات" : "Transportation Fleet Management"}
-                </h1>
-                <Badge
-                  variant="outline"
-                  className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 text-[11px] font-bold px-2 py-0.5"
-                >
-                  Dunas Fleet VIP
-                </Badge>
-              </div>
-              <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+              <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
+                <span>{isAr ? "إدارة أسطول النقل السياحي الفاخر" : "Luxury Transportation & Fleet"}</span>
+                <Sparkles className="w-5 h-5 text-amber-500" />
+              </h1>
+              <p className="text-xs text-muted-foreground font-semibold">
                 {isAr
-                  ? "متابعة وإدارة حافلات وسيارات Dunas Travel الفاخرة، الاستقبال في المطار، وخدمات الشيفور الخاص."
-                  : "Manage and monitor Dunas Travel coaches, executive vans, and VIP private chauffeurs."}
+                  ? "التحكم في الحافلات، الكوستر، والسيارات الخاصة VIP، والترجمات الـ 5، والأسعار، والحجوزات."
+                  : "Manage luxury coaches, executive coasters, VIP private transfers, 5-locale content & pricing."}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="flex items-center gap-2">
           <Button
+            type="button"
             variant="outline"
             size="sm"
-            onClick={() => {
-              refetch();
-              toast.info(isAr ? "جاري تحديث بيانات الأسطول..." : "Refreshing fleet data...");
-            }}
+            onClick={() => refetch()}
             disabled={isFetching}
-            className="rounded-xl text-xs font-semibold gap-1.5 h-9"
+            className="rounded-2xl h-11 text-xs font-bold gap-2 border-border cursor-pointer shadow-xs"
           >
-            <RefreshCw className={`h-3.5 w-3.5 ${isFetching ? "animate-spin text-amber-500" : ""}`} />
-            <span>{isAr ? "تحديث" : "Refresh"}</span>
+            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-amber-500" : ""}`} />
+            <span>{isAr ? "تحديث الأسطول" : "Refresh"}</span>
           </Button>
 
           <Button
-            onClick={handleOpenCreate}
-            className="bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-xl text-xs font-bold gap-1.5 h-9 shadow-md shadow-amber-500/10 cursor-pointer"
+            type="button"
+            onClick={openCreateModal}
+            className="rounded-2xl h-11 text-xs font-bold px-5 gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer"
           >
-            <Plus className="h-4 w-4 stroke-[3]" />
-            <span>{isAr ? "إضافة مركبة جديدة" : "Add New Vehicle"}</span>
+            <Plus className="w-4 h-4 stroke-[3]" />
+            <span>{isAr ? "إضافة مركبة جديدة +" : "Add Vehicle +"}</span>
           </Button>
         </div>
       </div>
 
-      {/* 2. Executive KPI Grid (Theme Adaptive) */}
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3.5">
-        {/* Total Fleet */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-amber-500/40 transition-all shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "إجمالي الأسطول" : "Total Fleet"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-muted text-foreground">
-              <Bus className="w-4 h-4" />
-            </div>
+      {/* 2. Metric Highlight Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+        <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+            <span>{isAr ? "إجمالي الأسطول" : "Total Fleet"}</span>
+            <Bus className="w-4 h-4 text-amber-500" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-foreground">{stats.total}</span>
-            <span className="text-[11px] text-muted-foreground">{isAr ? "مركبة" : "units"}</span>
-          </div>
+          <div className="text-2xl font-black text-foreground">{stats.total}</div>
+          <div className="text-[10px] text-muted-foreground">{isAr ? "مركبة مسجلة" : "Vehicles configured"}</div>
         </Card>
 
-        {/* Active & Ready */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-emerald-500/40 transition-all shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "مركبات جاهزة" : "Active Ready"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
-              <CheckCircle2 className="w-4 h-4" />
-            </div>
+        <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+            <span>{isAr ? "المركبات النشطة" : "Active Live"}</span>
+            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.active}</span>
-            <span className="text-[11px] text-muted-foreground">{isAr ? "مفعلة" : "live"}</span>
-          </div>
+          <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.active}</div>
+          <div className="text-[10px] text-muted-foreground">{isAr ? "متاحة للحجز في الموقع" : "Live on catalog"}</div>
         </Card>
 
-        {/* Luxury Coaches (50-Seater) */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-amber-500/40 transition-all shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "حافلات سياحية" : "Tour Coaches"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-              <Bus className="w-4 h-4" />
-            </div>
+        <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-purple-600 dark:text-purple-400">
+            <span>{isAr ? "سعة الركاب الإجمالية" : "Passenger Capacity"}</span>
+            <Users className="w-4 h-4 text-purple-500" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-foreground">{stats.buses}</span>
-            <span className="text-[11px] text-muted-foreground">50-Seat</span>
-          </div>
+          <div className="text-2xl font-black text-purple-600 dark:text-purple-400">{stats.totalCapacity}</div>
+          <div className="text-[10px] text-muted-foreground">{isAr ? "مقعد ركاب متاح" : "Total available seats"}</div>
         </Card>
 
-        {/* Coasters */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-sky-500/40 transition-all shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "كوستر وميني" : "Coasters"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-sky-500/10 text-sky-600 dark:text-sky-400">
-              <Bus className="w-4 h-4" />
-            </div>
+        <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+          <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+            <span>{isAr ? "المؤرشفة / غير النشطة" : "Archived / Draft"}</span>
+            <Archive className="w-4 h-4 text-muted-foreground" />
           </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-foreground">{stats.coasters}</span>
-            <span className="text-[11px] text-muted-foreground">26-Seat</span>
-          </div>
-        </Card>
-
-        {/* Private VIP */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-purple-500/40 transition-all shadow-xs">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "سيارات خاصة" : "Private VIP"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-purple-500/10 text-purple-600 dark:text-purple-400">
-              <Car className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-foreground">{stats.privates}</span>
-            <span className="text-[11px] text-muted-foreground">4-Seat</span>
-          </div>
-        </Card>
-
-        {/* Total Capacity */}
-        <Card className="p-4 rounded-2xl border-border/80 bg-card hover:border-primary/40 transition-all shadow-xs col-span-2 sm:col-span-1">
-          <div className="flex items-center justify-between gap-2">
-            <span className="text-[11px] font-medium text-muted-foreground">
-              {isAr ? "السعة الكلية" : "Total Capacity"}
-            </span>
-            <div className="p-1.5 rounded-xl bg-primary/10 text-primary">
-              <Users className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline gap-1.5">
-            <span className="text-2xl font-black text-amber-600 dark:text-amber-400">{stats.totalCapacity}</span>
-            <span className="text-[11px] text-muted-foreground">{isAr ? "مقعد" : "seats"}</span>
-          </div>
+          <div className="text-2xl font-black text-foreground">{stats.archived}</div>
+          <div className="text-[10px] text-muted-foreground">{isAr ? "مخفية من الموقع" : "Hidden from search"}</div>
         </Card>
       </div>
 
-      {/* 3. Filter, Search & View Controls */}
-      <Card className="p-3.5 rounded-2xl border-border/80 bg-card shadow-xs">
-        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-          {/* Category Tabs */}
-          <div className="flex flex-wrap items-center gap-1.5">
+      {/* 3. Filters, Tabs & Search Bar */}
+      <div className="space-y-3 p-4 rounded-3xl bg-card border shadow-xs">
+        {/* Status Lifecycle Tabs */}
+        <div className="flex items-center justify-between flex-wrap gap-2 border-b pb-3">
+          <div className="flex items-center gap-1.5 overflow-x-auto">
+            <button
+              type="button"
+              onClick={() => setSelectedStatus("ACTIVE")}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                selectedStatus === "ACTIVE"
+                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>{isAr ? "المركبات النشطة ✨" : "Active Fleet ✨"}</span>
+              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                {stats.active}
+              </Badge>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedStatus("ARCHIVED")}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                selectedStatus === "ARCHIVED"
+                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>{isAr ? "الأرشيف 📦" : "Archived 📦"}</span>
+              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                {stats.archived}
+              </Badge>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setSelectedStatus("ALL")}
+              className={`px-4 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                selectedStatus === "ALL"
+                  ? "bg-amber-500 text-slate-950 shadow-xs"
+                  : "bg-muted/40 text-muted-foreground hover:bg-muted"
+              }`}
+            >
+              <span>{isAr ? "جميع المركبات 📋" : "All Vehicles 📋"}</span>
+              <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+                {stats.total}
+              </Badge>
+            </button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              type="button"
+              variant={viewMode === "grid" ? "default" : "ghost"}
+              size="icon-sm"
+              onClick={() => setViewMode("grid")}
+              className="rounded-xl cursor-pointer"
+              title="Grid View"
+            >
+              <LayoutGrid className="w-4 h-4" />
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === "table" ? "default" : "ghost"}
+              size="icon-sm"
+              onClick={() => setViewMode("table")}
+              className="rounded-xl cursor-pointer"
+              title="Table View"
+            >
+              <TableIcon className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+
+        {/* Category Pills & Search */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-1">
+          <div className="relative flex-1 max-w-md">
+            <Search className="w-4 h-4 text-muted-foreground absolute right-3 rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2" />
+            <Input
+              placeholder={isAr ? "البحث بالاسم، الموديل، المواصفات أو الوصف..." : "Search by vehicle name, model, specs..."}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-10 text-xs pr-9 rtl:pr-9 ltr:pl-9 rounded-2xl font-medium"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => setSearch("")}
+                className="absolute left-3 rtl:left-3 ltr:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
             {[
-              { id: "ALL", labelAr: "الكل", labelEn: "All Fleet", count: stats.total },
-              { id: "bus", labelAr: "حافلات كبرى", labelEn: "Luxury Coaches", count: stats.buses },
-              { id: "coaster", labelAr: "كوستر وميني باص", labelEn: "Coasters", count: stats.coasters },
-              { id: "private", labelAr: "سيارات خاصة ونقل", labelEn: "Private VIP & Transfers", count: stats.privates },
-            ].map((tab) => {
-              const isSelected = selectedCategory === tab.id;
+              { id: "ALL", labelAr: "الكل", labelEn: "All Types" },
+              { id: "bus", labelAr: "حافلات سياحية 🚌", labelEn: "Coaches 🚌" },
+              { id: "coaster", labelAr: "كوستر وميني باص 🚐", labelEn: "Coasters 🚐" },
+              { id: "private", labelAr: "سيارات خاصة VIP 🚗", labelEn: "Private VIP 🚗" },
+              { id: "transfer", labelAr: "توصيل واستقبال ✈️", labelEn: "Airport Transfers ✈️" },
+            ].map((cat) => {
+              const isActive = selectedCategory === cat.id;
               return (
                 <button
-                  key={tab.id}
-                  onClick={() => setSelectedCategory(tab.id)}
-                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer ${
-                    isSelected
-                      ? "bg-amber-500 text-slate-950 shadow-xs"
-                      : "bg-muted/50 text-muted-foreground hover:text-foreground hover:bg-muted border border-border/60"
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.id)}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                    isActive
+                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                      : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
                   }`}
                 >
-                  <span>{isAr ? tab.labelAr : tab.labelEn}</span>
-                  <span
-                    className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
-                      isSelected ? "bg-slate-950/20 text-slate-950" : "bg-muted text-foreground"
-                    }`}
-                  >
-                    {tab.count}
-                  </span>
+                  {isAr ? cat.labelAr : cat.labelEn}
                 </button>
               );
             })}
           </div>
-
-          {/* Status & View Switcher + Search */}
-          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2.5">
-            {/* Status Filter */}
-            <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/60">
-              <button
-                onClick={() => setSelectedStatus("ALL")}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                  selectedStatus === "ALL"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "الكل" : "All"}
-              </button>
-              <button
-                onClick={() => setSelectedStatus("ACTIVE")}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                  selectedStatus === "ACTIVE"
-                    ? "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-black shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "مفعل" : "Active"}
-              </button>
-              <button
-                onClick={() => setSelectedStatus("INACTIVE")}
-                className={`px-2.5 py-1 text-[11px] font-bold rounded-lg transition-all cursor-pointer ${
-                  selectedStatus === "INACTIVE"
-                    ? "bg-rose-500/20 text-rose-600 dark:text-rose-400 font-black shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {isAr ? "معطل" : "Inactive"}
-              </button>
-            </div>
-
-            {/* View Mode Toggle */}
-            <div className="flex items-center bg-muted/50 p-1 rounded-xl border border-border/60">
-              <button
-                onClick={() => setViewMode("grid")}
-                title={isAr ? "عرض شبكي" : "Grid View"}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "grid"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <LayoutGrid className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={() => setViewMode("table")}
-                title={isAr ? "عرض جدول" : "Table View"}
-                className={`p-1.5 rounded-lg transition-all cursor-pointer ${
-                  viewMode === "table"
-                    ? "bg-card text-foreground shadow-xs"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                <TableIcon className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            {/* Search Input */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-muted-foreground pointer-events-none" />
-              <Input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder={isAr ? "بحث في الأسطول والمميزات..." : "Search fleet and features..."}
-                className="text-xs pr-8 pl-8 h-9 rounded-xl bg-background border-border/80 focus:border-amber-500"
-              />
-              {search && (
-                <button
-                  onClick={() => setSearch("")}
-                  className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded cursor-pointer"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
         </div>
-      </Card>
+      </div>
 
-      {/* 4. Main Content: Grid View or Table View */}
-      {isError ? (
-        <Card className="p-12 text-center border-destructive/30 bg-destructive/5 space-y-3 rounded-3xl">
-          <AlertTriangle className="mx-auto h-10 w-10 text-destructive" />
-          <h3 className="text-base font-bold text-destructive">
-            {isAr ? "تعذر تحميل بيانات الأسطول من الخادم" : "Fleet data could not be loaded from backend"}
-          </h3>
-          <p className="text-xs text-muted-foreground">
-            {isAr ? "يرجى التحقق من اتصال الشبكة وإعادة المحاولة." : "Please check connection and retry."}
-          </p>
-          <Button variant="outline" size="sm" onClick={() => void refetch()} className="rounded-xl">
-            {isAr ? "إعادة المحاولة" : "Retry"}
-          </Button>
-        </Card>
-      ) : isLoading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-          <p className="text-xs text-muted-foreground font-semibold">
-            {isAr ? "جاري تحميل أسطول النقل الفاخر..." : "Loading luxury fleet catalog..."}
-          </p>
+      {/* 4. Vehicles Listing (Grid / Table) */}
+      {isLoading ? (
+        <div className="flex flex-col items-center justify-center p-16 gap-3 rounded-3xl bg-card border text-muted-foreground">
+          <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+          <span className="text-xs font-bold">{isAr ? "جاري تحميل أسطول النقل..." : "Loading fleet catalog..."}</span>
         </div>
       ) : filteredFleet.length === 0 ? (
-        <Card className="text-center py-16 p-8 space-y-4 rounded-3xl border-dashed">
-          <div className="w-14 h-14 rounded-2xl bg-muted flex items-center justify-center mx-auto text-muted-foreground">
-            <Bus className="w-7 h-7" />
+        <div className="flex flex-col items-center justify-center p-16 gap-3 rounded-3xl bg-card border text-center">
+          <Bus className="w-12 h-12 text-muted-foreground/40" />
+          <div className="space-y-1">
+            <h3 className="text-sm font-black text-foreground">
+              {isAr ? "لم يتم العثور على مركبات مطابقة" : "No vehicles found matching criteria"}
+            </h3>
+            <p className="text-xs text-muted-foreground font-medium">
+              {isAr
+                ? "يمكنك تغيير فلاتر البحث أو إضافة مركبة جديدة إلى الأسطول."
+                : "Try adjusting search filters or add a new luxury vehicle."}
+            </p>
           </div>
-          <h3 className="text-base font-bold text-foreground">
-            {isAr ? "لم يتم العثور على مركبات مطابقة" : "No matching vehicles found"}
-          </h3>
-          <p className="text-xs text-muted-foreground max-w-md mx-auto">
-            {isAr
-              ? "جرب تغيير فئة البحث أو مسح كلمة البحث الحالية لعرض أسطول النقل."
-              : "Try adjusting your search criteria or filters to see available fleet units."}
-          </p>
           <Button
-            onClick={() => {
-              setSearch("");
-              setSelectedCategory("ALL");
-              setSelectedStatus("ALL");
-            }}
-            variant="outline"
-            size="sm"
-            className="rounded-xl text-xs font-semibold"
+            type="button"
+            onClick={openCreateModal}
+            className="mt-2 text-xs font-bold px-4 gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 rounded-2xl"
           >
-            {isAr ? "عرض جميع المركبات" : "Show All Vehicles"}
+            <Plus className="w-3.5 h-3.5 stroke-3" />
+            <span>{isAr ? "إضافة مركبة جديدة الآن" : "Add Vehicle Now"}</span>
           </Button>
-        </Card>
+        </div>
       ) : viewMode === "grid" ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        /* GRID VIEW */
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
           {filteredFleet.map((item) => {
-            const catKey = inferCategory(item);
-            const catInfo = CATEGORY_MAP[catKey] || CATEGORY_MAP.bus;
-            const CategoryIcon = catInfo.icon;
-            const price = Number(item.basePriceUsd) || 150;
-            const rawFeatures = item.features || item.featuresJsonb || [];
+            const catMeta = CATEGORY_MAP[item.vehicleCategory || "bus"] || CATEGORY_MAP.bus;
+            const CatIcon = catMeta.icon;
 
             return (
               <Card
                 key={item.id}
-                className="group relative flex flex-col justify-between overflow-hidden rounded-3xl border border-border/80 bg-card hover:border-amber-500/50 hover:shadow-xl hover:-translate-y-0.5 transition-all duration-300"
+                className="overflow-hidden rounded-3xl border bg-card shadow-xs hover:shadow-md transition-all flex flex-col justify-between group"
               >
-                {/* Vehicle Image & Badges */}
-                <div className="relative h-48 sm:h-52 w-full overflow-hidden bg-slate-950">
-                  <img
-                    src={item.heroImageUrl || getFallbackImage(catKey)}
-                    alt={item.name}
-                    className="h-full w-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    onError={(e) => {
-                      (e.target as HTMLImageElement).src = getFallbackImage(catKey);
-                    }}
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30" />
+                <div>
+                  {/* Hero Photo Header */}
+                  <div className="relative aspect-16/10 bg-slate-950 overflow-hidden">
+                    <img
+                      src={item.heroImageUrl || getFallbackImage(String(item.vehicleCategory))}
+                      alt={item.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-950/90 via-slate-950/20 to-transparent" />
 
-                  {/* Top-Right Category Pill */}
-                  <div className="absolute top-3 right-3 flex items-center gap-1.5">
-                    <Badge
-                      variant="outline"
-                      className={`text-[10px] font-black px-2.5 py-1 rounded-full backdrop-blur-md shadow-xs ${catInfo.badgeClass}`}
-                    >
-                      <CategoryIcon className="w-3 h-3 mr-1 inline" />
-                      {isAr ? catInfo.labelAr : catInfo.labelEn}
-                    </Badge>
-                  </div>
-
-                  {/* Top-Left Active Status Pill */}
-                  <div className="absolute top-3 left-3">
-                    <button
-                      onClick={() => toggleActiveStatus(item)}
-                      title={isAr ? "اضغط لتبديل حالة التفعيل" : "Click to toggle active status"}
-                      className={`text-[10px] font-black px-2.5 py-1 rounded-full backdrop-blur-md border transition-all flex items-center gap-1.5 shadow-xs cursor-pointer ${
-                        item.isActive
-                          ? "bg-emerald-500/90 text-white border-emerald-400 hover:bg-emerald-600"
-                          : "bg-slate-900/90 text-slate-300 border-slate-700 hover:bg-slate-800"
-                      }`}
-                    >
-                      <span
-                        className={`w-1.5 h-1.5 rounded-full ${
-                          item.isActive ? "bg-white animate-pulse" : "bg-rose-400"
-                        }`}
-                      />
-                      {item.isActive ? (isAr ? "مفعل وجاهز" : "Active") : (isAr ? "معطل" : "Inactive")}
-                    </button>
-                  </div>
-
-                  {/* Bottom-Left Price Badge */}
-                  <div className="absolute bottom-3 left-3">
-                    <div className="bg-slate-950/85 backdrop-blur-md border border-amber-400/30 text-white px-3 py-1 rounded-xl flex items-center gap-1.5 shadow-md">
-                      <span className="text-[10px] text-slate-300 font-semibold">{isAr ? "من" : "From"}</span>
-                      <span className="text-base font-black text-amber-400">${price}</span>
-                      <span className="text-[10px] text-slate-300">/{isAr ? "يوم" : "day"}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* Card Body */}
-                <div className="p-5 space-y-3.5 flex-1 flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-bold text-foreground text-base leading-snug line-clamp-1 group-hover:text-amber-500 transition-colors">
-                      {item.name}
-                    </h3>
-                    <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
-                      {item.vehicleType || (isAr ? "مركبة سياحية فاخرة" : "Luxury Tourist Vehicle")}
-                    </p>
-                  </div>
-
-                  {/* Specs Grid */}
-                  <div className="grid grid-cols-3 gap-2 py-2.5 px-3 rounded-xl bg-muted/40 border border-border/60 text-xs">
-                    <div className="flex items-center gap-1.5 text-foreground">
-                      <Users className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                      <span className="font-extrabold">{item.capacity || 4}</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "مقعد" : "seats"}</span>
+                    {/* Top Badges */}
+                    <div className="absolute top-3 right-3 rtl:right-3 ltr:left-3 flex items-center gap-1.5">
+                      <Badge className={`${catMeta.badgeClass} backdrop-blur-xs text-[10px] font-black border gap-1`}>
+                        <CatIcon className="w-3 h-3" />
+                        <span>{isAr ? catMeta.labelAr : catMeta.labelEn}</span>
+                      </Badge>
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-foreground">
-                      <DoorClosed className="w-3.5 h-3.5 text-sky-500 shrink-0" />
-                      <span className="font-extrabold">{item.doors || 2}</span>
-                      <span className="text-[10px] text-muted-foreground">{isAr ? "أبواب" : "doors"}</span>
+                    <div className="absolute top-3 left-3 rtl:left-3 ltr:right-3">
+                      {item.isActive && !item.isArchived ? (
+                        <Badge className="bg-emerald-500/80 text-slate-950 font-black text-[10px] gap-1">
+                          <CheckCircle2 className="w-3 h-3" />
+                          <span>{isAr ? "نشط" : "Active"}</span>
+                        </Badge>
+                      ) : (
+                        <Badge variant="secondary" className="bg-slate-950/80 text-amber-400 border border-amber-400/20 font-black text-[10px] gap-1">
+                          <Archive className="w-3 h-3" />
+                          <span>{isAr ? "مؤرشف" : "Archived"}</span>
+                        </Badge>
+                      )}
                     </div>
 
-                    <div className="flex items-center gap-1.5 text-foreground">
-                      <Sparkles className="w-3.5 h-3.5 text-purple-500 shrink-0" />
-                      <span className="font-extrabold text-[11px] truncate">{item.transmission || "AUTO"}</span>
+                    {/* Price Overlay */}
+                    <div className="absolute bottom-3 right-3 rtl:right-3 ltr:left-3">
+                      <div className="px-2.5 py-1 rounded-xl bg-slate-950/85 backdrop-blur-xs border border-amber-500/30 text-amber-400 font-mono font-black text-sm flex items-center gap-1">
+                        <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{item.basePriceUsd}</span>
+                        <span className="text-[10px] text-slate-400 font-sans">{isAr ? "/ رحلة" : "/ trip"}</span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Amenities / Features Chips */}
-                  <div className="flex flex-wrap gap-1.5 pt-1">
-                    {rawFeatures.slice(0, 4).map((f, i) => {
-                      const localized = resolveLocalizedFeature(f, locale);
-                      return (
-                        <span
-                          key={i}
-                          className="text-[10px] font-medium bg-muted/70 text-foreground px-2.5 py-1 rounded-lg border border-border/70 truncate max-w-[140px]"
-                          title={localized}
-                        >
-                          {localized}
-                        </span>
-                      );
-                    })}
-                    {rawFeatures.length > 4 && (
-                      <span
-                        className="text-[10px] font-extrabold bg-amber-500/10 text-amber-600 dark:text-amber-400 px-2 py-1 rounded-lg border border-amber-500/20"
-                        title={rawFeatures.slice(4).map((f) => resolveLocalizedFeature(f, locale)).join(", ")}
-                      >
-                        +{rawFeatures.length - 4}
+                  {/* Body Content */}
+                  <div className="p-5 space-y-3">
+                    <div>
+                      <h3 className="font-black text-base text-foreground leading-snug line-clamp-1">{item.name}</h3>
+                      <p className="text-xs text-muted-foreground font-semibold mt-0.5">{item.vehicleType}</p>
+                    </div>
+
+                    {/* Specs Row */}
+                    <div className="flex items-center gap-4 text-xs font-bold text-muted-foreground border-y py-2.5">
+                      <span className="flex items-center gap-1.5">
+                        <Users className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{item.capacity} {isAr ? "ركاب" : "seats"}</span>
                       </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1.5">
+                        <DoorClosed className="w-3.5 h-3.5 text-sky-500" />
+                        <span>{item.doors} {isAr ? "أبواب" : "doors"}</span>
+                      </span>
+                      <span>•</span>
+                      <span className="flex items-center gap-1.5">
+                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>{item.transmission}</span>
+                      </span>
+                    </div>
+
+                    {/* Features Chips */}
+                    {Array.isArray(item.features) && item.features.length > 0 && (
+                      <div className="flex flex-wrap gap-1">
+                        {item.features.slice(0, 3).map((feat, idx) => (
+                          <span
+                            key={idx}
+                            className="text-[10px] font-semibold px-2 py-0.5 rounded-lg bg-muted/60 text-muted-foreground border"
+                          >
+                            {feat}
+                          </span>
+                        ))}
+                        {item.features.length > 3 && (
+                          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                            +{item.features.length - 3}
+                          </span>
+                        )}
+                      </div>
                     )}
                   </div>
                 </div>
 
-                {/* Card Footer */}
-                <div className="p-4 border-t border-border/70 bg-muted/20 flex items-center justify-between">
-                  <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[110px]" title={item.id}>
-                    {item.id}
-                  </span>
+                {/* Footer Action Buttons */}
+                <div className="p-4 bg-muted/30 border-t flex items-center justify-between gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => openEditModal(item)}
+                    className="h-9 text-xs font-bold gap-1.5 rounded-xl border-border cursor-pointer flex-1"
+                  >
+                    <Edit3 className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{isAr ? "تعديل المركبة" : "Edit"}</span>
+                  </Button>
 
-                  <div className="flex items-center gap-2">
+                  {item.isActive && !item.isArchived ? (
                     <Button
-                      size="sm"
+                      type="button"
                       variant="outline"
-                      onClick={() => handleOpenEdit(item)}
-                      className="text-xs px-3 py-1.5 h-8 rounded-xl gap-1.5 font-bold cursor-pointer"
-                    >
-                      <Edit3 className="w-3.5 h-3.5 text-amber-500" />
-                      <span>{isAr ? "تعديل" : "Edit"}</span>
-                    </Button>
-
-                    <Button
                       size="sm"
-                      variant="ghost"
-                      onClick={() => setDeleteConfirmId(item.id)}
-                      className="text-muted-foreground hover:text-destructive hover:bg-destructive/10 p-2 h-8 rounded-xl cursor-pointer"
-                      title={isAr ? "حذف المركبة" : "Delete Vehicle"}
+                      onClick={() => archiveMutation.mutate(item.id)}
+                      disabled={archiveMutation.isPending}
+                      className="h-9 text-xs font-bold gap-1 rounded-xl text-amber-600 dark:text-amber-400 border-amber-500/30 hover:bg-amber-500/10 cursor-pointer"
+                      title={isAr ? "أرشفة المركبة وإخفاؤها من الموقع" : "Archive Vehicle"}
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <Archive className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{isAr ? "أرشفة" : "Archive"}</span>
                     </Button>
-                  </div>
+                  ) : (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => unarchiveMutation.mutate(item.id)}
+                      disabled={unarchiveMutation.isPending}
+                      className="h-9 text-xs font-bold gap-1 rounded-xl text-emerald-600 dark:text-emerald-400 border-emerald-500/30 hover:bg-emerald-500/10 cursor-pointer"
+                      title={isAr ? "استعادة المركبة إلى الأسطول النشط" : "Restore to Active"}
+                    >
+                      <RotateCcw className="w-3.5 h-3.5" />
+                      <span className="hidden sm:inline">{isAr ? "استعادة" : "Restore"}</span>
+                    </Button>
+                  )}
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon-sm"
+                    onClick={() => setDeleteConfirmItem(item)}
+                    className="h-9 w-9 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                    title={isAr ? "مسح نهائي 🗑️" : "Delete Vehicle 🗑️"}
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
                 </div>
               </Card>
             );
           })}
         </div>
       ) : (
-        /* Table View for Fleet Management */
-        <Card className="rounded-3xl border-border/80 overflow-hidden shadow-xs">
+        /* TABLE VIEW */
+        <Card className="rounded-3xl border overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-xs text-right dir-rtl">
-              <thead className="bg-muted/60 border-b border-border/80 text-muted-foreground font-bold">
+            <table className="w-full text-xs text-left rtl:text-right border-collapse">
+              <thead className="bg-muted/60 text-muted-foreground font-black border-b uppercase tracking-wider text-[10px]">
                 <tr>
-                  <th className="p-3.5 text-start">{isAr ? "المركبة والطراز" : "Vehicle & Model"}</th>
-                  <th className="p-3.5 text-start">{isAr ? "الفئة والخدمة" : "Category & Service"}</th>
-                  <th className="p-3.5 text-center">{isAr ? "السعة" : "Seats"}</th>
-                  <th className="p-3.5 text-center">{isAr ? "الأبواب" : "Doors"}</th>
-                  <th className="p-3.5 text-center">{isAr ? "السعر اليومي" : "Daily Rate"}</th>
-                  <th className="p-3.5 text-start">{isAr ? "أبرز المميزات" : "Key Amenities"}</th>
-                  <th className="p-3.5 text-center">{isAr ? "الحالة" : "Status"}</th>
-                  <th className="p-3.5 text-center">{isAr ? "الإجراءات" : "Actions"}</th>
+                  <th className="p-4">{isAr ? "المركبة" : "Vehicle"}</th>
+                  <th className="p-4">{isAr ? "الفئة والنوع" : "Category & Type"}</th>
+                  <th className="p-4">{isAr ? "السعة والأبواب" : "Capacity"}</th>
+                  <th className="p-4">{isAr ? "السعر الأساسي" : "Base Price"}</th>
+                  <th className="p-4">{isAr ? "الحالة" : "Status"}</th>
+                  <th className="p-4 text-center">{isAr ? "الإجراءات" : "Actions"}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-border/60">
+              <tbody className="divide-y divide-border">
                 {filteredFleet.map((item) => {
-                  const catKey = inferCategory(item);
-                  const catInfo = CATEGORY_MAP[catKey] || CATEGORY_MAP.bus;
-                  const price = Number(item.basePriceUsd) || 150;
-                  const rawFeatures = item.features || item.featuresJsonb || [];
-
+                  const catMeta = CATEGORY_MAP[item.vehicleCategory || "bus"] || CATEGORY_MAP.bus;
                   return (
-                    <tr key={item.id} className="hover:bg-muted/30 transition-colors">
-                      <td className="p-3.5">
+                    <tr key={item.id} className="hover:bg-muted/20 transition-colors">
+                      <td className="p-4">
                         <div className="flex items-center gap-3">
-                          <div className="w-12 h-10 rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-border/80">
-                            <img
-                              src={item.heroImageUrl || getFallbackImage(catKey)}
-                              alt={item.name}
-                              className="w-full h-full object-cover"
-                            />
-                          </div>
+                          <img
+                            src={item.heroImageUrl || getFallbackImage(String(item.vehicleCategory))}
+                            alt={item.name}
+                            className="w-12 h-10 object-cover rounded-xl border bg-slate-950 shrink-0"
+                          />
                           <div>
-                            <div className="font-bold text-foreground line-clamp-1">{item.name}</div>
-                            <div className="text-[11px] text-muted-foreground line-clamp-1">
-                              {item.vehicleType || "VIP Coach"}
-                            </div>
+                            <div className="font-black text-foreground">{item.name}</div>
+                            <div className="text-[10px] text-muted-foreground">{item.vehicleType}</div>
                           </div>
                         </div>
                       </td>
-
-                      <td className="p-3.5">
-                        <Badge variant="outline" className={`text-[10px] font-bold ${catInfo.badgeClass}`}>
-                          {isAr ? catInfo.labelAr : catInfo.labelEn}
+                      <td className="p-4">
+                        <Badge className={`${catMeta.badgeClass} text-[10px] font-bold border`}>
+                          {isAr ? catMeta.labelAr : catMeta.labelEn}
                         </Badge>
                       </td>
-
-                      <td className="p-3.5 text-center font-extrabold text-foreground">
-                        {item.capacity || 4} {isAr ? "مقعد" : "seats"}
+                      <td className="p-4 font-semibold text-muted-foreground">
+                        <span>{item.capacity} {isAr ? "ركاب" : "seats"}</span> · <span>{item.doors} {isAr ? "أبواب" : "doors"}</span>
                       </td>
-
-                      <td className="p-3.5 text-center font-medium text-muted-foreground">
-                        {item.doors || 2}
+                      <td className="p-4 font-mono font-black text-amber-500">
+                        ${item.basePriceUsd}
                       </td>
-
-                      <td className="p-3.5 text-center font-mono font-black text-amber-600 dark:text-amber-400">
-                        ${price}
+                      <td className="p-4">
+                        {item.isActive && !item.isArchived ? (
+                          <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+                            {isAr ? "نشط ومتاح" : "Active"}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-muted-foreground text-[10px] font-bold">
+                            {isAr ? "مؤرشف" : "Archived"}
+                          </Badge>
+                        )}
                       </td>
-
-                      <td className="p-3.5">
-                        <div className="flex flex-wrap gap-1 max-w-xs">
-                          {rawFeatures.slice(0, 2).map((f, idx) => (
-                            <span
-                              key={idx}
-                              className="text-[10px] bg-muted px-2 py-0.5 rounded-md text-foreground border border-border/60"
-                            >
-                              {resolveLocalizedFeature(f, locale)}
-                            </span>
-                          ))}
-                          {rawFeatures.length > 2 && (
-                            <span className="text-[10px] text-muted-foreground font-bold">
-                              +{rawFeatures.length - 2}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-
-                      <td className="p-3.5 text-center">
-                        <button
-                          onClick={() => toggleActiveStatus(item)}
-                          className={`text-[10px] font-extrabold px-2.5 py-1 rounded-full border cursor-pointer ${
-                            item.isActive
-                              ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30"
-                              : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30"
-                          }`}
-                        >
-                          {item.isActive ? (isAr ? "مفعل" : "Active") : (isAr ? "معطل" : "Inactive")}
-                        </button>
-                      </td>
-
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center gap-1.5">
+                      <td className="p-4 text-center">
+                        <div className="flex items-center justify-center gap-1">
                           <Button
-                            size="sm"
+                            type="button"
+                            size="icon-sm"
                             variant="ghost"
-                            onClick={() => handleOpenEdit(item)}
-                            className="p-1.5 h-8 w-8 rounded-xl text-amber-500 hover:bg-amber-500/10 cursor-pointer"
+                            onClick={() => openEditModal(item)}
+                            className="rounded-xl hover:bg-muted text-amber-500"
                             title={isAr ? "تعديل" : "Edit"}
                           >
-                            <Edit3 className="w-3.5 h-3.5" />
+                            <Edit3 className="w-4 h-4" />
                           </Button>
+                          {item.isActive && !item.isArchived ? (
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => archiveMutation.mutate(item.id)}
+                              className="rounded-xl hover:bg-amber-500/10 text-amber-600 dark:text-amber-400"
+                              title={isAr ? "أرشفة" : "Archive"}
+                            >
+                              <Archive className="w-4 h-4" />
+                            </Button>
+                          ) : (
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => unarchiveMutation.mutate(item.id)}
+                              className="rounded-xl hover:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                              title={isAr ? "استعادة" : "Restore"}
+                            >
+                              <RotateCcw className="w-4 h-4" />
+                            </Button>
+                          )}
                           <Button
-                            size="sm"
+                            type="button"
+                            size="icon-sm"
                             variant="ghost"
-                            onClick={() => setDeleteConfirmId(item.id)}
-                            className="p-1.5 h-8 w-8 rounded-xl text-muted-foreground hover:text-destructive hover:bg-destructive/10 cursor-pointer"
-                            title={isAr ? "حذف" : "Delete"}
+                            onClick={() => setDeleteConfirmItem(item)}
+                            className="rounded-xl hover:bg-destructive/10 text-destructive"
+                            title={isAr ? "مسح نهائي" : "Delete"}
                           >
-                            <Trash2 className="w-3.5 h-3.5" />
+                            <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>
                       </td>
@@ -1123,405 +1112,711 @@ export function TransportationServicesManager() {
         </Card>
       )}
 
-      {/* 5. Create / Edit Vehicle Modal Dialog */}
+      {/* 5. Comprehensive Vehicle Modal Editor (4 Tabs + 5 Languages + Media Picker) */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>
-        <DialogContent className="max-w-3xl bg-card border-border text-foreground p-6 rounded-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-          <DialogHeader className="border-b border-border/80 pb-4">
-            <DialogTitle className="text-xl font-bold text-foreground flex items-center gap-2.5 font-heading">
-              <div className="p-2 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
-                <Bus className="w-5 h-5" />
+        <DialogContent className="max-w-4xl p-0 overflow-hidden border border-border/80 shadow-2xl rounded-3xl bg-card">
+          <DialogHeader className="p-6 pb-4 bg-linear-to-r from-amber-500/10 via-primary/10 to-amber-500/5 border-b">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-3 bg-amber-500/20 text-amber-500 rounded-2xl shrink-0 shadow-sm">
+                  <Bus className="w-6 h-6 stroke-[2.5]" />
+                </div>
+                <div>
+                  <DialogTitle className="text-xl font-black text-foreground flex items-center gap-2">
+                    <span>
+                      {editingItem
+                        ? (isAr ? "تعديل بيانات المركبة والترجمات" : "Edit Vehicle & Localizations")
+                        : (isAr ? "إضافة مركبة جديدة إلى الأسطول" : "Add Luxury Vehicle to Fleet")}
+                    </span>
+                    <Sparkles className="w-5 h-5 text-amber-500" />
+                  </DialogTitle>
+                  <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-semibold">
+                    {isAr
+                      ? "إعداد الصورة الرئيسية، الترجمات الـ 5، المواصفات الفنية، والمميزات الفاخرة."
+                      : "Configure hero photo, 5-language content, technical specifications & amenities."}
+                  </DialogDescription>
+                </div>
               </div>
-              <span>
-                {editingItem
-                  ? isAr
-                    ? `تعديل المركبة: ${editingItem.name}`
-                    : `Edit Vehicle: ${editingItem.name}`
-                  : isAr
-                  ? "إضافة مركبة جديدة إلى أسطول النقل"
-                  : "Add New Vehicle to Fleet"}
-              </span>
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground">
-              {isAr
-                ? "قم بإدخال تفاصيل المركبة، سعة المقاعد، الأسعار والمميزات لتظهر في أنظمة الحجز والجولات الفاخرة."
-                : "Enter vehicle specifications, seating capacity, pricing, and guest amenities."}
-            </DialogDescription>
+            </div>
           </DialogHeader>
 
-          <form onSubmit={handleSave} className="space-y-6 pt-2">
+          {/* Modal Form Content */}
+          <div className="p-6 max-h-[75vh] overflow-y-auto space-y-6">
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid grid-cols-3 bg-muted/60 border border-border/80 rounded-2xl p-1 mb-4">
-                <TabsTrigger
-                  value="basic"
-                  className="text-xs font-bold rounded-xl data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 cursor-pointer"
-                >
-                  {isAr ? "البيانات الأساسية" : "Basic Info"}
+              <TabsList className="grid grid-cols-4 bg-muted/60 p-1 rounded-2xl mb-6">
+                <TabsTrigger value="basic" className="text-xs font-bold rounded-xl py-2 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950">
+                  {isAr ? "البيانات الأساسية والصورة" : "Basic Info & Media"}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="features"
-                  className="text-xs font-bold rounded-xl data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 cursor-pointer"
-                >
-                  {isAr ? "المميزات والصور" : "Media & Features"}
+                <TabsTrigger value="translations" className="text-xs font-bold rounded-xl py-2 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950">
+                  {isAr ? "الترجمات الـ 5 🌐" : "5 Languages 🌐"}
                 </TabsTrigger>
-                <TabsTrigger
-                  value="details"
-                  className="text-xs font-bold rounded-xl data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 cursor-pointer"
-                >
-                  {isAr ? "الوصف والتعليمات" : "Description & Policy"}
+                <TabsTrigger value="features" className="text-xs font-bold rounded-xl py-2 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950">
+                  {isAr ? "المميزات والرفاهية" : "Features & Luxury"}
+                </TabsTrigger>
+                <TabsTrigger value="instructions" className="text-xs font-bold rounded-xl py-2 data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950">
+                  {isAr ? "التعليمات والسياسات" : "Instructions"}
                 </TabsTrigger>
               </TabsList>
 
-              {/* Tab 1: Basic Specifications */}
-              <TabsContent value="basic" className="space-y-4 mt-0">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "اسم المركبة (عربي)" : "Vehicle Name (Arabic)"}
-                    </Label>
-                    <Input
-                      value={draft.nameAr || draft.name}
-                      onChange={(e) =>
-                        setDraft({ ...draft, name: e.target.value, nameAr: e.target.value })
-                      }
-                      placeholder="مثال: حافلة مرسيدس توريزمو VIP 50 راكب"
-                      className="text-xs rounded-xl bg-background border-border"
-                      required
-                    />
+              {/* TAB 1: BASIC INFO & MEDIA */}
+              <TabsContent value="basic" className="space-y-5">
+                {/* HERO PHOTO SECTION */}
+                <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border/80 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-xs font-black text-foreground flex items-center gap-2">
+                        <ImageIcon className="w-4 h-4 text-amber-500" />
+                        <span>{isAr ? "صورة المركبة الرئيسية ومعرض الوسائط" : "Vehicle Hero Image & Media"}</span>
+                      </h4>
+                      <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                        {isAr
+                          ? "الصورة الأساسية التي تظهر في بطاقة المركبة وصفحة الحجز بالموقع العام."
+                          : "Primary photo featured on customer booking cards and fleet showcase."}
+                      </p>
+                    </div>
+
+                    <div>
+                      {draft.heroImageUrl ? (
+                        <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold gap-1">
+                          <Check className="w-3 h-3 stroke-3" />
+                          <span>{isAr ? "الصورة محددة ✓" : "Photo Configured ✓"}</span>
+                        </Badge>
+                      ) : (
+                        <Badge variant="outline" className="text-amber-500 border-amber-500/30 text-[10px] font-bold">
+                          {isAr ? "لم تحدد صورة" : "No photo selected"}
+                        </Badge>
+                      )}
+                    </div>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "اسم المركبة (إنجليزي)" : "Vehicle Name (English)"}
-                    </Label>
-                    <Input
-                      value={draft.nameEn || ""}
-                      onChange={(e) => setDraft({ ...draft, nameEn: e.target.value })}
-                      placeholder="e.g. Mercedes-Benz Tourismo VIP Coach"
-                      className="text-xs rounded-xl bg-background border-border"
-                    />
-                  </div>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp"
+                    className="hidden"
+                    onChange={handleHeroFileUpload}
+                  />
+
+                  {/* Photo Preview or Empty State */}
+                  {draft.heroImageUrl ? (
+                    <div className="space-y-3">
+                      <div className="relative aspect-16/8 sm:aspect-21/9 rounded-2xl overflow-hidden border bg-slate-950 shadow-md">
+                        <img
+                          src={draft.heroImageUrl}
+                          alt="Vehicle Hero Preview"
+                          className="w-full h-full object-cover"
+                        />
+                        <div className="absolute top-3 left-3 rtl:left-3 ltr:right-3 flex items-center gap-1.5">
+                          <Badge className="bg-slate-950/80 text-amber-400 font-mono text-[10px] border border-amber-400/30">
+                            {draft.heroMediaId ? `Media ID: ${draft.heroMediaId.slice(0, 8)}...` : "Direct Photo"}
+                          </Badge>
+                        </div>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingHero}
+                          className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          {isUploadingHero ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+                          <span>{isUploadingHero ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "تغيير الصورة 📸" : "Upload New 📸")}</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsMediaPickerOpen(true)}
+                          className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          <span>{isAr ? "اختيار من مكتبة الوسائط 🖼️" : "Pick from Library 🖼️"}</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                          className="rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" />
+                          <span>{isAr ? "تعديل الرابط 🔗" : "Edit URL 🔗"}</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => setDraft((p) => ({ ...p, heroImageUrl: "", heroMediaId: null }))}
+                          className="rounded-xl text-xs font-bold gap-1 text-destructive hover:bg-destructive/10 cursor-pointer ml-auto rtl:ml-0 rtl:mr-auto"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                          <span>{isAr ? "إزالة" : "Remove"}</span>
+                        </Button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="p-6 border-2 border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center gap-3">
+                      <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                        <ImageIcon className="w-6 h-6 stroke-[2]" />
+                      </div>
+                      <div className="space-y-1 max-w-md">
+                        <h5 className="text-xs font-black text-foreground">
+                          {isAr ? "لم يتم تعيين صورة رئيسية للمركبة" : "No Photo Configured"}
+                        </h5>
+                        <p className="text-[11px] text-muted-foreground font-medium">
+                          {isAr
+                            ? "ارفع صورة مباشرة من جهازك أو اختر من مكتبة الوسائط المتوفرة بالمشروع."
+                            : "Upload directly from your device, choose from Media Library, or paste a URL."}
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center justify-center gap-2 pt-1">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploadingHero}
+                          className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                        >
+                          {isUploadingHero ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <UploadCloud className="w-3.5 h-3.5" />}
+                          <span>{isUploadingHero ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع صورة من الجهاز 📸" : "Upload Photo 📸")}</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setIsMediaPickerOpen(true)}
+                          className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                        >
+                          <FolderOpen className="w-3.5 h-3.5" />
+                          <span>{isAr ? "اختيار من مكتبة الوسائط 🖼️" : "Pick from Library 🖼️"}</span>
+                        </Button>
+
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowCustomUrlInput(!showCustomUrlInput)}
+                          className="rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                        >
+                          <LinkIcon className="w-3.5 h-3.5" />
+                          <span>{isAr ? "إدخال رابط مباشر 🔗" : "Direct URL 🔗"}</span>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
+
+                  {showCustomUrlInput && (
+                    <div className="p-3.5 rounded-2xl bg-card border border-amber-500/30 space-y-2 animate-in fade-in duration-200">
+                      <div className="flex items-center justify-between">
+                        <label className="text-[11px] font-extrabold text-foreground flex items-center gap-1.5">
+                          <LinkIcon className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{isAr ? "رابط الصورة المباشر (URL)" : "Direct Image URL"}</span>
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => setShowCustomUrlInput(false)}
+                          className="text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Input
+                          placeholder="https://res.cloudinary.com/... or /imgs/transportation/..."
+                          value={draft.heroImageUrl || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, heroImageUrl: e.target.value }))}
+                          className="h-9 text-xs font-mono"
+                        />
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => setShowCustomUrlInput(false)}
+                          className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-3 rounded-xl cursor-pointer"
+                        >
+                          <Check className="w-3.5 h-3.5" />
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                {/* Form Controls */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Category */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "فئة المركبة" : "Category"}
-                    </Label>
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "فئة المركبة *" : "Vehicle Category *"}</label>
                     <select
                       value={draft.vehicleCategory || "bus"}
-                      onChange={(e) =>
-                        setDraft({ ...draft, vehicleCategory: e.target.value as VehicleCategory })
-                      }
-                      className="w-full bg-background border border-border text-foreground text-xs rounded-xl p-2.5"
+                      onChange={(e) => setDraft((p) => ({ ...p, vehicleCategory: e.target.value as VehicleCategory }))}
+                      className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
                     >
-                      <option value="bus">{isAr ? "حافلة كبرى (Bus 45-50)" : "Luxury Bus (45-50 Seats)"}</option>
-                      <option value="coaster">{isAr ? "كوستر ميني باص (Coaster 22-26)" : "Coaster Mini-Bus (22-26 Seats)"}</option>
-                      <option value="private">{isAr ? "سيارة خاصة VIP (Private Car 4)" : "Private VIP Sedan/SUV (4 Seats)"}</option>
-                      <option value="transfer">{isAr ? "خدمة نقل واستقبال (Airport Transfer)" : "Airport Transfer Service"}</option>
+                      <option value="bus">🚌 حافلة كبرى فاخرة (Luxury Tour Coach)</option>
+                      <option value="coaster">🚐 كوستر وميني باص (Executive Coaster)</option>
+                      <option value="private">🚗 سيارة خاصة VIP (Luxury Sedan & SUV)</option>
+                      <option value="transfer">✈️ توصيل واستقبال VIP (Airport Transfer)</option>
+                      <option value="luxury_van">🚐 فان سياحي VIP (Luxury Mercedes Van)</option>
                     </select>
                   </div>
 
+                  {/* Service Type */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "نوع الخدمة" : "Service Type"}
-                    </Label>
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "نوع الخدمة *" : "Service Type *"}</label>
                     <select
                       value={draft.serviceType || "AIRPORT"}
-                      onChange={(e) => setDraft({ ...draft, serviceType: e.target.value })}
-                      className="w-full bg-background border border-border text-foreground text-xs rounded-xl p-2.5"
+                      onChange={(e) => setDraft((p) => ({ ...p, serviceType: e.target.value }))}
+                      className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
                     >
-                      <option value="AIRPORT">{isAr ? "استقبال وتوصيل المطار (Airport)" : "Airport Pickup/Drop"}</option>
-                      <option value="CITY_TO_CITY">{isAr ? "تنقل بين المدن (City to City)" : "City to City Transfer"}</option>
-                      <option value="HOTEL">{isAr ? "خدمة الفنادق واليوم الكامل (Hotel Day)" : "Hotel Full Day"}</option>
-                      <option value="PRIVATE">{isAr ? "جولة خاصة حصرية (Private Tour)" : "Private Tour"}</option>
+                      <option value="AIRPORT">✈️ مطارات واستقبال (Airport Transfer)</option>
+                      <option value="HOTEL">🏨 فنادق وتنقلات داخلية (Hotel Transfer)</option>
+                      <option value="CITY_TO_CITY">🛣️ رحلات بين المدن والمحافظات (City to City)</option>
+                      <option value="FULL_DAY">⏱️ استئجار يوم كامل مع سائق (Full Day Chauffeur)</option>
+                      <option value="VIP_ESCORT">👑 مرافقة VIP خاصة (VIP Escort)</option>
                     </select>
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "سعر التأجير اليومي ($ USD)" : "Daily Base Price (USD)"}
-                    </Label>
-                    <Input
-                      type="number"
-                      min="0"
-                      step="1"
-                      value={draft.basePriceUsd}
-                      onChange={(e) => setDraft({ ...draft, basePriceUsd: Number(e.target.value) })}
-                      className="text-xs rounded-xl font-bold bg-background border-border"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "طراز المركبة / الموديل" : "Model / Subtitle"}
-                    </Label>
+                  {/* Model / Spec */}
+                  <div className="space-y-1.5 sm:col-span-2">
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "طراز ومواصفات المركبة *" : "Vehicle Model & Specs *"}</label>
                     <Input
                       value={draft.vehicleType || ""}
-                      onChange={(e) => setDraft({ ...draft, vehicleType: e.target.value })}
-                      placeholder="e.g. Mercedes Tourismo 2026"
-                      className="text-xs rounded-xl bg-background border-border"
+                      onChange={(e) => setDraft((p) => ({ ...p, vehicleType: e.target.value }))}
+                      placeholder="e.g. Mercedes-Benz Travego VIP 50-Seater"
+                      className="h-10 text-xs font-bold"
                     />
                   </div>
 
+                  {/* Capacity */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "سعة المقاعد (Seats)" : "Seating Capacity"}
-                    </Label>
+                    <label className="text-xs font-extrabold text-foreground flex items-center gap-1">
+                      <Users className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{isAr ? "سعة المقاعد للركاب *" : "Passenger Capacity *"}</span>
+                    </label>
                     <Input
                       type="number"
-                      min="1"
-                      max="100"
-                      value={draft.capacity ?? 50}
-                      onChange={(e) => setDraft({ ...draft, capacity: Number(e.target.value) })}
-                      className="text-xs rounded-xl bg-background border-border"
+                      min={1}
+                      max={150}
+                      value={draft.capacity || 50}
+                      onChange={(e) => setDraft((p) => ({ ...p, capacity: Number(e.target.value) }))}
+                      className="h-10 text-xs font-mono font-bold"
                     />
                   </div>
 
+                  {/* Doors */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "ناقل الحركة" : "Transmission"}
-                    </Label>
+                    <label className="text-xs font-extrabold text-foreground flex items-center gap-1">
+                      <DoorClosed className="w-3.5 h-3.5 text-sky-500" />
+                      <span>{isAr ? "عدد الأبواب *" : "Door Count *"}</span>
+                    </label>
+                    <Input
+                      type="number"
+                      min={1}
+                      max={10}
+                      value={draft.doors || 2}
+                      onChange={(e) => setDraft((p) => ({ ...p, doors: Number(e.target.value) }))}
+                      className="h-10 text-xs font-mono font-bold"
+                    />
+                  </div>
+
+                  {/* Transmission */}
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "نوع ناقل الحركة (Transmission)" : "Transmission"}</label>
                     <select
                       value={draft.transmission || "AUTO"}
-                      onChange={(e) => setDraft({ ...draft, transmission: e.target.value })}
-                      className="w-full bg-background border border-border text-foreground text-xs rounded-xl p-2.5"
+                      onChange={(e) => setDraft((p) => ({ ...p, transmission: e.target.value }))}
+                      className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
                     >
-                      <option value="AUTO">{isAr ? "أوتوماتيك (Automatic)" : "Automatic"}</option>
-                      <option value="MANUAL">{isAr ? "يدوي (Manual)" : "Manual"}</option>
+                      <option value="AUTO">أوتوماتيك (Automatic)</option>
+                      <option value="MANUAL">يدوي (Manual)</option>
                     </select>
                   </div>
-                </div>
 
-                <div className="flex items-center justify-between p-3.5 bg-muted/40 border border-border/80 rounded-2xl">
-                  <div>
-                    <div className="text-xs font-bold text-foreground">
-                      {isAr ? "خدمة خاصة VIP (Private Service)" : "Private Chauffeur Service"}
-                    </div>
-                    <div className="text-[11px] text-muted-foreground">
-                      {isAr ? "مخصصة للعملاء والأفراد بشكل حصري" : "Exclusive VIP private transfer"}
-                    </div>
-                  </div>
-                  <Switch
-                    checked={draft.isPrivate}
-                    onCheckedChange={(checked) => setDraft({ ...draft, isPrivate: checked })}
-                  />
-                </div>
-              </TabsContent>
-
-              {/* Tab 2: Media & Amenities */}
-              <TabsContent value="features" className="space-y-4 mt-0">
-                <div className="space-y-2">
-                  <Label className="text-xs font-semibold text-foreground">
-                    {isAr ? "اختر صورة للمركبة من النماذج الجاهزة" : "Select Preset Fleet Image"}
-                  </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-5 gap-2.5">
-                    {PRESET_VEHICLE_IMAGES.map((img) => {
-                      const isSelected = draft.heroImageUrl === img.url;
-                      return (
-                        <button
-                          key={img.id}
-                          type="button"
-                          onClick={() => setDraft({ ...draft, heroImageUrl: img.url })}
-                          className={`relative rounded-xl overflow-hidden border-2 transition-all text-start group cursor-pointer ${
-                            isSelected
-                              ? "border-amber-500 shadow-md shadow-amber-500/20 scale-[1.02]"
-                              : "border-border opacity-70 hover:opacity-100"
-                          }`}
-                        >
-                          <div className="h-16 bg-slate-950">
-                            <img src={img.url} alt={img.label} className="w-full h-full object-cover" />
-                          </div>
-                          <div className="p-1.5 bg-card text-[10px] text-foreground font-medium truncate">
-                            {isAr ? img.label : img.labelEn}
-                          </div>
-                          {isSelected && (
-                            <div className="absolute top-1 right-1 bg-amber-500 text-slate-950 p-0.5 rounded-full shadow-xs">
-                              <Check className="w-3 h-3 stroke-[3]" />
-                            </div>
-                          )}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">
-                    {isAr ? "أو رابط صورة مخصص (Custom URL)" : "Or Custom Image URL"}
-                  </Label>
-                  <Input
-                    value={draft.heroImageUrl || ""}
-                    onChange={(e) => setDraft({ ...draft, heroImageUrl: e.target.value })}
-                    placeholder="/imgs/transportation/bus1.jpeg or https://..."
-                    className="text-xs rounded-xl font-mono bg-background border-border"
-                  />
-                </div>
-
-                <div className="space-y-2 pt-2">
-                  <Label className="text-xs font-semibold text-foreground">
-                    {isAr ? "المميزات والخدمات المتاحة على متن المركبة" : "Vehicle Amenities & Features"}
-                  </Label>
-                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                    {AVAILABLE_FEATURES.map((feat) => {
-                      const isChecked = isFeatureSelected(feat.id, draft.features);
-                      const IconComp = FEATURE_ICONS[feat.id] || Sparkles;
-
-                      return (
-                        <button
-                          key={feat.id}
-                          type="button"
-                          onClick={() => toggleFeature(feat.id)}
-                          className={`p-2.5 rounded-xl border text-xs font-medium flex items-center gap-2 transition-all cursor-pointer ${
-                            isChecked
-                              ? "bg-amber-500/15 border-amber-500/50 text-amber-700 dark:text-amber-300 font-bold"
-                              : "bg-muted/40 border-border/80 text-muted-foreground hover:text-foreground hover:bg-muted"
-                          }`}
-                        >
-                          <IconComp
-                            className={`w-3.5 h-3.5 ${
-                              isChecked ? "text-amber-500" : "text-muted-foreground"
-                            }`}
-                          />
-                          <span className="truncate">{isAr ? feat.labelAr : feat.labelEn}</span>
-                          {isChecked && <Check className="w-3.5 h-3.5 ms-auto text-amber-500 stroke-[3]" />}
-                        </button>
-                      );
-                    })}
-                  </div>
-                </div>
-              </TabsContent>
-
-              {/* Tab 3: Description & Policies */}
-              <TabsContent value="details" className="space-y-4 mt-0">
-                <div className="space-y-1.5">
-                  <Label className="text-xs font-semibold text-foreground">
-                    {isAr ? "الوصف التفصيلي للمركبة" : "Detailed Vehicle Description"}
-                  </Label>
-                  <Textarea
-                    value={draft.description || ""}
-                    onChange={(e) => setDraft({ ...draft, description: e.target.value })}
-                    rows={3}
-                    placeholder={
-                      isAr
-                        ? "وصف لتجربة الركوب، الفخامة، وخطوط السير المناسبة..."
-                        : "Describe the vehicle comfort, luxury seating, and ideal routes..."
-                    }
-                    className="text-xs rounded-xl bg-background border-border"
-                  />
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Base Price */}
                   <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "تعليمات الاستقبال (Pickup Instructions)" : "Pickup Instructions"}
-                    </Label>
+                    <label className="text-xs font-extrabold text-foreground flex items-center gap-1">
+                      <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{isAr ? "السعر الأساسي للرحلة ($ USD) *" : "Base Price ($ USD) *"}</span>
+                    </label>
+                    <Input
+                      type="number"
+                      min={0}
+                      value={draft.basePriceUsd}
+                      onChange={(e) => setDraft((p) => ({ ...p, basePriceUsd: Number(e.target.value) }))}
+                      className="h-10 text-xs font-mono font-bold text-amber-500"
+                    />
+                  </div>
+                </div>
+
+                {/* Toggles */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/30 border">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isActiveToggle"
+                      checked={draft.isActive}
+                      onChange={(e) => setDraft((p) => ({ ...p, isActive: e.target.checked }))}
+                      className="w-4 h-4 text-amber-500 rounded cursor-pointer"
+                    />
+                    <label htmlFor="isActiveToggle" className="text-xs font-extrabold text-foreground cursor-pointer">
+                      {isAr ? "تفعيل المركبة في الكتالوج العام للموقع" : "Active on public catalog & search"}
+                    </label>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="isPrivateToggle"
+                      checked={draft.isPrivate}
+                      onChange={(e) => setDraft((p) => ({ ...p, isPrivate: e.target.checked }))}
+                      className="w-4 h-4 text-purple-500 rounded cursor-pointer"
+                    />
+                    <label htmlFor="isPrivateToggle" className="text-xs font-extrabold text-foreground cursor-pointer">
+                      {isAr ? "خدمة خاصة وحصرية (Private Chauffeur)" : "Private exclusive chauffeur vehicle"}
+                    </label>
+                  </div>
+                </div>
+              </TabsContent>
+
+              {/* TAB 2: 5 LANGUAGES LOCALIZATION */}
+              <TabsContent value="translations" className="space-y-4">
+                <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-600 dark:text-amber-400">
+                    <Globe2 className="w-4 h-4 shrink-0" />
+                    <span>{isAr ? "دعم كامل للغات الخمس العالمية (الإنجليزية، العربية، الإسبانية، البرتغالية، الإيطالية)." : "Full 5-language editorial localization suite."}</span>
+                  </div>
+
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleSmartFillTranslations}
+                    className="h-8 text-xs font-bold gap-1 rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shrink-0"
+                  >
+                    <Copy className="w-3 h-3" />
+                    <span>{isAr ? "نسخ ذكي للغات الشاغرة" : "Smart Fill"}</span>
+                  </Button>
+                </div>
+
+                {/* Subtabs for 5 languages */}
+                <div className="flex items-center gap-1.5 border-b pb-2 overflow-x-auto">
+                  {(
+                    [
+                      { id: "en", label: "🇬🇧 English", nameKey: "nameEn" },
+                      { id: "ar", label: "🇸🇦 العربية", nameKey: "nameAr" },
+                      { id: "es", label: "🇪🇸 Español", nameKey: "nameEs" },
+                      { id: "pt", label: "🇵🇹 Português", nameKey: "namePt" },
+                      { id: "it", label: "🇮🇹 Italiano", nameKey: "nameIt" },
+                    ] as const
+                  ).map((lang) => {
+                    const isActive = langSubTab === lang.id;
+                    const hasName = Boolean(draft[lang.nameKey]);
+                    return (
+                      <button
+                        key={lang.id}
+                        type="button"
+                        onClick={() => setLangSubTab(lang.id)}
+                        className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 ${
+                          isActive
+                            ? "bg-amber-500 text-slate-950 shadow-xs"
+                            : "bg-muted/40 text-muted-foreground hover:bg-muted"
+                        }`}
+                      >
+                        <span>{lang.label}</span>
+                        {hasName && <Check className={`w-3 h-3 ${isActive ? "text-slate-950" : "text-emerald-500"}`} />}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {/* Subtab Content */}
+                <div className="space-y-4 pt-2">
+                  {langSubTab === "en" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇬🇧 Vehicle Name (English) *</label>
+                        <Input
+                          value={draft.nameEn || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, nameEn: e.target.value }))}
+                          placeholder="Luxury VIP Tour Bus Golden"
+                          className="h-10 text-xs font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇬🇧 Full Description & Overview (English)</label>
+                        <Textarea
+                          rows={4}
+                          value={draft.descriptionEn || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, descriptionEn: e.target.value }))}
+                          placeholder="50-seater luxury coach equipped with state-of-the-art entertainment, leather seats and professional multilingual chauffeur..."
+                          className="text-xs leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {langSubTab === "ar" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇸🇦 اسم المركبة (العربية) *</label>
+                        <Input
+                          value={draft.nameAr || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, nameAr: e.target.value }))}
+                          placeholder="حافلة سياحية كبرى فاخرة VIP"
+                          className="h-10 text-xs font-bold"
+                          dir="rtl"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇸🇦 الوصف الكامل للمركبة (العربية)</label>
+                        <Textarea
+                          rows={4}
+                          value={draft.descriptionAr || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, descriptionAr: e.target.value }))}
+                          placeholder="حافلة سياحية فاخرة 50 مقعداً مجهزة بأحدث وسائل الراحة والترفيه وشاشات العرض للرحلات الطويلة..."
+                          className="text-xs leading-relaxed"
+                          dir="rtl"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {langSubTab === "es" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇪🇸 Nombre del Vehículo (Español)</label>
+                        <Input
+                          value={draft.nameEs || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, nameEs: e.target.value }))}
+                          placeholder="Autobús Turístico VIP Golden"
+                          className="h-10 text-xs font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇪🇸 Descripción (Español)</label>
+                        <Textarea
+                          rows={4}
+                          value={draft.descriptionEs || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, descriptionEs: e.target.value }))}
+                          placeholder="Autobús de lujo de 50 plazas equipado con entretenimiento de última generación..."
+                          className="text-xs leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {langSubTab === "pt" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇵🇹 Nome do Veículo (Português)</label>
+                        <Input
+                          value={draft.namePt || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, namePt: e.target.value }))}
+                          placeholder="Ônibus Turístico VIP Golden"
+                          className="h-10 text-xs font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇵🇹 Descrição (Português)</label>
+                        <Textarea
+                          rows={4}
+                          value={draft.descriptionPt || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, descriptionPt: e.target.value }))}
+                          placeholder="Ônibus de luxo de 50 lugares equipado com entretenimento de última geração..."
+                          className="text-xs leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {langSubTab === "it" && (
+                    <div className="space-y-3">
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇮🇹 Nome del Veicolo (Italiano)</label>
+                        <Input
+                          value={draft.nameIt || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, nameIt: e.target.value }))}
+                          placeholder="Autobus Turistico VIP Golden"
+                          className="h-10 text-xs font-bold"
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <label className="text-xs font-extrabold text-foreground">🇮🇹 Descrizione (Italiano)</label>
+                        <Textarea
+                          rows={4}
+                          value={draft.descriptionIt || ""}
+                          onChange={(e) => setDraft((p) => ({ ...p, descriptionIt: e.target.value }))}
+                          placeholder="Autobus di lusso da 50 posti dotato di intrattenimento all'avanguardia..."
+                          className="text-xs leading-relaxed"
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
+
+              {/* TAB 3: FEATURES & LUXURY AMENITIES */}
+              <TabsContent value="features" className="space-y-4">
+                <div className="p-3 rounded-xl bg-muted/40 border text-xs font-semibold text-muted-foreground flex items-center justify-between">
+                  <span>{isAr ? "انقر على وسائل الراحة لتفعيلها في بطاقة المركبة:" : "Click luxury amenities to toggle on vehicle profile:"}</span>
+                  <Badge variant="outline" className="text-amber-500 font-bold border-amber-500/30">
+                    {draft.features.length} {isAr ? "ميزات مختارة" : "Selected"}
+                  </Badge>
+                </div>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5">
+                  {AVAILABLE_FEATURES.map((feat) => {
+                    const isSelected = isFeatureSelected(feat.id, draft.features);
+
+                    return (
+                      <button
+                        key={feat.id}
+                        type="button"
+                        onClick={() => toggleFeature(feat.id)}
+                        className={`p-3 rounded-2xl border text-xs font-bold flex items-center gap-2.5 transition-all cursor-pointer ${
+                          isSelected
+                            ? "bg-amber-500/15 border-amber-500 text-amber-600 dark:text-amber-400 shadow-xs"
+                            : "bg-card border-border text-muted-foreground hover:border-amber-500/50 hover:text-foreground"
+                        }`}
+                      >
+                        <Sparkles className={`w-4 h-4 shrink-0 ${isSelected ? "text-amber-500" : "text-muted-foreground"}`} />
+                        <span className="truncate">{isAr ? feat.labelAr : feat.labelEn}</span>
+                        {isSelected && <Check className="w-3.5 h-3.5 ml-auto rtl:ml-0 rtl:mr-auto text-amber-500" />}
+                      </button>
+                    );
+                  })}
+                </div>
+              </TabsContent>
+
+              {/* TAB 4: INSTRUCTIONS & POLICIES */}
+              <TabsContent value="instructions" className="space-y-4">
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "تعليمات نقطة الالتقاء والاستقبال (Pickup Instructions)" : "Pickup & Meeting Point Instructions"}</label>
                     <Textarea
+                      rows={3}
                       value={draft.pickupInstructions || ""}
-                      onChange={(e) => setDraft({ ...draft, pickupInstructions: e.target.value })}
-                      rows={2}
-                      placeholder={
-                        isAr
-                          ? "سيكون السائق بانتظاركم في صالة الوصول مع لافتة باسم العميل..."
-                          : "Driver will meet guests at arrival hall with name sign..."
-                      }
-                      className="text-xs rounded-xl bg-background border-border"
+                      onChange={(e) => setDraft((p) => ({ ...p, pickupInstructions: e.target.value }))}
+                      placeholder={isAr ? "سيكون السائق بانتظارك حاملاً لافتة باسمك في صالة الوصول رقم 3..." : "Our chauffeur will wait for you holding a name board at Arrival Hall 3..."}
+                      className="text-xs leading-relaxed"
                     />
                   </div>
 
-                  <div className="space-y-1.5">
-                    <Label className="text-xs font-semibold text-foreground">
-                      {isAr ? "تعليمات التوصيل (Dropoff Instructions)" : "Drop-off Instructions"}
-                    </Label>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">{isAr ? "تعليمات الوصول والتوصيل والأمتعة (Dropoff Instructions)" : "Dropoff & Luggage Guidelines"}</label>
                     <Textarea
+                      rows={3}
                       value={draft.dropoffInstructions || ""}
-                      onChange={(e) => setDraft({ ...draft, dropoffInstructions: e.target.value })}
-                      rows={2}
-                      placeholder={
-                        isAr
-                          ? "التوصيل المباشر حتى بوابة الفندق أو صالة المغادرة..."
-                          : "Direct dropoff at hotel lobby or airport departures..."
-                      }
-                      className="text-xs rounded-xl bg-background border-border"
+                      onChange={(e) => setDraft((p) => ({ ...p, dropoffInstructions: e.target.value }))}
+                      placeholder={isAr ? "توصيل مباشر إلى مدخل الفندق مع مساعدة كاملة في نقل الحقائب والأمتعة..." : "Direct drop-off at hotel main lobby with full luggage assistance..."}
+                      className="text-xs leading-relaxed"
                     />
                   </div>
                 </div>
               </TabsContent>
             </Tabs>
+          </div>
 
-            <DialogFooter className="border-t border-border/80 pt-4 flex gap-2">
+          {/* Modal Footer Actions */}
+          <DialogFooter className="p-4 bg-muted/40 border-t flex flex-row items-center justify-between">
+            <div className="text-xs text-muted-foreground font-semibold">
+              {draft.capacity} {isAr ? "مقاعد" : "seats"} · ${draft.basePriceUsd}
+            </div>
+
+            <div className="flex items-center gap-2">
               <Button
                 type="button"
                 variant="outline"
                 onClick={() => setIsEditorOpen(false)}
-                className="rounded-xl text-xs font-semibold"
+                disabled={saveMutation.isPending}
+                className="h-10 text-xs font-semibold px-4 cursor-pointer"
               >
                 {isAr ? "إلغاء" : "Cancel"}
               </Button>
 
               <Button
-                type="submit"
+                type="button"
+                onClick={() => saveMutation.mutate(draft)}
                 disabled={saveMutation.isPending}
-                className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold rounded-xl gap-2 text-xs"
+                className="h-10 text-xs font-bold px-6 gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer"
               >
-                {saveMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>
-                  {editingItem
-                    ? isAr
-                      ? "حفظ التعديلات"
-                      : "Save Changes"
-                    : isAr
-                    ? "إضافة المركبة"
-                    : "Add Vehicle"}
-                </span>
+                {saveMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <span>{isAr ? "جاري الحفظ..." : "Saving..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4" />
+                    <span>{editingItem ? (isAr ? "حفظ التعديلات" : "Save Changes") : (isAr ? "إضافة المركبة الآن" : "Create Vehicle")}</span>
+                  </>
+                )}
               </Button>
-            </DialogFooter>
-          </form>
+            </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* 6. Delete Confirmation Dialog */}
-      {deleteConfirmId && (
-        <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
-          <DialogContent className="max-w-md bg-card border-border text-foreground p-6 rounded-3xl shadow-2xl">
-            <DialogHeader className="space-y-3">
-              <div className="w-12 h-12 rounded-2xl bg-destructive/10 border border-destructive/20 flex items-center justify-center text-destructive mx-auto">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <DialogTitle className="text-center text-lg font-bold text-foreground font-heading">
-                {isAr ? "تأكيد حذف المركبة من الأسطول" : "Confirm Vehicle Deletion"}
-              </DialogTitle>
-              <DialogDescription className="text-center text-xs text-muted-foreground">
-                {isAr
-                  ? "هل أنت متأكد من رغبتك في حذف هذه المركبة من الأسطول؟ لا يمكن التراجع عن هذا الإجراء."
-                  : "Are you sure you want to delete this vehicle from the fleet? This action cannot be undone."}
-              </DialogDescription>
-            </DialogHeader>
+      <Dialog open={Boolean(deleteConfirmItem)} onOpenChange={(o) => !o && setDeleteConfirmItem(null)}>
+        <DialogContent className="max-w-md p-6 rounded-3xl bg-card border border-destructive/30 shadow-2xl">
+          <DialogHeader className="space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-destructive/10 text-destructive flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <DialogTitle className="text-center text-lg font-black text-foreground">
+              {isAr ? "تأكيد مسح المركبة نهائياً" : "Confirm Permanent Deletion"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground leading-relaxed">
+              {isAr
+                ? `هل أنت متأكد من رغبتك في حذف المركبة "${deleteConfirmItem?.name}" نهائياً من قاعدة البيانات؟`
+                : `Are you sure you want to permanently delete vehicle "${deleteConfirmItem?.name}"?`}
+            </DialogDescription>
+          </DialogHeader>
 
-            <DialogFooter className="grid grid-cols-2 gap-3 mt-4">
-              <Button
-                variant="outline"
-                onClick={() => setDeleteConfirmId(null)}
-                className="rounded-xl text-xs font-semibold"
-              >
-                {isAr ? "إلغاء" : "Cancel"}
-              </Button>
+          <DialogFooter className="flex flex-row items-center justify-center gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteConfirmItem(null)}
+              disabled={deleteMutation.isPending}
+              className="text-xs font-bold rounded-xl flex-1 cursor-pointer"
+            >
+              {isAr ? "إلغاء التراجع" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => deleteConfirmItem && deleteMutation.mutate(deleteConfirmItem.id)}
+              disabled={deleteMutation.isPending}
+              className="text-xs font-bold rounded-xl flex-1 gap-1.5 cursor-pointer bg-destructive hover:bg-destructive/90 text-destructive-foreground shadow-md"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              <span>{isAr ? "نعم، مسح نهائي 🗑️" : "Yes, Delete 🗑️"}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
-              <Button
-                onClick={() => deleteMutation.mutate(deleteConfirmId)}
-                disabled={deleteMutation.isPending}
-                variant="destructive"
-                className="font-bold rounded-xl text-xs gap-1.5"
-              >
-                {deleteMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-                <span>{isAr ? "تأكيد الحذف" : "Delete Vehicle"}</span>
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* 7. Media Library Picker Modal */}
+      <MediaLibraryPickerModal
+        open={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={handleSelectMediaFromPicker}
+        selectedAssetId={draft.heroMediaId}
+        selectedAssetUrl={draft.heroImageUrl}
+        locale={locale}
+        defaultCategory="fleet"
+      />
     </div>
   );
 }
-
