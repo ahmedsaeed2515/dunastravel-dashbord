@@ -167,10 +167,10 @@ export default function AdminAiControlCenterPage() {
     },
     { 
       key: "agents", 
-      label: isAr ? "فريق المساعدين" : "AI Assistants", 
-      labelEn: "Assistants",
-      icon: <Users className="h-4 w-4 text-emerald-500" />, 
-      badge: `${(Array.isArray(agents) ? agents.length : 0) || 5}` 
+      label: isAr ? "شخصية وبرومبت GuideR" : "GuideR Persona & Prompts", 
+      labelEn: "Persona & Prompts",
+      icon: <Crown className="h-4 w-4 text-amber-500" />, 
+      badge: isAr ? "1 نشط" : "1 Active" 
     },
     { 
       key: "knowledge", 
@@ -202,7 +202,6 @@ export default function AdminAiControlCenterPage() {
 
   // Additional tabs for Advanced Mode
   const advancedTabs: Array<{ key: AiTabKey; label: string; icon: React.ReactNode }> = [
-    { key: "prompts", label: isAr ? "استوديو التعليمات المتقدم (Prompts)" : "Prompt Engineering Studio", icon: <FileCode2 className="h-4 w-4 text-indigo-400" /> },
     { key: "finOps", label: isAr ? "تحليل التكاليف والتوكنز (FinOps)" : "Token & Cost Attribution", icon: <DollarSign className="h-4 w-4 text-emerald-400" /> },
   ];
 

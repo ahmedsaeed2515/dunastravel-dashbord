@@ -858,6 +858,10 @@ export const aiApi = {
     return apiClient.put<unknown, AgentItemData>(`/admin/ai/agents/${id}`, payload);
   },
 
+  activateAgent: async (id: string): Promise<{ success: boolean; agent: AgentItemData }> => {
+    return apiClient.post<unknown, { success: boolean; agent: AgentItemData }>(`/admin/ai/agents/${id}/activate`);
+  },
+
   deleteAgent: async (id: string): Promise<{ success: boolean; id: string }> => {
     return apiClient.delete<unknown, { success: boolean; id: string }>(`/admin/ai/agents/${id}`);
   },
