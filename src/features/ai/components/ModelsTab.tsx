@@ -180,7 +180,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   // Wizard Form State
   const [selectedProvider, setSelectedProvider] = useState("google");
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-3.7-flash");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [showEditApiKey, setShowEditApiKey] = useState(false);
@@ -257,7 +257,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             : `🎉 Discovered ${models.length} active models directly from ${PROVIDER_METADATA[provId]?.name || provId}!`
         );
         const available = models.filter((m) => m.status === "AVAILABLE");
-        if (available.length > 0 && (!available.some((m) => m.id === selectedModel) || selectedModel === "gemini-2.0-flash-lite")) {
+        if (available.length > 0 && !available.some((m) => m.id === selectedModel)) {
           setSelectedModel(available[0].id);
         }
       } else {
@@ -307,7 +307,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     const defaultModel =
       providerModels.find((m) => m.isDefault)?.id ||
       providerModels[0]?.id ||
-      (providerId === "google" ? "gemini-2.5-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
+      (providerId === "google" ? "gemini-3.7-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
 
     setSelectedModel(defaultModel);
     setLabel(
@@ -325,7 +325,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Open the wizard
   const handleOpenAddWizard = () => {
     setSelectedProvider("google");
-    setSelectedModel("gemini-2.5-flash");
+    setSelectedModel("gemini-3.7-flash");
     setApiKey("");
     setCustomBaseUrl("");
     setLabel("Google Gemini Production Key");
@@ -1380,6 +1380,11 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                           setApiKey(e.target.value);
                           setTestResult(null);
                         }}
+                        onBlur={() => {
+                          if (apiKey.trim().length >= 8 && !liveDiscoveredModels[selectedProvider]?.length) {
+                            void handleDiscoverLiveModels(selectedProvider, apiKey, customBaseUrl);
+                          }
+                        }}
                         placeholder={
                           selectedProvider === "google"
                             ? "AIzaSy..."
@@ -1570,7 +1575,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                     </Button>
                     <Button
                       type="submit"
-                      disabled={saving}
+                      disabled={saving || !selectedModel}
                       size="sm"
                       className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 gap-1.5 cursor-pointer shadow-sm"
                     >
@@ -1725,7 +1730,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                 </Button>
                 <Button
                   type="submit"
-                  disabled={saving}
+                  disabled={saving || !selectedModel}
                   size="sm"
                   className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 gap-1.5 cursor-pointer shadow-sm"
                 >

@@ -348,7 +348,7 @@ export function TestingLabTab({
             </div>
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
               <span className="text-[10px] text-muted-foreground block font-sans">{isAr ? "الموديل المنفذ:" : "Executing Model:"}</span>
-              <span className="font-bold text-foreground truncate block">{lastTrace.model?.id || "gemini-2.0-flash"}</span>
+              <span className="font-bold text-foreground truncate block">{lastTrace.model?.id || "gemini-3.6-flash"}</span>
             </div>
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
               <span className="text-[10px] text-muted-foreground block font-sans">{isAr ? "معلومات التأصيل:" : "Knowledge Chunks:"}</span>

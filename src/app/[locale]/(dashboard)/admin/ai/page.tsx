@@ -119,7 +119,7 @@ export default function AdminAiControlCenterPage() {
   const [keyPool, setKeyPool] = useState<ApiKeyPoolEntry[]>([]);
   const [agents, setAgents] = useState<AgentItemData[]>([]);
   const [activeProvider, setActiveProvider] = useState("google");
-  const [activeModel, setActiveModel] = useState("gemini-2.0-flash");
+  const [activeModel, setActiveModel] = useState("gemini-3.6-flash");
   const [loading, setLoading] = useState(true);
 
   const fetchGlobalAiData = async () => {
@@ -139,7 +139,7 @@ export default function AdminAiControlCenterPage() {
       if (Array.isArray(agentsRes)) setAgents(agentsRes);
       if (configRes) {
         setActiveProvider(configRes.provider || "google");
-        setActiveModel(configRes.model || "gemini-2.0-flash");
+        setActiveModel(configRes.model || "gemini-3.6-flash");
       }
     } catch (err: any) {
       toast.error(err?.message || "Failed to load AI Control Center data.");

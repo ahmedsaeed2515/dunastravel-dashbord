@@ -26,10 +26,23 @@ export interface ModelPreset {
   isPopular?: boolean;
 }
 
+const RETIRED_GOOGLE_MODEL_IDS = new Set([
+  "gemini-1.5-flash",
+  "gemini-1.5-pro",
+  "gemini-1.5-flash-8b",
+  "gemini-2.0-flash",
+  "gemini-2.0-flash-001",
+  "gemini-2.0-flash-lite",
+  "gemini-2.0-flash-lite-001",
+]);
+
 export const PROVIDER_MODEL_PRESETS: Record<string, ModelPreset[]> = {
   google: [
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيميناي 2.5 فلاش (الموصى به والأحدث)", badge: "Recommended", isPopular: true },
-    { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", nameAr: "جيميناي 2.0 فلاش (المستقر)", badge: "Stable", isPopular: true },
+    { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", nameAr: "جيمناي 3.7 فلاش (الموصى به للأعمال المعقدة والـ Agentic)", badge: "Flagship", isPopular: true },
+    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش (عالي السرعة والإنتاجية)", badge: "Production", isPopular: true },
+    { id: "gemini-3.1-pro", name: "Gemini 3.1 Pro", nameAr: "جيمناي 3.1 برو (أعلى ذكاء وتحليل عميق)", badge: "Reasoning", isPopular: true },
+    { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", nameAr: "جيمناي 3.1 فلاش لايت (اقتصادي وسريع جداً)", badge: "Economy", isPopular: true },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيمناي 2.5 فلاش (المستقر)", badge: "Stable", isPopular: false },
   ],
   openai: [
     { id: "gpt-4o-mini", name: "GPT-4o Mini", nameAr: "جي بي تي 4 أومني ميني (سريع واقتصادي)", badge: "Economy", isPopular: true },
@@ -94,7 +107,9 @@ export function ModelSelector({
   // Live models list
   const availableLiveModels = useMemo(() => {
     if (discoveredModels && discoveredModels.length > 0) {
-      return discoveredModels.filter((m) => m.status === "AVAILABLE");
+      return discoveredModels.filter(
+        (m) => m.status === "AVAILABLE" && !RETIRED_GOOGLE_MODEL_IDS.has(m.id)
+      );
     }
     return [];
   }, [discoveredModels]);
@@ -114,7 +129,7 @@ export function ModelSelector({
   }, [availableLiveModels, hasLiveModels, searchTerm]);
 
   // Check if current value is valid
-  const isCurrentValueDeprecated = value === "gemini-2.0-flash-lite";
+  const isCurrentValueDeprecated = RETIRED_GOOGLE_MODEL_IDS.has(value);
   const isCurrentValueInLive = hasLiveModels ? availableLiveModels.some((m) => m.id === value) : true;
   const isCurrentValueInPresets = fallbackPresets.some((p) => p.id === value);
 
@@ -172,8 +187,8 @@ export function ModelSelector({
           <span>
             {isCurrentValueDeprecated
               ? isAr
-                ? "⚠️ الموديل الحالي 'gemini-2.0-flash-lite' تم إيقافه رسمياً. يرجى اختيار موديل نشط من القائمة أدناه."
-                : "⚠️ The current model 'gemini-2.0-flash-lite' is shut down. Please select an active model below."
+                ? `⚠️ الموديل الحالي '${value}' تم إيقافه رسمياً. حدّث قائمة الموديلات واختر موديلًا نشطًا.`
+                : `⚠️ The current model '${value}' is shut down. Refresh the live list and select an active model.`
               : isAr
               ? `⚠️ الموديل المحدد (${value}) غير متاح في قائمة المزود الحية. يرجى اختيار موديل معتمد.`
               : `⚠️ The selected model (${value}) is not present in the live provider list. Please choose a valid live model.`}
@@ -262,6 +277,12 @@ export function ModelSelector({
             );
           })()}
         </div>
+      ) : normalizedProvider === "google" && !isCustomMode ? (
+        <div className="rounded-xl border border-dashed border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
+          {isAr
+            ? "أدخل مفتاح Google API ثم اضغط «اكتشاف الموديلات» لعرض الموديلات الفعالة لهذا المفتاح فقط."
+            : "Enter a Google API key and use Discover Models to load only the models available to that key."}
+        </div>
       ) : !isCustomMode ? (
         /* FALLBACK PRESET DROPDOWN (If live discovery hasn't run yet) */
         <div className="space-y-2">
@@ -326,4 +347,3 @@ export function ModelSelector({
     </div>
   );
 }
-
