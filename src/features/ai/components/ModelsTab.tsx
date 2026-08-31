@@ -320,6 +320,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     setTestResult(null);
     setLiveDiscoveryError(null);
     setWizardStep(2);
+    setShowAddWizard(true);
   };
 
   // Open the wizard
@@ -634,18 +635,20 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                 🟢 {isAr ? "المستوى الاقتصادي (Economy)" : "Economy / FAQ"}
               </span>
               <Badge variant="outline" className="text-[9px] font-mono border-emerald-500/30 text-emerald-600">
-                $0.075 / 1M
+                $0.25 / 1M
               </Badge>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-foreground">Gemini 2.0 Flash Lite</h4>
+              <h4 className="text-xs font-bold text-foreground">
+                {routingData?.table?.economy?.model || "gemini-3.1-flash-lite"}
+              </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "للأسئلة الشائعة والتحية واستفسارات السياسات البسيطة" : "FAQ, policies, basic catalog queries & greetings"}
               </p>
             </div>
             <div className="flex items-center justify-between pt-1 border-t border-border/40 text-[10px] text-muted-foreground font-mono">
               <span>Google Gemini</span>
-              <span className="text-emerald-500 font-bold">~140ms</span>
+              <span className="text-emerald-500 font-bold">~120ms</span>
             </div>
           </div>
 
@@ -656,11 +659,13 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                 🔵 {isAr ? "المحادثة القياسية (Normal)" : "Standard Concierge"}
               </span>
               <Badge variant="outline" className="text-[9px] font-mono border-blue-500/30 text-blue-600">
-                Balanced
+                Flagship
               </Badge>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-foreground">Gemini 2.0 Flash / GPT-4o</h4>
+              <h4 className="text-xs font-bold text-foreground">
+                {routingData?.table?.normal?.model || "gemini-3.7-flash"}
+              </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "محادثات الكونسيرج الفاخر وتخصيص الباقات السياحية" : "High-touch luxury travel dialogue & recommendation"}
               </p>
@@ -682,7 +687,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
               </Badge>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-foreground">Gemini 1.5 Pro / GPT-4o</h4>
+              <h4 className="text-xs font-bold text-foreground">
+                {routingData?.table?.complex?.model || "gemini-3.1-pro"}
+              </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "بناء الجداول متعددة المدن وتنسيق الرحلات وحساب الميزانيات" : "Multi-city itinerary synthesis & constraint solving"}
               </p>
@@ -704,7 +711,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
               </Badge>
             </div>
             <div>
-              <h4 className="text-xs font-bold text-foreground">DeepSeek V3 / OpenRouter</h4>
+              <h4 className="text-xs font-bold text-foreground">
+                {routingData?.table?.fallback?.model || "deepseek/deepseek-chat-v3-0324"}
+              </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "تدوير تلقائي عند انقطاع أي مزود لضمان استمرارية الخدمة" : "Instant failover if primary provider is degraded"}
               </p>
