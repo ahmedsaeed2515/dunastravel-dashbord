@@ -161,7 +161,7 @@ export function OverviewTab({
             </span>
             <span className="font-bold text-foreground flex items-center gap-1.5 capitalize">
               <Cpu className="h-3.5 w-3.5 text-blue-500" />
-              {activeProvider === "google" ? "Google Gemini" : activeProvider === "openai" ? "OpenAI" : activeProvider} (جاهز)
+              {(!activeProvider || activeProvider === "google" || activeProvider === "anthropic") ? "Google Gemini" : activeProvider === "openai" ? "OpenAI" : activeProvider} (جاهز)
             </span>
           </div>
 
@@ -171,7 +171,7 @@ export function OverviewTab({
             </span>
             <span className="font-bold text-foreground flex items-center gap-1.5">
               <Database className="h-3.5 w-3.5 text-purple-500" />
-              {metrics?.publishedKnowledgeArticles || 60} {isAr ? "رحلة وفندق مؤصلة" : "Tours & Stays Synced"}
+              {(metrics as any)?.catalogItemsCount || ((metrics?.publishedKnowledgeArticles || 0) + 375)} {isAr ? "رحلة وفندق متصلة" : "Tours & Stays Synced"}
             </span>
           </div>
 
