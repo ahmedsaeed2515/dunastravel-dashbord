@@ -202,6 +202,8 @@ export default function WalletPage() {
             {selectedWalletForLedger && (
               <div className="pt-2">
                 <WalletLedger
+                  walletId={selectedWalletForLedger.id}
+                  initialWallet={selectedWalletForLedger}
                   ownerType={selectedWalletForLedger.ownerType}
                   ownerId={selectedWalletForLedger.ownerId}
                 />

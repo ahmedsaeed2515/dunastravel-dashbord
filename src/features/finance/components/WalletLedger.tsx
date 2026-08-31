@@ -16,11 +16,21 @@ import { toast } from "sonner";
 interface WalletLedgerProps {
   ownerType: 'USER' | 'COMPANY';
   ownerId: string;
+  walletId?: string;
+  initialWallet?: any;
 }
 
-export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
-  const { data: wallet, isLoading: walletLoading } = useWallet(ownerType, ownerId);
-  const { data: transactions, isLoading: txLoading } = useWalletTransactions(wallet?.id || "", { enabled: !!wallet?.id });
+export function WalletLedger({ ownerType, ownerId, walletId: propWalletId, initialWallet }: WalletLedgerProps) {
+  const { data: fetchedWallet, isLoading: walletLoading } = useWallet(ownerType, ownerId, {
+    enabled: !initialWallet && !propWalletId,
+  });
+
+  const wallet = initialWallet || fetchedWallet;
+  const activeWalletId = propWalletId || wallet?.id;
+
+  const { data: transactions, isLoading: txLoading } = useWalletTransactions(activeWalletId || "", {
+    enabled: !!activeWalletId,
+  });
   const addTransaction = useAddManualTransaction();
 
   // Dialog state
@@ -54,10 +64,10 @@ export function WalletLedger({ ownerType, ownerId }: WalletLedgerProps) {
         <CardContent className="p-6 flex items-center justify-between">
           <div className="space-y-1">
             <h3 className="text-xs font-bold text-muted-foreground">الرصيد الحالي للمحفظة (Wallet Balance)</h3>
-            {walletLoading ? (
+            {walletLoading && !wallet ? (
               <Skeleton className="h-8 w-32" />
             ) : (
-              <p className="text-3xl font-bold tracking-tight">
+              <p className="text-3xl font-bold tracking-tight font-mono">
                 {new Intl.NumberFormat("en-US", { style: "currency", currency: wallet?.currency || "USD" }).format(parseFloat(wallet?.balance || "0"))}
               </p>
             )}

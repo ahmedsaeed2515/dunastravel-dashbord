@@ -4,6 +4,7 @@ export type TourStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 export interface TourItinerary {
   id?: string;
   dayLabel?: string;
+  titleJsonb?: Record<string, any> | null;
   descriptionJsonb: Record<string, any>;
   mealsJsonb?: Record<string, any> | null;
   activitiesJsonb?: Record<string, any> | null;

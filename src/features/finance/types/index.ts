@@ -65,6 +65,7 @@ export interface CommissionQueryFilters {
   limit?: number;
   companyId?: string;
   bookingId?: string;
+  bookingReference?: string;
   status?: CommissionStatus;
 }
 
@@ -144,4 +145,3 @@ export interface WalletListQueryFilters {
   sortBy?: string;
   sortOrder?: 'asc' | 'desc';
 }
-

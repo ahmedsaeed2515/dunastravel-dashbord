@@ -18,6 +18,7 @@ import { PaginatedResponse } from '@/lib/api-types';
 
 export interface TourItineraryPayload {
   dayLabel: string;
+  titleJsonb?: Record<string, unknown>;
   descriptionJsonb: Record<string, unknown>;
   mealsJsonb?: Record<string, unknown>;
   sortOrder: number;

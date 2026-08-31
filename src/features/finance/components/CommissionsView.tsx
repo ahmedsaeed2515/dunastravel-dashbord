@@ -32,7 +32,7 @@ export function CommissionsView() {
             <Input 
               placeholder="بحث برقم الحجز..." 
               className="pl-9 bg-background/50 rounded-xl"
-              onChange={(e) => setFilters(f => ({ ...f, bookingId: e.target.value || undefined, page: 1 }))}
+              onChange={(e) => setFilters(f => ({ ...f, bookingReference: e.target.value || undefined, page: 1 }))}
             />
           </div>
 

@@ -1,4 +1,3 @@
- 
 "use client";
 
 import { useState } from "react";
@@ -8,11 +7,20 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash, Edit2, X, Save } from "lucide-react";
+import { Plus, Trash, Edit2, X, Save, Sparkles, Globe } from "lucide-react";
+import { toast } from "sonner";
 
 interface ItineraryManagerProps {
   tour: Tour;
 }
+
+const LANGUAGES = [
+  { code: "ar", label: "العربية (AR)", flag: "🇪🇬" },
+  { code: "en", label: "English (EN)", flag: "🇬🇧" },
+  { code: "es", label: "Español (ES)", flag: "🇪🇸" },
+  { code: "pt", label: "Português (PT)", flag: "🇧🇷" },
+  { code: "it", label: "Italiano (IT)", flag: "🇮🇹" },
+] as const;
 
 export function ItineraryManager({ tour }: ItineraryManagerProps) {
   const { mutate: addItinerary, isPending: isAdding } = useAddTourItinerary();
@@ -21,184 +29,417 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
 
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [activeLangTab, setActiveLangTab] = useState<string>("ar");
 
   // Form State
-  const [dayLabel, setDayLabel] = useState("");
-  const [descriptionEn, setDescriptionEn] = useState("");
-  const [sortOrder, setSortOrder] = useState<number>(tour.itineraries?.length ? tour.itineraries.length + 1 : 1);
+  const [titles, setTitles] = useState<Record<string, string>>({
+    ar: "",
+    en: "",
+    es: "",
+    pt: "",
+    it: "",
+  });
+
+  const [descriptions, setDescriptions] = useState<Record<string, string>>({
+    ar: "",
+    en: "",
+    es: "",
+    pt: "",
+    it: "",
+  });
+
+  const [sortOrder, setSortOrder] = useState<number>(
+    tour.itineraries?.length ? tour.itineraries.length + 1 : 1
+  );
 
   const resetForm = () => {
-    setDayLabel("");
-    setDescriptionEn("");
+    setTitles({ ar: "", en: "", es: "", pt: "", it: "" });
+    setDescriptions({ ar: "", en: "", es: "", pt: "", it: "" });
     setSortOrder(tour.itineraries?.length ? tour.itineraries.length + 1 : 1);
     setIsAddingNew(false);
     setEditingId(null);
   };
 
+  const handleTitleChange = (lang: string, value: string) => {
+    setTitles((prev) => ({ ...prev, [lang]: value }));
+  };
+
+  const handleDescChange = (lang: string, value: string) => {
+    setDescriptions((prev) => ({ ...prev, [lang]: value }));
+  };
+
+  // Auto-fill empty languages from the first available filled language
+  const handleAutoFillLanguages = () => {
+    const sourceTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || "";
+    const sourceDesc = descriptions.ar || descriptions.en || descriptions.es || descriptions.pt || descriptions.it || "";
+
+    if (!sourceTitle && !sourceDesc) {
+      toast.warning("يرجى كتابة عنوان أو وصف في إحدى اللغات أولاً.");
+      return;
+    }
+
+    setTitles((prev) => {
+      const updated = { ...prev };
+      LANGUAGES.forEach((l) => {
+        if (!updated[l.code]?.trim()) {
+          updated[l.code] = sourceTitle;
+        }
+      });
+      return updated;
+    });
+
+    setDescriptions((prev) => {
+      const updated = { ...prev };
+      LANGUAGES.forEach((l) => {
+        if (!updated[l.code]?.trim()) {
+          updated[l.code] = sourceDesc;
+        }
+      });
+      return updated;
+    });
+
+    toast.success("تم نسخ النصوص إلى كافة اللغات غير المكتملة بنجاح!");
+  };
+
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addItinerary({
-      slug: tour.slug,
-      data: {
-        dayLabel,
-        descriptionJsonb: { en: descriptionEn },
-        sortOrder
-      }
-    }, {
-      onSuccess: resetForm
+    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || `Day ${sortOrder}`;
+    const primaryDesc = descriptions.ar || descriptions.en || descriptions.es || descriptions.pt || descriptions.it || "";
+
+    // Ensure all 5 languages have at least the primary fallback
+    const titleJsonb: Record<string, string> = {};
+    const descriptionJsonb: Record<string, string> = {};
+    LANGUAGES.forEach((l) => {
+      titleJsonb[l.code] = titles[l.code]?.trim() || primaryTitle;
+      descriptionJsonb[l.code] = descriptions[l.code]?.trim() || primaryDesc;
     });
+
+    addItinerary(
+      {
+        slug: tour.slug,
+        data: {
+          dayLabel: primaryTitle,
+          titleJsonb,
+          descriptionJsonb,
+          sortOrder,
+        },
+      },
+      {
+        onSuccess: resetForm,
+      }
+    );
   };
 
   const handleEditSubmit = (e: React.FormEvent, dayId: string) => {
     e.preventDefault();
-    updateItinerary({
-      slug: tour.slug,
-      dayId,
-      data: {
-        dayLabel,
-        descriptionJsonb: { en: descriptionEn },
-        sortOrder
-      }
-    }, {
-      onSuccess: resetForm
+    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || `Day ${sortOrder}`;
+    const primaryDesc = descriptions.ar || descriptions.en || descriptions.es || descriptions.pt || descriptions.it || "";
+
+    const titleJsonb: Record<string, string> = {};
+    const descriptionJsonb: Record<string, string> = {};
+    LANGUAGES.forEach((l) => {
+      titleJsonb[l.code] = titles[l.code]?.trim() || primaryTitle;
+      descriptionJsonb[l.code] = descriptions[l.code]?.trim() || primaryDesc;
     });
+
+    updateItinerary(
+      {
+        slug: tour.slug,
+        dayId,
+        data: {
+          dayLabel: primaryTitle,
+          titleJsonb,
+          descriptionJsonb,
+          sortOrder,
+        },
+      },
+      {
+        onSuccess: resetForm,
+      }
+    );
   };
 
   const startEditing = (it: any) => {
     setEditingId(it.id);
-    setDayLabel(it.dayLabel);
-    setDescriptionEn(it.descriptionJsonb?.["en"] || "");
+    const existingTitles: Record<string, string> = {};
+    const existingDescs: Record<string, string> = {};
+
+    LANGUAGES.forEach((l) => {
+      existingTitles[l.code] = it.titleJsonb?.[l.code] || (l.code === "ar" ? it.dayLabel || "" : "");
+      existingDescs[l.code] = it.descriptionJsonb?.[l.code] || "";
+    });
+
+    // Fallbacks
+    const fallbackTitle = it.dayLabel || "";
+    const fallbackDesc = it.descriptionJsonb?.["en"] || it.descriptionJsonb?.["ar"] || "";
+
+    LANGUAGES.forEach((l) => {
+      if (!existingTitles[l.code]) existingTitles[l.code] = fallbackTitle;
+      if (!existingDescs[l.code]) existingDescs[l.code] = fallbackDesc;
+    });
+
+    setTitles(existingTitles);
+    setDescriptions(existingDescs);
     setSortOrder(it.sortOrder);
     setIsAddingNew(false);
   };
 
   const sortedItineraries = [...(tour.itineraries || [])].sort((a, b) => a.sortOrder - b.sortOrder);
-  const isAr = true; // Dashboard default / Arabic preferred
 
   return (
     <div className="space-y-4">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="font-bold text-lg">إدارة البرنامج اليومي (Itinerary Management)</h3>
+        <div>
+          <h3 className="font-bold text-lg flex items-center gap-2">
+            <Globe className="h-5 w-5 text-primary" />
+            إدارة البرنامج اليومي (Itinerary Management - 5 Languages)
+          </h3>
+          <p className="text-xs text-muted-foreground mt-0.5">
+            يدعم المحتوى 5 لغات رسمية: العربية، الإنجليزية، الإسبانية، البرتغالية، والإيطالية
+          </p>
+        </div>
         {!isAddingNew && !editingId && (
-          <Button size="sm" onClick={() => setIsAddingNew(true)} className="font-bold gap-1.5">
+          <Button size="sm" onClick={() => setIsAddingNew(true)} className="font-bold gap-1.5 rounded-xl">
             <Plus className="h-4 w-4" /> إضافة يوم ➕
           </Button>
         )}
       </div>
 
+      {/* Add Form */}
       {isAddingNew && (
-        <form onSubmit={handleAddSubmit} className="border rounded-2xl p-4 bg-muted/30 space-y-4 shadow-sm relative">
-          <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={resetForm}>
+        <form onSubmit={handleAddSubmit} className="border rounded-2xl p-5 bg-card/60 backdrop-blur-xs space-y-4 shadow-sm relative border-primary/20">
+          <Button variant="ghost" size="icon" className="absolute top-3 left-3 h-7 w-7 rounded-full" onClick={resetForm}>
             <X className="h-4 w-4" />
           </Button>
-          <h4 className="font-bold text-sm">إضافة يوم جديد للبرنامج</h4>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold">عنوان اليوم (Day Label)</label>
-              <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} placeholder="مثال: اليوم الأول: الوصول والاستقبال" className="rounded-xl" />
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-sm text-foreground">إضافة يوم جديد للبرنامج</h4>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoFillLanguages}
+              className="text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              ملء اللغات المتبقية تلقائياً (Auto-Fill)
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/50">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setActiveLangTab(lang.code)}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  activeLangTab === lang.code
+                    ? "bg-background text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>{lang.flag}</span>
+                <span>{lang.label}</span>
+                {titles[lang.code]?.trim() && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="md:col-span-3 space-y-1.5">
+              <label className="text-xs font-bold flex items-center justify-between">
+                <span>عنوان اليوم ({LANGUAGES.find((l) => l.code === activeLangTab)?.label})</span>
+                <span className="text-[10px] text-muted-foreground font-normal">مثال: زيارة أهرامات الجيزة ومصنع البردي</span>
+              </label>
+              <Input
+                value={titles[activeLangTab] || ""}
+                onChange={(e) => handleTitleChange(activeLangTab, e.target.value)}
+                placeholder="اكتب عنوان اليوم باللغة المختارة..."
+                className="rounded-xl"
+              />
             </div>
-            <div className="space-y-1">
+            <div className="space-y-1.5">
               <label className="text-xs font-bold">الترتيب (Sort Order)</label>
-              <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="rounded-xl" />
+              <Input
+                required
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(Number(e.target.value))}
+                className="rounded-xl"
+              />
             </div>
           </div>
-          <div className="space-y-1">
-            <label className="text-xs font-bold">وصف وتفاصيل اليوم</label>
-            <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} placeholder="اكتب الأنشطة والجولات السياحية لهذا اليوم بالتفصيل..." className="rounded-xl" />
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold flex items-center justify-between">
+              <span>وصف وتفاصيل اليوم ({LANGUAGES.find((l) => l.code === activeLangTab)?.label})</span>
+              <span className="text-[10px] text-muted-foreground font-normal">الأنشطة، الوجبات، ومسار اليوم بالتفصيل</span>
+            </label>
+            <Textarea
+              rows={4}
+              value={descriptions[activeLangTab] || ""}
+              onChange={(e) => handleDescChange(activeLangTab, e.target.value)}
+              placeholder="اكتب تفاصيل وجدول اليوم باللغة المختارة..."
+              className="rounded-xl"
+            />
           </div>
-          <Button size="sm" type="submit" disabled={isAdding} className="font-bold gap-1.5 rounded-xl">
-            <Save className="h-4 w-4" /> حفظ اليوم
-          </Button>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" type="button" onClick={resetForm} className="rounded-xl">
+              إلغاء
+            </Button>
+            <Button size="sm" type="submit" disabled={isAdding} className="font-bold gap-1.5 rounded-xl shadow-sm">
+              <Save className="h-4 w-4" /> حفظ اليوم
+            </Button>
+          </div>
         </form>
       )}
 
-      <div className="space-y-4">
+      {/* Edit Form */}
+      {editingId && (
+        <form onSubmit={(e) => handleEditSubmit(e, editingId)} className="border-2 border-primary/30 rounded-2xl p-5 bg-card/80 space-y-4 shadow-sm relative">
+          <Button variant="ghost" size="icon" className="absolute top-3 left-3 h-7 w-7 rounded-full" onClick={resetForm}>
+            <X className="h-4 w-4" />
+          </Button>
+          <div className="flex items-center justify-between">
+            <h4 className="font-bold text-sm text-foreground">تعديل بيانات اليوم (الـ 5 لغات)</h4>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleAutoFillLanguages}
+              className="text-xs font-semibold gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+            >
+              <Sparkles className="h-3.5 w-3.5" />
+              ملء اللغات المتبقية تلقائياً (Auto-Fill)
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1.5 p-1 bg-muted/50 rounded-xl border border-border/50">
+            {LANGUAGES.map((lang) => (
+              <button
+                key={lang.code}
+                type="button"
+                onClick={() => setActiveLangTab(lang.code)}
+                className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
+                  activeLangTab === lang.code
+                    ? "bg-background text-foreground shadow-2xs"
+                    : "text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <span>{lang.flag}</span>
+                <span>{lang.label}</span>
+                {titles[lang.code]?.trim() && <span className="h-1.5 w-1.5 rounded-full bg-emerald-500"></span>}
+              </button>
+            ))}
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="md:col-span-3 space-y-1.5">
+              <label className="text-xs font-bold flex items-center justify-between">
+                <span>عنوان اليوم ({LANGUAGES.find((l) => l.code === activeLangTab)?.label})</span>
+              </label>
+              <Input
+                value={titles[activeLangTab] || ""}
+                onChange={(e) => handleTitleChange(activeLangTab, e.target.value)}
+                className="rounded-xl"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold">الترتيب</label>
+              <Input
+                required
+                type="number"
+                value={sortOrder}
+                onChange={(e) => setSortOrder(Number(e.target.value))}
+                className="rounded-xl"
+              />
+            </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <label className="text-xs font-bold">الوصف والتفاصيل ({LANGUAGES.find((l) => l.code === activeLangTab)?.label})</label>
+            <Textarea
+              rows={4}
+              value={descriptions[activeLangTab] || ""}
+              onChange={(e) => handleDescChange(activeLangTab, e.target.value)}
+              className="rounded-xl"
+            />
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2">
+            <Button variant="ghost" size="sm" type="button" onClick={resetForm} className="rounded-xl">
+              إلغاء
+            </Button>
+            <Button size="sm" type="submit" disabled={isUpdating} className="font-bold gap-1.5 rounded-xl shadow-sm">
+              <Save className="h-4 w-4" /> تحديث اليوم
+            </Button>
+          </div>
+        </form>
+      )}
+
+      {/* Itinerary Cards List */}
+      <div className="space-y-3.5">
         {sortedItineraries.length > 0 ? (
-          sortedItineraries.map((it, i) => (
-            editingId === it.id ? (
-              <form key={it.id} onSubmit={(e) => handleEditSubmit(e, it.id!)} className="border-2 border-primary/20 rounded-2xl p-4 bg-muted/10 space-y-4 shadow-sm relative">
-                <Button variant="ghost" size="icon" className="absolute top-2 right-2 h-6 w-6" onClick={resetForm}>
-                  <X className="h-4 w-4" />
-                </Button>
-                <h4 className="font-bold text-sm">تعديل بيانات اليوم</h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold">عنوان اليوم</label>
-                    <Input required value={dayLabel} onChange={(e) => setDayLabel(e.target.value)} className="rounded-xl" />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold">الترتيب</label>
-                    <Input required type="number" value={sortOrder} onChange={(e) => setSortOrder(Number(e.target.value))} className="rounded-xl" />
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold">الوصف والتفاصيل</label>
-                  <Textarea required value={descriptionEn} onChange={(e) => setDescriptionEn(e.target.value)} className="rounded-xl" />
-                </div>
-                <Button size="sm" type="submit" disabled={isUpdating} className="font-bold gap-1.5 rounded-xl">
-                  <Save className="h-4 w-4" /> تحديث اليوم
-                </Button>
-              </form>
-            ) : (
-              <div key={it.id || i} className="border rounded-xl p-5 bg-card shadow-sm space-y-3 group relative overflow-hidden">
-                <div className="absolute top-3 right-3 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button size="icon" variant="secondary" className="h-7 w-7" onClick={() => startEditing(it)}>
+          sortedItineraries.map((it, i) => {
+            const titleObj = (it as any).titleJsonb;
+            const currentTitle = titleObj?.ar || titleObj?.en || it.dayLabel || `Day ${it.sortOrder}`;
+            const currentDesc = (it.descriptionJsonb as any)?.ar || (it.descriptionJsonb as any)?.en || Object.values(it.descriptionJsonb || {})[0] || "لا يوجد وصف مسجل.";
+            const availableLangs = Object.keys(titleObj || it.descriptionJsonb || {}).filter((k) => ["ar", "en", "es", "pt", "it"].includes(k));
+
+            return (
+              <div
+                key={it.id || i}
+                className="border rounded-2xl p-4 bg-card shadow-2xs space-y-3 group relative hover:border-primary/40 transition-all overflow-hidden"
+              >
+                <div className="absolute top-3 left-3 flex gap-1.5 opacity-80 group-hover:opacity-100 transition-opacity">
+                  <Button size="icon" variant="secondary" className="h-7 w-7 rounded-lg" onClick={() => startEditing(it)}>
                     <Edit2 className="h-3.5 w-3.5" />
                   </Button>
-                  <Button variant="destructive" size="sm" onClick={() => removeItinerary({ slug: tour.slug, dayId: it.id! })} disabled={isRemoving}>
+                  <Button
+                    variant="destructive"
+                    size="icon"
+                    className="h-7 w-7 rounded-lg"
+                    onClick={() => removeItinerary({ slug: tour.slug, dayId: it.id! })}
+                    disabled={isRemoving}
+                  >
                     <Trash className="h-3.5 w-3.5" />
                   </Button>
                 </div>
-                <div className="flex justify-between items-center border-b pb-2">
-                  <span className="font-semibold text-base text-primary">
-                    {it.dayLabel || `Day ${it.sortOrder}`}
-                  </span>
-                  <Badge variant="outline">Step {it.sortOrder}</Badge>
+
+                <div className="flex items-center justify-between pl-20">
+                  <div className="flex items-center gap-2">
+                    <span className="h-6 w-6 rounded-full bg-primary/10 text-primary font-bold text-xs flex items-center justify-center">
+                      {it.sortOrder}
+                    </span>
+                    <span className="font-bold text-sm text-foreground">
+                      {currentTitle}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    {availableLangs.length > 0 ? (
+                      availableLangs.map((code) => (
+                        <span key={code} className="text-[10px] px-1.5 py-0.5 rounded bg-muted/60 text-muted-foreground uppercase font-mono">
+                          {code}
+                        </span>
+                      ))
+                    ) : (
+                      <Badge variant="outline" className="text-[9px]">Generic</Badge>
+                    )}
+                  </div>
                 </div>
-                <p className="text-sm text-foreground leading-relaxed pr-16">
-                  {it.descriptionJsonb?.["en"] || "No description for this day."}
+
+                <p className="text-xs text-muted-foreground leading-relaxed pl-8 line-clamp-3">
+                  {currentDesc}
                 </p>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-2 border-t text-xs">
-                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
-                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Meals</span>
-                    <span className="truncate block font-medium text-foreground">
-                      {it.mealsJsonb && typeof it.mealsJsonb === 'object' && Object.keys(it.mealsJsonb).length > 0
-                        ? Object.values(it.mealsJsonb).filter(Boolean).join(', ') || 'Included'
-                        : 'Included'}
-                    </span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
-                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Hotels</span>
-                    <span className="truncate block font-medium text-foreground">
-                      {it.hotelsJsonb && typeof it.hotelsJsonb === 'object' && Object.keys(it.hotelsJsonb).length > 0
-                        ? Object.values(it.hotelsJsonb).filter(Boolean).join(', ') || '5★ Luxury'
-                        : '5★ Luxury'}
-                    </span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
-                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Activities</span>
-                    <span className="truncate block font-medium text-foreground">
-                      {it.activitiesJsonb && typeof it.activitiesJsonb === 'object' && Object.keys(it.activitiesJsonb).length > 0
-                        ? Object.values(it.activitiesJsonb).filter(Boolean).join(', ') || 'Guided Excursions'
-                        : 'Guided Excursions'}
-                    </span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-muted/40 border border-border/50">
-                    <span className="text-muted-foreground block font-semibold text-[10px] uppercase tracking-wider">Transport</span>
-                    <span className="truncate block font-medium text-foreground">
-                      {it.transportationJsonb && typeof it.transportationJsonb === 'object' && Object.keys(it.transportationJsonb).length > 0
-                        ? Object.values(it.transportationJsonb).filter(Boolean).join(', ') || 'Private AC Vehicle'
-                        : 'Private AC Vehicle'}
-                    </span>
-                  </div>
-                </div>
               </div>
-            )
-          ))
-        ) : !isAddingNew && (
-          <div className="text-center text-muted-foreground py-12 border rounded-xl bg-card">
-            No itinerary day plans recorded for this tour.
-          </div>
+            );
+          })
+        ) : (
+          !isAddingNew && (
+            <div className="text-center text-muted-foreground py-12 border rounded-2xl bg-card/40">
+              لا توجد أيام مسجلة لهذا البرنامج السياحي بعد.
+            </div>
+          )
         )}
       </div>
     </div>
