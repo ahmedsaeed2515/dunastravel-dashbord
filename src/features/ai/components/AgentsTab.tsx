@@ -82,8 +82,8 @@ export function AgentsTab({
       await aiApi.activateAgent(agent.id);
       toast.success(
         isAr 
-          ? `تم تفعيل "${agent.nameJsonb?.ar || agent.name}" كمساعد وحيد ونشط على الموقع العام!` 
-          : `Activated "${agent.nameJsonb?.en || agent.name}" as the single live assistant!`
+          ? `تم تفعيل "${agent.nameJsonb?.ar || agent.displayName || agent.slug}" كمساعد وحيد ونشط على الموقع العام!` 
+          : `Activated "${agent.nameJsonb?.en || agent.displayName || agent.slug}" as the single live assistant!`
       );
       onRefresh();
     } catch (err: any) {

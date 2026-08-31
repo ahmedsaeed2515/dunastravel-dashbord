@@ -286,6 +286,8 @@ export interface AiSafetyEventItem {
 export interface AgentItemData {
   id: string;
   slug: string;
+  name?: string;
+  description?: string;
   nameJsonb: Record<string, string>;
   descriptionJsonb?: Record<string, string>;
   displayName?: string;

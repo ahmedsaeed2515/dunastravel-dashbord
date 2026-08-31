@@ -8,9 +8,11 @@
 export const DEFAULT_STAGING_FRONTEND_URL = "https://dunastravel-frontend.vercel.app";
 
 export function getFrontendBaseUrl(): string {
-  // 1. Explicit environment variable
-  if (process.env.NEXT_PUBLIC_FRONTEND_URL) {
-    return process.env.NEXT_PUBLIC_FRONTEND_URL.replace(/\/$/, "");
+  const envUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.trim();
+
+  // 1. Explicit environment variable (ignore obsolete legacy domains)
+  if (envUrl && !envUrl.includes("luxury-project")) {
+    return envUrl.replace(/\/$/, "");
   }
 
   // 2. Browser runtime determination
@@ -21,7 +23,11 @@ export function getFrontendBaseUrl(): string {
       return "http://localhost:5173";
     }
     // Vercel deployment / staging environments -> point directly to the live frontend
-    if (hostname.includes("vercel.app") || hostname.includes("dunastravel-dashbord")) {
+    if (
+      hostname.includes("vercel.app") ||
+      hostname.includes("dunastravel-dashbord") ||
+      hostname.includes("dunastravel-dashboard")
+    ) {
       return DEFAULT_STAGING_FRONTEND_URL;
     }
     // Custom domain production (e.g. dashboard.dunastravel.com or admin.dunastravel.com)
@@ -36,9 +42,9 @@ export function getFrontendBaseUrl(): string {
 /**
  * Returns the public frontend URL for a given tour by slug.
  */
-export function getFrontendTourUrl(slug: string): string {
-  if (!slug) return getFrontendBaseUrl();
+export function getFrontendTourUrl(slug?: string): string {
   const baseUrl = getFrontendBaseUrl();
+  if (!slug || !slug.trim()) return baseUrl;
   const cleanSlug = encodeURIComponent(slug.trim());
   return `${baseUrl}/tours/${cleanSlug}`;
 }
