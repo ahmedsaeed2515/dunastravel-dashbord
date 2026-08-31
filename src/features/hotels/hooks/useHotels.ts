@@ -33,9 +33,12 @@ export function useUpdateHotel() {
 export function useDeleteHotel() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: hotelsApi.remove,
-    onSuccess: () => { toast.success('Hotel archived'); queryClient.invalidateQueries({ queryKey: ['hotels'] }); },
-    onError: (error) => toast.error(messageFor(error, 'Could not archive hotel')),
+    mutationFn: (id: string) => hotelsApi.remove(id),
+    onSuccess: () => {
+      toast.success('Hotel deleted successfully');
+      queryClient.invalidateQueries({ queryKey: ['hotels'] });
+    },
+    onError: (error) => toast.error(messageFor(error, 'Could not delete hotel')),
   });
 }
 

@@ -50,6 +50,9 @@ import {
   UploadCloud,
   FolderOpen,
   Link as LinkIcon,
+  Archive,
+  ArchiveRestore,
+  RotateCcw,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -68,6 +71,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateHotel,
+  useDeleteHotel,
   useHotelLifecycle,
   useHotels,
   useUpdateHotel,
@@ -276,10 +280,12 @@ export function HotelsManager() {
   const [search, setSearch] = useState("");
   const [selectedDestination, setSelectedDestination] = useState("all");
   const [selectedStars, setSelectedStars] = useState<number | "ALL">("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<HotelStatus | "ALL">("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<HotelStatus | "ACTIVE" | "ALL">("ACTIVE");
 
   const [selectedHotel, setSelectedHotel] = useState<AdminHotel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [hotelToDelete, setHotelToDelete] = useState<AdminHotel | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
 
   const { data, isLoading, isError, refetch } = useHotels({
     page: 1,
@@ -288,6 +294,7 @@ export function HotelsManager() {
   });
 
   const lifecycleMutation = useHotelLifecycle();
+  const deleteMutation = useDeleteHotel();
 
   const hotels = Array.isArray(data) ? data : (data?.data ?? []);
 
@@ -300,7 +307,9 @@ export function HotelsManager() {
       if (selectedStars !== "ALL" && h.stars !== selectedStars) {
         return false;
       }
-      if (selectedStatus !== "ALL" && h.status !== selectedStatus) {
+      if (selectedStatus === "ACTIVE") {
+        if (h.status === "ARCHIVED") return false;
+      } else if (selectedStatus !== "ALL" && h.status !== selectedStatus) {
         return false;
       }
       if (search.trim()) {
@@ -325,26 +334,36 @@ export function HotelsManager() {
     setIsDialogOpen(true);
   };
 
-  const handleArchive = async (hotel: AdminHotel) => {
+  const handleArchive = (hotel: AdminHotel) => {
     const name = hotel.nameJsonb?.[locale] || hotel.nameJsonb?.en || hotel.slug;
-    if (
-      !window.confirm(
-        isAr
-          ? `هل أنت متأكد من تغيير حالة فندق "${name}" إلى أرشيف؟`
-          : `Are you sure you want to archive "${name}"?`
-      )
-    ) {
-      return;
-    }
     lifecycleMutation.mutate(
-      { id: hotel.id, action: hotel.status === "ARCHIVED" ? "unarchive" : "archive" },
+      { id: hotel.id, action: "archive" },
       {
-        onSuccess: () =>
+        onSuccess: () => {
           toast.success(
-            hotel.status === "ARCHIVED"
-              ? (isAr ? "تمت استعادة الفندق كمسودة بنجاح" : "Hotel returned to draft")
-              : (isAr ? "تم أرشفة الفندق بنجاح" : "Hotel archived successfully")
-          ),
+            isAr
+              ? `تم نقل فندق "${name}" إلى الأرشيف وإخفاؤه من القائمة 📦`
+              : `Hotel "${name}" moved to archive`
+          );
+          refetch();
+        },
+      }
+    );
+  };
+
+  const handleUnarchive = (hotel: AdminHotel) => {
+    const name = hotel.nameJsonb?.[locale] || hotel.nameJsonb?.en || hotel.slug;
+    lifecycleMutation.mutate(
+      { id: hotel.id, action: "unarchive" },
+      {
+        onSuccess: () => {
+          toast.success(
+            isAr
+              ? `تمت استعادة فندق "${name}" من الأرشيف كمسودة نشطة 🔄`
+              : `Hotel "${name}" restored from archive`
+          );
+          refetch();
+        },
       }
     );
   };
@@ -354,12 +373,14 @@ export function HotelsManager() {
     lifecycleMutation.mutate(
       { id: hotel.id, action: isPub ? "unpublish" : "publish" },
       {
-        onSuccess: () =>
+        onSuccess: () => {
           toast.success(
             isPub
               ? (isAr ? "تم تحويل الفندق إلى مسودة (غير متاح للجمهور)" : "Hotel converted to draft")
               : (isAr ? "تم نشر الفندق بنجاح وأصبح متاحاً للحجز" : "Hotel published successfully")
-          ),
+          );
+          refetch();
+        },
       }
     );
   };
@@ -492,7 +513,7 @@ export function HotelsManager() {
             <span>🌐</span>
             <span>{isAr ? "جميع الوجهات" : "All Destinations"}</span>
             <span
-              className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-black ${
+            className={`px-1.5 py-0.2 rounded-md text-[10px] font-mono font-black ${
                 selectedDestination === "all"
                   ? "bg-slate-950/20 text-slate-950"
                   : "bg-muted text-muted-foreground"
@@ -575,8 +596,8 @@ export function HotelsManager() {
 
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground shrink-0">{isAr ? "الحالة:" : "Status:"}</span>
-              <div className="flex items-center gap-1">
-                {(["ALL", "PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((st) => {
+              <div className="flex items-center gap-1 flex-wrap">
+                {(["ACTIVE", "PUBLISHED", "DRAFT", "ARCHIVED", "ALL"] as const).map((st) => {
                   const count = statusCounts[st] || 0;
                   return (
                     <button
@@ -588,7 +609,17 @@ export function HotelsManager() {
                           : "bg-muted/30 text-muted-foreground border-border"
                       }`}
                     >
-                      <span>{st === "ALL" ? (isAr ? "الكل" : "All") : st === "PUBLISHED" ? (isAr ? "منشور 🌐" : "Live") : st === "DRAFT" ? (isAr ? "مسودة" : "Draft") : (isAr ? "مؤرشف" : "Archived")}</span>
+                      <span>
+                        {st === "ACTIVE"
+                          ? (isAr ? "النشطة ✨" : "Active ✨")
+                          : st === "PUBLISHED"
+                          ? (isAr ? "منشور 🌐" : "Live")
+                          : st === "DRAFT"
+                          ? (isAr ? "مسودة" : "Draft")
+                          : st === "ARCHIVED"
+                          ? (isAr ? "مؤرشف 📦" : "Archived 📦")
+                          : (isAr ? "الكل" : "All")}
+                      </span>
                       <span className={`text-[10px] font-mono font-bold ${
                         selectedStatus === st ? "text-slate-950" : "text-muted-foreground"
                       }`}>
@@ -754,26 +785,79 @@ export function HotelsManager() {
                 <div className="px-5 py-3 flex items-center justify-between border-t border-border/60 bg-muted/20">
                   <span className="text-[11px] font-mono text-muted-foreground truncate max-w-35">/{hotel.slug}</span>
 
-                  <div className="flex items-center gap-1">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleOpenEdit(hotel)}
-                      className="h-8 text-xs font-bold hover:bg-amber-500 hover:text-slate-950 rounded-xl cursor-pointer gap-1 px-3 border-amber-500/30 text-amber-500"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>{isAr ? "تعديل الفندق والغرف" : "Edit & Rooms"}</span>
-                    </Button>
+                  <div className="flex items-center gap-1.5">
+                    {hotel.status === "ARCHIVED" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleUnarchive(hotel)}
+                          className="h-8 text-xs font-bold text-emerald-500 border-emerald-500/30 hover:bg-emerald-500 hover:text-slate-950 rounded-xl cursor-pointer gap-1 px-3"
+                          title={isAr ? "استعادة الفندق كمسودة نشطة" : "Restore hotel to active draft"}
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" />
+                          <span>{isAr ? "استعادة 🔄" : "Restore"}</span>
+                        </Button>
 
-                    <Button
-                      size="icon-sm"
-                      variant="ghost"
-                      onClick={() => handleArchive(hotel)}
-                      className="h-8 w-8 hover:bg-destructive/10 text-destructive rounded-xl cursor-pointer"
-                      title={isAr ? "أرشفة الفندق" : "Archive Hotel"}
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => handleOpenEdit(hotel)}
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground rounded-xl cursor-pointer"
+                          title={isAr ? "معاينة وتعديل" : "Edit"}
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                        </Button>
+
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setHotelToDelete(hotel);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="h-8 w-8 hover:bg-destructive/10 text-destructive rounded-xl cursor-pointer"
+                          title={isAr ? "حذف نهائي للفندق من النظام" : "Delete Hotel Permanently"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleOpenEdit(hotel)}
+                          className="h-8 text-xs font-bold hover:bg-amber-500 hover:text-slate-950 rounded-xl cursor-pointer gap-1 px-3 border-amber-500/30 text-amber-500"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>{isAr ? "تعديل الفندق والغرف" : "Edit & Rooms"}</span>
+                        </Button>
+
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => handleArchive(hotel)}
+                          className="h-8 w-8 hover:bg-amber-500/10 text-amber-500 rounded-xl cursor-pointer"
+                          title={isAr ? "أرشفة الفندق وإخفاؤه من القائمة النشطة" : "Archive Hotel (Move to Archive)"}
+                        >
+                          <Archive className="w-4 h-4" />
+                        </Button>
+
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setHotelToDelete(hotel);
+                            setIsDeleteDialogOpen(true);
+                          }}
+                          className="h-8 w-8 hover:bg-destructive/10 text-destructive rounded-xl cursor-pointer"
+                          title={isAr ? "حذف الفندق نهائياً" : "Delete Hotel"}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </>
+                    )}
                   </div>
                 </div>
               </Card>
@@ -788,6 +872,75 @@ export function HotelsManager() {
         open={isDialogOpen}
         onOpenChange={setIsDialogOpen}
       />
+
+      {/* 5. Delete Hotel Confirmation Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent className="max-w-md p-6 border-2 border-destructive/30 rounded-3xl bg-card">
+          <div className="flex items-center gap-3">
+            <div className="p-3 rounded-2xl bg-destructive/10 text-destructive border border-destructive/20">
+              <Trash2 className="w-6 h-6 stroke-[2.2]" />
+            </div>
+            <div>
+              <DialogTitle className="text-base font-black text-foreground">
+                {isAr ? "تأكيد حذف الفندق" : "Confirm Hotel Deletion"}
+              </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                {isAr
+                  ? "هل أنت متأكد من حذف هذا الفندق نهائياً؟ سيتم إلغاء تفعيل الفندق والغرف التابعة له."
+                  : "Are you sure you want to delete this hotel? All associated rooms will be deactivated."}
+              </DialogDescription>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl bg-muted/40 border border-border my-2 space-y-1.5 text-xs">
+            <div className="font-extrabold text-foreground text-sm">
+              🏨 {hotelToDelete?.nameJsonb?.[locale] || hotelToDelete?.nameJsonb?.en || hotelToDelete?.slug}
+            </div>
+            <div className="text-muted-foreground text-[11px] font-medium flex items-center gap-2">
+              <span>📍 {hotelToDelete?.city} · {hotelToDelete?.destinationSlug}</span>
+              <span>⭐ {hotelToDelete?.stars} {isAr ? "نجوم" : "stars"}</span>
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0 pt-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsDeleteDialogOpen(false)}
+              className="text-xs rounded-xl cursor-pointer"
+            >
+              {isAr ? "إلغاء التراجع" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              disabled={deleteMutation.isPending}
+              onClick={() => {
+                if (hotelToDelete) {
+                  deleteMutation.mutate(hotelToDelete.id, {
+                    onSuccess: () => {
+                      setIsDeleteDialogOpen(false);
+                      setHotelToDelete(null);
+                      toast.success(
+                        isAr ? "تم مسح وحذف الفندق بنجاح 🗑️" : "Hotel deleted successfully 🗑️"
+                      );
+                      refetch();
+                    },
+                  });
+                }
+              }}
+              className="text-xs font-bold gap-1 rounded-xl bg-destructive hover:bg-destructive/90 text-destructive-foreground cursor-pointer"
+            >
+              {deleteMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Trash2 className="w-4 h-4" />
+              )}
+              <span>{isAr ? "نعم، احذف الفندق الآن 🗑️" : "Yes, Delete Hotel 🗑️"}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
