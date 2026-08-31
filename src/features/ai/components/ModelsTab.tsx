@@ -46,8 +46,10 @@ import {
   ProviderRegistryItem,
   ProviderTestResult,
   RoutingPolicyData,
+  DiscoveredModelItem,
   aiApi,
 } from "../api/aiApi";
+import { ModelSelector } from "./ModelSelector";
 
 interface ModelsTabProps {
   keyPool: ApiKeyPoolEntry[];
@@ -178,7 +180,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   // Wizard Form State
   const [selectedProvider, setSelectedProvider] = useState("google");
-  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [showEditApiKey, setShowEditApiKey] = useState(false);
@@ -188,9 +190,12 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const [isActive, setIsActive] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  // Testing State in Wizard
+  // Testing & Discovery State in Wizard
   const [testingInWizard, setTestingInWizard] = useState(false);
   const [testResult, setTestResult] = useState<ProviderTestResult | null>(null);
+  const [liveDiscoveredModels, setLiveDiscoveredModels] = useState<Record<string, DiscoveredModelItem[]>>({});
+  const [isDiscoveringLiveModels, setIsDiscoveringLiveModels] = useState(false);
+  const [liveDiscoveryError, setLiveDiscoveryError] = useState<string | null>(null);
 
   // Registry & Routing Data from Backend
   const [registryModels, setRegistryModels] = useState<ModelCapabilityItem[]>([]);
@@ -219,6 +224,51 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       toast.error(err?.message || "Failed to load model registry.");
     } finally {
       setLoadingRegistry(false);
+    }
+  };
+
+  // Discover Live Models from Provider
+  const handleDiscoverLiveModels = async (provId: string, customKey?: string, customUrl?: string, credId?: string) => {
+    const keyToUse = customKey !== undefined ? customKey.trim() : apiKey.trim();
+    const urlToUse = customUrl !== undefined ? customUrl.trim() : customBaseUrl.trim();
+    if (!keyToUse && !credId) {
+      toast.error(
+        isAr
+          ? "يرجى إدخال مفتاح API أولاً لاكتشاف الموديلات الحية."
+          : "Please enter an API key to discover live models."
+      );
+      return;
+    }
+    setIsDiscoveringLiveModels(true);
+    setLiveDiscoveryError(null);
+    try {
+      const res = await aiApi.refreshProviderModels(provId, {
+        apiKey: keyToUse || undefined,
+        baseUrl: urlToUse || undefined,
+        credentialId: credId,
+        forceRefresh: true,
+      });
+      const models = res.models || [];
+      setLiveDiscoveredModels((prev) => ({ ...prev, [provId]: models }));
+      if (models.length > 0) {
+        toast.success(
+          isAr
+            ? `🎉 تم اكتشاف ${models.length} موديل نشط مباشرة من ${PROVIDER_METADATA[provId]?.name || provId}!`
+            : `🎉 Discovered ${models.length} active models directly from ${PROVIDER_METADATA[provId]?.name || provId}!`
+        );
+        const available = models.filter((m) => m.status === "AVAILABLE");
+        if (available.length > 0 && (!available.some((m) => m.id === selectedModel) || selectedModel === "gemini-2.0-flash-lite")) {
+          setSelectedModel(available[0].id);
+        }
+      } else {
+        toast.warning(isAr ? "لم يتم العثور على موديلات متوافقة." : "No compatible models found.");
+      }
+    } catch (err: any) {
+      const msg = err?.message || "Failed to discover live models from provider.";
+      setLiveDiscoveryError(msg);
+      toast.error(msg);
+    } finally {
+      setIsDiscoveringLiveModels(false);
     }
   };
 
@@ -257,7 +307,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     const defaultModel =
       providerModels.find((m) => m.isDefault)?.id ||
       providerModels[0]?.id ||
-      (providerId === "google" ? "gemini-2.0-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
+      (providerId === "google" ? "gemini-2.5-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
 
     setSelectedModel(defaultModel);
     setLabel(
@@ -268,19 +318,21 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     setApiKey("");
     setCustomBaseUrl("");
     setTestResult(null);
+    setLiveDiscoveryError(null);
     setWizardStep(2);
   };
 
   // Open the wizard
   const handleOpenAddWizard = () => {
     setSelectedProvider("google");
-    setSelectedModel("gemini-2.0-flash");
+    setSelectedModel("gemini-2.5-flash");
     setApiKey("");
     setCustomBaseUrl("");
     setLabel("Google Gemini Production Key");
     setPriority(keyPool.length + 1);
     setIsActive(true);
     setTestResult(null);
+    setLiveDiscoveryError(null);
     setWizardStep(1);
     setShowAddWizard(true);
   };
@@ -296,7 +348,11 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     setPriority(k.priority);
     setIsActive(k.isActive);
     setTestResult(null);
+    setLiveDiscoveryError(null);
     setShowEditModal(true);
+    if (k.hasKey) {
+      handleDiscoverLiveModels(k.provider, undefined, k.baseUrl, k.id);
+    }
   };
 
   // Live Connection Test in Wizard
@@ -1396,52 +1452,47 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                   </div>
                 )}
 
-                {/* Compatible Model Selector (No free-text input!) */}
-                <div className="space-y-1.5">
-                  <label className="font-bold uppercase text-[10px] text-muted-foreground flex items-center gap-1">
-                    <Cpu className="h-3 w-3 text-blue-500" />
-                    {isAr ? "الموديل المتوافق (Compatible Model)" : "Verified Model Selection"}
-                  </label>
-
-                  {availableModelsForProvider.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {availableModelsForProvider.map((m) => {
-                        const isSelected = selectedModel === m.id;
-                        return (
-                          <button
-                            key={m.id}
-                            type="button"
-                            onClick={() => setSelectedModel(m.id)}
-                            className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between space-y-1 ${
-                              isSelected
-                                ? "border-blue-500 bg-blue-500/10 ring-1 ring-blue-500"
-                                : "border-border/70 bg-background hover:bg-muted/30"
-                            }`}
-                          >
-                            <div className="flex items-center justify-between w-full">
-                              <span className="font-bold text-xs text-foreground font-mono">{m.name}</span>
-                              {isSelected && <Check className="h-3.5 w-3.5 text-blue-500 shrink-0" />}
-                            </div>
-                            <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
-                              <span>${m.inputCostPer1M.toFixed(2)} / 1M</span>
-                              <span className="text-[9px] px-1 rounded bg-muted font-sans font-bold">
-                                {m.badge}
-                              </span>
-                            </div>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  ) : (
-                    <Input
-                      value={selectedModel}
-                      onChange={(e) => setSelectedModel(e.target.value)}
-                      placeholder="e.g. custom-model-name"
-                      className="font-mono text-xs h-9 bg-background"
-                      required
-                    />
-                  )}
+                {/* Discover Models Button & Live Status */}
+                <div className="flex items-center justify-between p-2.5 rounded-xl bg-muted/40 border border-border/60">
+                  <div className="space-y-0.5">
+                    <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                      <Sparkles className="h-3.5 w-3.5 text-amber-500" />
+                      {isAr ? "اكتشاف الموديلات الحية من المزود" : "Live Provider Model Discovery"}
+                    </span>
+                    <p className="text-[10px] text-muted-foreground">
+                      {liveDiscoveredModels[selectedProvider]?.length
+                        ? isAr
+                          ? `✅ تم اكتشاف ${liveDiscoveredModels[selectedProvider].length} موديل متاح لهذا المفتاح`
+                          : `✅ ${liveDiscoveredModels[selectedProvider].length} active models discovered for this key`
+                        : isAr
+                        ? "استعلم مباشرة من مزود الذكاء الاصطناعي لجلب الموديلات المفعلة لمفتاحك فقط"
+                        : "Query the official provider API to fetch models available for your specific key"}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => handleDiscoverLiveModels(selectedProvider, apiKey, customBaseUrl)}
+                    disabled={isDiscoveringLiveModels || !apiKey.trim()}
+                    className="h-8 text-xs font-bold gap-1 text-blue-600 dark:text-blue-400 border-blue-500/30 hover:bg-blue-500/10 cursor-pointer"
+                  >
+                    <RefreshCw className={`h-3 w-3 ${isDiscoveringLiveModels ? "animate-spin" : ""}`} />
+                    {isDiscoveringLiveModels ? (isAr ? "جاري الاكتشاف..." : "Discovering...") : isAr ? "اكتشاف الموديلات" : "Discover Models"}
+                  </Button>
                 </div>
+
+                {/* Model Selector */}
+                <ModelSelector
+                  provider={selectedProvider}
+                  value={selectedModel}
+                  onChange={(m) => setSelectedModel(m)}
+                  discoveredModels={liveDiscoveredModels[selectedProvider]}
+                  isLoadingModels={isDiscoveringLiveModels}
+                  onRefreshModels={() => handleDiscoverLiveModels(selectedProvider, apiKey, customBaseUrl)}
+                  discoveryError={liveDiscoveryError}
+                  isAr={isAr}
+                />
 
                 {/* Label & Priority */}
                 <div className="grid grid-cols-2 gap-2.5">
@@ -1595,30 +1646,16 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                 />
               </div>
 
-              <div>
-                <label className="font-bold uppercase text-[10px] text-muted-foreground block mb-1">
-                  {isAr ? "الموديل المعين" : "Assigned Model"}
-                </label>
-                {availableModelsForProvider.length > 0 ? (
-                  <select
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="w-full h-9 px-3 rounded-xl border border-border bg-background text-xs font-bold text-foreground"
-                  >
-                    {availableModelsForProvider.map((m) => (
-                      <option key={m.id} value={m.id}>
-                        {m.name} [{m.badge}]
-                      </option>
-                    ))}
-                  </select>
-                ) : (
-                  <Input
-                    value={selectedModel}
-                    onChange={(e) => setSelectedModel(e.target.value)}
-                    className="font-mono text-xs h-9"
-                  />
-                )}
-              </div>
+              <ModelSelector
+                provider={selectedProvider}
+                value={selectedModel}
+                onChange={(m) => setSelectedModel(m)}
+                discoveredModels={liveDiscoveredModels[selectedProvider]}
+                isLoadingModels={isDiscoveringLiveModels}
+                onRefreshModels={() => handleDiscoverLiveModels(selectedProvider, apiKey, customBaseUrl, editingKey?.id)}
+                discoveryError={liveDiscoveryError}
+                isAr={isAr}
+              />
 
               <div>
                 <div className="flex items-center justify-between mb-1">

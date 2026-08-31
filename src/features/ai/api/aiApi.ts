@@ -86,6 +86,21 @@ export interface ProviderRegistryItem {
   allowCustomBaseUrl?: boolean;
 }
 
+export interface DiscoveredModelItem {
+  id: string;
+  displayName: string;
+  provider: string;
+  supportsChat: boolean;
+  supportsStreaming: boolean;
+  supportsTools: boolean;
+  supportsStructuredOutput: boolean;
+  contextWindow?: number;
+  inputPricePer1M?: number;
+  outputPricePer1M?: number;
+  status: 'AVAILABLE' | 'UNAVAILABLE' | 'DEPRECATED';
+  source: 'LIVE_PROVIDER';
+}
+
 export interface RoutingPolicyData {
   table: Record<'economy' | 'normal' | 'complex' | 'fallback', {
     provider: string;
@@ -598,7 +613,7 @@ export const aiApi = {
     return apiClient.post<unknown, ProviderTestResult>(`/admin/ai/keys/${id}/test`);
   },
 
-  // Provider Registry & Routing Endpoints (NEW)
+  // Provider Registry & Routing Endpoints
   getProviders: async (): Promise<{ providers: ProviderRegistryItem[]; routingTable: any }> => {
     return apiClient.get<unknown, { providers: ProviderRegistryItem[]; routingTable: any }>("/admin/ai/providers");
   },
@@ -615,6 +630,29 @@ export const aiApi = {
     models: ModelCapabilityItem[];
   }> => {
     return apiClient.get<unknown, any>(`/admin/ai/providers/${providerId}/models`);
+  },
+
+  refreshProviderModels: async (
+    providerId: string,
+    payload?: {
+      credentialId?: string;
+      apiKey?: string;
+      baseUrl?: string;
+      integrationMode?: 'openai-compatible' | 'google-native';
+      forceRefresh?: boolean;
+    },
+  ): Promise<{
+    providerId: string;
+    models: DiscoveredModelItem[];
+    cached: boolean;
+    timestamp: string;
+  }> => {
+    return apiClient.post<unknown, {
+      providerId: string;
+      models: DiscoveredModelItem[];
+      cached: boolean;
+      timestamp: string;
+    }>(`/admin/ai/providers/${providerId}/models/refresh`, payload || {});
   },
 
   getRoutingPolicy: async (): Promise<RoutingPolicyData> => {

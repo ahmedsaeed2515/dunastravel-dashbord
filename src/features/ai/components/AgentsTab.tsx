@@ -189,9 +189,9 @@ export function AgentsTab({
     const temperatureVal = responseStyle === "precise" ? 0.3 : responseStyle === "creative" ? 0.9 : 0.7;
 
     // Map human qualityProfile back to recommended primaryModel internally
-    let resolvedModel = "gemini-2.0-flash";
-    if (qualityProfile === "economy") resolvedModel = "gemini-2.0-flash-lite";
-    else if (qualityProfile === "premium") resolvedModel = "gemini-1.5-pro";
+    let resolvedModel = "gemini-2.5-flash";
+    if (qualityProfile === "economy") resolvedModel = "gemini-2.5-flash";
+    else if (qualityProfile === "premium") resolvedModel = "gpt-4o";
 
     try {
       const payload = {
