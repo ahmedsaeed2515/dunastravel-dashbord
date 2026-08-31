@@ -179,8 +179,8 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Wizard Form State
-  const [selectedProvider, setSelectedProvider] = useState("google");
-  const [selectedModel, setSelectedModel] = useState("gemini-3.7-flash");
+  const [selectedProvider, setSelectedProvider] = useState<string>("google");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [showEditApiKey, setShowEditApiKey] = useState(false);
@@ -307,7 +307,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     const defaultModel =
       providerModels.find((m) => m.isDefault)?.id ||
       providerModels[0]?.id ||
-      (providerId === "google" ? "gemini-3.7-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
+      (providerId === "google" ? "gemini-2.0-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
 
     setSelectedModel(defaultModel);
     setLabel(
@@ -326,7 +326,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Open the wizard
   const handleOpenAddWizard = () => {
     setSelectedProvider("google");
-    setSelectedModel("gemini-3.7-flash");
+    setSelectedModel("gemini-2.0-flash");
     setApiKey("");
     setCustomBaseUrl("");
     setLabel("Google Gemini Production Key");
@@ -372,7 +372,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       const modelToTest =
         selectedModel ||
         (selectedProvider === "google"
-          ? "gemini-3.7-flash"
+          ? "gemini-2.0-flash"
           : selectedProvider === "openai"
           ? "gpt-4o-mini"
           : undefined);
@@ -647,7 +647,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.economy?.model || "gemini-3.1-flash-lite"}
+                {routingData?.table?.economy?.model || "gemini-2.0-flash"}
               </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "للأسئلة الشائعة والتحية واستفسارات السياسات البسيطة" : "FAQ, policies, basic catalog queries & greetings"}
@@ -671,7 +671,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.normal?.model || "gemini-3.7-flash"}
+                {routingData?.table?.normal?.model || "gemini-2.0-flash"}
               </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "محادثات الكونسيرج الفاخر وتخصيص الباقات السياحية" : "High-touch luxury travel dialogue & recommendation"}
@@ -695,7 +695,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.complex?.model || "gemini-3.1-pro"}
+                {routingData?.table?.complex?.model || "gemini-1.5-pro"}
               </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "بناء الجداول متعددة المدن وتنسيق الرحلات وحساب الميزانيات" : "Multi-city itinerary synthesis & constraint solving"}
@@ -978,7 +978,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Model */}
                         <td className="px-4 py-3 font-mono text-foreground font-semibold">
                           <span className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px]">
-                            {entry.model || (entry.provider === "google" ? "gemini-3.7-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
+                            {entry.model || (entry.provider === "google" ? "gemini-2.0-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
                           </span>
                         </td>
 
