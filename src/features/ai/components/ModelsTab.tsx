@@ -978,7 +978,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Model */}
                         <td className="px-4 py-3 font-mono text-foreground font-semibold">
                           <span className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px]">
-                            {entry.model}
+                            {entry.model || (entry.provider === "google" ? "gemini-3.7-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
                           </span>
                         </td>
 

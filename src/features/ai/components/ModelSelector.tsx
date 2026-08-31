@@ -277,18 +277,12 @@ export function ModelSelector({
             );
           })()}
         </div>
-      ) : normalizedProvider === "google" && !isCustomMode ? (
-        <div className="rounded-xl border border-dashed border-blue-500/30 bg-blue-500/5 p-3 text-[11px] text-muted-foreground">
-          {isAr
-            ? "أدخل مفتاح Google API ثم اضغط «اكتشاف الموديلات» لعرض الموديلات الفعالة لهذا المفتاح فقط."
-            : "Enter a Google API key and use Discover Models to load only the models available to that key."}
-        </div>
       ) : !isCustomMode ? (
-        /* FALLBACK PRESET DROPDOWN (If live discovery hasn't run yet) */
+        /* VERIFIED PRESETS DROPDOWN */
         <div className="space-y-2">
           <div className="relative">
             <select
-              value={fallbackPresets.some((p) => p.id === value) ? value : fallbackPresets[0]?.id}
+              value={fallbackPresets.some((p) => p.id === value) ? value : value || fallbackPresets[0]?.id}
               onChange={(e) => onChange(e.target.value)}
               className="w-full p-2.5 pe-8 rounded-xl bg-background border border-border/80 text-xs font-bold text-foreground focus:ring-2 focus:ring-amber-500 cursor-pointer transition-all"
             >
