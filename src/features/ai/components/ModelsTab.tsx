@@ -369,9 +369,16 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     setTestResult(null);
 
     try {
+      const modelToTest =
+        selectedModel ||
+        (selectedProvider === "google"
+          ? "gemini-3.7-flash"
+          : selectedProvider === "openai"
+          ? "gpt-4o-mini"
+          : undefined);
       const res = await aiApi.testConnection({
         provider: selectedProvider,
-        model: selectedModel,
+        model: modelToTest,
         apiKey: apiKey.trim(),
       });
       setTestResult(res);
