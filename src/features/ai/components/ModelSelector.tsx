@@ -34,15 +34,16 @@ const RETIRED_GOOGLE_MODEL_IDS = new Set([
   "gemini-2.0-flash-001",
   "gemini-2.0-flash-lite",
   "gemini-2.0-flash-lite-001",
+  "gemini-2.5-flash-lite",
 ]);
 
 export const PROVIDER_MODEL_PRESETS: Record<string, ModelPreset[]> = {
   google: [
-    { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", nameAr: "جيمناي 3.7 فلاش (الموصى به للأعمال المعقدة والـ Agentic)", badge: "Flagship", isPopular: true },
-    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش (عالي السرعة والإنتاجية)", badge: "Production", isPopular: true },
-    { id: "gemini-3.1-pro", name: "Gemini 3.1 Pro", nameAr: "جيمناي 3.1 برو (أعلى ذكاء وتحليل عميق)", badge: "Reasoning", isPopular: true },
-    { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", nameAr: "جيمناي 3.1 فلاش لايت (اقتصادي وسريع جداً)", badge: "Economy", isPopular: true },
-    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيمناي 2.5 فلاش (المستقر)", badge: "Stable", isPopular: false },
+    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش (الموصى به للإنتاجية — استجابة ~900ms)", badge: "Recommended", isPopular: true },
+    { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", nameAr: "جيمناي 3.5 فلاش لايت (فائق السرعة — استجابة ~500ms)", badge: "Ultra Fast", isPopular: true },
+    { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", nameAr: "جيمناي 3.1 فلاش لايت (اقتصادي — استجابة ~600ms)", badge: "Economy", isPopular: true },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيمناي 2.5 فلاش (المستقر — استجابة ~650ms)", badge: "Stable", isPopular: true },
+    { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", nameAr: "جيمناي 3.7 فلاش (الرائد للأعمال المعقدة والـ Agentic)", badge: "Flagship", isPopular: true },
   ],
   openai: [
     { id: "gpt-4o-mini", name: "GPT-4o Mini", nameAr: "جي بي تي 4 أومني ميني (سريع واقتصادي)", badge: "Economy", isPopular: true },
