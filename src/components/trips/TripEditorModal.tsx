@@ -52,6 +52,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { toast } from 'sonner';
+import { MediaPickerModal } from '@/components/media/MediaPickerModal';
 
 interface TripEditorModalProps {
   trip?: TripModel | null;
@@ -131,6 +132,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const [isTranslating, setIsTranslating] = useState(false);
   const [translateStatus, setTranslateStatus] = useState<string>('');
   const [isSaving, setIsSaving] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
   useEffect(() => {
     if (trip) {
@@ -1268,17 +1270,29 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     <ImageIcon className="w-4 h-4 text-amber-500" />
                     روابط صور المعرض (Photo Gallery & Hero Image):
                   </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      const imgs = [...(formData.images || []), ''];
-                      handleChange('images', imgs);
-                    }}
-                    className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" /> إضافة صورة +
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => setMediaPickerOpen(true)}
+                      className="text-xs text-amber-500 border-amber-500/30 hover:bg-amber-500/10 gap-1.5 font-bold cursor-pointer rounded-xl"
+                    >
+                      <ImageIcon className="w-3.5 h-3.5" /> اختيار من مكتبة الوسائط 🖼️
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => {
+                        const imgs = [...(formData.images || []), ''];
+                        handleChange('images', imgs);
+                      }}
+                      className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة رابط يدوي +
+                    </Button>
+                  </div>
                 </div>
 
                 <div className="space-y-3">
@@ -1589,6 +1603,25 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           </div>
         </DialogFooter>
       </DialogContent>
+
+      <MediaPickerModal
+        isOpen={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        multiple
+        onSelectMultiple={(urls) => {
+          const existing = formData.images || [];
+          const newImgs = [...existing, ...urls.filter(u => !existing.includes(u))];
+          handleChange('images', newImgs);
+          toast.success(`تمت إضافة ${urls.length} صور من المكتبة بنجاح!`);
+        }}
+        onSelect={(url) => {
+          const existing = formData.images || [];
+          if (!existing.includes(url)) {
+            handleChange('images', [...existing, url]);
+            toast.success('تمت إضافة الصورة بنجاح!');
+          }
+        }}
+      />
     </Dialog>
   );
 });

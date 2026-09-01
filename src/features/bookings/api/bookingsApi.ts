@@ -56,5 +56,9 @@ export const bookingsApi = {
 
   addAttachment: async (referenceCode: string, data: AddAttachmentPayload): Promise<BookingAttachment> => {
     return apiClient.post<BookingAttachment, BookingAttachment>(`/admin/bookings/${referenceCode}/attachments`, data);
+  },
+
+  recordManualPayment: async (referenceCode: string, data: { amount: number; method?: string; transactionId?: string; notes?: string }): Promise<any> => {
+    return apiClient.post(`/admin/bookings/${referenceCode}/payments`, data);
   }
 };

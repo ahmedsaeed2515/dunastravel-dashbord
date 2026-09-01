@@ -48,6 +48,37 @@ export function useUpdateReviewStatus() {
   });
 }
 
+export function useBatchUpdateReviewStatus() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({
+      reviewIds,
+      status,
+      isPublished,
+    }: {
+      reviewIds: string[];
+      status: ReviewStatus;
+      isPublished?: boolean;
+    }) => reviewsApi.batchUpdateReviewStatus(reviewIds, status, isPublished),
+    onSuccess: (data) => {
+      toast.success(
+        data.status === "APPROVED"
+          ? `تم اعتماد ونشر ${data.count} مراجعة بنجاح! ✨`
+          : `تم تحديث حالة ${data.count} مراجعة بنجاح!`
+      );
+      queryClient.invalidateQueries({ queryKey: ["reviews"] });
+    },
+    onError: (error: any) => {
+      toast.error(
+        error?.response?.data?.message ||
+          error?.message ||
+          "فشل التحديث الجماعي للمراجعات"
+      );
+    },
+  });
+}
+
 export function usePublishReview() {
   const queryClient = useQueryClient();
 

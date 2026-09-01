@@ -30,8 +30,32 @@ export const communicationsApi = {
     return apiClient.get<unknown, PaginatedResponse<Inquiry>>("/admin/inquiries", { params: filters });
   },
 
-  updateInquiry: async (referenceCode: string, payload: { assigneeId?: string; status?: string }): Promise<Inquiry> => {
+  updateInquiry: async (
+    referenceCode: string,
+    payload: {
+      assigneeId?: string | null;
+      status?: string;
+      quotedAmountUsd?: number;
+      internalNote?: string;
+      followUpAt?: string;
+      notes?: string;
+    }
+  ): Promise<Inquiry> => {
     return apiClient.patch<unknown, Inquiry>(`/admin/inquiries/${referenceCode}`, payload);
+  },
+
+  convertInquiryToBooking: async (
+    referenceCode: string,
+    payload?: {
+      tourId?: string;
+      quotedAmountUsd?: number;
+      notes?: string;
+    }
+  ): Promise<{ success: boolean; message: string; booking: any }> => {
+    return apiClient.post<unknown, { success: boolean; message: string; booking: any }>(
+      `/admin/inquiries/${referenceCode}/convert-to-booking`,
+      payload || {}
+    );
   },
 
   getContactSubmissions: async (filters: ContactSubmissionQueryFilters): Promise<PaginatedResponse<ContactSubmission>> => {

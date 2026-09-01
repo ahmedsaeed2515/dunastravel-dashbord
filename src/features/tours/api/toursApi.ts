@@ -80,6 +80,8 @@ export const toursApi = {
     apiClient.get<TourAvailability[], TourAvailability[]>(`/admin/tours/${tourId}/availabilities`),
   createTourAvailability: (tourId: string, data: CreateTourAvailabilityPayload): Promise<TourAvailability> =>
     apiClient.post<TourAvailability, TourAvailability>(`/admin/tours/${tourId}/availabilities`, data),
+  createBatchTourAvailability: (tourId: string, data: { startDate: string; endDate: string; totalCapacity: number; daysOfWeek?: number[] }): Promise<{ count: number }> =>
+    apiClient.post<{ count: number }, { count: number }>(`/admin/tours/${tourId}/availabilities/batch`, data),
   updateTourAvailability: (id: string, data: UpdateTourAvailabilityPayload): Promise<TourAvailability> =>
     apiClient.patch<TourAvailability, TourAvailability>(`/admin/availabilities/${id}`, data),
   deleteTourAvailability: (id: string): Promise<{ success: boolean }> =>

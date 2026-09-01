@@ -86,4 +86,57 @@ export interface HotelPayload {
   rooms?: HotelRoomPayload[];
 }
 
+export type HotelBookingStatus = 'PENDING' | 'CONFIRMED' | 'CANCELLED' | 'COMPLETED';
+
+export interface HotelBooking {
+  id: string;
+  referenceCode: string;
+  hotelId: string;
+  roomId?: string | null;
+  userId?: string | null;
+  status: HotelBookingStatus;
+  guestName: string;
+  guestEmail: string;
+  guestPhone: string;
+  checkInDate: string;
+  checkOutDate: string;
+  nights: number;
+  roomsCount: number;
+  guestsCount: number;
+  ratePerNightUsd: number | string;
+  totalAmountUsd: number | string;
+  currency: string;
+  specialRequests?: string | null;
+  adminNotes?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  hotel?: {
+    id: string;
+    slug: string;
+    nameJsonb: Record<string, string>;
+    city: string;
+    stars: number;
+  };
+  room?: {
+    id: string;
+    slug: string;
+    nameJsonb: Record<string, string>;
+    ratePerNight: number | string;
+  } | null;
+}
+
+export interface HotelBookingsQuery {
+  page?: number;
+  limit?: number;
+  status?: string;
+  hotelId?: string;
+  search?: string;
+}
+
+export interface PaginatedHotelBookings {
+  items: HotelBooking[];
+  meta: { total: number; page: number; limit: number; totalPages: number };
+}
+
+
 

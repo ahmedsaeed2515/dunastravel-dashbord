@@ -34,6 +34,18 @@ export const reviewsApi = {
     });
   },
 
+  batchUpdateReviewStatus: async (
+    reviewIds: string[],
+    status: ReviewStatus,
+    isPublished?: boolean
+  ): Promise<{ success: boolean; count: number; status: string; isPublished: boolean }> => {
+    return apiClient.patch("/admin/reviews/batch/status", {
+      reviewIds,
+      status,
+      isPublished: isPublished !== undefined ? isPublished : status === "APPROVED",
+    });
+  },
+
   publishReview: async (id: string): Promise<Review> => {
     return apiClient.patch<Review, Review>(`/admin/reviews/${id}/status`, {
       status: "APPROVED",

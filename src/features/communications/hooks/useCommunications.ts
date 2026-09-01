@@ -17,7 +17,7 @@ export function useCommunicationMetrics() {
   return useQuery({
     queryKey: communicationsKeys.metrics(),
     queryFn: () => communicationsApi.getMetrics(),
-    refetchInterval: 30000, // Refresh metrics every 30 seconds
+    refetchInterval: 30000,
   });
 }
 
@@ -26,7 +26,7 @@ export function useDeliveryLogs(filters: NotificationDeliveryLogQueryFilters) {
     queryKey: communicationsKeys.logs(filters),
     queryFn: () => communicationsApi.getLogs(filters),
     placeholderData: (prev) => prev,
-    refetchInterval: 15000, // Poll logs to see status changes easily
+    refetchInterval: 15000,
   });
 }
 
@@ -55,11 +55,47 @@ export function useInquiries(filters: InquiryQueryFilters) {
 export function useAssignInquiry() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ referenceCode, assigneeId }: { referenceCode: string, assigneeId: string }) => 
-      communicationsApi.updateInquiry(referenceCode, { assigneeId }),
+    mutationFn: ({ referenceCode, assigneeId }: { referenceCode: string; assigneeId: string | null }) => 
+      communicationsApi.updateInquiry(referenceCode, { assigneeId: assigneeId ?? undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
       toast.success("Inquiry assigned successfully.");
+    },
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message);
+    },
+  });
+}
+
+export function useUpdateInquiry() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ referenceCode, data }: { referenceCode: string; data: Record<string, any> }) => 
+      communicationsApi.updateInquiry(referenceCode, data),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
+      toast.success("تم تحديث بيانات الاستفسار بنجاح.");
+    },
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message);
+    },
+  });
+}
+
+export function useConvertInquiryToBooking() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      referenceCode,
+      payload,
+    }: {
+      referenceCode: string;
+      payload?: { tourId?: string; quotedAmountUsd?: number; notes?: string };
+    }) => communicationsApi.convertInquiryToBooking(referenceCode, payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
+      queryClient.invalidateQueries({ queryKey: ["bookings"] });
+      toast.success(data?.message || "تم تحويل الاستفسار إلى حجز رسمي بنجاح! 🎟️");
     },
     onError: (error: unknown) => {
       toast.error(normalizeApiError(error).message);
@@ -124,11 +160,9 @@ export function useUpdateContactSubmissionStatus() {
     mutationFn: ({ referenceCode, status }: { referenceCode: string, status: string }) => 
       communicationsApi.updateContactSubmissionStatus(referenceCode, status),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["communications", "contactSubmissions"] });
-      toast.success("Submission status updated successfully.");
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.all });
+      toast.success("Contact submission status updated.");
     },
-    onError: (error: unknown) => {
-      toast.error(normalizeApiError(error).message);
-    },
+    onError: () => toast.error("Failed to update status."),
   });
 }

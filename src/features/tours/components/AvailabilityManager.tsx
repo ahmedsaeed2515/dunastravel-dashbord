@@ -4,10 +4,11 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Save, Trash2 } from "lucide-react";
+import { Calendar, Loader2, Plus, RefreshCw, Save, Sparkles, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { Tour, TourAvailability, TourAvailabilityStatus } from "../types";
 import {
+  useCreateBatchTourAvailability,
   useCreateTourAvailability,
   useDeleteTourAvailability,
   useTourAvailabilities,
@@ -24,12 +25,15 @@ interface AvailabilityManagerProps {
 export function AvailabilityManager({ tour, locale }: AvailabilityManagerProps) {
   const { data: slots, isLoading, isError, refetch } = useTourAvailabilities(tour.id);
   const { mutate: createSlot, isPending: isCreating } = useCreateTourAvailability();
+  const { mutate: createBatch, isPending: isBatchGenerating } = useCreateBatchTourAvailability();
   const { mutate: updateSlot, isPending: isUpdating } = useUpdateTourAvailability();
   const { mutate: deleteSlot, isPending: isDeleting } = useDeleteTourAvailability();
   const [date, setDate] = useState("");
   const [capacity, setCapacity] = useState("");
   const [status, setStatus] = useState<TourAvailabilityStatus>('AVAILABLE');
   const [edits, setEdits] = useState<Record<string, { capacity: string; status: TourAvailabilityStatus }>>({});
+
+  const isAr = locale === 'ar';
 
   const editFor = (slot: TourAvailability) => edits[slot.id] ?? {
     capacity: String(slot.totalCapacity),
@@ -42,7 +46,7 @@ export function AvailabilityManager({ tour, locale }: AvailabilityManagerProps) 
 
   const create = () => {
     if (!date || !/^\d+$/.test(capacity) || Number(capacity) < 1) {
-      toast.error("A departure date and a whole-number capacity of at least 1 are required.");
+      toast.error(isAr ? "يرجى تحديد تاريخ وسعة عددية صحيحة (1 على الأقل)." : "A departure date and a whole-number capacity of at least 1 are required.");
       return;
     }
     createSlot(
@@ -51,10 +55,28 @@ export function AvailabilityManager({ tour, locale }: AvailabilityManagerProps) 
     );
   };
 
+  const handleGenerateYearlyBatch = () => {
+    const today = new Date();
+    const nextYear = new Date();
+    nextYear.setDate(today.getDate() + 365);
+
+    const startDate = today.toISOString().split('T')[0];
+    const endDate = nextYear.toISOString().split('T')[0];
+
+    createBatch({
+      tourId: tour.id,
+      data: {
+        startDate,
+        endDate,
+        totalCapacity: 25,
+      },
+    });
+  };
+
   const save = (slot: TourAvailability) => {
     const edit = editFor(slot);
     if (!/^\d+$/.test(edit.capacity) || Number(edit.capacity) < 1) {
-      toast.error("Capacity must be a whole number of at least 1.");
+      toast.error(isAr ? "يجب أن تكون السعة رقماً صحيحاً لا يقل عن 1." : "Capacity must be a whole number of at least 1.");
       return;
     }
     updateSlot({
@@ -68,8 +90,6 @@ export function AvailabilityManager({ tour, locale }: AvailabilityManagerProps) 
     });
   };
 
-  const isAr = locale === 'ar';
-
   const statusLabels: Record<string, string> = {
     AVAILABLE: isAr ? 'متاح (Available)' : 'Available',
     LIMITED: isAr ? 'محدود (Limited)' : 'Limited',
@@ -80,10 +100,22 @@ export function AvailabilityManager({ tour, locale }: AvailabilityManagerProps) 
 
   return (
     <div className="space-y-4">
-      <div className="rounded-2xl border p-3.5 text-xs text-muted-foreground bg-muted/30">
-        {isAr
-          ? "تخصيص وإدارة تواريخ المغادرة والسعة الاستيعابية للمقاعد وتحديث الحالات التشغيلية لكل موعد."
-          : "Configure and manage departure dates, seat capacity, and operational statuses for each slot."}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 rounded-2xl border p-4 text-xs bg-muted/20">
+        <div className="text-muted-foreground leading-relaxed">
+          {isAr
+            ? `تخصيص وإدارة تواريخ المغادرة والسعة الاستيعابية للمقاعد وتحديث الحالات التشغيلية (${slots?.length ?? 0} موعد مسجل).`
+            : `Configure and manage departure dates, seat capacity, and operational statuses (${slots?.length ?? 0} departures active).`}
+        </div>
+        <Button
+          type="button"
+          onClick={handleGenerateYearlyBatch}
+          disabled={isBatchGenerating}
+          variant="outline"
+          className="rounded-xl font-bold gap-2 shrink-0 border-primary/30 hover:bg-primary/10 text-primary"
+        >
+          {isBatchGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+          {isAr ? "توليد جدول 365 يوماً تلقائياً" : "Generate 365-Day Calendar"}
+        </Button>
       </div>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-3 items-end rounded-2xl border p-4 bg-card">
         <label className="text-xs font-bold space-y-1">

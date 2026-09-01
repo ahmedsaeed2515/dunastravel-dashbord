@@ -15,6 +15,8 @@ import {
   Loader2,
   CheckCircle2,
   Sparkles,
+  FolderOpen,
+  Image as ImageIcon,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -30,6 +32,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { MediaLibraryPickerModal, SelectedMediaAsset } from "@/components/media/MediaLibraryPickerModal";
 import {
   useBlogsAdmin,
   useCreateBlog,
@@ -56,6 +59,7 @@ const defaultDraft: BlogDraft = {
 export function BlogsManager() {
   const [search, setSearch] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [editingArticle, setEditingArticle] = useState<BlogArticle | null>(null);
   const [draft, setDraft] = useState<BlogDraft>(defaultDraft);
 
@@ -312,13 +316,32 @@ export function BlogsManager() {
                 />
               </div>
               <div className="space-y-1.5">
-                <label className="text-xs font-bold">رابط صورة الغلاف (Cover Image URL)</label>
-                <Input
-                  value={draft.coverImage}
-                  onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })}
-                  placeholder="https://images.unsplash.com/..."
-                  className="rounded-xl font-mono text-xs"
-                />
+                <div className="flex items-center justify-between">
+                  <label className="text-xs font-bold">صورة الغلاف (Cover Image)</label>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="xs"
+                    onClick={() => setMediaPickerOpen(true)}
+                    className="text-xs text-amber-500 hover:text-amber-600 gap-1 font-bold h-6 px-2 cursor-pointer"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>مكتبة الوسائط</span>
+                  </Button>
+                </div>
+                <div className="flex items-center gap-2">
+                  {draft.coverImage && (
+                    <div className="w-10 h-10 rounded-xl overflow-hidden bg-slate-950 border shrink-0">
+                      <img src={draft.coverImage} alt="Cover preview" className="w-full h-full object-cover" />
+                    </div>
+                  )}
+                  <Input
+                    value={draft.coverImage}
+                    onChange={(e) => setDraft({ ...draft, coverImage: e.target.value })}
+                    placeholder="https://images.unsplash.com/... أو اختر من المكتبة"
+                    className="rounded-xl font-mono text-xs flex-1"
+                  />
+                </div>
               </div>
             </div>
 
@@ -378,6 +401,20 @@ export function BlogsManager() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Media Library Picker Modal */}
+      <MediaLibraryPickerModal
+        open={mediaPickerOpen}
+        onClose={() => setMediaPickerOpen(false)}
+        onSelect={(selected: SelectedMediaAsset) => {
+          if (selected?.url) {
+            setDraft((prev) => ({ ...prev, coverImage: selected.url }));
+            toast.success("تم تعيين صورة الغلاف بنجاح! 📸");
+          }
+        }}
+        defaultCategory="blog"
+        locale="ar"
+      />
     </div>
   );
 }

@@ -275,6 +275,31 @@ export function useCreateTourAvailability() {
   });
 }
 
+export function useCreateBatchTourAvailability() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      tourId,
+      data,
+    }: {
+      tourId: string;
+      data: {
+        startDate: string;
+        endDate: string;
+        totalCapacity: number;
+        daysOfWeek?: number[];
+      };
+    }) => toursApi.createBatchTourAvailability(tourId, data),
+    onSuccess: (_, variables) => {
+      toast.success("تم توليد جدول مواعيد المغادرة بنجاح");
+      queryClient.invalidateQueries({ queryKey: availabilityKey(variables.tourId) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.stats() });
+    },
+    onError: (error: ApiError) =>
+      toast.error(error?.message || "فشل توليد جدول المواعيد"),
+  });
+}
+
 export function useUpdateTourAvailability() {
   const queryClient = useQueryClient();
   return useMutation({

@@ -45,6 +45,7 @@ import { Switch } from "@/components/ui/switch";
 import {
   useReviews,
   useUpdateReviewStatus,
+  useBatchUpdateReviewStatus,
   usePublishReview,
   useRejectReview,
   useReplyReview,
@@ -174,6 +175,8 @@ export function ReviewsManager() {
     isPublished: true,
   });
 
+  const [selectedReviewIds, setSelectedReviewIds] = useState<string[]>([]);
+
   // Queries & Mutations
   const { data: reviewsResponse, isLoading, refetch, isRefetching } = useReviews({ limit: 100 });
   const { data: toursData } = useTours({ limit: 100 });
@@ -181,6 +184,7 @@ export function ReviewsManager() {
 
   const publishMutation = usePublishReview();
   const rejectMutation = useRejectReview();
+  const batchUpdateMutation = useBatchUpdateReviewStatus();
   const replyMutation = useReplyReview();
   const createMutation = useCreateReview();
   const updateMutation = useUpdateReview();
@@ -196,8 +200,8 @@ export function ReviewsManager() {
   // Executive KPI stats
   const stats = useMemo(() => {
     const total = allReviews.length;
-    const pending = allReviews.filter((r) => r.status === "PENDING" || (!r.isPublished && r.status !== "REJECTED")).length;
-    const approved = allReviews.filter((r) => r.status === "APPROVED" || r.isPublished).length;
+    const pending = allReviews.filter((r) => r.status === "PENDING").length;
+    const approved = allReviews.filter((r) => r.status === "APPROVED" && r.isPublished).length;
     const rejected = allReviews.filter((r) => r.status === "REJECTED").length;
     const avgRating = total > 0
       ? (allReviews.reduce((sum, r) => sum + (Number(r.rating) || 5), 0) / total).toFixed(1)
@@ -211,11 +215,9 @@ export function ReviewsManager() {
     return allReviews.filter((review) => {
       // 1. Tab Status Filter
       if (activeTab === "PENDING") {
-        const isPending = review.status === "PENDING" || (!review.isPublished && review.status !== "REJECTED");
-        if (!isPending) return false;
+        if (review.status !== "PENDING") return false;
       } else if (activeTab === "APPROVED") {
-        const isApproved = review.status === "APPROVED" || review.isPublished;
-        if (!isApproved) return false;
+        if (review.status !== "APPROVED" || !review.isPublished) return false;
       } else if (activeTab === "REJECTED") {
         if (review.status !== "REJECTED") return false;
       }
@@ -256,6 +258,41 @@ export function ReviewsManager() {
       return true;
     });
   }, [allReviews, activeTab, selectedRating, selectedTourId, searchQuery, locale]);
+
+  // Batch Selection Handlers
+  const handleToggleSelect = (id: string) => {
+    setSelectedReviewIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
+    );
+  };
+
+  const handleSelectAll = () => {
+    if (filteredReviews.length > 0 && selectedReviewIds.length === filteredReviews.length) {
+      setSelectedReviewIds([]);
+    } else {
+      setSelectedReviewIds(filteredReviews.map((r) => r.id));
+    }
+  };
+
+  const handleBatchApprove = async () => {
+    if (selectedReviewIds.length === 0) return;
+    await batchUpdateMutation.mutateAsync({
+      reviewIds: selectedReviewIds,
+      status: "APPROVED",
+      isPublished: true,
+    });
+    setSelectedReviewIds([]);
+  };
+
+  const handleBatchReject = async () => {
+    if (selectedReviewIds.length === 0) return;
+    await batchUpdateMutation.mutateAsync({
+      reviewIds: selectedReviewIds,
+      status: "REJECTED",
+      isPublished: false,
+    });
+    setSelectedReviewIds([]);
+  };
 
   // Handlers
   const handleOpenReply = (review: Review) => {
@@ -592,6 +629,52 @@ export function ReviewsManager() {
         </div>
       </Card>
 
+      {/* Bulk Moderation Action Bar */}
+      {selectedReviewIds.length > 0 && (
+        <div className="p-3.5 rounded-2xl bg-slate-900 text-white border border-amber-500/40 shadow-xl flex flex-wrap items-center justify-between gap-3 animate-in fade-in slide-in-from-top-2">
+          <div className="flex items-center gap-2.5">
+            <Badge className="bg-amber-500 text-slate-950 font-black text-xs px-2.5 py-0.5">
+              {selectedReviewIds.length}
+            </Badge>
+            <span className="text-xs font-bold">
+              {isAr ? "مراجعات محددة للإجراء الجماعي:" : "Reviews selected for bulk action:"}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              size="sm"
+              onClick={handleBatchApprove}
+              disabled={batchUpdateMutation.isPending}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl text-xs gap-1.5 cursor-pointer shadow-xs"
+            >
+              {batchUpdateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+              <span>{isAr ? "اعتماد ونشر المحدد ✅" : "Approve Selected"}</span>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBatchReject}
+              disabled={batchUpdateMutation.isPending}
+              className="rounded-xl text-xs font-bold gap-1.5 cursor-pointer shadow-xs"
+            >
+              {batchUpdateMutation.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <XCircle className="w-3.5 h-3.5" />}
+              <span>{isAr ? "حجب ورفض المحدد 🚫" : "Reject Selected"}</span>
+            </Button>
+
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setSelectedReviewIds([])}
+              className="text-white/70 hover:text-white rounded-xl text-xs cursor-pointer"
+            >
+              {isAr ? "إلغاء التحديد" : "Cancel"}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* 4. Main Content: Table or Grid View */}
       {isLoading ? (
         <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
@@ -632,6 +715,18 @@ export function ReviewsManager() {
             <table className="w-full text-xs text-start dir-ltr">
               <thead className="bg-muted/60 border-b border-border/80 text-muted-foreground font-bold">
                 <tr>
+                  <th className="p-3.5 text-center w-10">
+                    <input
+                      type="checkbox"
+                      aria-label="Select all reviews"
+                      checked={
+                        filteredReviews.length > 0 &&
+                        selectedReviewIds.length === filteredReviews.length
+                      }
+                      onChange={handleSelectAll}
+                      className="rounded border-border text-amber-500 focus:ring-amber-500 cursor-pointer"
+                    />
+                  </th>
                   <th className="p-3.5 text-start">{tReviews("tour")}</th>
                   <th className="p-3.5 text-start">{tReviews("reviewer")}</th>
                   <th className="p-3.5 text-start">{tReviews("rating")}</th>
@@ -652,6 +747,17 @@ export function ReviewsManager() {
 
                   return (
                     <tr key={review.id} className="hover:bg-muted/30 transition-colors">
+                      {/* Checkbox */}
+                      <td className="p-3.5 text-center">
+                        <input
+                          type="checkbox"
+                          aria-label={`Select review by ${review.reviewerName}`}
+                          checked={selectedReviewIds.includes(review.id)}
+                          onChange={() => handleToggleSelect(review.id)}
+                          className="rounded border-border text-amber-500 focus:ring-amber-500 cursor-pointer"
+                        />
+                      </td>
+
                       {/* Tour */}
                       <td className="p-3.5 max-w-[200px]">
                         <div className="font-bold text-foreground line-clamp-2" title={tourTitle}>
@@ -766,8 +872,45 @@ export function ReviewsManager() {
                       {/* Actions */}
                       <td className="p-3.5 text-end whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
-                          {/* Approve Button */}
-                          {!isApproved && (
+                          {/* Moderation Actions */}
+                          {review.status === "PENDING" ? (
+                            <>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => publishMutation.mutate(review.id)}
+                                disabled={publishMutation.isPending}
+                                className="h-8 px-2.5 rounded-xl border-emerald-500/40 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 text-xs font-bold gap-1 cursor-pointer"
+                                title="اعتماد المراجعة ونشرها"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span className="hidden xl:inline">{isAr ? "اعتماد" : "Approve"}</span>
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => rejectMutation.mutate(review.id)}
+                                disabled={rejectMutation.isPending}
+                                className="h-8 px-2.5 rounded-xl border-rose-500/40 text-rose-600 dark:text-rose-400 hover:bg-rose-500/10 text-xs font-bold gap-1 cursor-pointer"
+                                title="حجب ورفض المراجعة"
+                              >
+                                <XCircle className="w-3.5 h-3.5" />
+                                <span className="hidden xl:inline">{isAr ? "رفض" : "Reject"}</span>
+                              </Button>
+                            </>
+                          ) : isApproved ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => rejectMutation.mutate(review.id)}
+                              disabled={rejectMutation.isPending}
+                              className="h-8 px-2.5 rounded-xl border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 cursor-pointer"
+                              title={tReviews("quickReject")}
+                            >
+                              <XCircle className="w-3.5 h-3.5" />
+                              <span className="hidden xl:inline">{isAr ? "حجب" : "Unpublish"}</span>
+                            </Button>
+                          ) : (
                             <Button
                               size="sm"
                               variant="outline"
@@ -778,21 +921,6 @@ export function ReviewsManager() {
                             >
                               <CheckCircle2 className="w-3.5 h-3.5" />
                               <span className="hidden xl:inline">{isAr ? "اعتماد" : "Approve"}</span>
-                            </Button>
-                          )}
-
-                          {/* Reject Button */}
-                          {isApproved && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => rejectMutation.mutate(review.id)}
-                              disabled={rejectMutation.isPending}
-                              className="h-8 px-2.5 rounded-xl border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 cursor-pointer"
-                              title={tReviews("quickReject")}
-                            >
-                              <XCircle className="w-3.5 h-3.5" />
-                              <span className="hidden xl:inline">{isAr ? "إلغاء النشر" : "Unpublish"}</span>
                             </Button>
                           )}
 
@@ -854,6 +982,13 @@ export function ReviewsManager() {
                   {/* Top Header: Avatar + Name + Status */}
                   <div className="flex items-start justify-between gap-3">
                     <div className="flex items-center gap-2.5">
+                      <input
+                        type="checkbox"
+                        aria-label={`Select review by ${review.reviewerName}`}
+                        checked={selectedReviewIds.includes(review.id)}
+                        onChange={() => handleToggleSelect(review.id)}
+                        className="rounded border-border text-amber-500 focus:ring-amber-500 cursor-pointer"
+                      />
                       <div
                         className={`w-10 h-10 rounded-2xl bg-gradient-to-tr ${getAvatarGradient(
                           review.reviewerName
@@ -921,26 +1056,48 @@ export function ReviewsManager() {
                 {/* Footer Action Bar */}
                 <div className="pt-3 border-t border-border/60 flex items-center justify-between">
                   <div className="flex items-center gap-1">
-                    {!isApproved ? (
-                      <Button
-                        size="sm"
-                        onClick={() => publishMutation.mutate(review.id)}
-                        disabled={publishMutation.isPending}
-                        className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl font-bold gap-1 px-3"
-                      >
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        <span>{isAr ? "اعتماد" : "Approve"}</span>
-                      </Button>
-                    ) : (
+                    {review.status === "PENDING" ? (
+                      <>
+                        <Button
+                          size="sm"
+                          onClick={() => publishMutation.mutate(review.id)}
+                          disabled={publishMutation.isPending}
+                          className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl font-bold gap-1 px-2.5 cursor-pointer shadow-xs"
+                        >
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>{isAr ? "اعتماد" : "Approve"}</span>
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => rejectMutation.mutate(review.id)}
+                          disabled={rejectMutation.isPending}
+                          className="h-8 border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs rounded-xl font-bold gap-1 px-2.5 cursor-pointer"
+                        >
+                          <XCircle className="w-3.5 h-3.5" />
+                          <span>{isAr ? "رفض" : "Reject"}</span>
+                        </Button>
+                      </>
+                    ) : isApproved ? (
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => rejectMutation.mutate(review.id)}
                         disabled={rejectMutation.isPending}
-                        className="h-8 border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs rounded-xl font-bold gap-1 px-3"
+                        className="h-8 border-rose-500/30 text-rose-600 hover:bg-rose-500/10 text-xs rounded-xl font-bold gap-1 px-3 cursor-pointer"
                       >
                         <XCircle className="w-3.5 h-3.5" />
                         <span>{isAr ? "إخفاء" : "Unpublish"}</span>
+                      </Button>
+                    ) : (
+                      <Button
+                        size="sm"
+                        onClick={() => publishMutation.mutate(review.id)}
+                        disabled={publishMutation.isPending}
+                        className="h-8 bg-emerald-600 hover:bg-emerald-700 text-white text-xs rounded-xl font-bold gap-1 px-3 cursor-pointer shadow-xs"
+                      >
+                        <CheckCircle2 className="w-3.5 h-3.5" />
+                        <span>{isAr ? "اعتماد" : "Approve"}</span>
                       </Button>
                     )}
 

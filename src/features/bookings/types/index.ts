@@ -180,6 +180,7 @@ export interface BookingAttachment {
 export interface ManualBookingPayload {
   tourId: string;
   arrivalDate: string;
+  departureDate?: string;
   fullName: string;
   email: string;
   phone: string;
@@ -189,6 +190,8 @@ export interface ManualBookingPayload {
   userId?: string;
   availabilityId?: string;
   promoCode?: string;
+  notes?: string;
+  transportChoice?: string;
 }
 
 export interface AddNotePayload {

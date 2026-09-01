@@ -33,6 +33,17 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Wand2,
+  Calendar,
+  Clock,
+  Phone,
+  Mail,
+  MapPin,
+  UserCheck,
+  FileText,
+  Navigation,
+  User,
+  Luggage,
+  MessageCircle,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -186,10 +197,19 @@ export function TransportationServicesManager() {
   const isAr = locale === "ar";
   const queryClient = useQueryClient();
 
+  const [mainTab, setMainTab] = useState<"fleet" | "bookings">("fleet");
   const [search, setSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState<string>("ALL");
   const [selectedStatus, setSelectedStatus] = useState<"ACTIVE" | "ARCHIVED" | "ALL">("ALL");
   const [viewMode, setViewMode] = useState<"grid" | "table">("grid");
+
+  // Bookings management state
+  const [bookingStatusFilter, setBookingStatusFilter] = useState<string>("ALL");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [selectedBookingForDriver, setSelectedBookingForDriver] = useState<any | null>(null);
+  const [driverNameInput, setDriverNameInput] = useState("");
+  const [driverNotesInput, setDriverNotesInput] = useState("");
+  const [driverStatusInput, setDriverStatusInput] = useState("ASSIGNED");
 
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<TransportationService | null>(null);
@@ -227,6 +247,49 @@ export function TransportationServicesManager() {
       }
     },
     staleTime: 30_000,
+  });
+
+  const {
+    data: rawBookings = [],
+    isLoading: isBookingsLoading,
+    isFetching: isBookingsFetching,
+    refetch: refetchBookings,
+  } = useQuery({
+    queryKey: ["admin-transportation-bookings", bookingStatusFilter],
+    queryFn: async () => {
+      try {
+        const list = await transportationApi.listBookings(bookingStatusFilter);
+        return Array.isArray(list) ? list : [];
+      } catch (err) {
+        console.warn("Error fetching admin transportation bookings:", err);
+        return [];
+      }
+    },
+    staleTime: 15_000,
+  });
+
+  const updateBookingStatusMutation = useMutation({
+    mutationFn: async ({
+      id,
+      status,
+      driverName,
+      notes,
+    }: {
+      id: string;
+      status: string;
+      driverName?: string;
+      notes?: string;
+    }) => {
+      return await transportationApi.updateBookingStatus(id, { status, driverName, notes });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-transportation-bookings"] });
+      toast.success(isAr ? "تم تحديث حالة الحجز وتعيين السائق بنجاح! ✨" : "Booking status & driver updated! ✨");
+      setSelectedBookingForDriver(null);
+    },
+    onError: (err: any) => {
+      toast.error(err?.response?.data?.message || (isAr ? "تعذر تحديث الحجز" : "Failed to update booking"));
+    },
   });
 
   const fleetData = useMemo(() => {
@@ -352,6 +415,43 @@ export function TransportationServicesManager() {
       return true;
     });
   }, [fleetData, selectedCategory, selectedStatus, search]);
+
+  const bookingStats = useMemo(() => {
+    const total = rawBookings.length;
+    const submitted = rawBookings.filter((b: any) => b.status === "SUBMITTED").length;
+    const confirmed = rawBookings.filter((b: any) => b.status === "CONFIRMED").length;
+    const assigned = rawBookings.filter((b: any) => b.status === "ASSIGNED").length;
+    const completed = rawBookings.filter((b: any) => b.status === "COMPLETED").length;
+    const cancelled = rawBookings.filter((b: any) => b.status === "CANCELLED").length;
+    const totalRevenue = rawBookings
+      .filter((b: any) => b.status !== "CANCELLED")
+      .reduce((acc: number, b: any) => acc + (Number(b.totalAmountUsd) || 0), 0);
+
+    return { total, submitted, confirmed, assigned, completed, cancelled, totalRevenue };
+  }, [rawBookings]);
+
+  const filteredBookings = useMemo(() => {
+    return rawBookings.filter((b: any) => {
+      if (bookingStatusFilter !== "ALL" && b.status !== bookingStatusFilter) return false;
+      if (bookingSearch.trim()) {
+        const q = bookingSearch.toLowerCase().trim();
+        const matchRef = b.referenceCode?.toLowerCase().includes(q);
+        const matchCustomer =
+          b.user?.name?.toLowerCase().includes(q) ||
+          b.user?.email?.toLowerCase().includes(q) ||
+          b.notes?.toLowerCase().includes(q);
+        const matchPickup = b.pickupLocation?.toLowerCase().includes(q);
+        const matchDropoff = b.dropoffLocation?.toLowerCase().includes(q);
+        const matchFlight = b.flightNumber?.toLowerCase().includes(q);
+        const matchDriver = b.driverName?.toLowerCase().includes(q);
+        const matchService = b.service?.name?.toLowerCase().includes(q);
+        if (!matchRef && !matchCustomer && !matchPickup && !matchDropoff && !matchFlight && !matchDriver && !matchService) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }, [rawBookings, bookingStatusFilter, bookingSearch]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: ServiceDraft) => {
@@ -647,32 +747,91 @@ export function TransportationServicesManager() {
         </div>
 
         <div className="flex items-center gap-2">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => refetch()}
-            disabled={isFetching}
-            className="rounded-2xl h-11 text-xs font-bold gap-2 border-border cursor-pointer shadow-xs"
-          >
-            <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-amber-500" : ""}`} />
-            <span>{isAr ? "تحديث الأسطول" : "Refresh"}</span>
-          </Button>
+          {mainTab === "fleet" ? (
+            <>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => refetch()}
+                disabled={isFetching}
+                className="rounded-2xl h-11 text-xs font-bold gap-2 border-border cursor-pointer shadow-xs"
+              >
+                <RefreshCw className={`w-4 h-4 ${isFetching ? "animate-spin text-amber-500" : ""}`} />
+                <span>{isAr ? "تحديث الأسطول" : "Refresh"}</span>
+              </Button>
 
-          <Button
-            type="button"
-            onClick={openCreateModal}
-            className="rounded-2xl h-11 text-xs font-bold px-5 gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer"
-          >
-            <Plus className="w-4 h-4 stroke-[3]" />
-            <span>{isAr ? "إضافة مركبة جديدة +" : "Add Vehicle +"}</span>
-          </Button>
+              <Button
+                type="button"
+                onClick={openCreateModal}
+                className="rounded-2xl h-11 text-xs font-bold px-5 gap-2 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer"
+              >
+                <Plus className="w-4 h-4 stroke-[3]" />
+                <span>{isAr ? "إضافة مركبة جديدة +" : "Add Vehicle +"}</span>
+              </Button>
+            </>
+          ) : (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => refetchBookings()}
+              disabled={isBookingsFetching}
+              className="rounded-2xl h-11 text-xs font-bold gap-2 border-border cursor-pointer shadow-xs"
+            >
+              <RefreshCw className={`w-4 h-4 ${isBookingsFetching ? "animate-spin text-amber-500" : ""}`} />
+              <span>{isAr ? "تحديث الحجوزات" : "Refresh Bookings"}</span>
+            </Button>
+          )}
         </div>
       </div>
 
-      {/* 2. Metric Highlight Cards */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
-        <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+      {/* 2. Top-Level Tab Switcher: Fleet vs Bookings */}
+      <div className="flex items-center gap-2 p-1.5 rounded-2xl bg-muted/40 border w-fit">
+        <button
+          type="button"
+          onClick={() => setMainTab("fleet")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            mainTab === "fleet"
+              ? "bg-amber-500 text-slate-950 shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          }`}
+        >
+          <Bus className="w-4 h-4" />
+          <span>{isAr ? "أسطول النقل والمركبات" : "Fleet & Vehicles"}</span>
+          <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+            {stats.total}
+          </Badge>
+        </button>
+
+        <button
+          type="button"
+          onClick={() => setMainTab("bookings")}
+          className={`px-4 py-2.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+            mainTab === "bookings"
+              ? "bg-amber-500 text-slate-950 shadow-xs"
+              : "text-muted-foreground hover:text-foreground hover:bg-muted/60"
+          }`}
+        >
+          <Calendar className="w-4 h-4" />
+          <span>{isAr ? "حجوزات وطلبات التوصيل" : "Transfer Bookings"}</span>
+          {bookingStats.submitted > 0 ? (
+            <Badge className="bg-amber-500 text-slate-950 text-[10px] font-bold px-1.5 py-0 animate-pulse">
+              {bookingStats.submitted} {isAr ? "جديد" : "New"}
+            </Badge>
+          ) : (
+            <Badge variant="secondary" className="text-[10px] font-bold px-1.5 py-0">
+              {bookingStats.total}
+            </Badge>
+          )}
+        </button>
+      </div>
+
+      {mainTab === "fleet" ? (
+        <>
+          {/* 3. Metric Highlight Cards (Fleet) */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
           <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
             <span>{isAr ? "إجمالي الأسطول" : "Total Fleet"}</span>
             <Bus className="w-4 h-4 text-amber-500" />
@@ -1130,6 +1289,388 @@ export function TransportationServicesManager() {
           </div>
         </Card>
       )}
+      </>
+      ) : (
+        /* ========================================================================= */
+        /* TRANSPORTATION BOOKINGS WORKSPACE */
+        /* ========================================================================= */
+        <div className="space-y-6 animate-in fade-in duration-300">
+          {/* 1. Bookings Metric Cards */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+            <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                <span>{isAr ? "إجمالي طلبات النقل" : "Total Transfers"}</span>
+                <Calendar className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="text-2xl font-black text-foreground">{bookingStats.total}</div>
+              <div className="text-[10px] text-muted-foreground">{isAr ? "طلب حجز مسجل" : "Registered requests"}</div>
+            </Card>
+
+            <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-amber-600 dark:text-amber-400">
+                <span>{isAr ? "جديدة بانتظار التأكيد" : "Pending Confirmation"}</span>
+                <AlertTriangle className="w-4 h-4 text-amber-500" />
+              </div>
+              <div className="text-2xl font-black text-amber-600 dark:text-amber-400">{bookingStats.submitted}</div>
+              <div className="text-[10px] text-muted-foreground">{isAr ? "بحاجة لمراجعة وتعيين سائق" : "Requires driver assignment"}</div>
+            </Card>
+
+            <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-sky-600 dark:text-sky-400">
+                <span>{isAr ? "حجوزات مؤكدة ومجدولة" : "Confirmed & Scheduled"}</span>
+                <UserCheck className="w-4 h-4 text-sky-500" />
+              </div>
+              <div className="text-2xl font-black text-sky-600 dark:text-sky-400">{bookingStats.confirmed + bookingStats.assigned}</div>
+              <div className="text-[10px] text-muted-foreground">{isAr ? "قيد التنفيذ والمتابعة" : "Scheduled & in progress"}</div>
+            </Card>
+
+            <Card className="p-4 rounded-3xl bg-card border shadow-xs space-y-1">
+              <div className="flex items-center justify-between text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <span>{isAr ? "الإيرادات الإجمالية" : "Total Revenue"}</span>
+                <DollarSign className="w-4 h-4 text-emerald-500" />
+              </div>
+              <div className="text-2xl font-black text-emerald-600 dark:text-emerald-400">${bookingStats.totalRevenue.toLocaleString()}</div>
+              <div className="text-[10px] text-muted-foreground">{bookingStats.completed} {isAr ? "رحلة مكتملة" : "completed trips"}</div>
+            </Card>
+          </div>
+
+          {/* 2. Bookings Filter & Search Bar */}
+          <div className="space-y-3 p-4 rounded-3xl bg-card border shadow-xs">
+            <div className="flex items-center justify-between flex-wrap gap-2 border-b pb-3">
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {[
+                  { id: "ALL", labelAr: "جميع الحجوزات 📋", labelEn: "All Bookings 📋", count: bookingStats.total },
+                  { id: "SUBMITTED", labelAr: "جديد بانتظار التأكيد ⏳", labelEn: "Submitted ⏳", count: bookingStats.submitted },
+                  { id: "CONFIRMED", labelAr: "مؤكد ⚡", labelEn: "Confirmed ⚡", count: bookingStats.confirmed },
+                  { id: "ASSIGNED", labelAr: "تم تعيين سائق 🚗", labelEn: "Driver Assigned 🚗", count: bookingStats.assigned },
+                  { id: "COMPLETED", labelAr: "مكتمل بنجاح ✅", labelEn: "Completed ✅", count: bookingStats.completed },
+                  { id: "CANCELLED", labelAr: "ملغي ❌", labelEn: "Cancelled ❌", count: bookingStats.cancelled },
+                ].map((st) => (
+                  <button
+                    key={st.id}
+                    type="button"
+                    onClick={() => setBookingStatusFilter(st.id)}
+                    className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                      bookingStatusFilter === st.id
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                        : "bg-muted/40 text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    <span>{isAr ? st.labelAr : st.labelEn}</span>
+                    <Badge variant="secondary" className="mr-1.5 text-[10px] font-bold px-1.5 py-0">
+                      {st.count}
+                    </Badge>
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="relative flex-1">
+                <Search className="w-4 h-4 text-muted-foreground absolute right-3 rtl:right-3 ltr:left-3 top-1/2 -translate-y-1/2" />
+                <Input
+                  placeholder={isAr ? "البحث بالرقم المرجعي، اسم العميل، موقع الاستقبال، أو رقم الرحلة..." : "Search reference, guest name, location, flight..."}
+                  value={bookingSearch}
+                  onChange={(e) => setBookingSearch(e.target.value)}
+                  className="h-10 text-xs pr-9 rtl:pr-9 ltr:pl-9 rounded-2xl font-medium"
+                />
+                {bookingSearch && (
+                  <button
+                    type="button"
+                    onClick={() => setBookingSearch("")}
+                    className="absolute left-3 rtl:left-3 ltr:right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* 3. Bookings List Cards */}
+          {isBookingsLoading ? (
+            <div className="flex flex-col items-center justify-center p-16 gap-3 rounded-3xl bg-card border text-muted-foreground">
+              <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />
+              <span className="text-xs font-bold">{isAr ? "جاري تحميل حجوزات النقل والتوصيل..." : "Loading transfer bookings..."}</span>
+            </div>
+          ) : filteredBookings.length === 0 ? (
+            <div className="flex flex-col items-center justify-center p-16 gap-3 rounded-3xl bg-card border text-center">
+              <Calendar className="w-12 h-12 text-muted-foreground/40" />
+              <div className="space-y-1">
+                <h3 className="text-sm font-black text-foreground">
+                  {isAr ? "لا توجد حجوزات نقل مطابقة" : "No transfer bookings found matching criteria"}
+                </h3>
+                <p className="text-xs text-muted-foreground">
+                  {isAr ? "ستظهر طلبات النقل الخاصة بالمطارات والتنقلات VIP فور قيام العملاء بالحجز من الموقع." : "VIP transfer requests will appear here when guests book online."}
+                </p>
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {filteredBookings.map((b: any) => {
+                let customerName = b.user?.name || "Guest Traveler";
+                let customerEmail = b.user?.email || "";
+                let customerPhone = b.user?.phone || "";
+
+                if (b.notes && b.notes.includes("[Contact:")) {
+                  const matchName = b.notes.match(/Name:\s*([^|\]]+)/);
+                  const matchEmail = b.notes.match(/Email:\s*([^|\]]+)/);
+                  const matchPhone = b.notes.match(/Phone:\s*([^|\]]+)/);
+                  if (matchName && matchName[1]) customerName = matchName[1].trim();
+                  if (matchEmail && matchEmail[1]) customerEmail = matchEmail[1].trim();
+                  if (matchPhone && matchPhone[1]) customerPhone = matchPhone[1].trim();
+                }
+
+                const statusBadgeConfig: Record<string, { label: string; class: string }> = {
+                  SUBMITTED: { label: isAr ? "جديد بانتظار التأكيد" : "Submitted", class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+                  CONFIRMED: { label: isAr ? "مؤكد" : "Confirmed", class: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30" },
+                  ASSIGNED: { label: isAr ? "تم تعيين سائق" : "Driver Assigned", class: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30" },
+                  COMPLETED: { label: isAr ? "مكتمل" : "Completed", class: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+                  CANCELLED: { label: isAr ? "ملغي" : "Cancelled", class: "bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/30" },
+                };
+
+                const currentBadge = statusBadgeConfig[b.status] || { label: b.status, class: "bg-muted text-muted-foreground border-border" };
+
+                return (
+                  <Card key={b.id} className="p-5 rounded-3xl bg-card border shadow-xs space-y-4 hover:border-amber-500/40 transition-all">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 border-b pb-4">
+                      <div className="flex items-center gap-3">
+                        <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                          <Car className="w-5 h-5" />
+                        </div>
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono text-sm font-black text-foreground">{b.referenceCode}</span>
+                            <Badge className={`text-[10px] font-bold ${currentBadge.class}`}>
+                              {currentBadge.label}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground font-semibold flex items-center gap-1.5">
+                            <span>{b.service?.name || "VIP Chauffeur Transfer"}</span>
+                            {b.flightNumber && (
+                              <span className="font-mono px-1.5 py-0.5 rounded bg-sky-500/10 text-sky-600 dark:text-sky-400 border border-sky-500/20 text-[10px]">
+                                ✈️ {b.flightNumber}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <select
+                          aria-label={isAr ? "تغيير حالة الحجز" : "Change booking status"}
+                          value={b.status}
+                          onChange={(e) => updateBookingStatusMutation.mutate({ id: b.id, status: e.target.value })}
+                          disabled={updateBookingStatusMutation.isPending}
+                          className="h-9 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
+                        >
+                          <option value="SUBMITTED">{isAr ? "جديد (SUBMITTED)" : "Submitted"}</option>
+                          <option value="CONFIRMED">{isAr ? "مؤكد (CONFIRMED)" : "Confirmed"}</option>
+                          <option value="ASSIGNED">{isAr ? "تم تعيين سائق (ASSIGNED)" : "Driver Assigned"}</option>
+                          <option value="COMPLETED">{isAr ? "مكتمل (COMPLETED)" : "Completed"}</option>
+                          <option value="CANCELLED">{isAr ? "ملغي (CANCELLED)" : "Cancelled"}</option>
+                        </select>
+
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedBookingForDriver(b);
+                            setDriverNameInput(b.driverName || "");
+                            setDriverNotesInput(b.notes || "");
+                            setDriverStatusInput(b.status === "SUBMITTED" ? "ASSIGNED" : b.status);
+                          }}
+                          className="rounded-xl h-9 text-xs font-bold gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer shadow-xs"
+                        >
+                          <UserCheck className="w-3.5 h-3.5" />
+                          <span>{b.driverName ? (isAr ? `السائق: ${b.driverName}` : `Driver: ${b.driverName}`) : (isAr ? "تعيين سائق 🚗" : "Assign Driver 🚗")}</span>
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4 text-xs">
+                      {/* Customer */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                          <User className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{isAr ? "بيانات العميل" : "Guest Customer"}</span>
+                        </div>
+                        <div className="font-black text-foreground">{customerName}</div>
+                        {customerEmail && <div className="text-muted-foreground text-[11px] truncate dir-ltr">{customerEmail}</div>}
+                        {customerPhone && (
+                          <div className="flex items-center gap-2 pt-0.5">
+                            <span className="font-mono text-[11px] text-foreground dir-ltr">{customerPhone}</span>
+                            <a
+                              href={`https://wa.me/${customerPhone.replace(/[^0-9]/g, '')}`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="p-1 rounded-md bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold inline-flex items-center gap-1"
+                              title="WhatsApp"
+                            >
+                              <MessageCircle className="w-3.5 h-3.5 inline" />
+                              <span>WhatsApp</span>
+                            </a>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Schedule */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{isAr ? "موعد الاستقبال والتوصيل" : "Pickup Schedule"}</span>
+                        </div>
+                        <div className="font-black text-foreground">
+                          {new Date(b.pickupDate).toLocaleDateString(locale, { dateStyle: 'medium' })}
+                        </div>
+                        <div className="text-muted-foreground text-[11px] flex items-center gap-1 font-semibold">
+                          <Clock className="w-3 h-3" />
+                          <span>{b.pickupTime || "10:00 AM"}</span>
+                        </div>
+                        <div className="text-[11px] text-muted-foreground font-semibold">
+                          👥 {b.passengerCount} {isAr ? "ركاب" : "passengers"} · 🧳 {b.luggageCount || 0} {isAr ? "حقائب" : "bags"}
+                        </div>
+                      </div>
+
+                      {/* Route */}
+                      <div className="space-y-1">
+                        <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                          <Navigation className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{isAr ? "مسار الرحلة" : "Transfer Route"}</span>
+                        </div>
+                        <div className="text-muted-foreground text-[11px] flex items-start gap-1">
+                          <span className="text-amber-500 font-bold shrink-0">📍</span>
+                          <span className="font-bold text-foreground truncate">{b.pickupLocation}</span>
+                        </div>
+                        <div className="text-muted-foreground text-[11px] flex items-start gap-1">
+                          <span className="text-emerald-500 font-bold shrink-0">🏁</span>
+                          <span className="font-bold text-foreground truncate">{b.dropoffLocation}</span>
+                        </div>
+                      </div>
+
+                      {/* Financials & Driver */}
+                      <div className="space-y-1 md:text-left rtl:md:text-right">
+                        <div className="text-[11px] font-bold text-muted-foreground flex items-center gap-1">
+                          <DollarSign className="w-3.5 h-3.5 text-amber-500" />
+                          <span>{isAr ? "القيمة والسائق" : "Financials & Driver"}</span>
+                        </div>
+                        <div className="text-lg font-black text-amber-500">
+                          ${Number(b.totalAmountUsd).toFixed(2)}
+                        </div>
+                        <div className="text-[11px] font-semibold text-muted-foreground">
+                          {b.driverName ? (
+                            <span className="text-emerald-600 dark:text-emerald-400">🚗 {b.driverName}</span>
+                          ) : (
+                            <span className="text-amber-600 dark:text-amber-400">⚠️ {isAr ? "بانتظار تعيين سائق" : "Unassigned"}</span>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+
+                    {b.notes && (
+                      <div className="p-3 rounded-2xl bg-muted/40 text-[11px] text-muted-foreground leading-relaxed border">
+                        <span className="font-bold text-foreground ml-1">{isAr ? "ملاحظات وتفاصيل إضافية:" : "Notes / Requests:"}</span>
+                        <span>{b.notes}</span>
+                      </div>
+                    )}
+                  </Card>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Driver Assignment Dialog */}
+      <Dialog open={Boolean(selectedBookingForDriver)} onOpenChange={(open) => !open && setSelectedBookingForDriver(null)}>
+        <DialogContent className="max-w-md p-6 rounded-3xl bg-card border border-border shadow-2xl">
+          <DialogHeader className="space-y-2">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/20 text-amber-500 flex items-center justify-center mx-auto">
+              <UserCheck className="w-6 h-6 stroke-[2.5]" />
+            </div>
+            <DialogTitle className="text-center text-lg font-black text-foreground">
+              {isAr ? "تعيين وتحديث بيانات السائق" : "Assign Chauffeur & Driver"}
+            </DialogTitle>
+            <DialogDescription className="text-center text-xs text-muted-foreground">
+              {isAr
+                ? `طلب الحجز رقم ${selectedBookingForDriver?.referenceCode} - ${selectedBookingForDriver?.service?.name || "VIP Transfer"}`
+                : `Booking ${selectedBookingForDriver?.referenceCode} - ${selectedBookingForDriver?.service?.name || "VIP Transfer"}`}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-3">
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">{isAr ? "اسم السائق ورقم الاتصال *" : "Driver Name & Contact *"}</label>
+              <Input
+                placeholder={isAr ? "مثال: الكابتن أحمد حسني (+20 100 123 4567)" : "e.g. Captain Ahmed Hosny (+20 100 123 4567)"}
+                value={driverNameInput}
+                onChange={(e) => setDriverNameInput(e.target.value)}
+                className="rounded-xl text-xs font-bold"
+              />
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">{isAr ? "حالة الحجز التشغيلية" : "Operational Status"}</label>
+              <select
+                aria-label={isAr ? "حالة الحجز التشغيلية" : "Operational status"}
+                value={driverStatusInput}
+                onChange={(e) => setDriverStatusInput(e.target.value)}
+                className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
+              >
+                <option value="ASSIGNED">{isAr ? "تم تعيين سائق (ASSIGNED)" : "Driver Assigned"}</option>
+                <option value="CONFIRMED">{isAr ? "مؤكد (CONFIRMED)" : "Confirmed"}</option>
+                <option value="COMPLETED">{isAr ? "مكتمل (COMPLETED)" : "Completed"}</option>
+                <option value="CANCELLED">{isAr ? "ملغي (CANCELLED)" : "Cancelled"}</option>
+              </select>
+            </div>
+
+            <div className="space-y-1.5">
+              <label className="text-xs font-bold text-foreground">{isAr ? "ملاحظات تشغيلية داخلية" : "Internal Operational Notes"}</label>
+              <Textarea
+                rows={3}
+                placeholder={isAr ? "أي تعليمات خاصة بالسائق أو رقم لوحة السيارة..." : "Vehicle license plate number, special pickup coordinates..."}
+                value={driverNotesInput}
+                onChange={(e) => setDriverNotesInput(e.target.value)}
+                className="text-xs rounded-xl"
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="flex flex-row items-center justify-center gap-3 pt-4 border-t">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setSelectedBookingForDriver(null)}
+              disabled={updateBookingStatusMutation.isPending}
+              className="text-xs font-bold rounded-xl flex-1 cursor-pointer"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                if (selectedBookingForDriver) {
+                  updateBookingStatusMutation.mutate({
+                    id: selectedBookingForDriver.id,
+                    status: driverStatusInput,
+                    driverName: driverNameInput.trim() || undefined,
+                    notes: driverNotesInput.trim() || undefined,
+                  });
+                }
+              }}
+              disabled={updateBookingStatusMutation.isPending}
+              className="text-xs font-bold rounded-xl flex-1 gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer shadow-md"
+            >
+              {updateBookingStatusMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4" />
+              )}
+              <span>{isAr ? "حفظ وتعيين السائق ✨" : "Save & Assign ✨"}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* 5. Comprehensive Vehicle Modal Editor (4 Tabs + 5 Languages + Media Picker) */}
       <Dialog open={isEditorOpen} onOpenChange={setIsEditorOpen}>

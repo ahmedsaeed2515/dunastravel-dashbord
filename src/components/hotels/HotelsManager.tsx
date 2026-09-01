@@ -77,7 +77,19 @@ import {
   useHotels,
   useUpdateHotel,
 } from "@/features/hotels/hooks/useHotels";
-import { AdminHotel, HotelPayload, HotelRoomPayload, HotelStatus } from "@/features/hotels/types";
+import {
+  useHotelBookings,
+  useUpdateHotelBookingStatus,
+} from "@/features/hotels/hooks/useHotelBookings";
+import {
+  AdminHotel,
+  HotelPayload,
+  HotelRoomPayload,
+  HotelStatus,
+  HotelBooking,
+  HotelBookingStatus,
+} from "@/features/hotels/types";
+import { format } from "date-fns";
 import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
 import { MediaAsset, MediaEntityType } from "@/features/media/types";
 import { autoTranslateMissingEntityFields } from "@/lib/translationService";
@@ -298,6 +310,39 @@ export function HotelsManager() {
   const lifecycleMutation = useHotelLifecycle();
   const deleteMutation = useDeleteHotel();
 
+  // Standalone Hotel Bookings Workspace State
+  const [activeMainTab, setActiveMainTab] = useState<"catalog" | "bookings">("catalog");
+  const [bookingStatusFilter, setBookingStatusFilter] = useState<string>("ALL");
+  const [bookingSearch, setBookingSearch] = useState("");
+  const [selectedBookingForDetails, setSelectedBookingForDetails] = useState<HotelBooking | null>(null);
+  const [adminNotesInput, setAdminNotesInput] = useState("");
+
+  const { data: bookingsData, isLoading: isBookingsLoading } = useHotelBookings({
+    page: 1,
+    limit: 100,
+    status: bookingStatusFilter !== "ALL" ? bookingStatusFilter : undefined,
+    search: bookingSearch.trim() || undefined,
+  });
+
+  const updateBookingStatusMutation = useUpdateHotelBookingStatus();
+
+  const allBookings: HotelBooking[] = useMemo(() => {
+    return bookingsData?.items || [];
+  }, [bookingsData]);
+
+  const bookingStats = useMemo(() => {
+    const total = allBookings.length;
+    const pending = allBookings.filter((b) => b.status === "PENDING").length;
+    const confirmed = allBookings.filter((b) => b.status === "CONFIRMED").length;
+    const completed = allBookings.filter((b) => b.status === "COMPLETED").length;
+    const cancelled = allBookings.filter((b) => b.status === "CANCELLED").length;
+    const totalRevenue = allBookings.reduce(
+      (sum, b) => (b.status !== "CANCELLED" ? sum + (Number(b.totalAmountUsd) || 0) : sum),
+      0
+    );
+    return { total, pending, confirmed, completed, cancelled, totalRevenue };
+  }, [allBookings]);
+
   const hotels = Array.isArray(data) ? data : (data?.data ?? []);
 
   // Filter hotels
@@ -432,6 +477,43 @@ export function HotelsManager() {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
+      {/* Top Main Mode Switcher: Catalog vs Bookings */}
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-4 p-2.5 bg-muted/60 border border-border/80 rounded-3xl shadow-xs">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setActiveMainTab("catalog")}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+              activeMainTab === "catalog"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.01]"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/70"
+            }`}
+          >
+            <Building2 className="w-4 h-4" />
+            <span>{isAr ? "دليل الفنادق والغرف (Catalog)" : "Hotels & Rooms Catalog"}</span>
+            <span className="bg-slate-950/20 text-slate-950 text-[10px] font-mono font-black px-2 py-0.5 rounded-full">
+              {totalHotels}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab("bookings")}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+              activeMainTab === "bookings"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.01]"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/70"
+            }`}
+          >
+            <BedDouble className="w-4 h-4" />
+            <span>{isAr ? "حجوزات الفنادق والغرف المباشرة (Hotel Bookings)" : "Hotel & Room Reservations"}</span>
+            <span className="bg-emerald-600 text-white text-[10px] font-mono font-black px-2 py-0.5 rounded-full">
+              {bookingStats.total}
+            </span>
+          </button>
+        </div>
+      </div>
+
+      {activeMainTab === "catalog" && (
+        <div className="space-y-6">
       {/* 1. Metric Cards */}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
@@ -872,6 +954,455 @@ export function HotelsManager() {
           })}
         </div>
       )}
+
+              </div>
+      )}
+
+      {/* Standalone Hotel Bookings Workspace */}
+      {activeMainTab === "bookings" && (
+        <div className="space-y-6">
+          {/* Booking KPIs */}
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "إجمالي حجوزات الفنادق" : "Total Hotel Bookings"}
+                </span>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
+                  {bookingStats.total} <span className="text-xs font-bold text-amber-500">{isAr ? "حجز 🏨" : "Stays"}</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                <BedDouble className="w-6 h-6 stroke-[2.2]" />
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "بانتظار التأكيد والمراجعة" : "Pending Confirmation"}
+                </span>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-500">
+                  {bookingStats.pending} <span className="text-xs font-bold text-amber-500">⏳</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                <Clock className="w-6 h-6 stroke-[2.2]" />
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "حجوزات وإقامات مؤكدة" : "Confirmed Stays"}
+                </span>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-emerald-500">
+                  {bookingStats.confirmed} <span className="text-xs font-bold text-emerald-500">✅</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500">
+                <CheckCircle2 className="w-6 h-6 stroke-[2.2]" />
+              </div>
+            </Card>
+
+            <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
+              <div className="space-y-1">
+                <span className="text-xs font-bold text-muted-foreground">
+                  {isAr ? "إجمالي إيرادات الفنادق" : "Total Hotel Revenue"}
+                </span>
+                <div className="text-2xl sm:text-3xl font-black font-mono text-amber-500">
+                  ${bookingStats.totalRevenue.toLocaleString()} <span className="text-xs font-bold text-amber-500">USD 💰</span>
+                </div>
+              </div>
+              <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                <DollarSign className="w-6 h-6 stroke-[2.2]" />
+              </div>
+            </Card>
+          </div>
+
+          {/* Bookings Filters & Search */}
+          <Card className="p-5 bg-card border border-border/80 rounded-3xl shadow-xs space-y-4">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+              <div className="flex flex-wrap items-center gap-1.5 p-1 bg-muted/60 rounded-2xl border border-border/60">
+                {[
+                  { id: "ALL", label: isAr ? "جميع الحجوزات" : "All Bookings", count: bookingStats.total },
+                  { id: "PENDING", label: isAr ? "قيد المراجعة" : "Pending", count: bookingStats.pending, badgeColor: "bg-amber-500/20 text-amber-600 dark:text-amber-400" },
+                  { id: "CONFIRMED", label: isAr ? "مؤكدة" : "Confirmed", count: bookingStats.confirmed, badgeColor: "bg-emerald-500/20 text-emerald-600 dark:text-emerald-400" },
+                  { id: "COMPLETED", label: isAr ? "مكتملة" : "Completed", count: bookingStats.completed, badgeColor: "bg-sky-500/20 text-sky-600 dark:text-sky-400" },
+                  { id: "CANCELLED", label: isAr ? "ملغاة" : "Cancelled", count: bookingStats.cancelled, badgeColor: "bg-rose-500/20 text-rose-600 dark:text-rose-400" },
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setBookingStatusFilter(tab.id)}
+                    className={`flex items-center gap-2 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                      bookingStatusFilter === tab.id
+                        ? "bg-card text-foreground shadow-xs border border-border"
+                        : "text-muted-foreground hover:text-foreground hover:bg-card/50"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    <span
+                      className={`text-[10px] px-1.5 py-0.2 rounded-full font-bold ${
+                        tab.badgeColor || "bg-muted text-muted-foreground"
+                      }`}
+                    >
+                      {tab.count}
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              <div className="relative w-full sm:w-72">
+                <Search className="absolute right-3 top-2.5 w-4 h-4 text-muted-foreground rtl:right-3 ltr:left-3 rtl:left-auto" />
+                <input
+                  type="text"
+                  placeholder={isAr ? "البحث بالكود، النزيل، الهاتف..." : "Search by ref, guest, phone..."}
+                  value={bookingSearch}
+                  onChange={(e) => setBookingSearch(e.target.value)}
+                  className="w-full pl-9 pr-9 py-2 bg-muted/40 border border-border rounded-xl text-xs font-bold text-foreground focus:outline-none focus:border-amber-500/50"
+                />
+              </div>
+            </div>
+          </Card>
+
+          {/* Bookings Table */}
+          {isBookingsLoading ? (
+            <div className="flex flex-col items-center justify-center py-20 gap-3 text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+              <p className="text-xs font-medium">{isAr ? "جاري تحميل حجوزات الفنادق..." : "Loading hotel bookings..."}</p>
+            </div>
+          ) : allBookings.length === 0 ? (
+            <Card className="p-12 text-center rounded-3xl bg-card border-border/80 space-y-3">
+              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 text-amber-500 flex items-center justify-center mx-auto">
+                <BedDouble className="w-6 h-6" />
+              </div>
+              <h3 className="text-base font-bold text-foreground">
+                {isAr ? "لا توجد حجوزات فنادق مطابقة" : "No hotel bookings found"}
+              </h3>
+              <p className="text-xs text-muted-foreground max-w-sm mx-auto">
+                {isAr
+                  ? "عندما يقوم النزلاء بطلب حجز غرف فندقية من الموقع ستظهر جميع تفاصيل الحجز هنا مباشرة."
+                  : "When guests submit hotel room reservations from the public site, they will appear here."}
+              </p>
+            </Card>
+          ) : (
+            <Card className="rounded-3xl border-border/80 overflow-hidden shadow-xs">
+              <div className="overflow-x-auto">
+                <table className="w-full text-xs text-start dir-ltr">
+                  <thead className="bg-muted/60 border-b border-border/80 text-muted-foreground font-bold">
+                    <tr>
+                      <th className="p-3.5 text-start">{isAr ? "كود الحجز" : "Reference"}</th>
+                      <th className="p-3.5 text-start">{isAr ? "الفندق والغرفة" : "Hotel & Room"}</th>
+                      <th className="p-3.5 text-start">{isAr ? "النزيل والتواصل" : "Guest Contact"}</th>
+                      <th className="p-3.5 text-center">{isAr ? "تواريخ الإقامة" : "Dates & Nights"}</th>
+                      <th className="p-3.5 text-center">{isAr ? "الإجمالي" : "Total USD"}</th>
+                      <th className="p-3.5 text-center">{isAr ? "الحالة" : "Status"}</th>
+                      <th className="p-3.5 text-end">{isAr ? "الإجراءات" : "Actions"}</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-border/60">
+                    {allBookings.map((b) => {
+                      const hotelName = b.hotel?.nameJsonb?.[locale] || b.hotel?.nameJsonb?.en || b.hotel?.slug || "Hotel";
+                      const roomName = b.room?.nameJsonb?.[locale] || b.room?.nameJsonb?.en || b.room?.slug || "Standard Room";
+                      const isPending = b.status === "PENDING";
+                      const isConfirmed = b.status === "CONFIRMED";
+                      const isCompleted = b.status === "COMPLETED";
+
+                      return (
+                        <tr key={b.id} className="hover:bg-muted/30 transition-colors">
+                          {/* Reference */}
+                          <td className="p-3.5 whitespace-nowrap">
+                            <div className="flex items-center gap-1.5 font-mono font-black text-foreground">
+                              <span>{b.referenceCode}</span>
+                              <button
+                                onClick={() => {
+                                  navigator.clipboard.writeText(b.referenceCode);
+                                  toast.success("تم نسخ كود الحجز 📋");
+                                }}
+                                className="text-muted-foreground hover:text-amber-500 cursor-pointer"
+                                title="نسخ الكود"
+                              >
+                                <Copy className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                            <span className="text-[10px] text-muted-foreground font-mono">
+                              {b.createdAt ? format(new Date(b.createdAt), "MMM d, yyyy") : ""}
+                            </span>
+                          </td>
+
+                          {/* Hotel & Room */}
+                          <td className="p-3.5 max-w-[220px]">
+                            <div className="font-bold text-foreground line-clamp-1">{hotelName}</div>
+                            <div className="text-[11px] text-amber-500 font-semibold line-clamp-1">🛏️ {roomName}</div>
+                            {b.hotel?.city && (
+                              <div className="text-[10px] text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3 h-3" />
+                                <span>{b.hotel.city}</span>
+                              </div>
+                            )}
+                          </td>
+
+                          {/* Guest Contact */}
+                          <td className="p-3.5">
+                            <div className="font-bold text-foreground">{b.guestName}</div>
+                            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1">
+                              <Mail className="w-3 h-3" />
+                              <a href={`mailto:${b.guestEmail}`} className="hover:underline text-foreground/80">{b.guestEmail}</a>
+                            </div>
+                            <div className="text-[11px] text-muted-foreground font-mono flex items-center gap-1">
+                              <Phone className="w-3 h-3" />
+                              <a href={`tel:${b.guestPhone}`} className="hover:underline text-foreground/80">{b.guestPhone}</a>
+                            </div>
+                          </td>
+
+                          {/* Stay Dates */}
+                          <td className="p-3.5 text-center whitespace-nowrap">
+                            <div className="text-xs font-mono font-bold text-foreground">
+                              {b.checkInDate ? format(new Date(b.checkInDate), "dd/MM/yyyy") : "—"} ➔ {b.checkOutDate ? format(new Date(b.checkOutDate), "dd/MM/yyyy") : "—"}
+                            </div>
+                            <div className="flex items-center justify-center gap-1.5 mt-0.5">
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-bold bg-amber-500/10 text-amber-600 border-amber-500/30">
+                                {b.nights} {isAr ? "ليالٍ" : "nights"}
+                              </Badge>
+                              <span className="text-[10px] text-muted-foreground font-bold">
+                                {b.roomsCount} {isAr ? "غرفة" : "rm"} • {b.guestsCount} {isAr ? "نزيل" : "guests"}
+                              </span>
+                            </div>
+                          </td>
+
+                          {/* Total Amount */}
+                          <td className="p-3.5 text-center whitespace-nowrap font-mono font-black text-sm text-foreground">
+                            ${Number(b.totalAmountUsd).toLocaleString()}
+                            <span className="text-[10px] text-muted-foreground font-normal block font-sans">
+                              (${Number(b.ratePerNightUsd)}/nt)
+                            </span>
+                          </td>
+
+                          {/* Status */}
+                          <td className="p-3.5 text-center whitespace-nowrap">
+                            {isConfirmed ? (
+                              <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                                {isAr ? "مؤكد ✅" : "Confirmed"}
+                              </Badge>
+                            ) : isPending ? (
+                              <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold animate-pulse">
+                                {isAr ? "قيد المراجعة ⏳" : "Pending"}
+                              </Badge>
+                            ) : isCompleted ? (
+                              <Badge className="bg-sky-500/15 text-sky-600 dark:text-sky-400 border border-sky-500/30 text-[10px] font-bold">
+                                {isAr ? "مكتمل 🏨" : "Completed"}
+                              </Badge>
+                            ) : (
+                              <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30 text-[10px] font-bold">
+                                {isAr ? "ملغى 🚫" : "Cancelled"}
+                              </Badge>
+                            )}
+                          </td>
+
+                          {/* Actions */}
+                          <td className="p-3.5 text-end whitespace-nowrap">
+                            <div className="flex items-center justify-end gap-1.5">
+                              {isPending && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    onClick={() =>
+                                      updateBookingStatusMutation.mutate({
+                                        id: b.id,
+                                        status: "CONFIRMED",
+                                      })
+                                    }
+                                    disabled={updateBookingStatusMutation.isPending}
+                                    className="h-8 px-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold gap-1 cursor-pointer"
+                                  >
+                                    <CheckCircle2 className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "تأكيد" : "Confirm"}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      updateBookingStatusMutation.mutate({
+                                        id: b.id,
+                                        status: "CANCELLED",
+                                      })
+                                    }
+                                    disabled={updateBookingStatusMutation.isPending}
+                                    className="h-8 px-2 rounded-xl border-rose-500/40 text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 cursor-pointer"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "إلغاء" : "Cancel"}</span>
+                                  </Button>
+                                </>
+                              )}
+
+                              {isConfirmed && (
+                                <>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      updateBookingStatusMutation.mutate({
+                                        id: b.id,
+                                        status: "COMPLETED",
+                                      })
+                                    }
+                                    disabled={updateBookingStatusMutation.isPending}
+                                    className="h-8 px-2.5 rounded-xl border-sky-500/40 text-sky-600 hover:bg-sky-500/10 text-xs font-bold gap-1 cursor-pointer"
+                                  >
+                                    <Building2 className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "إتمام" : "Complete"}</span>
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    onClick={() =>
+                                      updateBookingStatusMutation.mutate({
+                                        id: b.id,
+                                        status: "CANCELLED",
+                                      })
+                                    }
+                                    disabled={updateBookingStatusMutation.isPending}
+                                    className="h-8 px-2 rounded-xl border-rose-500/40 text-rose-600 hover:bg-rose-500/10 text-xs font-bold gap-1 cursor-pointer"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                    <span>{isAr ? "إلغاء" : "Cancel"}</span>
+                                  </Button>
+                                </>
+                              )}
+
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  setSelectedBookingForDetails(b);
+                                  setAdminNotesInput(b.adminNotes || "");
+                                }}
+                                className="h-8 w-8 p-0 rounded-xl text-muted-foreground hover:text-amber-500 cursor-pointer"
+                                title="عرض التفاصيل والملاحظات"
+                              >
+                                <Eye className="w-4 h-4" />
+                              </Button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )}
+        </div>
+      )}
+
+      {/* Booking Details & Notes Dialog */}
+      <Dialog
+        open={Boolean(selectedBookingForDetails)}
+        onOpenChange={(open) => {
+          if (!open) setSelectedBookingForDetails(null);
+        }}
+      >
+        <DialogContent className="max-w-lg p-6 rounded-3xl bg-card border-border">
+          {selectedBookingForDetails && (
+            <div className="space-y-4">
+              <DialogHeader>
+                <div className="flex items-center justify-between">
+                  <Badge className="bg-amber-500 text-slate-950 font-black">
+                    {selectedBookingForDetails.referenceCode}
+                  </Badge>
+                  <span className="text-xs text-muted-foreground font-mono">
+                    {selectedBookingForDetails.createdAt ? format(new Date(selectedBookingForDetails.createdAt), "dd/MM/yyyy HH:mm") : ""}
+                  </span>
+                </div>
+                <DialogTitle className="text-base font-black text-foreground pt-2">
+                  🏨 {selectedBookingForDetails.hotel?.nameJsonb?.[locale] || selectedBookingForDetails.hotel?.nameJsonb?.en || selectedBookingForDetails.hotel?.slug}
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground">
+                  🛏️ {selectedBookingForDetails.room?.nameJsonb?.[locale] || selectedBookingForDetails.room?.nameJsonb?.en || "Standard Room"} • {selectedBookingForDetails.hotel?.city}
+                </DialogDescription>
+              </DialogHeader>
+
+              <div className="p-4 rounded-2xl bg-muted/40 border border-border/80 space-y-2 text-xs">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "اسم النزيل:" : "Guest Name:"}</span>
+                  <span className="font-bold text-foreground">{selectedBookingForDetails.guestName}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "البريد الإلكتروني:" : "Email:"}</span>
+                  <span className="font-bold font-mono text-foreground">{selectedBookingForDetails.guestEmail}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "رقم الهاتف:" : "Phone:"}</span>
+                  <span className="font-bold font-mono text-foreground">{selectedBookingForDetails.guestPhone}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "فترة الإقامة:" : "Stay Dates:"}</span>
+                  <span className="font-bold font-mono text-foreground">
+                    {selectedBookingForDetails.checkInDate ? format(new Date(selectedBookingForDetails.checkInDate), "dd/MM/yyyy") : ""} ➔ {selectedBookingForDetails.checkOutDate ? format(new Date(selectedBookingForDetails.checkOutDate), "dd/MM/yyyy") : ""} ({selectedBookingForDetails.nights} {isAr ? "ليالٍ" : "nights"})
+                  </span>
+                </div>
+                <div className="flex justify-between border-t border-border/60 pt-2">
+                  <span className="font-bold text-muted-foreground">{isAr ? "المبلغ الإجمالي:" : "Total Amount:"}</span>
+                  <span className="font-black text-sm text-amber-500 font-mono">
+                    ${Number(selectedBookingForDetails.totalAmountUsd).toLocaleString()} USD
+                  </span>
+                </div>
+              </div>
+
+              {selectedBookingForDetails.specialRequests && (
+                <div className="p-3.5 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs space-y-1">
+                  <span className="font-bold text-amber-600 dark:text-amber-400 block">
+                    {isAr ? "طلبات النزيل الخاصة:" : "Special Requests:"}
+                  </span>
+                  <p className="text-foreground/90 leading-relaxed italic">
+                    "{selectedBookingForDetails.specialRequests}"
+                  </p>
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <label className="text-xs font-bold text-foreground">
+                  {isAr ? "ملاحظات الإدارة الداخلية:" : "Internal Admin Notes:"}
+                </label>
+                <Textarea
+                  rows={3}
+                  value={adminNotesInput}
+                  onChange={(e) => setAdminNotesInput(e.target.value)}
+                  placeholder={isAr ? "أضف أي ملاحظات حول الغرفة، الدفع، أو التأكيد..." : "Add internal notes about payment, room assignment..."}
+                  className="rounded-xl text-xs bg-muted/40"
+                />
+              </div>
+
+              <DialogFooter className="gap-2 pt-2">
+                <Button
+                  size="sm"
+                  onClick={() => {
+                    updateBookingStatusMutation.mutate({
+                      id: selectedBookingForDetails.id,
+                      status: selectedBookingForDetails.status,
+                      adminNotes: adminNotesInput,
+                    });
+                    setSelectedBookingForDetails(null);
+                  }}
+                  disabled={updateBookingStatusMutation.isPending}
+                  className="rounded-xl bg-amber-500 text-slate-950 hover:bg-amber-600 font-bold text-xs cursor-pointer"
+                >
+                  {isAr ? "حفظ الملاحظات" : "Save Notes"}
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setSelectedBookingForDetails(null)}
+                  className="rounded-xl text-xs cursor-pointer"
+                >
+                  {isAr ? "إغلاق" : "Close"}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
 
       {/* 4. Add / Edit Hotel Dialog Modal */}
       <HotelEditorDialog

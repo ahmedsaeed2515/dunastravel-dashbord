@@ -16,8 +16,9 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Loader2, Save } from "lucide-react";
+import { Plus, Trash2, Loader2, Save, CreditCard, DollarSign } from "lucide-react";
 import { toast } from "sonner";
+import { RecordPaymentDialog } from "../Dialogs/RecordPaymentDialog";
 
 interface EditBookingDrawerProps {
   booking: Booking | null;
@@ -38,6 +39,7 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
   const [statusReason, setStatusReason] = useState<string>("");
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [passengers, setPassengers] = useState<Passenger[]>([]);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   useEffect(() => {
      
@@ -207,6 +209,25 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
                   {updateStatus.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
                   تحديث حالة الحجز
                 </Button>
+
+                <div className="bg-muted/40 border border-border/80 rounded-xl p-3.5 space-y-2 mt-4">
+                  <div className="flex items-center gap-2">
+                    <DollarSign className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                    <span className="text-xs font-bold">تسجيل دفعة نقدية أو تحويل بنكي</span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground leading-relaxed">
+                    تسجيل الدفع المباشر يقوم بتحديث المبالغ المدفوعة تلقائياً ونقل الحجز إلى حالة مؤكد أو مدفوع جزئياً مع تحديث الفاتورة.
+                  </p>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setPaymentOpen(true)}
+                    className="w-full rounded-xl text-xs font-bold gap-1.5 border-emerald-500/30 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                  >
+                    <CreditCard className="w-3.5 h-3.5" /> تسجيل دفعة مالية للحجز
+                  </Button>
+                </div>
               </div>
             </TabsContent>
 
@@ -345,6 +366,14 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
           </ScrollArea>
         </Tabs>
       </SheetContent>
+
+      <RecordPaymentDialog
+        referenceCode={booking.referenceCode}
+        totalAmount={booking.totalAmount}
+        paidAmount={booking.paidAmount}
+        isOpen={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
+      />
     </Sheet>
   );
 }

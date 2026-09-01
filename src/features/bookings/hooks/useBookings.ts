@@ -197,3 +197,24 @@ export function useAddAttachment() {
     },
   });
 }
+
+export function useRecordManualPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      referenceCode,
+      data,
+    }: {
+      referenceCode: string;
+      data: { amount: number; method?: string; transactionId?: string; notes?: string };
+    }) => bookingsApi.recordManualPayment(referenceCode, data),
+    onSuccess: (_, variables) => {
+      toast.success("تم تسجيل الدفعة وتحديث حالة الحجز بنجاح");
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "فشل تسجيل الدفعة");
+    },
+  });
+}

@@ -56,10 +56,25 @@ export interface Inquiry {
   numberOfTravelers?: number;
   budgetAmount?: number | null;
   budgetCurrency?: string | null;
+  quotedAmountUsd?: number | null;
   notes?: string | null;
   specialRequests?: string | null;
+  internalNote?: string | null;
+  followUpAt?: string | null;
   status: string;
   assigneeId?: string | null;
+  assignee?: {
+    id: string;
+    name: string;
+    email: string;
+  } | null;
+  bookingId?: string | null;
+  booking?: {
+    id: string;
+    referenceCode: string;
+    status: string;
+    totalAmountUsd: number;
+  } | null;
   partnerCode?: string | null;
   companyId?: string | null;
   company?: {
@@ -105,6 +120,9 @@ export interface InquiryQueryFilters {
   limit?: number;
   status?: string;
   assigneeId?: string;
+  search?: string;
+  dateFrom?: string;
+  dateTo?: string;
 }
 
 export interface EmailTemplate {

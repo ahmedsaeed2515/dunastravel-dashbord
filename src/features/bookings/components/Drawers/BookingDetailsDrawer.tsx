@@ -30,6 +30,7 @@ import { useState } from "react";
 import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
 import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
 import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
+import { RecordPaymentDialog } from "../Dialogs/RecordPaymentDialog";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
 
@@ -84,6 +85,7 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
   const [noteOpen, setNoteOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
   const [passengerOpen, setPassengerOpen] = useState(false);
+  const [paymentOpen, setPaymentOpen] = useState(false);
 
   if (!booking) return null;
 
@@ -570,10 +572,21 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
 
               {/* Payments History */}
               <div className="space-y-3">
-                <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-primary" />
-                  Transaction & Gateway Records ({booking.payments?.length || 0})
-                </h4>
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                    <CreditCard className="w-3.5 h-3.5 text-primary" />
+                    Transaction & Gateway Records ({booking.payments?.length || 0})
+                  </h4>
+                  {balanceDue > 0 && (
+                    <Button
+                      size="sm"
+                      onClick={() => setPaymentOpen(true)}
+                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 h-8"
+                    >
+                      <CreditCard className="w-3.5 h-3.5" /> تسجيل دفعة جديدة
+                    </Button>
+                  )}
+                </div>
 
                 {booking.payments && booking.payments.length > 0 ? (
                   booking.payments.map((p: any, i: number) => (
@@ -697,6 +710,13 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
         initialPassengers={booking.passengers || []}
         open={passengerOpen}
         onOpenChange={setPassengerOpen}
+      />
+      <RecordPaymentDialog
+        referenceCode={booking.referenceCode}
+        totalAmount={booking.totalAmount}
+        paidAmount={booking.paidAmount}
+        isOpen={paymentOpen}
+        onClose={() => setPaymentOpen(false)}
       />
     </Sheet>
   );
