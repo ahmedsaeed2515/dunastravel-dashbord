@@ -165,12 +165,12 @@ const MEAL_PLAN_OPTIONS = [
 ];
 
 const ROOM_PRESETS = [
-  { slug: "deluxe-room", nameEn: "Deluxe Nile View Room", nameAr: "غرفة ديلوكس بإطلالة على النيل", rate: 180, maxOccupancy: 2, inventory: 15, mealPlan: "bb" },
-  { slug: "superior-room", nameEn: "Superior City View Room", nameAr: "غرفة سوبيريور بإطلالة المدينة", rate: 140, maxOccupancy: 2, inventory: 20, mealPlan: "bb" },
-  { slug: "executive-suite", nameEn: "Executive Panorama Suite", nameAr: "جناح تنفيذي بانورامي", rate: 290, maxOccupancy: 3, inventory: 8, mealPlan: "bb" },
-  { slug: "royal-suite", nameEn: "Royal Presidential Suite", nameAr: "الجناح الرئاسي الملكي", rate: 550, maxOccupancy: 4, inventory: 3, mealPlan: "hb" },
-  { slug: "family-connecting", nameEn: "Family Connecting Suite", nameAr: "جناح عائلي متصل", rate: 320, maxOccupancy: 5, inventory: 6, mealPlan: "bb" },
-  { slug: "luxury-villa", nameEn: "Private Beachfront Villa", nameAr: "فيلا شاطئية خاصة مع مسبح", rate: 850, maxOccupancy: 6, inventory: 2, mealPlan: "ai" },
+  { slug: "single-room", nameEn: "Single Room", nameAr: "غرفة مفردة (سينجل)", rate: 75, maxOccupancy: 1, inventory: 10, mealPlan: "bb", bedEn: "1 Single Bed", bedAr: "سرير مفرد", viewEn: "City / Garden View", viewAr: "إطلالة على الحديقة / المدينة" },
+  { slug: "twin-room", nameEn: "Twin Room", nameAr: "غرفة توأم (سريرين منفصلين)", rate: 85, maxOccupancy: 2, inventory: 15, mealPlan: "bb", bedEn: "Double / Twin Beds", bedAr: "مزدوجة / توأم", viewEn: "Standard View", viewAr: "إطلالة قياسية" },
+  { slug: "double-room", nameEn: "Double Room", nameAr: "غرفة مزدوجة (دبل)", rate: 95, maxOccupancy: 2, inventory: 15, mealPlan: "bb", bedEn: "1 King Bed", bedAr: "1 سرير كينج مزدوج", viewEn: "Pyramids View", viewAr: "إطلالة على الأهرامات" },
+  { slug: "triple-room", nameEn: "Triple Room", nameAr: "غرفة ثلاثية (تريبل)", rate: 125, maxOccupancy: 3, inventory: 10, mealPlan: "bb", bedEn: "Double/Twin + Extra Bed", bedAr: "مزدوجة / توأم + سرير إضافي", viewEn: "Standard View", viewAr: "إطلالة قياسية" },
+  { slug: "executive-suite", nameEn: "Executive Suite", nameAr: "جناح تنفيذي (إكزكتيف سويت)", rate: 190, maxOccupancy: 3, inventory: 6, mealPlan: "bb", bedEn: "1 King Bed + Lounge", bedAr: "1 سرير كينج + صالون استراحة", viewEn: "Panoramic Pyramids View", viewAr: "إطلالة بانورامية على الأهرامات" },
+  { slug: "royal-pyramid-view-suite", nameEn: "Royal Pyramid View Suite", nameAr: "الجناح الملكي بإطلالة الأهرامات", rate: 280, maxOccupancy: 4, inventory: 4, mealPlan: "hb", bedEn: "Master King Bed + Royal Lounge", bedAr: "ماستر كينج + صالة ملكية", viewEn: "Front-Row Direct Pyramids View", viewAr: "إطلالة مباشرة صف أول على الأهرامات" },
 ];
 
 export interface FormRoomItem {
@@ -186,6 +186,15 @@ export interface FormRoomItem {
   inventory: number;
   mealPlan: string;
   isActive: boolean;
+  bedTypeEn?: string;
+  bedTypeAr?: string;
+  viewTypeEn?: string;
+  viewTypeAr?: string;
+  image?: string;
+  gallery?: string[];
+  amenities?: string[];
+  smokingAllowed?: boolean;
+  petsAllowed?: boolean;
 }
 
 interface HotelFormData {
@@ -1946,7 +1955,7 @@ function HotelEditorDialog({
           status: hotel.status || "PUBLISHED",
           isActive: hotel.isActive ?? true,
           rooms: hotel.rooms && hotel.rooms.length > 0
-            ? hotel.rooms.map((r) => ({
+            ? hotel.rooms.map((r: any) => ({
                 id: r.id,
                 slug: r.slug,
                 nameEn: (r.name as any)?.en || (typeof r.name === 'string' ? r.name : r.slug),
@@ -1959,6 +1968,15 @@ function HotelEditorDialog({
                 inventory: r.inventory || 10,
                 mealPlan: typeof (r.mealPlan) === 'string' ? r.mealPlan : "bb",
                 isActive: r.isActive ?? true,
+                bedTypeEn: r.bedType?.en || (typeof r.bedType === 'string' ? r.bedType : "Double / Twin Beds"),
+                bedTypeAr: r.bedType?.ar || (typeof r.bedType === 'string' ? r.bedType : "مزدوجة / توأم"),
+                viewTypeEn: r.viewType?.en || (typeof r.viewType === 'string' ? r.viewType : "Standard View"),
+                viewTypeAr: r.viewType?.ar || (typeof r.viewType === 'string' ? r.viewType : "إطلالة قياسية"),
+                image: r.image || "",
+                gallery: r.gallery || [],
+                amenities: r.amenities || [],
+                smokingAllowed: r.smokingAllowed ?? false,
+                petsAllowed: r.petsAllowed ?? false,
               }))
             : defaultFormData().rooms,
         });
@@ -2123,6 +2141,23 @@ function HotelEditorDialog({
         es: r.nameEs.trim() || r.nameEn.trim(),
         pt: r.namePt.trim() || r.nameEn.trim(),
         it: r.nameIt.trim() || r.nameEn.trim(),
+      },
+      descriptionJsonb: {
+        bedType: {
+          en: r.bedTypeEn || "Double / Twin Beds",
+          ar: r.bedTypeAr || "مزدوجة / توأم",
+        },
+        viewType: {
+          en: r.viewTypeEn || "Standard View",
+          ar: r.viewTypeAr || "إطلالة قياسية",
+        },
+        smokingAllowed: r.smokingAllowed ?? false,
+        petsAllowed: r.petsAllowed ?? false,
+        image: r.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+        gallery: r.gallery && r.gallery.length > 0 ? r.gallery : [
+          r.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200"
+        ],
+        amenities: r.amenities && r.amenities.length > 0 ? r.amenities : ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "iron", "phone"],
       },
       ratePerNight: Number(r.ratePerNight) || 100,
       currency: form.currency.toUpperCase() || "USD",
@@ -2764,18 +2799,33 @@ function HotelEditorDialog({
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "نظام الوجبات" : "Meal Plan"}</label>
-                      <select
-                        value={newRoom.mealPlan}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, mealPlan: e.target.value }))}
-                        className="w-full h-9 px-3 rounded-xl border bg-background text-xs font-bold"
-                      >
-                        {MEAL_PLAN_OPTIONS.map((mp) => (
-                          <option key={mp.id} value={mp.id}>
-                            {isAr ? mp.nameAr : mp.nameEn}
-                          </option>
-                        ))}
-                      </select>
+                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "نوع السرير (Bed Type)" : "Bed Type"}</label>
+                      <Input
+                        placeholder={isAr ? "مثال: مزدوجة / توأم" : "e.g. Double / Twin Beds"}
+                        value={newRoom.bedTypeAr || newRoom.bedTypeEn || ""}
+                        onChange={(e) => setNewRoom((prev) => ({ ...prev, bedTypeEn: e.target.value, bedTypeAr: e.target.value }))}
+                        className="h-9 text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "الإطلالة (View Type)" : "View Type"}</label>
+                      <Input
+                        placeholder={isAr ? "مثال: إطلالة على الأهرامات" : "e.g. Pyramids View"}
+                        value={newRoom.viewTypeAr || newRoom.viewTypeEn || ""}
+                        onChange={(e) => setNewRoom((prev) => ({ ...prev, viewTypeEn: e.target.value, viewTypeAr: e.target.value }))}
+                        className="h-9 text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-1 sm:col-span-2">
+                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "رابط صورة الغرفة (Room Image URL)" : "Room Image URL"}</label>
+                      <Input
+                        placeholder="https://images.unsplash.com/..."
+                        value={newRoom.image || ""}
+                        onChange={(e) => setNewRoom((prev) => ({ ...prev, image: e.target.value }))}
+                        className="h-9 text-xs font-mono"
+                      />
                     </div>
                   </div>
 
@@ -2837,6 +2887,22 @@ function HotelEditorDialog({
                               <Users className="w-3.5 h-3.5 text-sky-500" />
                               {room.maxOccupancy} {isAr ? "أفراد" : "Guests"}
                             </span>
+                            {(room.bedTypeAr || room.bedTypeEn) && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-slate-300">
+                                  🛏️ {isAr ? (room.bedTypeAr || room.bedTypeEn) : (room.bedTypeEn || room.bedTypeAr)}
+                                </span>
+                              </>
+                            )}
+                            {(room.viewTypeAr || room.viewTypeEn) && (
+                              <>
+                                <span>•</span>
+                                <span className="flex items-center gap-1 text-amber-400 font-semibold">
+                                  🌄 {isAr ? (room.viewTypeAr || room.viewTypeEn) : (room.viewTypeEn || room.viewTypeAr)}
+                                </span>
+                              </>
+                            )}
                             <span>•</span>
                             <span className="flex items-center gap-1 font-bold text-foreground">
                               <Layers className="w-3.5 h-3.5 text-emerald-500" />

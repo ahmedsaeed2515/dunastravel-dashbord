@@ -4,19 +4,26 @@ export interface HotelRoomRecord {
   id: string;
   slug: string;
   name: Record<string, string>;
-  description?: Record<string, string> | null;
+  description?: Record<string, any> | null;
   ratePerNight: number;
   currency: string;
   mealPlan?: Record<string, string> | null;
   maxOccupancy: number;
   inventory: number;
   isActive: boolean;
+  bedType?: any;
+  viewType?: any;
+  smokingAllowed?: boolean;
+  petsAllowed?: boolean;
+  image?: string;
+  gallery?: string[];
+  amenities?: string[];
 }
 
 export interface HotelRoomPayload {
   slug: string;
   nameJsonb: Record<string, string>;
-  descriptionJsonb?: Record<string, string>;
+  descriptionJsonb?: Record<string, any>;
   ratePerNight: number;
   currency?: string;
   mealPlanJsonb?: Record<string, string>;
