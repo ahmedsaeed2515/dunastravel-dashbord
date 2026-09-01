@@ -26,7 +26,10 @@ export interface ModelPreset {
   isPopular?: boolean;
 }
 
-const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([]);
+const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([
+  "gemini-2.0-flash-lite",
+  "gemini-1.0-pro",
+]);
 
 export const PROVIDER_MODEL_PRESETS: Record<string, ModelPreset[]> = {
   google: [

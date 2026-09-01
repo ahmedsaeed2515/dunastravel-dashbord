@@ -18,13 +18,42 @@ export interface Passenger {
   nationality?: string | null;
 }
 
+export interface BillingInfo {
+  fullName: string;
+  email: string;
+  phone: string | null;
+  invoiceType?: 'PERSONAL' | 'COMPANY' | string;
+  companyName?: string | null;
+  taxId?: string | null;
+  address?: string | null;
+  city?: string | null;
+  country?: string | null;
+}
+
+export interface InvoiceDetail {
+  id: string;
+  invoiceNumber: string;
+  status?: string;
+  subtotal?: string;
+  tax?: string;
+  total?: string;
+  currency?: string;
+  dueDate?: string | null;
+  pdfUrl?: string | null;
+  createdAt: string;
+}
+
 export interface Booking {
   id: string;
   referenceCode: string;
   status: BookingStatus;
   totalAmount: string;
+  paidAmount?: string;
   currency: string;
   passengerCount: number;
+  adults?: number;
+  children?: number;
+  infants?: number;
   tourId: string;
   tourSlug: string;
   tourNameEn: string;
@@ -33,30 +62,52 @@ export interface Booking {
   updatedAt?: string;
   arrivalDate?: string | null;
   departureDate?: string | null;
-  assigneeId?: string | null;
+  arrivalTime?: string | null;
+  departureTime?: string | null;
+  language?: string | null;
+  activityType?: string | null;
+  bookingType?: string;
+  transportChoice?: string | null;
+  notes?: string | null;
+  inquiryMessage?: string | null;
   priority?: string;
   tags?: string[];
-  passengers?: Passenger[];
-  billingInfo?: {
-    fullName: string;
-    email: string;
-    phone: string | null;
-    address: string | null;
-    city: string | null;
-    country: string | null;
-  } | null;
-  invoice?: {
+  cancellationReason?: string | null;
+  assigneeId?: string | null;
+  assignee?: {
     id: string;
-    invoiceNumber: string;
-    createdAt: string;
+    name: string;
+    email: string;
   } | null;
+  user?: {
+    id: string;
+    name: string;
+    email: string;
+    phone?: string | null;
+    role?: string;
+  } | null;
+  tour?: {
+    id: string;
+    slug: string;
+    titleJsonb?: Record<string, string> | unknown;
+    subtitleJsonb?: Record<string, string> | unknown;
+    category?: string | null;
+    country?: string | null;
+    city?: string | null;
+    basePriceUsd?: string | null;
+    durationJsonb?: Record<string, string> | unknown;
+  } | null;
+  passengers?: Passenger[];
+  billingInfo?: BillingInfo | null;
+  invoice?: InvoiceDetail | null;
   payments?: Payment[];
   activityLogs?: BookingActivity[];
-  notes?: BookingNote[];
+  notesList?: BookingNote[];
   attachments?: BookingAttachment[];
 }
 
 export type BookingDetail = Booking;
+
 
 export interface BookingQueryFilters {
   page?: number;

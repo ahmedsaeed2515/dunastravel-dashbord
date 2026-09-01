@@ -14,6 +14,10 @@ vi.mock('../../../hooks/useBookings', () => ({
   useBookings: vi.fn()
 }));
 
+vi.mock('../../../hooks/useBookingDetail', () => ({
+  useBookingDetail: () => ({ data: null, isLoading: false })
+}));
+
 describe('BookingsTable', () => {
   const mockData: any[] = [
     {
