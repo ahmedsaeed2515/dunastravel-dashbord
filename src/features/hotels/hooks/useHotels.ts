@@ -47,7 +47,33 @@ export function useHotelLifecycle() {
   return useMutation({
     mutationFn: ({ id, action }: { id: string; action: 'publish' | 'unpublish' | 'archive' | 'unarchive' | 'restore' }) =>
       hotelsApi[action](id),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['hotels'] }),
+    onMutate: async ({ id, action }) => {
+      await queryClient.cancelQueries({ queryKey: ['hotels'] });
+      queryClient.setQueriesData({ queryKey: ['hotels'] }, (old: any) => {
+        if (!old) return old;
+        const updateItem = (item: any) => {
+          if (item.id !== id) return item;
+          if (action === 'publish' || action === 'unarchive' || action === 'restore') {
+            return { ...item, status: 'PUBLISHED', isActive: true };
+          }
+          if (action === 'archive') {
+            return { ...item, status: 'ARCHIVED', isActive: false };
+          }
+          if (action === 'unpublish') {
+            return { ...item, status: 'DRAFT', isActive: false };
+          }
+          return item;
+        };
+
+        if (Array.isArray(old)) return old.map(updateItem);
+        if (Array.isArray(old.data)) return { ...old, data: old.data.map(updateItem) };
+        if (Array.isArray(old.items)) return { ...old, items: old.items.map(updateItem) };
+        return old;
+      });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['hotels'] });
+    },
     onError: (error) => toast.error(messageFor(error, 'Could not update hotel lifecycle')),
   });
 }

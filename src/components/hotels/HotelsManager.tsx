@@ -294,7 +294,7 @@ export function HotelsManager() {
   const [search, setSearch] = useState("");
   const [selectedDestination, setSelectedDestination] = useState("all");
   const [selectedStars, setSelectedStars] = useState<number | "ALL">("ALL");
-  const [selectedStatus, setSelectedStatus] = useState<HotelStatus | "ACTIVE" | "ALL">("ALL");
+  const [selectedStatus, setSelectedStatus] = useState<"ALL" | "ACTIVE" | "ARCHIVED">("ALL");
 
   const [selectedHotel, setSelectedHotel] = useState<AdminHotel | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -356,10 +356,6 @@ export function HotelsManager() {
       }
       if (selectedStatus === "ACTIVE") {
         if (h.status === "ARCHIVED" || !h.isActive) return false;
-      } else if (selectedStatus === "PUBLISHED") {
-        if (h.status !== "PUBLISHED" || !h.isActive) return false;
-      } else if (selectedStatus === "DRAFT") {
-        if (h.status !== "DRAFT") return false;
       } else if (selectedStatus === "ARCHIVED") {
         if (h.status !== "ARCHIVED" && h.isActive) return false;
       }
@@ -410,8 +406,14 @@ export function HotelsManager() {
         onSuccess: () => {
           toast.success(
             isAr
-              ? `تمت استعادة فندق "${name}" من الأرشيف كمسودة نشطة 🔄`
-              : `Hotel "${name}" restored from archive`
+              ? `تمت استعادة فندق "${name}" بنجاح وأصبح متاحاً في القائمة النشطة 🔄`
+              : `Hotel "${name}" restored successfully and is now active 🔄`,
+            {
+              action: {
+                label: isAr ? "عرض النشطة ✨" : "View Active ✨",
+                onClick: () => setSelectedStatus("ACTIVE"),
+              },
+            }
           );
           refetch();
         },
@@ -439,7 +441,7 @@ export function HotelsManager() {
   // Metrics
   const totalHotels = hotels.length;
   const fiveStarCount = hotels.filter((h) => h.stars === 5).length;
-  const publishedCount = hotels.filter((h) => h.status === "PUBLISHED" && h.isActive).length;
+  const publishedCount = hotels.filter((h) => h.status !== "ARCHIVED" && h.isActive).length;
   const totalRoomsCount = hotels.reduce((acc: number, h) => acc + (h.rooms?.reduce((rAcc: number, r: any) => rAcc + (r.inventory || 0), 0) || 0), 0);
 
   // Live Counts for destination pills
@@ -465,14 +467,13 @@ export function HotelsManager() {
 
   // Live Counts for statuses
   const statusCounts = useMemo(() => {
-    const counts: Record<string, number> = {
+    const activeCount = hotels.filter((h) => h.status !== "ARCHIVED" && h.isActive).length;
+    const archivedCount = hotels.length - activeCount;
+    return {
       ALL: hotels.length,
-      ACTIVE: hotels.filter((h) => h.status !== "ARCHIVED" && h.isActive).length,
-      PUBLISHED: hotels.filter((h) => h.status === "PUBLISHED" && h.isActive).length,
-      DRAFT: hotels.filter((h) => h.status === "DRAFT").length,
-      ARCHIVED: hotels.filter((h) => h.status === "ARCHIVED" || !h.isActive).length,
+      ACTIVE: activeCount,
+      ARCHIVED: archivedCount,
     };
-    return counts;
   }, [hotels]);
 
   return (
@@ -542,7 +543,7 @@ export function HotelsManager() {
 
         <Card className="p-5 bg-card border border-border/80 shadow-xs rounded-2xl flex items-center justify-between">
           <div className="space-y-1">
-            <span className="text-xs font-bold text-muted-foreground">{isAr ? "منشورة ومتاحة للحجز" : "Published & Live"}</span>
+            <span className="text-xs font-bold text-muted-foreground">{isAr ? "فنادق نشطة ومتاحة للحجز ✨" : "Active & Bookable ✨"}</span>
             <div className="text-2xl sm:text-3xl font-black font-mono text-foreground">
               {publishedCount} <span className="text-xs font-bold text-emerald-500">({totalHotels ? Math.round((publishedCount / totalHotels) * 100) : 0}%) 🌐</span>
             </div>
@@ -686,15 +687,15 @@ export function HotelsManager() {
             <div className="flex items-center gap-2">
               <span className="text-xs font-bold text-muted-foreground shrink-0">{isAr ? "الحالة:" : "Status:"}</span>
               <div className="flex items-center gap-1 flex-wrap">
-                {(["ALL", "ACTIVE", "PUBLISHED", "DRAFT", "ARCHIVED"] as const).map((st) => {
+                {(["ALL", "ACTIVE", "ARCHIVED"] as const).map((st) => {
                   const count = statusCounts[st] || 0;
                   return (
                     <button
                       key={st}
                       onClick={() => setSelectedStatus(st)}
-                      className={`px-2.5 py-1 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1 ${
+                      className={`px-3 py-1.5 rounded-lg text-xs font-extrabold border transition-all cursor-pointer flex items-center gap-1.5 ${
                         selectedStatus === st
-                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs font-black"
                           : "bg-muted/30 text-muted-foreground border-border hover:text-foreground"
                       }`}
                     >
@@ -703,11 +704,7 @@ export function HotelsManager() {
                           ? (isAr ? "الكل" : "All")
                           : st === "ACTIVE"
                           ? (isAr ? "النشطة ✨" : "Active ✨")
-                          : st === "PUBLISHED"
-                          ? (isAr ? "منشور 🌐" : "Live")
-                          : st === "DRAFT"
-                          ? (isAr ? "مسودة" : "Draft")
-                          : (isAr ? "مؤرشف 📦" : "Archived 📦")}
+                          : (isAr ? "الأرشيف 📦" : "Archived 📦")}
                       </span>
                       <span className={`text-[10px] font-mono font-bold ${
                         selectedStatus === st ? "text-slate-950" : "text-muted-foreground"
@@ -815,16 +812,15 @@ export function HotelsManager() {
                     {/* Status Badge */}
                     <div className="absolute top-3 left-3 flex items-center gap-1.5">
                       <Badge
-                        variant={isPub ? "default" : "secondary"}
-                        className={`font-bold text-[10px] shadow-xs cursor-pointer ${
-                          isPub
-                            ? "bg-emerald-500/90 hover:bg-emerald-600 text-white"
-                            : "bg-slate-900/90 text-amber-400 border border-amber-400/30"
+                        className={`font-bold text-[10px] shadow-xs ${
+                          hotel.status !== "ARCHIVED" && hotel.isActive
+                            ? "bg-emerald-500/90 text-slate-950 font-black border border-emerald-400/40"
+                            : "bg-slate-900/90 text-amber-400 border border-amber-400/30 font-bold"
                         }`}
-                        onClick={() => handlePublish(hotel)}
-                        title={isAr ? "اضغط لتبديل حالة النشر" : "Click to toggle publication"}
                       >
-                        {isPub ? (isAr ? "منشور 🌐" : "PUBLISHED") : hotel.status}
+                        {hotel.status !== "ARCHIVED" && hotel.isActive
+                          ? (isAr ? "نشط ✨" : "ACTIVE")
+                          : (isAr ? "مؤرشف 📦" : "ARCHIVED")}
                       </Badge>
                     </div>
 
@@ -875,14 +871,14 @@ export function HotelsManager() {
                   <span className="text-[11px] font-mono text-muted-foreground truncate max-w-35">/{hotel.slug}</span>
 
                   <div className="flex items-center gap-1.5">
-                    {hotel.status === "ARCHIVED" ? (
+                    {hotel.status === "ARCHIVED" || !hotel.isActive ? (
                       <>
                         <Button
                           size="sm"
                           variant="outline"
                           onClick={() => handleUnarchive(hotel)}
                           className="h-8 text-xs font-bold text-emerald-500 border-emerald-500/30 hover:bg-emerald-500 hover:text-slate-950 rounded-xl cursor-pointer gap-1 px-3"
-                          title={isAr ? "استعادة الفندق كمسودة نشطة" : "Restore hotel to active draft"}
+                          title={isAr ? "استعادة الفندق للقائمة النشطة" : "Restore hotel to active list"}
                         >
                           <RotateCcw className="w-3.5 h-3.5" />
                           <span>{isAr ? "استعادة 🔄" : "Restore"}</span>
@@ -2623,32 +2619,25 @@ function HotelEditorDialog({
                 </div>
               </div>
 
-              {/* Status & Active Toggles */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/30 border">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-extrabold text-foreground">{isAr ? "حالة النشر (Publication Status)" : "Publication Status"}</label>
+              {/* Status Section */}
+              <div className="p-4 rounded-2xl bg-muted/30 border">
+                <div className="space-y-1.5 max-w-sm">
+                  <label className="text-xs font-extrabold text-foreground">{isAr ? "حالة الفندق في النظام" : "Hotel System Status"}</label>
                   <select
-                    value={form.status}
-                    onChange={(e) => setForm((prev) => ({ ...prev, status: e.target.value as HotelStatus }))}
+                    value={form.status === "ARCHIVED" || !form.isActive ? "ARCHIVED" : "PUBLISHED"}
+                    onChange={(e) => {
+                      const isArchived = e.target.value === "ARCHIVED";
+                      setForm((prev) => ({
+                        ...prev,
+                        status: (isArchived ? "ARCHIVED" : "PUBLISHED") as HotelStatus,
+                        isActive: !isArchived,
+                      }));
+                    }}
                     className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
                   >
-                    <option value="PUBLISHED">{isAr ? "منشور ومتاح للحجز (PUBLISHED)" : "Published & Live"}</option>
-                    <option value="DRAFT">{isAr ? "مسودة مؤقتة (DRAFT)" : "Draft (Hidden)"}</option>
-                    <option value="ARCHIVED">{isAr ? "مؤرشف (ARCHIVED)" : "Archived"}</option>
+                    <option value="PUBLISHED">{isAr ? "نشط ومتاح للحجز ✨ (Active)" : "Active & Bookable ✨"}</option>
+                    <option value="ARCHIVED">{isAr ? "مؤرشف ومخفي 📦 (Archived)" : "Archived & Hidden 📦"}</option>
                   </select>
-                </div>
-
-                <div className="flex items-center gap-3 pt-6">
-                  <input
-                    type="checkbox"
-                    id="isActiveCheck"
-                    checked={form.isActive}
-                    onChange={(e) => setForm((prev) => ({ ...prev, isActive: e.target.checked }))}
-                    className="w-4 h-4 text-amber-500 rounded cursor-pointer"
-                  />
-                  <label htmlFor="isActiveCheck" className="text-xs font-extrabold text-foreground cursor-pointer">
-                    {isAr ? "تفعيل الفندق في الكتالوج العام للموقع" : "Active on public catalog & search"}
-                  </label>
                 </div>
               </div>
             </TabsContent>
