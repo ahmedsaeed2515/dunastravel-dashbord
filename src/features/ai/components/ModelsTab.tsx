@@ -346,10 +346,12 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const handleOpenEditModal = (k: ApiKeyPoolEntry) => {
     setEditingKey(k);
     setSelectedProvider(k.provider);
-    const validModel = k.model === "gemini-2.0-flash" || k.model === "gemini-1.5-flash" || !k.model
+    const currentModel = k.model || k.defaultModel;
+    const validModel = currentModel === "gemini-2.0-flash" || currentModel === "gemini-1.5-flash" || !currentModel
       ? (k.provider === "google" ? "gemini-2.5-flash" : "gpt-4o-mini")
-      : k.model;
+      : currentModel;
     setSelectedModel(validModel);
+
     setApiKey("");
     setCustomBaseUrl(k.baseUrl || "");
     setLabel(k.label || "");
@@ -1024,9 +1026,10 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Model */}
                         <td className="px-4 py-3 font-mono text-foreground font-semibold">
                           <span className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px]">
-                            {entry.model || (entry.provider === "google" ? "gemini-2.5-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
+                            {entry.model || entry.defaultModel || (entry.provider === "google" ? "gemini-2.5-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
                           </span>
                         </td>
+
 
 
                         {/* Masked Key */}
