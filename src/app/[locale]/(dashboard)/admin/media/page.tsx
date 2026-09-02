@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -13,6 +13,13 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { UploadMediaDialog } from "@/features/media/components/UploadMediaDialog";
 import { MoveMediaDialog } from "@/features/media/components/MoveMediaDialog";
 import { ManageCategoriesDialog } from "@/features/media/components/ManageCategoriesDialog";
@@ -43,6 +50,12 @@ import {
   CheckSquare,
   Square,
   Sparkles,
+  SlidersHorizontal,
+  FileImage,
+  X,
+  RotateCcw,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -62,9 +75,77 @@ export default function MediaPage() {
 
   const [page, setPage] = useState(1);
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [selectedFormat, setSelectedFormat] = useState<string>("all");
   const [search, setSearch] = useState("");
-  const [sortBy, setSortBy] = useState<"createdAt" | "bytes">("createdAt");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [sortValue, setSortValue] = useState<string>("createdAt:desc");
+
+  // Category scroll slider state & ref
+  const categoryScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const isDraggingRef = useRef(false);
+  const startXRef = useRef(0);
+  const scrollLeftRef = useRef(0);
+
+  const checkCategoryScroll = useCallback(() => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = scrollWidth - clientWidth;
+    const current = Math.abs(scrollLeft);
+    setCanScrollLeft(current > 5);
+    setCanScrollRight(current < maxScroll - 5);
+  }, []);
+
+  useEffect(() => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    checkCategoryScroll();
+    el.addEventListener("scroll", checkCategoryScroll, { passive: true });
+    window.addEventListener("resize", checkCategoryScroll);
+    return () => {
+      el.removeEventListener("scroll", checkCategoryScroll);
+      window.removeEventListener("resize", checkCategoryScroll);
+    };
+  }, [checkCategoryScroll]);
+
+  const slideCategories = (direction: "left" | "right") => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    const step = 280;
+    const sign = isAr ? (direction === "left" ? 1 : -1) : (direction === "left" ? -1 : 1);
+    el.scrollBy({ left: sign * step, behavior: "smooth" });
+  };
+
+  const handleCategoryWheel = (e: React.WheelEvent<HTMLDivElement>) => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    if (e.deltaY !== 0) {
+      el.scrollLeft += e.deltaY;
+    }
+  };
+
+  const handleMouseDown = (e: React.MouseEvent<HTMLDivElement>) => {
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    isDraggingRef.current = true;
+    startXRef.current = e.pageX - el.offsetLeft;
+    scrollLeftRef.current = el.scrollLeft;
+  };
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!isDraggingRef.current) return;
+    const el = categoryScrollRef.current;
+    if (!el) return;
+    e.preventDefault();
+    const x = e.pageX - el.offsetLeft;
+    const walk = (x - startXRef.current) * 1.5;
+    el.scrollLeft = scrollLeftRef.current - walk;
+  };
+
+  const handleMouseUpOrLeave = () => {
+    isDraggingRef.current = false;
+  };
 
   // Modals state
   const [uploadOpen, setUploadOpen] = useState(false);
@@ -79,6 +160,12 @@ export default function MediaPage() {
   // Categories hook
   const { data: categories = [] } = useMediaCategories();
 
+  // Sort resolution
+  const [sortBy, sortOrder] = useMemo(() => {
+    const [b, o] = sortValue.split(":") as ["createdAt" | "bytes", "asc" | "desc"];
+    return [b, o];
+  }, [sortValue]);
+
   // Media query filters
   const filters = useMemo<MediaQueryFilters>(() => {
     const q: MediaQueryFilters = {
@@ -91,8 +178,11 @@ export default function MediaPage() {
     if (selectedCategory !== "all") {
       q.category = selectedCategory;
     }
+    if (selectedFormat !== "all") {
+      q.format = selectedFormat;
+    }
     return q;
-  }, [page, search, selectedCategory, sortBy, sortOrder]);
+  }, [page, search, selectedCategory, selectedFormat, sortBy, sortOrder]);
 
   const { data: result, isLoading, isError, refetch, isRefetching } = useMediaAssets(filters);
   const { data: summary } = useMediaSummary();
@@ -103,6 +193,16 @@ export default function MediaPage() {
 
   const totalAssetsCount = summary?.total ?? 0;
   const totalStorageBytes = summary?.bytes ?? 0;
+
+  const hasActiveFilters = selectedCategory !== "all" || selectedFormat !== "all" || search.trim() !== "";
+
+  const handleResetFilters = () => {
+    setSelectedCategory("all");
+    setSelectedFormat("all");
+    setSearch("");
+    setSortValue("createdAt:desc");
+    setPage(1);
+  };
 
   // Toggle single selection
   const toggleSelect = (id: string) => {
@@ -198,7 +298,7 @@ export default function MediaPage() {
             size="sm"
             onClick={() => refetch()}
             disabled={isRefetching}
-            className="h-9 text-xs font-semibold cursor-pointer"
+            className="h-9 text-xs font-semibold cursor-pointer rounded-xl"
           >
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
             {isAr ? "تحديث" : "Refresh"}
@@ -208,7 +308,7 @@ export default function MediaPage() {
             variant="outline"
             size="sm"
             onClick={() => setManageCategoriesOpen(true)}
-            className="h-9 text-xs font-bold gap-1.5 cursor-pointer border-amber-500/40 hover:bg-amber-500/10 text-foreground"
+            className="h-9 text-xs font-bold gap-1.5 cursor-pointer border-amber-500/40 hover:bg-amber-500/10 text-foreground rounded-xl"
           >
             <Tags className="w-3.5 h-3.5 text-amber-500" />
             <span>{isAr ? "إدارة الفئات والمجلدات" : "Manage Categories"}</span>
@@ -217,10 +317,10 @@ export default function MediaPage() {
           <Button
             size="sm"
             onClick={() => setUploadOpen(true)}
-            className="h-9 text-xs font-bold gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer"
+            className="h-9 text-xs font-bold gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 shadow-md cursor-pointer rounded-xl"
           >
             <UploadCloud className="w-4 h-4 stroke-[2.5]" />
-            <span>{isAr ? "رفع صورة جديدة" : "Upload Image"}</span>
+            <span>{isAr ? "إضافة صور / روابط 📸" : "Add Images / URLs 📸"}</span>
           </Button>
         </div>
       </div>
@@ -270,11 +370,12 @@ export default function MediaPage() {
         </Card>
       </div>
 
-      {/* 3. Category Filter Tabs */}
+      {/* 3. Category Filter Tabs Slider */}
       <div className="space-y-3">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider">
-            {isAr ? "تصفية حسب الفئة / المجلد:" : "Filter by Category / Folder:"}
+          <span className="text-xs font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+            <Filter className="w-3.5 h-3.5 text-amber-500" />
+            <span>{isAr ? "تصفية حسب الفئة / المجلد:" : "Filter by Category / Folder:"}</span>
           </span>
           <button
             onClick={() => setManageCategoriesOpen(true)}
@@ -285,104 +386,279 @@ export default function MediaPage() {
           </button>
         </div>
 
-        <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-          <button
+        {/* Smooth Slider Bar with Left / Right Navigation */}
+        <div className="relative flex items-center gap-1.5 bg-card/60 p-1.5 rounded-2xl border border-border/70 shadow-xs">
+          <Button
             type="button"
-            onClick={() => {
-              setSelectedCategory("all");
-              setPage(1);
-            }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold border transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-              selectedCategory === "all"
-                ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm scale-[1.02]"
-                : "bg-card text-muted-foreground border-border hover:border-amber-500/40 hover:text-foreground"
-            }`}
+            variant="outline"
+            size="icon"
+            onClick={() => slideCategories("left")}
+            className="h-8 w-8 rounded-xl shrink-0 border-border/80 bg-background/80 hover:bg-amber-500 hover:text-slate-950 shadow-xs cursor-pointer transition-all"
+            title={isAr ? "تحريك لليمين" : "Scroll Left"}
           >
-            <span>{isAr ? "كافة الصور" : "All Assets"}</span>
-            <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono font-bold">
-              {totalAssetsCount}
-            </Badge>
-          </button>
+            {isAr ? <ChevronRight className="w-4 h-4 stroke-[2.5]" /> : <ChevronLeft className="w-4 h-4 stroke-[2.5]" />}
+          </Button>
 
-          {categories.map((cat) => {
-            const isSelected = selectedCategory === cat.slug;
-            return (
-              <button
-                key={cat.slug}
-                type="button"
-                onClick={() => {
-                  setSelectedCategory(cat.slug);
-                  setPage(1);
-                }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold border transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                  isSelected
-                    ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm scale-[1.02]"
-                    : "bg-card text-muted-foreground border-border hover:border-amber-500/40 hover:text-foreground"
-                }`}
-              >
-                <span>{isAr ? cat.nameAr : cat.nameEn}</span>
-                {cat.count !== undefined && (
-                  <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono font-bold">
-                    {cat.count}
-                  </Badge>
-                )}
-              </button>
-            );
-          })}
+          <div
+            ref={categoryScrollRef}
+            onWheel={handleCategoryWheel}
+            onMouseDown={handleMouseDown}
+            onMouseMove={handleMouseMove}
+            onMouseUp={handleMouseUpOrLeave}
+            onMouseLeave={handleMouseUpOrLeave}
+            className="flex-1 flex items-center gap-2 overflow-x-auto scroll-smooth py-1 px-1 cursor-grab active:cursor-grabbing select-none scrollbar-thin scrollbar-thumb-amber-500/30 hover:scrollbar-thumb-amber-500/60 scrollbar-track-transparent"
+          >
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedCategory("all");
+                setPage(1);
+              }}
+              className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold border transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
+                selectedCategory === "all"
+                  ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm scale-[1.02]"
+                  : "bg-background/80 text-muted-foreground border-border hover:border-amber-500/40 hover:text-foreground"
+              }`}
+            >
+              <span>{isAr ? "كافة الصور" : "All Assets"}</span>
+              <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono font-bold">
+                {totalAssetsCount}
+              </Badge>
+            </button>
+
+            {categories.map((cat) => {
+              const isSelected = selectedCategory === cat.slug;
+              return (
+                <button
+                  key={cat.slug}
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory(cat.slug);
+                    setPage(1);
+                  }}
+                  className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold border transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
+                    isSelected
+                      ? "bg-amber-500 text-slate-950 border-amber-500 shadow-sm scale-[1.02]"
+                      : "bg-background/80 text-muted-foreground border-border hover:border-amber-500/40 hover:text-foreground"
+                  }`}
+                >
+                  <span>{isAr ? cat.nameAr : cat.nameEn}</span>
+                  {cat.count !== undefined && (
+                    <Badge variant="secondary" className="px-1.5 py-0 text-[10px] font-mono font-bold">
+                      {cat.count}
+                    </Badge>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => slideCategories("right")}
+            className="h-8 w-8 rounded-xl shrink-0 border-border/80 bg-background/80 hover:bg-amber-500 hover:text-slate-950 shadow-xs cursor-pointer transition-all"
+            title={isAr ? "تحريك لليسار" : "Scroll Right"}
+          >
+            {isAr ? <ChevronLeft className="w-4 h-4 stroke-[2.5]" /> : <ChevronRight className="w-4 h-4 stroke-[2.5]" />}
+          </Button>
         </div>
       </div>
 
-      {/* 4. Toolbar: Search, Sort & Bulk Selection */}
-      <Card className="p-3.5 bg-card border border-border/80 rounded-2xl flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="relative flex-1 sm:max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
-              setPage(1);
-            }}
-            placeholder={isAr ? "بحث بالنص البديل أو كود الصورة..." : "Search by alt text or public ID..."}
-            className="pl-9 h-9 text-xs"
-          />
-        </div>
+      {/* 4. Toolbar: Search, Format Pills, Sort Selector & Bulk Actions */}
+      <Card className="p-4 bg-card border border-border/80 rounded-2xl flex flex-col gap-4 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          {/* Search Box */}
+          <div className="relative flex-1 md:max-w-md">
+            <Search className="absolute left-3 rtl:left-auto rtl:right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
+              placeholder={isAr ? "بحث بالنص البديل، كود الصورة، أو الرابط..." : "Search by alt text, ID, or URL..."}
+              className="pl-9 pr-9 rtl:pl-9 rtl:pr-9 h-9 text-xs rounded-xl"
+            />
+            {search && (
+              <button
+                type="button"
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
+                className="absolute right-3 rtl:right-auto rtl:left-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
+          </div>
 
-        <div className="flex flex-wrap items-center gap-2">
-          {/* Select all toggle */}
-          {assets.length > 0 && (
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={handleSelectAll}
-              className="h-9 text-xs font-bold gap-1.5 cursor-pointer"
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Format Selector Pills */}
+            <div className="flex items-center gap-1 bg-muted/40 p-1 rounded-xl border border-border/60">
+              {[
+                { id: "all", labelEn: "All Formats", labelAr: "كافة الصيغ" },
+                { id: "webp", labelEn: "WEBP", labelAr: "WEBP" },
+                { id: "jpg", labelEn: "JPG", labelAr: "JPG" },
+                { id: "png", labelEn: "PNG", labelAr: "PNG" },
+              ].map((f) => {
+                const isActive = selectedFormat === f.id;
+                return (
+                  <button
+                    key={f.id}
+                    type="button"
+                    onClick={() => {
+                      setSelectedFormat(f.id);
+                      setPage(1);
+                    }}
+                    className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all cursor-pointer ${
+                      isActive
+                        ? "bg-amber-500 text-slate-950 font-black shadow-xs"
+                        : "text-muted-foreground hover:text-foreground"
+                    }`}
+                  >
+                    {isAr ? f.labelAr : f.labelEn}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Sort Selector Dropdown */}
+            <Select
+              value={sortValue}
+              onValueChange={(val) => {
+                setSortValue(val);
+                setPage(1);
+              }}
             >
-              {selectedAssetIds.length === assets.length ? (
-                <CheckSquare className="w-3.5 h-3.5 text-amber-500" />
-              ) : (
-                <Square className="w-3.5 h-3.5 text-muted-foreground" />
-              )}
-              <span>{selectedAssetIds.length === assets.length ? (isAr ? "إلغاء تحديد الكل" : "Deselect All") : (isAr ? "تحديد الكل" : "Select All")}</span>
-            </Button>
-          )}
+              <SelectTrigger className="h-9 w-[170px] text-xs font-bold rounded-xl gap-1.5">
+                <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
+                <SelectValue placeholder={isAr ? "الترتيب" : "Sort By"} />
+              </SelectTrigger>
+              <SelectContent className="rounded-xl">
+                <SelectItem value="createdAt:desc" className="text-xs font-bold">
+                  {isAr ? "الأحدث أولاً (Newest)" : "Newest First"}
+                </SelectItem>
+                <SelectItem value="createdAt:asc" className="text-xs font-bold">
+                  {isAr ? "الأقدم أولاً (Oldest)" : "Oldest First"}
+                </SelectItem>
+                <SelectItem value="bytes:desc" className="text-xs font-bold">
+                  {isAr ? "الأكبر حجماً (Largest)" : "Largest Size"}
+                </SelectItem>
+                <SelectItem value="bytes:asc" className="text-xs font-bold">
+                  {isAr ? "الأصغر حجماً (Smallest)" : "Smallest Size"}
+                </SelectItem>
+              </SelectContent>
+            </Select>
 
-          {/* Sort order toggle */}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSortBy((prev) => (prev === "createdAt" ? "bytes" : "createdAt"));
-              setPage(1);
-            }}
-            className="h-9 text-xs font-semibold gap-1.5 cursor-pointer"
-          >
-            <ArrowUpDown className="w-3.5 h-3.5 text-muted-foreground" />
-            <span>
-              {sortBy === "createdAt"
-                ? (isAr ? "الترتيب: الأحدث" : "Sort: Newest")
-                : (isAr ? "الترتيب: الحجم" : "Sort: Size")}
-            </span>
-          </Button>
+            {/* Select all toggle */}
+            {assets.length > 0 && (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={handleSelectAll}
+                className="h-9 text-xs font-bold gap-1.5 cursor-pointer rounded-xl"
+              >
+                {selectedAssetIds.length === assets.length ? (
+                  <CheckSquare className="w-3.5 h-3.5 text-amber-500" />
+                ) : (
+                  <Square className="w-3.5 h-3.5 text-muted-foreground" />
+                )}
+                <span>
+                  {selectedAssetIds.length === assets.length
+                    ? isAr
+                      ? "إلغاء التحديد"
+                      : "Deselect All"
+                    : isAr
+                    ? "تحديد الكل"
+                    : "Select All"}
+                </span>
+              </Button>
+            )}
+          </div>
         </div>
+
+        {/* Active Filters Bar */}
+        {hasActiveFilters && (
+          <div className="flex flex-wrap items-center gap-2 pt-2 border-t border-border/60 animate-in fade-in">
+            <span className="text-[11px] font-bold text-muted-foreground">
+              {isAr ? "الفلاتر النشطة:" : "Active Filters:"}
+            </span>
+
+            {selectedCategory !== "all" && (
+              <Badge
+                variant="secondary"
+                className="text-[11px] font-bold gap-1.5 py-1 px-2.5 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30"
+              >
+                <span>
+                  {isAr ? "الفئة:" : "Category:"}{" "}
+                  {categories.find((c) => c.slug === selectedCategory)?.[isAr ? "nameAr" : "nameEn"] || selectedCategory}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedCategory("all");
+                    setPage(1);
+                  }}
+                  className="hover:text-destructive cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            {selectedFormat !== "all" && (
+              <Badge
+                variant="secondary"
+                className="text-[11px] font-bold gap-1.5 py-1 px-2.5 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30"
+              >
+                <span>{isAr ? "الصيغة:" : "Format:"} {selectedFormat.toUpperCase()}</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSelectedFormat("all");
+                    setPage(1);
+                  }}
+                  className="hover:text-destructive cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            {search.trim() !== "" && (
+              <Badge
+                variant="secondary"
+                className="text-[11px] font-bold gap-1.5 py-1 px-2.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30"
+              >
+                <span>{isAr ? "البحث:" : "Search:"} &quot;{search}&quot;</span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setSearch("");
+                    setPage(1);
+                  }}
+                  className="hover:text-destructive cursor-pointer"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </Badge>
+            )}
+
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={handleResetFilters}
+              className="h-6 text-[11px] font-extrabold text-destructive hover:bg-destructive/10 px-2 rounded-lg gap-1 cursor-pointer"
+            >
+              <RotateCcw className="w-3 h-3" />
+              <span>{isAr ? "إعادة ضبط الفلاتر" : "Reset All"}</span>
+            </Button>
+          </div>
+        )}
       </Card>
 
       {/* Floating Bulk Action Bar */}
@@ -401,7 +677,7 @@ export default function MediaPage() {
             <Button
               size="sm"
               onClick={handleOpenMoveBulk}
-              className="h-8 text-xs font-bold gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer shadow-xs"
+              className="h-8 text-xs font-bold gap-1.5 bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer shadow-xs rounded-xl"
             >
               <FolderSymlink className="w-3.5 h-3.5" />
               <span>{isAr ? "نقل إلى فئة أخرى..." : "Move to Category..."}</span>
@@ -411,7 +687,7 @@ export default function MediaPage() {
               size="sm"
               variant="outline"
               onClick={handleRemoveBulk}
-              className="h-8 text-xs font-bold text-destructive hover:bg-destructive/10 border-destructive/30 cursor-pointer gap-1.5"
+              className="h-8 text-xs font-bold text-destructive hover:bg-destructive/10 border-destructive/30 cursor-pointer gap-1.5 rounded-xl"
             >
               <Trash2 className="w-3.5 h-3.5" />
               <span>{isAr ? "حذف المحدد" : "Delete Selected"}</span>
@@ -421,7 +697,7 @@ export default function MediaPage() {
               size="sm"
               variant="ghost"
               onClick={() => setSelectedAssetIds([])}
-              className="h-8 text-xs text-muted-foreground cursor-pointer"
+              className="h-8 text-xs text-muted-foreground cursor-pointer rounded-xl"
             >
               {isAr ? "إلغاء" : "Clear"}
             </Button>
@@ -438,11 +714,11 @@ export default function MediaPage() {
           </p>
         </div>
       ) : isError ? (
-        <Card className="p-12 text-center border-destructive/30 bg-destructive/5 space-y-3">
+        <Card className="p-12 text-center border-destructive/30 bg-destructive/5 space-y-3 rounded-3xl">
           <p className="text-sm font-bold text-destructive">
             {isAr ? "تعذر تحميل مكتبة الوسائط من الخادم." : "Could not load media assets from backend."}
           </p>
-          <Button variant="outline" size="sm" onClick={() => void refetch()}>
+          <Button variant="outline" size="sm" onClick={() => void refetch()} className="rounded-xl">
             {isAr ? "إعادة المحاولة" : "Retry"}
           </Button>
         </Card>
@@ -456,29 +732,28 @@ export default function MediaPage() {
           </h3>
           <p className="text-xs text-muted-foreground max-w-sm mx-auto">
             {isAr
-              ? "يمكنك رفع صور جديدة أو تغيير الفئة لعرض المزيد من الأصول الرقمية."
-              : "Upload high-res images or reset your search filters to explore assets."}
+              ? "يمكنك إعادة ضبط الفلاتر أو رفع صور جديدة واستيرادها عبر الروابط."
+              : "Reset filters or upload new high-res images and import direct URLs."}
           </p>
           <div className="flex items-center justify-center gap-2 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => {
-                setSelectedCategory("all");
-                setSearch("");
-                setPage(1);
-              }}
-              className="text-xs font-semibold"
-            >
-              {isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"}
-            </Button>
+            {hasActiveFilters && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleResetFilters}
+                className="text-xs font-semibold rounded-xl gap-1.5"
+              >
+                <RotateCcw className="w-3.5 h-3.5" />
+                <span>{isAr ? "إعادة ضبط الفلاتر" : "Reset Filters"}</span>
+              </Button>
+            )}
             <Button
               size="sm"
               onClick={() => setUploadOpen(true)}
-              className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 gap-1.5"
+              className="text-xs font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 gap-1.5 rounded-xl shadow-xs"
             >
               <UploadCloud className="w-3.5 h-3.5" />
-              <span>{isAr ? "رفع صورة الآن" : "Upload Image"}</span>
+              <span>{isAr ? "إضافة صور الآن" : "Add Images Now"}</span>
             </Button>
           </div>
         </Card>

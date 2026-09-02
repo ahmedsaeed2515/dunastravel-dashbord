@@ -10,6 +10,43 @@ import { TourRowActions } from "./TourRowActions";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useToggleFeatured } from "../../hooks/useTours";
 import { Loader2 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useTourLifecycleAction } from "../../hooks/useTours";
+
+function PublishToggleCell({ tour, currentLocale }: { tour: Tour; currentLocale: string }) {
+  const { mutate: publish, isPending: isPublishing } = useTourLifecycleAction('publish');
+  const { mutate: unpublish, isPending: isUnpublishing } = useTourLifecycleAction('unpublish');
+  const isPending = isPublishing || isUnpublishing;
+  const isPublished = tour.status === "PUBLISHED" && tour.isActive;
+  const isAr = currentLocale === "ar";
+
+  return (
+    <div className="flex items-center gap-2">
+      <Switch
+        size="sm"
+        checked={isPublished}
+        disabled={isPending}
+        onCheckedChange={() => {
+          if (isPublished) {
+            unpublish(tour.slug);
+          } else {
+            publish(tour.slug);
+          }
+        }}
+        title={isPublished ? (isAr ? "إلغاء النشر (تحويل لمسودة)" : "Unpublish (Draft)") : (isAr ? "نشر وتفعيل الرحلة" : "Publish Tour")}
+      />
+      <span className={`text-[11px] font-bold ${isPublished ? "text-emerald-500" : "text-muted-foreground"}`}>
+        {isPending ? (
+          <Loader2 className="h-3 w-3 animate-spin inline" />
+        ) : isPublished ? (
+          isAr ? "منشور" : "Live"
+        ) : (
+          isAr ? "مسودة" : "Draft"
+        )}
+      </span>
+    </div>
+  );
+}
 
 export function getTourTitle(tour: Tour, lang: string = "en"): string {
   if ((tour as any).title && typeof (tour as any).title === "string" && (tour as any).title.trim() !== "") {
@@ -166,10 +203,7 @@ export function getColumns(
     {
       accessorKey: "status",
       header: tCommon("status"),
-      cell: ({ row }) => {
-        const status = row.getValue("status") as string;
-        return <StatusBadge status={status} />;
-      },
+      cell: ({ row }) => <PublishToggleCell tour={row.original} currentLocale={currentLocale} />,
     },
     {
       accessorKey: "basePriceUsd",

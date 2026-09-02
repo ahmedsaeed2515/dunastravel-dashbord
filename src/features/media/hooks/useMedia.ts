@@ -3,6 +3,8 @@ import { mediaApi } from "../api/mediaApi";
 import { 
   MediaQueryFilters, 
   UploadMediaPayload, 
+  UploadBulkMediaPayload,
+  ImportMediaUrlsPayload,
   UpdateMediaPayload, 
   BulkMoveMediaPayload,
   CreateMediaCategoryPayload,
@@ -50,6 +52,36 @@ export function useUploadMedia() {
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || "Failed to upload media.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useUploadBulkMedia() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: UploadBulkMediaPayload) => mediaApi.uploadBulkMedia(data),
+    onSuccess: (assets) => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.all });
+      toast.success(`Successfully uploaded ${assets.length} image(s).`);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to upload multiple images.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useImportMediaUrls() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data: ImportMediaUrlsPayload) => mediaApi.importMediaUrls(data),
+    onSuccess: (assets) => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.all });
+      toast.success(`Successfully imported ${assets.length} image(s) from URLs.`);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to import images from URLs.";
       toast.error(msg);
     },
   });

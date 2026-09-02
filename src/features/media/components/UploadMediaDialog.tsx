@@ -1,6 +1,6 @@
 "use client";
 
-import { ChangeEvent, FormEvent, useEffect, useState } from "react";
+import { ChangeEvent, FormEvent, useEffect, useState, useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -19,9 +20,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, UploadCloud, Image as ImageIcon, X } from "lucide-react";
-import { useUploadMedia } from "../hooks/useMedia";
-import { MediaCategoryItem, MediaEntityType } from "../types";
+import {
+  Loader2,
+  UploadCloud,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  X,
+  Plus,
+  Trash2,
+  CheckCircle2,
+  AlertCircle,
+  FolderOpen,
+  Sparkles,
+  Layers,
+  FileCheck,
+} from "lucide-react";
+import { useUploadBulkMedia, useImportMediaUrls } from "../hooks/useMedia";
+import { MediaCategoryItem, MediaEntityType, MediaUrlItem } from "../types";
 import { toast } from "sonner";
 
 interface UploadMediaDialogProps {
@@ -32,6 +47,29 @@ interface UploadMediaDialogProps {
   isAr?: boolean;
 }
 
+interface QueuedFile {
+  id: string;
+  file: File;
+  previewUrl: string;
+  altText: string;
+}
+
+interface QueuedUrl {
+  id: string;
+  url: string;
+  altText: string;
+  status: "idle" | "validating" | "valid" | "invalid";
+  dimensions?: { width: number; height: number };
+  errorMessage?: string;
+}
+
+function formatBytes(bytes: number): string {
+  if (!bytes) return "0 B";
+  const units = ["B", "KB", "MB", "GB"];
+  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(1024)), units.length - 1);
+  return `${(bytes / 1024 ** i).toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
+}
+
 export function UploadMediaDialog({
   open,
   onOpenChange,
@@ -39,19 +77,35 @@ export function UploadMediaDialog({
   defaultCategorySlug = "general",
   isAr = false,
 }: UploadMediaDialogProps) {
-  const { mutate: uploadMedia, isPending } = useUploadMedia();
-  const [file, setFile] = useState<File | null>(null);
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [altText, setAltText] = useState("");
+  const [activeTab, setActiveTab] = useState<"files" | "urls">("files");
+
+  // Category & Entity settings
   const [targetCategory, setTargetCategory] = useState<string>(defaultCategorySlug);
   const [customEntityId, setCustomEntityId] = useState("");
+  const [globalAltText, setGlobalAltText] = useState("");
 
+  // Files Queue state
+  const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  // URLs Queue state
+  const [urlRawInput, setUrlRawInput] = useState("");
+  const [queuedUrls, setQueuedUrls] = useState<QueuedUrl[]>([]);
+  const [isValidatingUrls, setIsValidatingUrls] = useState(false);
+
+  // Mutations
+  const { mutate: uploadBulkMedia, isPending: isUploadingFiles } = useUploadBulkMedia();
+  const { mutate: importMediaUrls, isPending: isImportingUrls } = useImportMediaUrls();
+  const isPending = isUploadingFiles || isImportingUrls;
+
+  // Cleanup on open/close
   useEffect(() => {
     if (!open) {
-      setFile(null);
-      if (previewUrl) URL.revokeObjectURL(previewUrl);
-      setPreviewUrl(null);
-      setAltText("");
+      queuedFiles.forEach((f) => URL.revokeObjectURL(f.previewUrl));
+      setQueuedFiles([]);
+      setQueuedUrls([]);
+      setUrlRawInput("");
+      setGlobalAltText("");
       setTargetCategory(defaultCategorySlug || "general");
       setCustomEntityId("");
     } else {
@@ -59,30 +113,153 @@ export function UploadMediaDialog({
     }
   }, [open, defaultCategorySlug]);
 
-  const selectFile = (event: ChangeEvent<HTMLInputElement>) => {
-    const selected = event.target.files?.[0] ?? null;
-    if (!selected) return;
-    if (!["image/jpeg", "image/png", "image/webp"].includes(selected.type)) {
-      toast.error(isAr ? "يرجى اختيار صورة بصيغة JPEG أو PNG أو WebP." : "Choose a JPEG, PNG, or WebP image.");
-      event.target.value = "";
-      return;
+  // ---------------- File Selection Handling ----------------
+  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+    const selectedList = event.target.files;
+    if (!selectedList || selectedList.length === 0) return;
+
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    const maxSizeBytes = 10 * 1024 * 1024;
+    const newItems: QueuedFile[] = [];
+    let rejectedCount = 0;
+
+    for (let i = 0; i < selectedList.length; i++) {
+      const file = selectedList[i];
+      if (!allowedTypes.includes(file.type)) {
+        rejectedCount++;
+        continue;
+      }
+      if (file.size > maxSizeBytes) {
+        rejectedCount++;
+        continue;
+      }
+
+      const defaultAlt = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      newItems.push({
+        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        file,
+        previewUrl: URL.createObjectURL(file),
+        altText: defaultAlt,
+      });
     }
-    if (selected.size > 10 * 1024 * 1024) {
-      toast.error(isAr ? "يجب ألا يتجاوز حجم الصورة 10 ميجابايت." : "Images must be 10 MB or smaller.");
-      event.target.value = "";
-      return;
+
+    if (rejectedCount > 0) {
+      toast.warning(
+        isAr
+          ? `تم استبعاد ${rejectedCount} ملف(ات) لتجاوز الحجم (10MB) أو لعدم توافق الصيغة (JPG/PNG/WEBP).`
+          : `${rejectedCount} file(s) skipped (must be JPG/PNG/WEBP under 10MB).`,
+      );
     }
-    setFile(selected);
-    const url = URL.createObjectURL(selected);
-    setPreviewUrl(url);
+
+    if (newItems.length > 0) {
+      setQueuedFiles((prev) => [...prev, ...newItems]);
+      toast.success(
+        isAr
+          ? `تمت إضافة ${newItems.length} صورة لقائمة الرفع.`
+          : `Added ${newItems.length} image(s) to upload queue.`,
+      );
+    }
+
+    if (event.target) event.target.value = "";
   };
 
-  const submit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    if (!file) {
-      toast.error(isAr ? "يرجى تحديد ملف صورة أولاً." : "Choose an image before uploading.");
+  const removeQueuedFile = (id: string) => {
+    setQueuedFiles((prev) => {
+      const target = prev.find((f) => f.id === id);
+      if (target) URL.revokeObjectURL(target.previewUrl);
+      return prev.filter((f) => f.id !== id);
+    });
+  };
+
+  const updateFileAltText = (id: string, text: string) => {
+    setQueuedFiles((prev) =>
+      prev.map((f) => (f.id === id ? { ...f, altText: text } : f)),
+    );
+  };
+
+  // ---------------- URL Parsing & Validation ----------------
+  const handleParseUrls = async () => {
+    const lines = urlRawInput
+      .split(/[\n,]+/)
+      .map((l) => l.trim())
+      .filter((l) => l.length > 0 && /^https?:\/\//i.test(l));
+
+    if (lines.length === 0) {
+      toast.error(
+        isAr
+          ? "يرجى إدخال روابط صور صحيحة تبدأ بـ http:// أو https://"
+          : "Please enter valid image URLs starting with http:// or https://",
+      );
       return;
     }
+
+    setIsValidatingUrls(true);
+    const newUrls: QueuedUrl[] = [];
+
+    for (const url of lines) {
+      const id = `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+      newUrls.push({
+        id,
+        url,
+        altText: url.split("/").pop()?.split("?")[0] || "",
+        status: "validating",
+      });
+    }
+
+    setQueuedUrls((prev) => [...prev, ...newUrls]);
+    setUrlRawInput("");
+
+    // Validate images in parallel
+    for (const item of newUrls) {
+      validateSingleUrl(item);
+    }
+    setIsValidatingUrls(false);
+  };
+
+  const validateSingleUrl = (item: QueuedUrl) => {
+    const img = new Image();
+    img.onload = () => {
+      setQueuedUrls((prev) =>
+        prev.map((u) =>
+          u.id === item.id
+            ? {
+                ...u,
+                status: "valid",
+                dimensions: { width: img.naturalWidth, height: img.naturalHeight },
+              }
+            : u,
+        ),
+      );
+    };
+    img.onerror = () => {
+      setQueuedUrls((prev) =>
+        prev.map((u) =>
+          u.id === item.id
+            ? {
+                ...u,
+                status: "invalid",
+                errorMessage: isAr ? "تعذر تحميل الصورة" : "Could not load image",
+              }
+            : u,
+        ),
+      );
+    };
+    img.src = item.url;
+  };
+
+  const removeQueuedUrl = (id: string) => {
+    setQueuedUrls((prev) => prev.filter((u) => u.id !== id));
+  };
+
+  const updateUrlAltText = (id: string, text: string) => {
+    setQueuedUrls((prev) =>
+      prev.map((u) => (u.id === id ? { ...u, altText: text } : u)),
+    );
+  };
+
+  // ---------------- Submit Actions ----------------
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
 
     let entityType: MediaEntityType = "GENERAL";
     let entityId: string | undefined = undefined;
@@ -100,185 +277,475 @@ export function UploadMediaDialog({
       entityId = categorySlug;
     }
 
-    uploadMedia(
-      {
-        file,
-        entityType,
-        entityId,
-        categorySlug,
-        altText: altText.trim() || undefined,
-      },
-      {
-        onSuccess: () => onOpenChange(false),
-      },
-    );
+    if (activeTab === "files") {
+      if (queuedFiles.length === 0) {
+        toast.error(isAr ? "يرجى اختيار ملف صورة واحد على الأقل." : "Select at least one image file.");
+        return;
+      }
+
+      const files = queuedFiles.map((q) => q.file);
+      const altTextsMap: Record<string, string> = {};
+      queuedFiles.forEach((q) => {
+        if (q.altText.trim()) altTextsMap[q.file.name] = q.altText.trim();
+      });
+
+      uploadBulkMedia(
+        {
+          files,
+          entityType,
+          entityId,
+          categorySlug,
+          altText: globalAltText.trim() || undefined,
+          altTextsMap,
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        },
+      );
+    } else {
+      const validUrls = queuedUrls.filter((u) => u.status !== "invalid");
+      if (validUrls.length === 0) {
+        toast.error(
+          isAr
+            ? "لا توجد روابط صور صالحة للاستيراد. يرجى إدخال ومعاينة الروابط أولاً."
+            : "No valid image URLs to import. Validate URLs before importing.",
+        );
+        return;
+      }
+
+      const items: MediaUrlItem[] = validUrls.map((u) => ({
+        url: u.url,
+        altText: u.altText.trim() || globalAltText.trim() || undefined,
+      }));
+
+      importMediaUrls(
+        {
+          items,
+          entityType,
+          entityId,
+          categorySlug,
+          defaultAltText: globalAltText.trim() || undefined,
+        },
+        {
+          onSuccess: () => onOpenChange(false),
+        },
+      );
+    }
   };
+
+  const totalFilesBytes = queuedFiles.reduce((acc, f) => acc + f.file.size, 0);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-lg p-0 overflow-hidden rounded-3xl border border-border/80 shadow-2xl bg-card">
-        <DialogHeader className="p-6 pb-4 bg-linear-to-r from-amber-500/10 via-primary/10 to-transparent border-b">
-          <DialogTitle className="text-lg font-black flex items-center gap-2 text-foreground">
-            <div className="p-2 rounded-xl bg-amber-500 text-slate-950">
-              <UploadCloud className="w-5 h-5" />
+      <DialogContent className="sm:max-w-2xl max-h-[90vh] flex flex-col p-0 overflow-hidden rounded-3xl border border-border/80 shadow-2xl bg-card">
+        {/* Header */}
+        <DialogHeader className="p-6 pb-4 bg-linear-to-r from-amber-500/10 via-primary/10 to-transparent border-b shrink-0">
+          <div className="flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-amber-500 text-slate-950 shadow-xs">
+                <UploadCloud className="w-5 h-5 stroke-[2.5]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
+                  <span>{isAr ? "إضافة وسائط وصور للمكتبة" : "Add Media & Digital Assets"}</span>
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5">
+                  {isAr
+                    ? "ارفع صوراً من جهازك أو استوردها عبر الروابط المباشرة مع المعاينة الفورية والتخزين السحابي."
+                    : "Upload images from device or import via direct URLs with live preview and cloud storage."}
+                </DialogDescription>
+              </div>
             </div>
-            <span>{isAr ? "رفع صورة جديدة للمكتبة" : "Upload Library Image"}</span>
-          </DialogTitle>
-          <DialogDescription className="text-xs text-muted-foreground mt-1">
-            {isAr
-              ? "اختر صورة عالية الدقة بصيغة JPEG أو PNG أو WebP وحدد الفئة المناسبة لها."
-              : "Upload high-resolution verified JPEG, PNG, or WebP file and assign it to a category."}
-          </DialogDescription>
+          </div>
+
+          {/* Dual Tabs Bar */}
+          <div className="flex items-center gap-2 mt-4 bg-muted/40 p-1 rounded-2xl border border-border/60">
+            <button
+              type="button"
+              onClick={() => setActiveTab("files")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "files"
+                  ? "bg-card text-foreground shadow-xs border border-border/80 font-black"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <UploadCloud className="w-4 h-4 text-amber-500" />
+              <span>{isAr ? "📁 رفع ملفات من الجهاز" : "📁 Upload from Device"}</span>
+              {queuedFiles.length > 0 && (
+                <Badge className="px-1.5 py-0 text-[10px] bg-amber-500 text-slate-950 font-mono font-black">
+                  {queuedFiles.length}
+                </Badge>
+              )}
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setActiveTab("urls")}
+              className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                activeTab === "urls"
+                  ? "bg-card text-foreground shadow-xs border border-border/80 font-black"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <LinkIcon className="w-4 h-4 text-amber-500" />
+              <span>{isAr ? "🔗 استيراد عبر روابط (URLs)" : "🔗 Import via URLs"}</span>
+              {queuedUrls.length > 0 && (
+                <Badge className="px-1.5 py-0 text-[10px] bg-amber-500 text-slate-950 font-mono font-black">
+                  {queuedUrls.length}
+                </Badge>
+              )}
+            </button>
+          </div>
         </DialogHeader>
 
-        <form onSubmit={submit} className="p-6 space-y-4">
-          {/* File input & Drag drop box */}
-          <div className="space-y-2">
-            <Label className="text-xs font-extrabold text-foreground">
-              {isAr ? "ملف الصورة *" : "Image file *"}
-            </Label>
+        {/* Scrollable Form Content */}
+        <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-6 space-y-5">
+          {/* TAB 1: UPLOAD FILES FROM DEVICE */}
+          {activeTab === "files" && (
+            <div className="space-y-4">
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                accept="image/jpeg,image/png,image/webp"
+                onChange={handleFileSelect}
+                className="hidden"
+                disabled={isPending}
+              />
 
-            {!file ? (
-              <label
-                htmlFor="library-media-file"
-                className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-border rounded-2xl bg-muted/20 hover:bg-muted/40 transition-colors cursor-pointer text-center group"
+              {/* Drag & drop upload target */}
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center p-6 border-2 border-dashed border-amber-500/40 rounded-3xl bg-amber-500/5 hover:bg-amber-500/10 transition-colors cursor-pointer text-center group"
               >
-                <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 group-hover:scale-110 transition-transform mb-2">
-                  <ImageIcon className="w-6 h-6" />
+                <div className="p-3.5 rounded-2xl bg-amber-500/20 text-amber-500 group-hover:scale-110 transition-transform mb-2">
+                  <ImageIcon className="w-7 h-7 stroke-[2]" />
                 </div>
-                <span className="text-xs font-bold text-foreground">
-                  {isAr ? "انقر لاختيار صورة من جهازك" : "Click to select an image from your device"}
+                <span className="text-xs font-black text-foreground">
+                  {isAr
+                    ? "انقر لاختيار صورة أو مجموعة صور من جهازك (يدعم التحديد المتعدد)"
+                    : "Click to choose single or multiple images from device"}
                 </span>
                 <span className="text-[11px] text-muted-foreground mt-1 font-mono">
-                  JPEG, PNG, WebP (Max 10 MB)
+                  JPEG, PNG, WebP · Max 10 MB per image · Multi-select supported
                 </span>
-                <Input
-                  id="library-media-file"
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp"
-                  onChange={selectFile}
-                  disabled={isPending}
-                  required
-                  className="hidden"
-                />
-              </label>
-            ) : (
-              <div className="p-3 rounded-2xl bg-muted/40 border flex items-center justify-between gap-3">
-                <div className="flex items-center gap-3 min-w-0">
-                  {previewUrl && (
-                    <div className="w-14 h-14 rounded-xl overflow-hidden bg-slate-950 shrink-0">
-                      <img src={previewUrl} alt="Preview" className="w-full h-full object-cover" />
+              </div>
+
+              {/* Files Queue List */}
+              {queuedFiles.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-foreground flex items-center gap-1.5">
+                      <FileCheck className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{isAr ? `الصور المحددة للرفع (${queuedFiles.length}):` : `Selected Images (${queuedFiles.length}):`}</span>
+                    </span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-mono text-muted-foreground">
+                        {formatBytes(totalFilesBytes)}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          queuedFiles.forEach((f) => URL.revokeObjectURL(f.previewUrl));
+                          setQueuedFiles([]);
+                        }}
+                        className="h-6 text-[10px] text-destructive hover:bg-destructive/10 px-2 rounded-lg"
+                      >
+                        {isAr ? "مسح الكل" : "Clear All"}
+                      </Button>
                     </div>
-                  )}
-                  <div className="min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">{file.name}</p>
-                    <p className="text-[10px] text-muted-foreground font-mono mt-0.5">
-                      {(file.size / 1024).toFixed(1)} KB · {file.type.split("/")[1]?.toUpperCase()}
-                    </p>
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {queuedFiles.map((item, idx) => (
+                      <div
+                        key={item.id}
+                        className="p-2.5 rounded-2xl bg-muted/40 border border-border/70 flex items-center justify-between gap-3 animate-in fade-in"
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-border/60">
+                            <img
+                              src={item.previewUrl}
+                              alt="Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          </div>
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-bold text-foreground truncate max-w-[180px]">
+                                {item.file.name}
+                              </p>
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono">
+                                {formatBytes(item.file.size)}
+                              </Badge>
+                            </div>
+                            <Input
+                              placeholder={isAr ? "نص بديل مخصص لهذه الصورة..." : "Custom Alt text for this image..."}
+                              value={item.altText}
+                              onChange={(e) => updateFileAltText(item.id, e.target.value)}
+                              className="h-7 text-[11px] bg-background/60 rounded-lg"
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeQueuedFile(item.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
                   </div>
                 </div>
+              )}
+            </div>
+          )}
 
+          {/* TAB 2: IMPORT VIA DIRECT URLS */}
+          {activeTab === "urls" && (
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-xs font-extrabold text-foreground flex items-center justify-between">
+                  <span>{isAr ? "أدخل رابط أو قائمة روابط الصور المباشرة (رابط لكل سطر) *" : "Enter Direct Image URLs (one per line) *"}</span>
+                  <span className="text-[10px] text-muted-foreground">HTTP / HTTPS direct links</span>
+                </Label>
+                <textarea
+                  rows={3}
+                  value={urlRawInput}
+                  onChange={(e) => setUrlRawInput(e.target.value)}
+                  placeholder={
+                    isAr
+                      ? "https://example.com/photo1.jpg\nhttps://example.com/photo2.webp"
+                      : "https://example.com/photo1.jpg\nhttps://example.com/photo2.webp"
+                  }
+                  className="w-full rounded-2xl border border-border/80 bg-background/60 p-3 text-xs font-mono focus:outline-hidden focus:ring-2 focus:ring-amber-500/30"
+                />
                 <Button
                   type="button"
-                  size="icon"
-                  variant="ghost"
-                  className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
-                  onClick={() => {
-                    setFile(null);
-                    if (previewUrl) URL.revokeObjectURL(previewUrl);
-                    setPreviewUrl(null);
-                  }}
+                  variant="outline"
+                  size="sm"
+                  onClick={handleParseUrls}
+                  disabled={isValidatingUrls || !urlRawInput.trim()}
+                  className="h-8 text-xs font-bold gap-1.5 border-amber-500/40 text-amber-500 hover:bg-amber-500/10 rounded-xl"
                 >
-                  <X className="w-4 h-4" />
+                  {isValidatingUrls ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Plus className="w-3.5 h-3.5" />
+                  )}
+                  <span>{isAr ? "فحص ومعاينة الروابط 🔍" : "Verify & Preview URLs 🔍"}</span>
                 </Button>
+              </div>
+
+              {/* URLs Validation & Preview Grid */}
+              {queuedUrls.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-extrabold text-foreground flex items-center gap-1.5">
+                      <LinkIcon className="w-3.5 h-3.5 text-amber-500" />
+                      <span>{isAr ? `معاينة الروابط (${queuedUrls.length}):` : `Validated URLs (${queuedUrls.length}):`}</span>
+                    </span>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setQueuedUrls([])}
+                      className="h-6 text-[10px] text-destructive hover:bg-destructive/10 px-2 rounded-lg"
+                    >
+                      {isAr ? "مسح الكل" : "Clear All"}
+                    </Button>
+                  </div>
+
+                  <div className="space-y-2 max-h-56 overflow-y-auto pr-1">
+                    {queuedUrls.map((item) => (
+                      <div
+                        key={item.id}
+                        className={`p-2.5 rounded-2xl border flex items-center justify-between gap-3 animate-in fade-in ${
+                          item.status === "invalid"
+                            ? "bg-destructive/10 border-destructive/40"
+                            : item.status === "valid"
+                            ? "bg-muted/40 border-emerald-500/30"
+                            : "bg-muted/30 border-border/60"
+                        }`}
+                      >
+                        <div className="flex items-center gap-3 min-w-0 flex-1">
+                          <div className="w-12 h-12 rounded-xl overflow-hidden bg-slate-950 shrink-0 border border-border/60 relative flex items-center justify-center">
+                            {item.status === "validating" ? (
+                              <Loader2 className="w-4 h-4 animate-spin text-amber-500" />
+                            ) : item.status === "invalid" ? (
+                              <AlertCircle className="w-5 h-5 text-destructive" />
+                            ) : (
+                              <img
+                                src={item.url}
+                                alt="Preview"
+                                className="w-full h-full object-cover"
+                              />
+                            )}
+                          </div>
+
+                          <div className="min-w-0 flex-1 space-y-1">
+                            <div className="flex items-center gap-2">
+                              <p className="text-xs font-mono font-semibold text-foreground truncate max-w-[200px]" title={item.url}>
+                                {item.url}
+                              </p>
+                              {item.status === "valid" && (
+                                <Badge className="text-[9px] px-1.5 py-0 bg-emerald-500/20 text-emerald-500 border-emerald-500/30">
+                                  {item.dimensions ? `${item.dimensions.width}x${item.dimensions.height}` : "Valid"}
+                                </Badge>
+                              )}
+                              {item.status === "invalid" && (
+                                <Badge variant="destructive" className="text-[9px] px-1.5 py-0">
+                                  {item.errorMessage || "Invalid"}
+                                </Badge>
+                              )}
+                            </div>
+                            <Input
+                              placeholder={isAr ? "نص بديل لهذا الرابط..." : "Alt text for this URL..."}
+                              value={item.altText}
+                              onChange={(e) => updateUrlAltText(item.id, e.target.value)}
+                              className="h-7 text-[11px] bg-background/60 rounded-lg"
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="ghost"
+                          onClick={() => removeQueuedUrl(item.id)}
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        >
+                          <X className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Common Settings: Target Category & Entity Slug */}
+          <div className="p-4 rounded-2xl bg-muted/20 border border-border/80 space-y-3.5">
+            <div className="flex items-center gap-2 text-xs font-black text-foreground">
+              <Layers className="w-4 h-4 text-amber-500" />
+              <span>{isAr ? "إعدادات الفئة والربط التلقائي:" : "Category & Entity Destination:"}</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Category Select */}
+              {categories.length > 0 && (
+                <div className="space-y-1">
+                  <Label className="text-[11px] font-bold text-muted-foreground">
+                    {isAr ? "الفئة / المجلد *" : "Target Category *"}
+                  </Label>
+                  <Select value={targetCategory} onValueChange={setTargetCategory}>
+                    <SelectTrigger className="h-9 text-xs font-bold rounded-xl">
+                      <SelectValue placeholder={isAr ? "اختر فئة" : "Select category"} />
+                    </SelectTrigger>
+                    <SelectContent className="rounded-xl">
+                      {categories.map((cat) => (
+                        <SelectItem key={cat.slug} value={cat.slug} className="text-xs font-bold">
+                          <div className="flex items-center gap-2">
+                            <span className="w-2 h-2 rounded-full bg-amber-500" />
+                            <span>{isAr ? cat.nameAr : cat.nameEn}</span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              {/* General Alt Text */}
+              <div className="space-y-1">
+                <Label className="text-[11px] font-bold text-muted-foreground">
+                  {isAr ? "نص بديل افتراضي عام" : "Default Global Alt Text"}
+                </Label>
+                <Input
+                  placeholder={isAr ? "وصف عام لصور المجموعة..." : "Default description for batch..."}
+                  value={globalAltText}
+                  onChange={(e) => setGlobalAltText(e.target.value)}
+                  className="h-9 text-xs rounded-xl"
+                />
+              </div>
+            </div>
+
+            {/* Tour/Hotel ID if applicable */}
+            {(targetCategory === "tours" || targetCategory === "hotels") && (
+              <div className="space-y-1 pt-1 animate-in fade-in">
+                <Label className="text-[11px] font-bold text-muted-foreground flex items-center justify-between">
+                  <span>
+                    {targetCategory === "tours"
+                      ? isAr
+                        ? "معرف الرحلة (Tour ID or Slug)"
+                        : "Tour ID or Slug"
+                      : isAr
+                      ? "معرف الفندق (Hotel ID or Slug)"
+                      : "Hotel ID or Slug"}
+                  </span>
+                  <span className="text-[10px] text-muted-foreground">{isAr ? "اختياري" : "Optional"}</span>
+                </Label>
+                <Input
+                  placeholder={targetCategory === "tours" ? "e.g. cairo-luxor-aswan" : "e.g. sol-pyramid-hotel"}
+                  value={customEntityId}
+                  onChange={(e) => setCustomEntityId(e.target.value)}
+                  className="h-9 text-xs font-mono rounded-xl"
+                />
               </div>
             )}
           </div>
 
-          {/* Target Category */}
-          {categories.length > 0 && (
-            <div className="space-y-1.5">
-              <Label className="text-xs font-extrabold text-foreground">
-                {isAr ? "الفئة / المجلد المستهدف *" : "Target Category / Folder *"}
-              </Label>
-              <Select value={targetCategory} onValueChange={setTargetCategory}>
-                <SelectTrigger className="h-10 text-xs font-bold">
-                  <SelectValue placeholder={isAr ? "اختر فئة" : "Select category"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.slug} value={cat.slug} className="text-xs font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-amber-500" />
-                        <span>{isAr ? cat.nameAr : cat.nameEn}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-          )}
-
-          {/* Tour/Hotel ID if applicable */}
-          {(targetCategory === "tours" || targetCategory === "hotels") && (
-            <div className="space-y-1.5 animate-in fade-in">
-              <Label className="text-xs font-extrabold text-foreground flex items-center justify-between">
-                <span>
-                  {targetCategory === "tours"
-                    ? (isAr ? "معرف أو رابط الرحلة (Tour Slug / ID)" : "Tour Slug / ID")
-                    : (isAr ? "معرف أو رابط الفندق (Hotel Slug / ID)" : "Hotel Slug / ID")}
-                </span>
-                <span className="text-[10px] text-muted-foreground">{isAr ? "اختياري" : "Optional"}</span>
-              </Label>
-              <Input
-                placeholder={targetCategory === "tours" ? "e.g. cairo-luxor-aswan" : "e.g. sol-pyramid-hotel"}
-                value={customEntityId}
-                onChange={(e) => setCustomEntityId(e.target.value)}
-                className="h-10 text-xs font-mono"
-              />
-            </div>
-          )}
-
-          {/* Alt text input */}
-          <div className="space-y-1.5">
-            <Label htmlFor="library-media-alt" className="text-xs font-extrabold text-foreground">
-              {isAr ? "النص البديل / وصف الصورة (Alt text)" : "Accessible alt text"}
-            </Label>
-            <Input
-              id="library-media-alt"
-              maxLength={255}
-              placeholder={isAr ? "وصف موجز لمحتوى الصورة لسهولة البحث..." : "Short description of image content for search..."}
-              value={altText}
-              onChange={(event) => setAltText(event.target.value)}
-              disabled={isPending}
-              className="h-10 text-xs"
-            />
-          </div>
-
-          <DialogFooter className="p-0 pt-2 flex flex-row items-center justify-end gap-2">
+          <DialogFooter className="p-0 pt-2 flex flex-row items-center justify-end gap-2 shrink-0">
             <Button
               type="button"
               variant="outline"
               onClick={() => onOpenChange(false)}
               disabled={isPending}
-              className="h-9 text-xs font-semibold cursor-pointer"
+              className="h-9 text-xs font-semibold rounded-xl cursor-pointer"
             >
               {isAr ? "إلغاء" : "Cancel"}
             </Button>
             <Button
               type="submit"
-              disabled={isPending || !file}
-              className="h-9 text-xs font-bold px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 gap-1.5 cursor-pointer shadow-xs"
+              disabled={
+                isPending ||
+                (activeTab === "files" ? queuedFiles.length === 0 : queuedUrls.length === 0)
+              }
+              className="h-9 text-xs font-black px-5 bg-amber-500 hover:bg-amber-600 text-slate-950 gap-1.5 rounded-xl cursor-pointer shadow-xs"
             >
               {isPending ? (
                 <>
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  <span>{isAr ? "جاري الرفع..." : "Uploading..."}</span>
+                  <span>
+                    {activeTab === "files"
+                      ? isAr
+                        ? "جاري رفع الصور..."
+                        : "Uploading files..."
+                      : isAr
+                      ? "جاري استيراد الروابط..."
+                      : "Importing URLs..."}
+                  </span>
                 </>
               ) : (
                 <>
-                  <UploadCloud className="w-3.5 h-3.5" />
-                  <span>{isAr ? "رفع الصورة الآن" : "Upload Image"}</span>
+                  <CheckCircle2 className="w-3.5 h-3.5 stroke-[2.5]" />
+                  <span>
+                    {activeTab === "files"
+                      ? isAr
+                        ? `تأكيد ورفع ${queuedFiles.length} صورة`
+                        : `Upload ${queuedFiles.length} Image(s)`
+                      : isAr
+                      ? `تأكيد واستيراد ${queuedUrls.filter((u) => u.status !== "invalid").length} رابط`
+                      : `Import ${queuedUrls.filter((u) => u.status !== "invalid").length} URL(s)`}
+                  </span>
                 </>
               )}
             </Button>

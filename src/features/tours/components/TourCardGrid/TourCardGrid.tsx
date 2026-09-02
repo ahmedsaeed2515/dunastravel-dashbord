@@ -15,6 +15,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Switch } from "@/components/ui/switch";
 import { useBulkUpdateTours } from "../../hooks/useTours";
 import { useTranslations, useLocale } from "next-intl";
 
@@ -92,14 +93,27 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
               
               <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-black/20" />
 
-              {/* Status & Featured Badges */}
+              {/* Status & Switch Badges */}
               <div className="absolute top-3 left-3 flex items-center gap-2">
-                <Badge
-                  variant={tour.status === "PUBLISHED" ? "default" : tour.status === "DRAFT" ? "secondary" : "destructive"}
-                  className="font-bold text-xs shadow-sm"
+                <div
+                  className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-white/20 shadow-md cursor-pointer hover:border-amber-400/50 transition-colors"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleTogglePublish(tour);
+                  }}
+                  title={tour.status === "PUBLISHED" ? (isAr ? "انقر لإلغاء النشر وتحويل لمسودة" : "Click to unpublish") : (isAr ? "انقر لنشر وتفعيل الرحلة بالموقع" : "Click to publish")}
                 >
-                  {tStatus(tour.status)}
-                </Badge>
+                  <Switch
+                    size="sm"
+                    checked={tour.status === "PUBLISHED"}
+                    disabled={bulkUpdate.isPending}
+                    onCheckedChange={() => handleTogglePublish(tour)}
+                    onClick={(e) => e.stopPropagation()}
+                  />
+                  <span className={`text-[10px] font-black ${tour.status === "PUBLISHED" ? "text-emerald-400" : "text-rose-400"}`}>
+                    {tour.status === "PUBLISHED" ? (isAr ? "منشور" : "Live") : (isAr ? "مسودة" : "Draft")}
+                  </span>
+                </div>
                 {tour.isFeatured && (
                   <Badge variant="secondary" className="bg-linear-to-r from-amber-500 to-amber-600 text-white border-none font-bold text-xs flex items-center gap-1 shadow-sm">
                     <Star className="h-3 w-3 fill-white text-white" />

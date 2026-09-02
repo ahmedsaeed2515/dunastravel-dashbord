@@ -37,7 +37,8 @@ import type { Tour } from "@/features/tours/types";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
 import { TourPriorityList } from "@/features/tours/components/TourPriorityList/TourPriorityList";
 import { DestinationsManager } from "@/components/destinations/DestinationsManager";
-import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats } from "@/features/tours/hooks/useTours";
+import { Switch } from "@/components/ui/switch";
+import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats, useTourLifecycleAction } from "@/features/tours/hooks/useTours";
 import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
 import { toursApi } from "@/features/tours/api/toursApi";
 import Link from "next/link";
@@ -229,6 +230,28 @@ export default function ToursPage() {
   const { data: stats } = useTourStats();
   const { data: catalogOverview } = useTourCatalogOverview();
   const removeTour = useSoftDeleteTour();
+  const publishMutation = useTourLifecycleAction('publish');
+  const unpublishMutation = useTourLifecycleAction('unpublish');
+  const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
+
+  const handleTogglePublish = async (tour: Tour) => {
+    const isCurrentlyPublished = tour.status === "PUBLISHED" && tour.isActive;
+    try {
+      setTogglingSlug(tour.slug);
+      if (isCurrentlyPublished) {
+        await unpublishMutation.mutateAsync(tour.slug);
+        toast.success(isAr ? `تم إيقاف نشر الرحلة (${tour.slug}) وتحويلها لمسودة` : `Tour unpublished: ${tour.slug}`);
+      } else {
+        await publishMutation.mutateAsync(tour.slug);
+        toast.success(isAr ? `تم نشر وتفعيل الرحلة (${tour.slug}) على الموقع` : `Tour published: ${tour.slug}`);
+      }
+      refetch();
+    } catch (err: any) {
+      toast.error(err?.message || (isAr ? "فشل في تحديث حالة النشر" : "Failed to update publish status"));
+    } finally {
+      setTogglingSlug(null);
+    }
+  };
 
   const tours = data?.data ?? [];
   const visibleWebsiteTours = useMemo(() => tours.filter(isTourVisibleOnWebsite), [tours]);
@@ -661,11 +684,35 @@ export default function ToursPage() {
                         {heroImg ? <img src={heroImg} alt={title} className="w-full h-full object-cover group-hover:scale-108 transition-transform duration-500" /> : <div className="flex h-full items-center justify-center text-xs text-slate-400">No image uploaded</div>}
                         <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-transparent to-black/30" />
 
-                        {/* Top Badges */}
-                        <div className="absolute top-3 right-3 flex flex-wrap gap-1.5">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-black shadow-xs ${visibleOnWebsite ? "bg-emerald-500 text-white" : "bg-rose-500 text-white"}`}>
-                            {visibleOnWebsite ? (isAr ? "ظاهر بالموقع" : "Live on website") : (isAr ? "غير ظاهر" : "Hidden")}
-                          </span>
+                        {/* Top Badges & Switch */}
+                        <div className="absolute top-3 right-3 flex flex-wrap gap-1.5 items-center">
+                          {/* Dedicated Live Publish Switch */}
+                          <div
+                            className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-950/90 backdrop-blur-md border border-white/20 shadow-md cursor-pointer hover:border-amber-400/50 transition-colors"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTogglePublish(tour);
+                            }}
+                            title={tour.status === "PUBLISHED" && tour.isActive ? (isAr ? "انقر لإلغاء النشر وإيقاف الرحلة" : "Click to unpublish") : (isAr ? "انقر لنشر الرحلة وتفعيلها بالموقع" : "Click to publish")}
+                          >
+                            <Switch
+                              size="sm"
+                              checked={tour.status === "PUBLISHED" && tour.isActive}
+                              disabled={togglingSlug === tour.slug}
+                              onCheckedChange={() => handleTogglePublish(tour)}
+                              onClick={(e) => e.stopPropagation()}
+                            />
+                            <span className={`text-[10px] font-black ${tour.status === "PUBLISHED" && tour.isActive ? "text-emerald-400" : "text-rose-400"}`}>
+                              {togglingSlug === tour.slug ? (
+                                <Loader2 className="w-3 h-3 animate-spin inline" />
+                              ) : tour.status === "PUBLISHED" && tour.isActive ? (
+                                isAr ? "منشور بالموقع" : "Live"
+                              ) : (
+                                isAr ? "غير ظاهر" : "Hidden"
+                              )}
+                            </span>
+                          </div>
+
                           {!attachedToInterface && (
                             <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-violet-500 text-white shadow-xs">
                               {isAr ? "بدون واجهة" : "No interface"}
@@ -680,75 +727,75 @@ export default function ToursPage() {
                             ${price.toLocaleString()} USD
                           </span>
                         </div>
-
-                        {/* Destination Tag */}
-                        <div className="absolute top-3 left-3">
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-900/80 text-slate-200 backdrop-blur-md border border-white/10">
-                            {destGroup}
-                          </span>
-                        </div>
-
-                        {/* Bottom Info Bar */}
-                        <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-slate-200">
-                          <span className="flex items-center gap-1 font-bold">
-                            <Calendar className="w-3.5 h-3.5 text-amber-400" /> {duration}
-                          </span>
-                          <span className="flex items-center gap-1 font-bold text-amber-400">
-                            <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount ?? 0} {isAr ? "تقييم" : "reviews"}
-                          </span>
-                        </div>
                       </div>
 
-                      {/* Content Details */}
-                      <div className="p-5 space-y-3">
-                        <h4 className="font-black text-base text-foreground line-clamp-1 group-hover:text-amber-500 transition-colors">
-                          {title}
-                        </h4>
-                        <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium">
-                          {overview}
-                        </p>
+                      {/* Destination Tag */}
+                      <div className="absolute top-3 left-3">
+                        <span className="px-2.5 py-1 rounded-full text-[10px] font-bold bg-slate-900/80 text-slate-200 backdrop-blur-md border border-white/10">
+                          {destGroup}
+                        </span>
+                      </div>
 
-                        {/* 5 Languages Translation Status Bar */}
-                        <div className="p-2.5 rounded-2xl bg-muted/50 border border-border/60 space-y-1.5">
-                          <div className="flex items-center justify-between text-[11px] font-extrabold text-muted-foreground">
-                            <span className="flex items-center gap-1">
-                              <Globe2 className="w-3.5 h-3.5 text-amber-500" />
-                              {isAr ? "مترجم بالكامل:" : "Translated:"}
-                            </span>
-                            <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${completion(tour) === LOCALES.length ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" : "text-amber-600 bg-amber-500/10 border-amber-500/20"}`}>
-                              {completion(tour)}/5 {isAr ? "لغات" : "Locales"}
-                            </span>
-                          </div>
-                          <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] font-extrabold pt-0.5">
-                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
-                              🇸🇦 AR ✓
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
-                              🇪🇸 ES ✓
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
-                              🇵🇹 PT ✓
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
-                              🇬🇧 EN ✓
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
-                              🇮🇹 IT ✓
-                            </span>
-                          </div>
+                      {/* Bottom Info Bar */}
+                      <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-slate-200">
+                        <span className="flex items-center gap-1 font-bold">
+                          <Calendar className="w-3.5 h-3.5 text-amber-400" /> {duration}
+                        </span>
+                        <span className="flex items-center gap-1 font-bold text-amber-400">
+                          <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount ?? 0} {isAr ? "تقييم" : "reviews"}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Content Details */}
+                    <div className="p-5 space-y-3">
+                      <h4 className="font-black text-base text-foreground line-clamp-1 group-hover:text-amber-500 transition-colors">
+                        {title}
+                      </h4>
+                      <p className="text-xs text-muted-foreground line-clamp-2 leading-relaxed font-medium">
+                        {overview}
+                      </p>
+
+                      {/* 5 Languages Translation Status Bar */}
+                      <div className="p-2.5 rounded-2xl bg-muted/50 border border-border/60 space-y-1.5">
+                        <div className="flex items-center justify-between text-[11px] font-extrabold text-muted-foreground">
+                          <span className="flex items-center gap-1">
+                            <Globe2 className="w-3.5 h-3.5 text-amber-500" />
+                            {isAr ? "مترجم بالكامل:" : "Translated:"}
+                          </span>
+                          <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${completion(tour) === LOCALES.length ? "text-emerald-500 bg-emerald-500/10 border-emerald-500/20" : "text-amber-600 bg-amber-500/10 border-amber-500/20"}`}>
+                            {completion(tour)}/5 {isAr ? "لغات" : "Locales"}
+                          </span>
+                        </div>
+                        <div className="flex flex-wrap items-center justify-between gap-1 text-[10px] font-extrabold pt-0.5">
+                          <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
+                            🇸🇦 AR ✓
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
+                            🇪🇸 ES ✓
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
+                            🇵🇹 PT ✓
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
+                            🇬🇧 EN ✓
+                          </span>
+                          <span className="px-1.5 py-0.5 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 flex items-center gap-1 shrink-0">
+                            🇮🇹 IT ✓
+                          </span>
                         </div>
                       </div>
                     </div>
 
                     {/* Actions Bar */}
-                    <div className="px-5 py-3 flex items-center justify-between border-t border-border/60">
+                    <div className="px-5 py-3 flex items-center justify-between border-t border-border/60 bg-muted/20 gap-2">
                       <Button
                         size="sm"
                         variant="outline"
                         onClick={() => handleOpenMove(tour)}
                         className="rounded-xl text-xs gap-1.5 font-bold hover:border-amber-500/50 cursor-pointer"
                       >
-                        <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" /> {isAr ? "نقل الرحلة 🔄" : "Transfer 🔄"}
+                        <ArrowRightLeft className="w-3.5 h-3.5 text-amber-500" /> {isAr ? "نقل الرحلة" : "Transfer"}
                       </Button>
 
                       <div className="flex items-center gap-1">

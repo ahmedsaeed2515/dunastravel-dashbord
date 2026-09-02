@@ -38,6 +38,7 @@ export interface MediaQueryFilters {
   entityType?: MediaEntityType;
   entityId?: string;
   category?: string;
+  format?: string;
   includeDeleted?: boolean;
   search?: string;
   sortBy?: 'createdAt' | 'bytes';
@@ -50,6 +51,28 @@ export interface UploadMediaPayload {
   entityId?: string;
   altText?: string;
   categorySlug?: string;
+}
+
+export interface UploadBulkMediaPayload {
+  files: File[];
+  entityType: MediaEntityType;
+  entityId?: string;
+  categorySlug?: string;
+  altText?: string;
+  altTextsMap?: Record<string, string>;
+}
+
+export interface MediaUrlItem {
+  url: string;
+  altText?: string;
+}
+
+export interface ImportMediaUrlsPayload {
+  items: MediaUrlItem[];
+  entityType: MediaEntityType;
+  entityId?: string;
+  categorySlug?: string;
+  defaultAltText?: string;
 }
 
 export interface UpdateMediaPayload {

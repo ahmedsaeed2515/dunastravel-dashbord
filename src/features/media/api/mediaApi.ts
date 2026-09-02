@@ -4,6 +4,8 @@ import {
   MediaSummary,
   MediaQueryFilters,
   UploadMediaPayload,
+  UploadBulkMediaPayload,
+  ImportMediaUrlsPayload,
   UpdateMediaPayload,
   BulkMoveMediaPayload,
   MediaCategoryItem,
@@ -60,6 +62,33 @@ export const mediaApi = {
         "Content-Type": "multipart/form-data",
       },
     });
+  },
+
+  uploadBulkMedia: async (payload: UploadBulkMediaPayload): Promise<MediaAsset[]> => {
+    const formData = new FormData();
+    for (const file of payload.files) {
+      formData.append("files", file);
+    }
+    formData.append("entityType", payload.entityType);
+
+    if (payload.entityId) formData.append("entityId", payload.entityId);
+    if (payload.categorySlug) formData.append("categorySlug", payload.categorySlug);
+
+    if (payload.altTextsMap && Object.keys(payload.altTextsMap).length > 0) {
+      formData.append("altText", JSON.stringify(payload.altTextsMap));
+    } else if (payload.altText) {
+      formData.append("altText", payload.altText);
+    }
+
+    return apiClient.post<MediaAsset[], MediaAsset[]>("/admin/media/upload-bulk", formData, {
+      headers: {
+        "Content-Type": "multipart/form-data",
+      },
+    });
+  },
+
+  importMediaUrls: async (payload: ImportMediaUrlsPayload): Promise<MediaAsset[]> => {
+    return apiClient.post<MediaAsset[], MediaAsset[]>("/admin/media/import-urls", payload);
   },
 
   updateMedia: async (id: string, payload: UpdateMediaPayload): Promise<MediaAsset> => {

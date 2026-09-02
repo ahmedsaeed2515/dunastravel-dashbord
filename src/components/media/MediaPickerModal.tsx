@@ -22,6 +22,9 @@ import {
   Loader2,
   FolderOpen,
   Sparkles,
+  ChevronLeft,
+  ChevronRight,
+  X,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -43,12 +46,14 @@ export function MediaPickerModal({
   title = "اختيار صورة من مكتبة الوسائط",
 }: MediaPickerModalProps) {
   const [search, setSearch] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const [selectedUrls, setSelectedUrls] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
   const { data: mediaData, isLoading } = useMediaAssets({
     limit: 60,
     search: search.trim() || undefined,
+    category: selectedCategory !== "all" ? selectedCategory : undefined,
   });
 
   const uploadMediaMutation = useUploadMedia();
@@ -88,7 +93,7 @@ export function MediaPickerModal({
         file,
         entityType: "GENERAL",
         altText: file.name.replace(/\.[^/.]+$/, ""),
-        categorySlug: "general",
+        categorySlug: selectedCategory !== "all" ? selectedCategory : "general",
       });
       const newUrl = res.secureUrl || res.url;
       if (newUrl) {
@@ -148,15 +153,86 @@ export function MediaPickerModal({
             </div>
           </div>
 
-          {/* Search bar */}
-          <div className="relative mt-3">
-            <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="البحث بالاسم أو الوسم في مكتبة الصور..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="ps-9 rounded-xl text-xs bg-background/50 h-9"
-            />
+          {/* Search bar & Category filters */}
+          <div className="mt-3 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="البحث بالاسم أو الوسم في مكتبة الصور..."
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="ps-9 pe-9 rounded-xl text-xs bg-background/50 h-9"
+              />
+              {search && (
+                <button
+                  type="button"
+                  onClick={() => setSearch("")}
+                  className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground cursor-pointer"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
+            </div>
+
+            <div className="relative flex items-center gap-1 bg-muted/40 p-1 rounded-2xl border border-border/60">
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("picker-modal-tabs-track");
+                  if (el) el.scrollBy({ left: 160, behavior: "smooth" });
+                }}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background/80 cursor-pointer shrink-0"
+                title="السابق"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+
+              <div
+                id="picker-modal-tabs-track"
+                onWheel={(e) => {
+                  if (e.deltaY !== 0) {
+                    e.currentTarget.scrollLeft += e.deltaY;
+                  }
+                }}
+                className="flex items-center gap-1 overflow-x-auto scroll-smooth py-0.5 scrollbar-thin scrollbar-thumb-amber-500/20 max-w-[340px]"
+              >
+                {[
+                  { id: "all", label: "الكل" },
+                  { id: "tours", label: "رحلات ✈️" },
+                  { id: "hotels", label: "فنادق 🏨" },
+                  { id: "fleet", label: "الأسطول 🚌" },
+                  { id: "general", label: "عام 🌐" },
+                ].map((tab) => {
+                  const isActive = selectedCategory === tab.id;
+                  return (
+                    <button
+                      key={tab.id}
+                      type="button"
+                      onClick={() => setSelectedCategory(tab.id)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer shrink-0 border ${
+                        isActive
+                          ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs"
+                          : "bg-card text-muted-foreground border-border hover:bg-muted/80"
+                      }`}
+                    >
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => {
+                  const el = document.getElementById("picker-modal-tabs-track");
+                  if (el) el.scrollBy({ left: -160, behavior: "smooth" });
+                }}
+                className="p-1 rounded-lg text-muted-foreground hover:text-foreground hover:bg-background/80 cursor-pointer shrink-0"
+                title="التالي"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </DialogHeader>
 
