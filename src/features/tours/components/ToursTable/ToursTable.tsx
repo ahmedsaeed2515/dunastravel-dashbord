@@ -133,9 +133,11 @@ function tourToTripModel(tour: Tour): TripModel {
     meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || (typeof itin.meals === 'object' ? (itin.meals?.ar || itin.meals?.en) : itin.meals) || 'الإفطار',
   }));
 
-  const rawHighlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights || canon?.highlights;
-  const rawIncluded = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included || canon?.included || canon?.includes;
-  const rawExcluded = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded || canon?.excluded || canon?.excludes;
+  const hasItems = (v: any) => (Array.isArray(v) ? v.length > 0 : (v && typeof v === 'object' ? Object.keys(v).length > 0 : !!v));
+
+  const rawHighlights = hasItems(tour.highlightsJsonb) ? tour.highlightsJsonb : (hasItems((tour as any).highlights) ? (tour as any).highlights : canon?.highlights);
+  const rawIncluded = hasItems(tour.includedServicesJsonb) ? tour.includedServicesJsonb : (hasItems((tour as any).includedServices) ? (tour as any).includedServices : (hasItems((tour as any).included) ? (tour as any).included : (canon?.included || canon?.includes)));
+  const rawExcluded = hasItems(tour.excludedServicesJsonb) ? tour.excludedServicesJsonb : (hasItems((tour as any).excludedServices) ? (tour as any).excludedServices : (hasItems((tour as any).excluded) ? (tour as any).excluded : (canon?.excluded || canon?.excludes)));
 
   return {
     id: tour.id,

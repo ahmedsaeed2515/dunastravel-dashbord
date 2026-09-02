@@ -93,9 +93,11 @@ function localeList(value: Record<string, any> | string[] | null | undefined, lo
 function tourToTripModel(tour: Tour): TripModel {
   const canon = findCanonicalTour(tour.slug || tour.id);
 
-  const rawHighlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights || canon?.highlights;
-  const rawIncluded = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included || canon?.included || canon?.includes;
-  const rawExcluded = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded || canon?.excluded || canon?.excludes;
+  const hasItems = (v: any) => (Array.isArray(v) ? v.length > 0 : (v && typeof v === 'object' ? Object.keys(v).length > 0 : !!v));
+
+  const rawHighlights = hasItems(tour.highlightsJsonb) ? tour.highlightsJsonb : (hasItems((tour as any).highlights) ? (tour as any).highlights : canon?.highlights);
+  const rawIncluded = hasItems(tour.includedServicesJsonb) ? tour.includedServicesJsonb : (hasItems((tour as any).includedServices) ? (tour as any).includedServices : (hasItems((tour as any).included) ? (tour as any).included : (canon?.included || canon?.includes)));
+  const rawExcluded = hasItems(tour.excludedServicesJsonb) ? tour.excludedServicesJsonb : (hasItems((tour as any).excludedServices) ? (tour as any).excludedServices : (hasItems((tour as any).excluded) ? (tour as any).excluded : (canon?.excluded || canon?.excludes)));
 
   const rawItinerary = (Array.isArray(tour.itineraries) && tour.itineraries.length > 0)
     ? tour.itineraries
