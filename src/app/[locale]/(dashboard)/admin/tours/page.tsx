@@ -39,6 +39,7 @@ import { TourPriorityList } from "@/features/tours/components/TourPriorityList/T
 import { DestinationsManager } from "@/components/destinations/DestinationsManager";
 import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats } from "@/features/tours/hooks/useTours";
 import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
+import { toursApi } from "@/features/tours/api/toursApi";
 import Link from "next/link";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import {
