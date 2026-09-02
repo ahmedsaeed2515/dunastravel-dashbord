@@ -141,6 +141,57 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         cloned.translations = { ar: {}, en: {}, es: {}, pt: {}, it: {} };
       }
       setFormData(cloned);
+
+      const hasContent = (cloned.included && cloned.included.length > 0) || (cloned.highlights && cloned.highlights.length > 0);
+      if (!hasContent && trip.slug) {
+        toursApi.getTourBySlug(trip.slug).then((fullTour) => {
+          if (!fullTour) return;
+          const incJson = fullTour.includedServicesJsonb || fullTour.inclusionJsonb || (fullTour as any).includedServices || (fullTour as any).included;
+          const excJson = fullTour.excludedServicesJsonb || fullTour.exclusionJsonb || (fullTour as any).excludedServices || (fullTour as any).excluded;
+          const highJson = fullTour.highlightsJsonb || fullTour.highlightJsonb || (fullTour as any).highlights;
+
+          const extractList = (val: any, lang: string): string[] => {
+            if (!val) return [];
+            if (Array.isArray(val)) {
+              return val.map(item => {
+                if (typeof item === 'object' && item !== null) {
+                  return item[lang] || item.en || item.ar || Object.values(item)[0] || '';
+                }
+                return typeof item === 'string' ? item : '';
+              }).filter(Boolean);
+            }
+            if (typeof val === 'object') {
+              const list = val[lang] || val.en || val.ar || [];
+              if (Array.isArray(list)) {
+                return list.map((item: any) => typeof item === 'string' ? item : (item?.[lang] || item?.en || '')).filter(Boolean);
+              }
+            }
+            return [];
+          };
+
+          const arInc = extractList(incJson, 'ar');
+          const arExc = extractList(excJson, 'ar');
+          const arHigh = extractList(highJson, 'ar');
+
+          setFormData(prev => {
+            const trans = { ...(prev.translations || {}) };
+            (['ar', 'en', 'es', 'pt', 'it'] as LanguageCode[]).forEach(loc => {
+              if (!trans[loc]) trans[loc] = {};
+              if (!trans[loc].included || trans[loc].included.length === 0) trans[loc].included = extractList(incJson, loc);
+              if (!trans[loc].excluded || trans[loc].excluded.length === 0) trans[loc].excluded = extractList(excJson, loc);
+              if (!trans[loc].highlights || trans[loc].highlights.length === 0) trans[loc].highlights = extractList(highJson, loc);
+            });
+
+            return {
+              ...prev,
+              included: (prev.included && prev.included.length > 0) ? prev.included : arInc,
+              excluded: (prev.excluded && prev.excluded.length > 0) ? prev.excluded : arExc,
+              highlights: (prev.highlights && prev.highlights.length > 0) ? prev.highlights : arHigh,
+              translations: trans,
+            };
+          });
+        }).catch(() => {});
+      }
     } else {
       setFormData(DEFAULT_TRIP);
     }

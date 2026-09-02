@@ -55,30 +55,48 @@ function localeText(value: Record<string, any> | null | undefined, locale: strin
   return typeof value?.[locale] === "string" ? value[locale] as string : "";
 }
 
-function localeList(value: Record<string, any> | null | undefined, locale: string): string[] {
-  return Array.isArray(value?.[locale]) ? value[locale].filter((item: unknown): item is string => typeof item === "string") : [];
+function localeList(value: Record<string, any> | string[] | null | undefined, locale: string): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map(item => {
+      if (typeof item === 'object' && item !== null) {
+        return item[locale] || item.en || item.ar || item.es || Object.values(item)[0] || '';
+      }
+      return typeof item === 'string' ? item : '';
+    }).filter(Boolean);
+  }
+  if (typeof value === "object") {
+    const list = value[locale] || value.en || value.ar || value.es || [];
+    if (Array.isArray(list)) {
+      return list.map(item => typeof item === 'string' ? item : (item?.[locale] || item?.en || '')).filter(Boolean);
+    }
+  }
+  return [];
 }
 
 function tourToTripModel(tour: Tour): TripModel {
-  const highlights = tour.highlightsJsonb || tour.highlightJsonb;
+  const highlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights;
+  const inclusions = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included;
+  const exclusions = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded;
+
   const itinerary = (tour.itineraries || []).map((item, index) => ({
     day: index + 1,
     title: item.dayLabel || '',
-    description: localeText(item.descriptionJsonb, 'ar'),
-    meals: localeText(item.mealsJsonb, 'ar'),
+    description: localeText(item.descriptionJsonb, 'ar') || localeText(item.descriptionJsonb, 'en'),
+    meals: localeText(item.mealsJsonb, 'ar') || localeText(item.mealsJsonb, 'en'),
   }));
 
   return {
     id: tour.id,
     slug: tour.slug,
-    title: localeText(tour.titleJsonb, 'ar'),
-    subtitle: localeText(tour.subtitleJsonb, 'ar'),
+    title: localeText(tour.titleJsonb, 'ar') || localeText(tour.titleJsonb, 'en') || tour.slug,
+    subtitle: localeText(tour.subtitleJsonb, 'ar') || localeText(tour.subtitleJsonb, 'en'),
     destination: destinationForCountry(tour.country),
     market: tour.market || '',
     language: 'ar',
     type: tour.category || '',
-    duration: localeText(tour.durationJsonb, 'ar'),
-    departures: localeText(tour.departureInfoJsonb, 'ar'),
+    duration: localeText(tour.durationJsonb, 'ar') || localeText(tour.durationJsonb, 'en'),
+    departures: localeText(tour.departureInfoJsonb, 'ar') || localeText(tour.departureInfoJsonb, 'en'),
     price: Number(tour.basePriceUsd || 0),
     hotelCategory: '',
     rating: Number(tour.sourceRating || 0),
@@ -89,27 +107,27 @@ function tourToTripModel(tour: Tour): TripModel {
     luxury: false,
     cultural: false,
     adventure: false,
-    overview: localeText(tour.overviewJsonb, 'ar'),
+    overview: localeText(tour.overviewJsonb, 'ar') || localeText(tour.overviewJsonb, 'en'),
     highlights: localeList(highlights, 'ar'),
-    included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
-    excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
+    included: localeList(inclusions, 'ar'),
+    excluded: localeList(exclusions, 'ar'),
     images: tour.images?.map((image: { imageUrl?: string }) => image.imageUrl || "").filter(Boolean) || (tour.heroImage ? [tour.heroImage] : []),
     hotels: '',
     accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
     itinerary,
     translations: Object.fromEntries(LOCALES.map((locale) => [locale, {
-      title: localeText(tour.titleJsonb, locale),
-      subtitle: localeText(tour.subtitleJsonb, locale),
-      overview: localeText(tour.overviewJsonb, locale),
-      duration: localeText(tour.durationJsonb, locale),
+      title: localeText(tour.titleJsonb, locale) || localeText(tour.titleJsonb, 'en'),
+      subtitle: localeText(tour.subtitleJsonb, locale) || localeText(tour.subtitleJsonb, 'en'),
+      overview: localeText(tour.overviewJsonb, locale) || localeText(tour.overviewJsonb, 'en'),
+      duration: localeText(tour.durationJsonb, locale) || localeText(tour.durationJsonb, 'en'),
       highlights: localeList(highlights, locale),
-      included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, locale),
-      excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, locale),
+      included: localeList(inclusions, locale),
+      excluded: localeList(exclusions, locale),
       itinerary: (tour.itineraries || []).map((item, index) => ({
         day: index + 1,
         title: item.dayLabel || '',
-        description: localeText(item.descriptionJsonb, locale),
-        meals: localeText(item.mealsJsonb, locale),
+        description: localeText(item.descriptionJsonb, locale) || localeText(item.descriptionJsonb, 'en'),
+        meals: localeText(item.mealsJsonb, locale) || localeText(item.mealsJsonb, 'en'),
       })),
     }])) as TripModel['translations'],
   };
@@ -225,9 +243,20 @@ export default function ToursPage() {
             ? (catalogOverview?.unpublished ?? tours.filter((tour) => tour.status !== "PUBLISHED" || !tour.isActive).length)
             : (catalogOverview?.totalTours ?? stats?.totalTours ?? tours.length);
 
-  const handleOpenEditTrip = (tour: Tour) => {
+  const handleOpenEditTrip = async (tour: Tour) => {
     setSelectedTripForModal(tourToTripModel(tour));
     setIsTripModalOpen(true);
+
+    if (tour.slug) {
+      try {
+        const fullTour = await toursApi.getTourBySlug(tour.slug);
+        if (fullTour) {
+          setSelectedTripForModal(tourToTripModel(fullTour));
+        }
+      } catch {
+        // Fallback model already loaded
+      }
+    }
   };
 
   const handleOpenAddTrip = () => {

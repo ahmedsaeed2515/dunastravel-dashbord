@@ -60,6 +60,25 @@ import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
 
+function extractLocalizedList(value: any, locale: string): string[] {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map(item => {
+      if (typeof item === 'object' && item !== null) {
+        return item[locale] || item.en || item.ar || item.es || Object.values(item)[0] || '';
+      }
+      return typeof item === 'string' ? item : '';
+    }).filter(Boolean);
+  }
+  if (typeof value === 'object') {
+    const list = value[locale] || value.en || value.ar || value.es || [];
+    if (Array.isArray(list)) {
+      return list.map((item: any) => typeof item === 'string' ? item : (item?.[locale] || item?.en || '')).filter(Boolean);
+    }
+  }
+  return [];
+}
+
 function tourToTripModel(tour: Tour): TripModel {
   const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
   const enTitle = tour.titleJsonb?.en || tour.slug;
@@ -89,6 +108,10 @@ function tourToTripModel(tour: Tour): TripModel {
       }))
     : [];
 
+  const rawHighlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights;
+  const rawIncluded = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included;
+  const rawExcluded = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded;
+
   return {
     id: tour.id,
     slug: tour.slug,
@@ -111,19 +134,19 @@ function tourToTripModel(tour: Tour): TripModel {
     cultural: true,
     adventure: false,
     overview: arOverview,
-    highlights: (tour.highlightJsonb?.ar as string[]) || (tour.highlightJsonb?.en as string[]) || [],
-    included: (tour.includedServicesJsonb?.ar as string[]) || (tour.includedServicesJsonb?.en as string[]) || [],
-    excluded: (tour.excludedServicesJsonb?.ar as string[]) || (tour.excludedServicesJsonb?.en as string[]) || [],
+    highlights: extractLocalizedList(rawHighlights, 'ar'),
+    included: extractLocalizedList(rawIncluded, 'ar'),
+    excluded: extractLocalizedList(rawExcluded, 'ar'),
     images,
     hotels: '5-Star Luxury Hotels',
     accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],
     itinerary,
     translations: {
-      ar: { title: arTitle, overview: arOverview, highlights: (tour.highlightJsonb?.ar as string[]) || [], included: (tour.includedServicesJsonb?.ar as string[]) || [], excluded: (tour.excludedServicesJsonb?.ar as string[]) || [] },
-      en: { title: enTitle, overview: enOverview, highlights: (tour.highlightJsonb?.en as string[]) || [], included: (tour.includedServicesJsonb?.en as string[]) || [], excluded: (tour.excludedServicesJsonb?.en as string[]) || [] },
-      es: { title: esTitle, overview: esOverview, highlights: (tour.highlightJsonb?.es as string[]) || [], included: (tour.includedServicesJsonb?.es as string[]) || [], excluded: (tour.excludedServicesJsonb?.es as string[]) || [] },
-      pt: { title: ptTitle, overview: ptOverview, highlights: (tour.highlightJsonb?.pt as string[]) || [], included: (tour.includedServicesJsonb?.pt as string[]) || [], excluded: (tour.excludedServicesJsonb?.pt as string[]) || [] },
-      it: { title: itTitle, overview: itOverview, highlights: (tour.highlightJsonb?.it as string[]) || [], included: (tour.includedServicesJsonb?.it as string[]) || [], excluded: (tour.excludedServicesJsonb?.it as string[]) || [] },
+      ar: { title: arTitle, overview: arOverview, highlights: extractLocalizedList(rawHighlights, 'ar'), included: extractLocalizedList(rawIncluded, 'ar'), excluded: extractLocalizedList(rawExcluded, 'ar') },
+      en: { title: enTitle, overview: enOverview, highlights: extractLocalizedList(rawHighlights, 'en'), included: extractLocalizedList(rawIncluded, 'en'), excluded: extractLocalizedList(rawExcluded, 'en') },
+      es: { title: esTitle, overview: esOverview, highlights: extractLocalizedList(rawHighlights, 'es'), included: extractLocalizedList(rawIncluded, 'es'), excluded: extractLocalizedList(rawExcluded, 'es') },
+      pt: { title: ptTitle, overview: ptOverview, highlights: extractLocalizedList(rawHighlights, 'pt'), included: extractLocalizedList(rawIncluded, 'pt'), excluded: extractLocalizedList(rawExcluded, 'pt') },
+      it: { title: itTitle, overview: itOverview, highlights: extractLocalizedList(rawHighlights, 'it'), included: extractLocalizedList(rawIncluded, 'it'), excluded: extractLocalizedList(rawExcluded, 'it') },
     },
   };
 }
