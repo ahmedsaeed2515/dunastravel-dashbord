@@ -59,6 +59,21 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
+import canonicalDb from "@/data/database/unified_52_tours.json";
+
+const canonicalToursList = (canonicalDb as any).tours || [];
+
+function findCanonicalTour(slugOrId: string) {
+  if (!slugOrId) return null;
+  const s = String(slugOrId).toLowerCase();
+  return canonicalToursList.find((t: any) =>
+    (t.slug && t.slug.toLowerCase() === s) ||
+    (t.id && t.id.toLowerCase() === s) ||
+    (t.code && typeof t.code === 'string' && t.code.toLowerCase() === s) ||
+    (t.code?.en && t.code.en.toLowerCase() === s) ||
+    (t.code?.ar && t.code.ar.toLowerCase() === s)
+  ) || null;
+}
 
 function extractLocalizedList(value: any, locale: string): string[] {
   if (!value) return [];
@@ -80,47 +95,57 @@ function extractLocalizedList(value: any, locale: string): string[] {
 }
 
 function tourToTripModel(tour: Tour): TripModel {
-  const arTitle = tour.titleJsonb?.ar || tour.titleJsonb?.en || tour.slug;
-  const enTitle = tour.titleJsonb?.en || tour.slug;
-  const esTitle = tour.titleJsonb?.es || enTitle;
-  const ptTitle = tour.titleJsonb?.pt || enTitle;
-  const itTitle = tour.titleJsonb?.it || enTitle;
+  const canon = findCanonicalTour(tour.slug || tour.id);
 
-  const arOverview = tour.overviewJsonb?.ar || tour.overviewJsonb?.en || '';
-  const enOverview = tour.overviewJsonb?.en || arOverview;
-  const esOverview = tour.overviewJsonb?.es || enOverview;
-  const ptOverview = tour.overviewJsonb?.pt || enOverview;
-  const itOverview = tour.overviewJsonb?.it || enOverview;
+  const arTitle = tour.titleJsonb?.ar || (typeof canon?.title === 'object' ? canon?.title?.ar : canon?.title) || tour.titleJsonb?.en || tour.slug;
+  const enTitle = tour.titleJsonb?.en || (typeof canon?.title === 'object' ? canon?.title?.en : canon?.title) || tour.slug;
+  const esTitle = tour.titleJsonb?.es || (typeof canon?.title === 'object' ? canon?.title?.es : canon?.title) || enTitle;
+  const ptTitle = tour.titleJsonb?.pt || (typeof canon?.title === 'object' ? canon?.title?.pt : canon?.title) || enTitle;
+  const itTitle = tour.titleJsonb?.it || (typeof canon?.title === 'object' ? canon?.title?.it : canon?.title) || enTitle;
 
-  const duration = tour.durationJsonb?.ar || tour.durationJsonb?.en || '';
-  const price = Number(tour.basePriceUsd || 0);
+  const arOverview = tour.overviewJsonb?.ar || (typeof canon?.overview === 'object' ? canon?.overview?.ar : canon?.overview) || tour.overviewJsonb?.en || '';
+  const enOverview = tour.overviewJsonb?.en || (typeof canon?.overview === 'object' ? canon?.overview?.en : canon?.overview) || arOverview;
+  const esOverview = tour.overviewJsonb?.es || (typeof canon?.overview === 'object' ? canon?.overview?.es : canon?.overview) || enOverview;
+  const ptOverview = tour.overviewJsonb?.pt || (typeof canon?.overview === 'object' ? canon?.overview?.pt : canon?.overview) || enOverview;
+  const itOverview = tour.overviewJsonb?.it || (typeof canon?.overview === 'object' ? canon?.overview?.it : canon?.overview) || enOverview;
+
+  const duration = tour.durationJsonb?.ar || (typeof canon?.duration === 'object' ? canon?.duration?.ar : canon?.duration) || tour.durationJsonb?.en || '';
+  const price = Number(tour.basePriceUsd || canon?.price || 0);
 
   const images = (tour.images && tour.images.length > 0)
     ? tour.images.map(img => img.imageUrl)
-    : (tour.heroImage ? [tour.heroImage] : []);
+    : (Array.isArray(canon?.images) && canon.images.length > 0)
+      ? canon.images
+      : (tour.heroImage ? [tour.heroImage] : (canon?.heroImage ? [canon.heroImage] : []));
 
-  const itinerary = (tour.itineraries && tour.itineraries.length > 0)
-    ? tour.itineraries.map((itin, idx) => ({
-        day: idx + 1,
-        title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || `اليوم ${idx + 1}`,
-        description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
-        meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
-      }))
-    : [];
+  const rawItinerary = (Array.isArray(tour.itineraries) && tour.itineraries.length > 0)
+    ? tour.itineraries
+    : (Array.isArray(canon?.days) && canon.days.length > 0)
+      ? canon.days
+      : (Array.isArray(canon?.itinerary) && canon.itinerary.length > 0)
+        ? canon.itinerary
+        : [];
 
-  const rawHighlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights;
-  const rawIncluded = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included;
-  const rawExcluded = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded;
+  const itinerary = rawItinerary.map((itin: any, idx: number) => ({
+    day: itin.day || (itin.sortOrder !== undefined ? itin.sortOrder + 1 : idx + 1),
+    title: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || itin.dayLabel || (typeof itin.title === 'object' ? (itin.title?.ar || itin.title?.en) : itin.title) || `اليوم ${idx + 1}`,
+    description: (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || (typeof itin.description === 'object' ? (itin.description?.ar || itin.description?.en) : itin.description) || '',
+    meals: (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || (typeof itin.meals === 'object' ? (itin.meals?.ar || itin.meals?.en) : itin.meals) || 'الإفطار',
+  }));
+
+  const rawHighlights = tour.highlightsJsonb || tour.highlightJsonb || (tour as any).highlights || canon?.highlights;
+  const rawIncluded = tour.includedServicesJsonb || tour.inclusionJsonb || (tour as any).includedServices || (tour as any).included || canon?.included || canon?.includes;
+  const rawExcluded = tour.excludedServicesJsonb || tour.exclusionJsonb || (tour as any).excludedServices || (tour as any).excluded || canon?.excluded || canon?.excludes;
 
   return {
     id: tour.id,
     slug: tour.slug,
     title: arTitle,
     subtitle: tour.subtitleJsonb?.ar || tour.subtitleJsonb?.en || '',
-    destination: (tour.country?.toLowerCase() || 'egypt'),
+    destination: (tour.country?.toLowerCase() || canon?.destination || 'egypt'),
     market: 'Global',
     language: 'ar',
-    type: (tour.category || 'Classic') as any,
+    type: (tour.category || canon?.type || 'Classic') as any,
     duration,
     departures: 'Daily / Diário',
     price,
