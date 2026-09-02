@@ -40,6 +40,7 @@ import { useUploadBulkMedia, useImportMediaUrls } from "../hooks/useMedia";
 import { MediaCategoryItem, MediaEntityType, MediaUrlItem } from "../types";
 import { toast } from "sonner";
 import { convertFileToWebP } from "@/lib/webp-converter";
+import { Switch } from "@/components/ui/switch";
 
 interface UploadMediaDialogProps {
   open: boolean;
@@ -89,6 +90,7 @@ export function UploadMediaDialog({
   const [targetCategory, setTargetCategory] = useState<string>(defaultCategorySlug);
   const [customEntityId, setCustomEntityId] = useState("");
   const [globalAltText, setGlobalAltText] = useState("");
+  const [enableWebPConversion, setEnableWebPConversion] = useState<boolean>(true);
 
   // Files Queue state
   const [queuedFiles, setQueuedFiles] = useState<QueuedFile[]>([]);
@@ -140,25 +142,39 @@ export function UploadMediaDialog({
         continue;
       }
 
-      // Convert to WebP and compress on client side for maximum speed & quality
-      const result = await convertFileToWebP(rawFile, { quality: 0.88, maxWidth: 2560, maxHeight: 2560 });
-      const finalFile = result.file;
-      const defaultAlt = finalFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      if (enableWebPConversion) {
+        // Convert to WebP and compress on client side for maximum speed & quality
+        const result = await convertFileToWebP(rawFile, { quality: 0.88, maxWidth: 2560, maxHeight: 2560 });
+        const finalFile = result.file;
+        const defaultAlt = finalFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
 
-      if (result.converted && result.savingsPercentage > 0) {
-        totalSavedBytes += Math.max(0, result.originalSize - result.newSize);
+        if (result.converted && result.savingsPercentage > 0) {
+          totalSavedBytes += Math.max(0, result.originalSize - result.newSize);
+        }
+
+        newItems.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          file: finalFile,
+          previewUrl: URL.createObjectURL(finalFile),
+          altText: defaultAlt,
+          originalSize: result.originalSize,
+          newSize: result.newSize,
+          savingsPercentage: result.savingsPercentage,
+          converted: result.converted,
+        });
+      } else {
+        const defaultAlt = rawFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+        newItems.push({
+          id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+          file: rawFile,
+          previewUrl: URL.createObjectURL(rawFile),
+          altText: defaultAlt,
+          originalSize: rawFile.size,
+          newSize: rawFile.size,
+          savingsPercentage: 0,
+          converted: false,
+        });
       }
-
-      newItems.push({
-        id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        file: finalFile,
-        previewUrl: URL.createObjectURL(finalFile),
-        altText: defaultAlt,
-        originalSize: result.originalSize,
-        newSize: result.newSize,
-        savingsPercentage: result.savingsPercentage,
-        converted: result.converted,
-      });
     }
 
     if (rejectedCount > 0) {
@@ -176,12 +192,44 @@ export function UploadMediaDialog({
         : "";
       toast.success(
         isAr
-          ? `تمت إضافة ${newItems.length} صورة وتحويلها إلى WEBP بنجاح${savedMsg}!`
-          : `Added ${newItems.length} image(s) and converted to WebP${savedMsg}!`,
+          ? `تمت إضافة ${newItems.length} صورة بنجاح${savedMsg}!`
+          : `Added ${newItems.length} image(s) successfully${savedMsg}!`,
       );
     }
 
     if (event.target) event.target.value = "";
+  };
+
+  const convertAllQueuedToWebP = async () => {
+    let convertedCount = 0;
+    let totalSaved = 0;
+    const updated = await Promise.all(
+      queuedFiles.map(async (item) => {
+        if (item.converted) return item;
+        const result = await convertFileToWebP(item.file, { quality: 0.88, maxWidth: 2560, maxHeight: 2560 });
+        if (result.converted) {
+          convertedCount++;
+          totalSaved += Math.max(0, result.originalSize - result.newSize);
+          URL.revokeObjectURL(item.previewUrl);
+          return {
+            ...item,
+            file: result.file,
+            previewUrl: URL.createObjectURL(result.file),
+            originalSize: result.originalSize,
+            newSize: result.newSize,
+            savingsPercentage: result.savingsPercentage,
+            converted: true,
+          };
+        }
+        return item;
+      })
+    );
+    setQueuedFiles(updated);
+    toast.success(
+      isAr
+        ? `تم تحويل ${convertedCount} صورة إلى WebP وتوفير ${formatBytes(totalSaved)}!`
+        : `Converted ${convertedCount} file(s) to WebP, saving ${formatBytes(totalSaved)}!`
+    );
   };
 
   const removeQueuedFile = (id: string) => {
@@ -435,20 +483,37 @@ export function UploadMediaDialog({
                 disabled={isPending}
               />
 
-              {/* WebP Feature Banner */}
-              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
-                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
-                  <Zap className="w-4 h-4" />
+              {/* WebP Feature Banner & Toggle */}
+              <div className="p-3.5 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between gap-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                    <Zap className="w-4 h-4" />
+                  </div>
+                  <div className="text-xs">
+                    <span className="font-bold text-emerald-400">
+                      {isAr ? "تحويل وضغط تلقائي إلى WebP ⚡" : "Auto WebP Optimization ⚡"}
+                    </span>
+                    <p className="text-[11px] text-muted-foreground mt-0.5">
+                      {isAr
+                        ? "يوفر حتى 80% من مساحة الصور ويرفع سرعة تصفح الموقع بأعلى نقاء للجودة."
+                        : "Saves up to 80% bandwidth and boosts site loading speed with high quality."}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-[11px] leading-relaxed">
-                  <span className="font-bold text-emerald-400">
-                    {isAr ? "ميزة التحويل التلقائي إلى WEBP نشطة ⚡: " : "Auto WebP Conversion Active ⚡: "}
+
+                <div className="flex items-center gap-2 shrink-0">
+                  <span className="text-[11px] font-bold text-emerald-400">
+                    {enableWebPConversion ? (isAr ? "مفعّل" : "ON") : (isAr ? "معطّل" : "OFF")}
                   </span>
-                  <span className="text-muted-foreground">
-                    {isAr
-                      ? "يتم ضغط وتحويل جميع الصور تلقائياً لصيغة WEBP لرفع سرعة الموقع بنسبة 80% مع أقصى نقاء للجودة."
-                      : "Images are automatically compressed & converted to WebP for 80% faster load speeds and crystal clarity."}
-                  </span>
+                  <Switch
+                    checked={enableWebPConversion}
+                    onCheckedChange={(val) => {
+                      setEnableWebPConversion(val);
+                      if (val && queuedFiles.some((f) => !f.converted)) {
+                        convertAllQueuedToWebP();
+                      }
+                    }}
+                  />
                 </div>
               </div>
 

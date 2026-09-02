@@ -23,6 +23,7 @@ import {
 import { UploadMediaDialog } from "@/features/media/components/UploadMediaDialog";
 import { MoveMediaDialog } from "@/features/media/components/MoveMediaDialog";
 import { ManageCategoriesDialog } from "@/features/media/components/ManageCategoriesDialog";
+import { WebPOptimizerStudio } from "@/features/media/components/WebPOptimizerStudio";
 import {
   useDeleteMedia,
   useMediaAssets,
@@ -56,6 +57,7 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
+  Zap,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -151,6 +153,7 @@ export default function MediaPage() {
   const [uploadOpen, setUploadOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
+  const [webpStudioOpen, setWebpStudioOpen] = useState(false);
   const [activeAssetForMove, setActiveAssetForMove] = useState<MediaAsset | null>(null);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
 
@@ -302,6 +305,16 @@ export default function MediaPage() {
           >
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
             {isAr ? "تحديث" : "Refresh"}
+          </Button>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setWebpStudioOpen(true)}
+            className="h-9 text-xs font-bold gap-1.5 cursor-pointer border-emerald-500/40 hover:bg-emerald-500/10 text-emerald-400 rounded-xl"
+          >
+            <Zap className="w-3.5 h-3.5 text-emerald-400" />
+            <span>{isAr ? "استوديو تحويل WebP ⚡" : "WebP Studio ⚡"}</span>
           </Button>
 
           <Button
@@ -1020,6 +1033,14 @@ export default function MediaPage() {
         onOpenChange={setUploadOpen}
         categories={categories}
         defaultCategorySlug={selectedCategory !== "all" ? selectedCategory : "general"}
+        isAr={isAr}
+      />
+
+      {/* 11. WebP Optimizer Studio */}
+      <WebPOptimizerStudio
+        open={webpStudioOpen}
+        onOpenChange={setWebpStudioOpen}
+        categories={categories}
         isAr={isAr}
       />
     </div>
