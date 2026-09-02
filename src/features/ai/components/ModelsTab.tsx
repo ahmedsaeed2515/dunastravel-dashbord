@@ -422,12 +422,37 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       return;
     }
 
+    // Pre-flight client-side format validation
+    const trimmedKey = apiKey.trim();
+    if (selectedProvider === "google" && (!trimmedKey.startsWith("AIza") || trimmedKey.length < 30)) {
+      toast.error(
+        isAr
+          ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ المفتاح بـ 'AIza' (مثال: AIzaSy...) ويتكون من حوالي 39 حرفاً. يمكنك الحصول على مفتاح مجاني من https://aistudio.google.com/apikey"
+          : "Invalid Google Gemini API key format. Key must start with 'AIza' (e.g. AIzaSy...) and contain ~39 characters. Get your key from https://aistudio.google.com/apikey"
+      );
+      return;
+    } else if (selectedProvider === "openai" && (!trimmedKey.startsWith("sk-") || trimmedKey.length < 20)) {
+      toast.error(
+        isAr
+          ? "مفتاح OpenAI غير صالح. يجب أن يبدأ بـ 'sk-' أو 'sk-proj-' ويتكون من 20 حرفاً على الأقل."
+          : "Invalid OpenAI API key format. Key must start with 'sk-' and be at least 20 characters."
+      );
+      return;
+    } else if (selectedProvider === "openrouter" && (!trimmedKey.startsWith("sk-or-") || trimmedKey.length < 20)) {
+      toast.error(
+        isAr
+          ? "مفتاح OpenRouter غير صالح. يجب أن يبدأ بـ 'sk-or-'."
+          : "Invalid OpenRouter API key format. Key must start with 'sk-or-'."
+      );
+      return;
+    }
+
     setSaving(true);
     try {
       await aiApi.addPoolKey({
         provider: selectedProvider,
         model: selectedModel,
-        apiKey: apiKey.trim(),
+        apiKey: trimmedKey,
         baseUrl: selectedProvider === "custom" ? customBaseUrl.trim() || undefined : undefined,
         label: label.trim() || `${selectedProvider} - ${selectedModel}`,
         priority: Number(priority),
@@ -453,12 +478,24 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     e.preventDefault();
     if (!editingKey) return;
 
+    const trimmedKey = apiKey.trim();
+    if (trimmedKey && !trimmedKey.includes("••")) {
+      if (selectedProvider === "google" && (!trimmedKey.startsWith("AIza") || trimmedKey.length < 30)) {
+        toast.error(
+          isAr
+            ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ بـ 'AIza' (مثال: AIzaSy...)."
+            : "Invalid Google Gemini API key. Key must start with 'AIza'."
+        );
+        return;
+      }
+    }
+
     setSaving(true);
     try {
       await aiApi.updatePoolKey(editingKey.id, {
         provider: selectedProvider,
         model: selectedModel,
-        apiKey: apiKey.trim() || undefined,
+        apiKey: trimmedKey || undefined,
         baseUrl: selectedProvider === "custom" ? customBaseUrl.trim() || undefined : undefined,
         label: label.trim() || undefined,
         priority: Number(priority),
@@ -474,6 +511,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       setSaving(false);
     }
   };
+
 
   // Test single credential in the table
   const handleTestKeyInTable = async (id: string) => {

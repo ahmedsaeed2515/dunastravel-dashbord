@@ -3311,7 +3311,7 @@ function HotelEditorDialog({
     const stars = Number(form.stars) || 5;
     const rating = form.rating.trim() ? Number(form.rating) : 4.9;
 
-    // Build Rooms payload
+    // Build Rooms payload with full 5-language support
     const roomsPayload: HotelRoomPayload[] = form.rooms.map((r, idx) => ({
       slug: slugify(r.slug || r.nameEn || `room-${idx + 1}`),
       nameJsonb: {
@@ -3322,13 +3322,26 @@ function HotelEditorDialog({
         it: r.nameIt.trim() || r.nameEn.trim(),
       },
       descriptionJsonb: {
+        overview: {
+          en: r.descEn || "",
+          ar: r.descAr || "",
+          es: r.descEs || "",
+          pt: r.descPt || "",
+          it: r.descIt || "",
+        },
         bedType: {
           en: r.bedTypeEn || "Double / Twin Beds",
           ar: r.bedTypeAr || "مزدوجة / توأم",
+          es: r.bedTypeEs || r.bedTypeEn || "Doble / Twin",
+          pt: r.bedTypePt || r.bedTypeEn || "Duplo / Twin",
+          it: r.bedTypeIt || r.bedTypeEn || "Matrimoniale / Twin",
         },
         viewType: {
           en: r.viewTypeEn || "Standard View",
           ar: r.viewTypeAr || "إطلالة قياسية",
+          es: r.viewTypeEs || r.viewTypeEn || "Vista Estándar",
+          pt: r.viewTypePt || r.viewTypeEn || "Vista Padrão",
+          it: r.viewTypeIt || r.viewTypeEn || "Vista Standard",
         },
         smokingAllowed: r.smokingAllowed ?? false,
         petsAllowed: r.petsAllowed ?? false,
@@ -3344,6 +3357,10 @@ function HotelEditorDialog({
       inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,
       mealPlanJsonb: {
         en: r.mealPlan || "bb",
+        ar: r.mealPlan || "bb",
+        es: r.mealPlan || "bb",
+        pt: r.mealPlan || "bb",
+        it: r.mealPlan || "bb",
       },
       isActive: r.isActive ?? true,
       sortOrder: idx,
@@ -3856,274 +3873,319 @@ function HotelEditorDialog({
               </div>
             </TabsContent>
 
-            {/* TAB 2: ROOMS & INVENTORY MANAGEMENT (NEW & COMPLETE) */}
+            {/* TAB 2: ROOMS & INVENTORY MANAGEMENT (LUXURY EDITORIAL REDESIGN) */}
             <TabsContent value="rooms" className="space-y-4">
-              <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                <div>
-                  <h4 className="text-xs font-extrabold text-amber-600 dark:text-amber-400 flex items-center gap-1.5">
-                    <BedDouble className="w-4 h-4" />
+              {/* Header & Stats Banner */}
+              <div className="p-4 rounded-2xl bg-linear-to-r from-amber-500/15 via-primary/10 to-amber-500/5 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                  <h4 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <BedDouble className="w-5 h-5 text-amber-500" />
                     <span>{isAr ? "التحكم في فئات الغرف وعدد الغرف المتاحة (Inventory)" : "Room Categories & Available Inventory"}</span>
                   </h4>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-xs text-muted-foreground font-medium">
                     {isAr
-                      ? "يمكنك إضافة فئات غرف متعددة وتحديد سعر كل غرفة وعدد الغرف المتاحة للحجز وأقصى سعة للأفراد."
-                      : "Configure room categories, nightly rates, available inventory quotas, and occupancy limits."}
+                      ? "يمكنك إضافة وتعديل فئات الغرف، تحديد الأسعار، الصور، المواصفات وتوافر الغرف باللغات الخمس بالكامل."
+                      : "Configure room tiers, rates, photos, specifications, and 5-language localization."}
                   </p>
+                  {/* Live Room Statistics */}
+                  <div className="flex items-center gap-2 pt-1 flex-wrap text-xs">
+                    <Badge variant="outline" className="bg-background/80 border-amber-500/30 text-amber-500 font-bold px-2 py-0.5">
+                      {form.rooms.length} {isAr ? "فئات غرف" : "Room Tiers"}
+                    </Badge>
+                    <Badge variant="outline" className="bg-background/80 border-emerald-500/30 text-emerald-500 font-bold px-2 py-0.5">
+                      {form.rooms.reduce((acc, r) => acc + (Number(r.inventory) || 0), 0)} {isAr ? "غرفة متاحة للحجز" : "Total Units in Stock"}
+                    </Badge>
+                    <Badge variant="outline" className="bg-background/80 border-primary/30 text-primary font-bold px-2 py-0.5">
+                      {form.rooms.filter((r) => r.isActive).length} {isAr ? "فئات مفعلة" : "Active"}
+                    </Badge>
+                  </div>
                 </div>
 
                 <Button
                   type="button"
                   size="sm"
-                  onClick={() => setIsAddingRoom(true)}
-                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 rounded-xl cursor-pointer"
+                  onClick={handleOpenAddRoom}
+                  className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs gap-1.5 px-4 py-2 rounded-xl cursor-pointer shadow-md shadow-amber-500/20 shrink-0"
                 >
-                  <Plus className="w-3.5 h-3.5 stroke-3" />
-                  <span>{isAr ? "إضافة فئة غرفة +" : "Add Room Tier +"}</span>
+                  <Plus className="w-4 h-4 stroke-[2.5]" />
+                  <span>{isAr ? "إضافة فئة غرفة جديدة +" : "Add Room Tier +"}</span>
                 </Button>
               </div>
 
-              {/* Quick Room Preset Buttons */}
-              <div className="space-y-1.5">
-                <span className="text-[11px] font-bold text-muted-foreground block">{isAr ? "نماذج جاهزة للغرف السريعة:" : "Quick Room Presets:"}</span>
-                <div className="flex flex-wrap gap-1.5">
+              {/* Quick Room Presets Bar */}
+              <div className="space-y-1.5 p-3 rounded-2xl bg-muted/20 border border-border/80">
+                <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
+                  <span className="flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                    <span>{isAr ? "نماذج جاهزة للغرف السريعة (تعبئة باللغات الخمس والصور):" : "Quick Luxury Room Presets (5-Language Ready):"}</span>
+                  </span>
+                </div>
+                <div className="flex flex-wrap gap-2 pt-1">
                   {ROOM_PRESETS.map((preset) => (
                     <button
                       key={preset.slug}
                       type="button"
                       onClick={() => handleApplyRoomPreset(preset)}
-                      className="text-xs px-3 py-1.5 rounded-xl border bg-card hover:border-amber-500 hover:text-amber-500 font-bold flex items-center gap-1.5 transition-all cursor-pointer shadow-xs"
+                      className="text-xs px-3 py-1.5 rounded-xl border bg-card hover:border-amber-500 hover:text-amber-500 font-bold flex items-center gap-2 transition-all cursor-pointer shadow-xs group"
                     >
-                      <Plus className="w-3 h-3 text-amber-500" />
+                      <Plus className="w-3 h-3 text-amber-500 group-hover:scale-120 transition-transform" />
                       <span>{isAr ? preset.nameAr : preset.nameEn}</span>
-                      <span className="text-[10px] font-mono text-amber-400">(${preset.rate})</span>
+                      <span className="text-[10px] font-mono text-amber-400 bg-amber-500/10 px-1.5 py-0.5 rounded-md">(${preset.rate})</span>
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Add Room Inline Form Card */}
-              {isAddingRoom && (
-                <Card className="p-5 border-2 border-amber-500/50 bg-amber-500/5 rounded-2xl space-y-4 animate-in fade-in duration-200">
-                  <div className="flex items-center justify-between border-b pb-3">
-                    <h5 className="text-xs font-black text-foreground flex items-center gap-2">
-                      <BedDouble className="w-4 h-4 text-amber-500" />
-                      <span>{isAr ? "إضافة فئة غرفة جديدة" : "New Room Configuration"}</span>
-                    </h5>
-                    <button
-                      type="button"
-                      onClick={() => setIsAddingRoom(false)}
-                      className="text-muted-foreground hover:text-foreground cursor-pointer"
-                    >
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "اسم الغرفة بالإنجليزية *" : "Room Name (EN) *"}</label>
-                      <Input
-                        placeholder="e.g. Deluxe Nile View Room"
-                        value={newRoom.nameEn}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, nameEn: e.target.value, slug: slugify(e.target.value) }))}
-                        className="h-9 text-xs font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "اسم الغرفة بالعربية *" : "Room Name (AR) *"}</label>
-                      <Input
-                        placeholder="مثال: غرفة ديلوكس مطلة على النيل"
-                        value={newRoom.nameAr}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, nameAr: e.target.value }))}
-                        className="h-9 text-xs font-bold"
-                        dir="rtl"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "سعر الليلة ($ USD) *" : "Rate Per Night ($ USD) *"}</label>
-                      <Input
-                        type="number"
-                        min="1"
-                        value={newRoom.ratePerNight}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, ratePerNight: Number(e.target.value) }))}
-                        className="h-9 text-xs font-mono font-bold"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "عدد الغرف المتاحة (Inventory) *" : "Available Inventory (Quantity) *"}</label>
-                      <Input
-                        type="number"
-                        min="0"
-                        value={newRoom.inventory}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, inventory: Number(e.target.value) }))}
-                        className="h-9 text-xs font-mono font-bold text-amber-500"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "أقصى سعة للأفراد (Max Occupancy) *" : "Max Guests Occupancy *"}</label>
-                      <select
-                        value={newRoom.maxOccupancy}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, maxOccupancy: Number(e.target.value) }))}
-                        className="w-full h-9 px-3 rounded-xl border bg-background text-xs font-bold"
-                      >
-                        <option value={1}>👤 1 Guest</option>
-                        <option value={2}>👥 2 Guests (Standard Double)</option>
-                        <option value={3}>👥👤 3 Guests (Triple)</option>
-                        <option value={4}>👨‍👩‍👧‍👦 4 Guests (Family Suite)</option>
-                        <option value={6}>👨‍👩‍👧‍👦👥 6 Guests (Luxury Villa)</option>
-                      </select>
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "نوع السرير (Bed Type)" : "Bed Type"}</label>
-                      <Input
-                        placeholder={isAr ? "مثال: مزدوجة / توأم" : "e.g. Double / Twin Beds"}
-                        value={newRoom.bedTypeAr || newRoom.bedTypeEn || ""}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, bedTypeEn: e.target.value, bedTypeAr: e.target.value }))}
-                        className="h-9 text-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "الإطلالة (View Type)" : "View Type"}</label>
-                      <Input
-                        placeholder={isAr ? "مثال: إطلالة على الأهرامات" : "e.g. Pyramids View"}
-                        value={newRoom.viewTypeAr || newRoom.viewTypeEn || ""}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, viewTypeEn: e.target.value, viewTypeAr: e.target.value }))}
-                        className="h-9 text-xs"
-                      />
-                    </div>
-
-                    <div className="space-y-1 sm:col-span-2">
-                      <label className="text-[11px] font-extrabold text-foreground">{isAr ? "رابط صورة الغرفة (Room Image URL)" : "Room Image URL"}</label>
-                      <Input
-                        placeholder="https://images.unsplash.com/..."
-                        value={newRoom.image || ""}
-                        onChange={(e) => setNewRoom((prev) => ({ ...prev, image: e.target.value }))}
-                        className="h-9 text-xs font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-end gap-2 pt-2 border-t">
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setIsAddingRoom(false)}
-                      className="text-xs"
-                    >
-                      {isAr ? "إلغاء" : "Cancel"}
-                    </Button>
-                    <Button
-                      type="button"
-                      size="sm"
-                      onClick={handleAddRoom}
-                      className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs"
-                    >
-                      {isAr ? "حفظ وإضافة الغرفة" : "Confirm & Add Room"}
-                    </Button>
-                  </div>
-                </Card>
-              )}
-
-              {/* Configured Rooms List */}
+              {/* Configured Rooms List (Luxury Cards) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between text-xs font-bold text-muted-foreground">
-                  <span>{isAr ? "الغرف المحددة في هذا الفندق:" : "Configured Room Tiers:"}</span>
-                  <span className="text-amber-500 font-extrabold">{form.rooms.length} {isAr ? "فئات غرف" : "Tiers"}</span>
+                  <span>{isAr ? "قائمة فئات الغرف المعدة لهذا الفندق:" : "Configured Room Tiers in this Hotel:"}</span>
+                  <span className="text-amber-500 font-extrabold">{form.rooms.length} {isAr ? "فئات" : "Tiers"}</span>
                 </div>
 
                 {form.rooms.length === 0 ? (
-                  <div className="p-8 text-center border-dashed border-2 rounded-2xl text-muted-foreground text-xs font-bold">
-                    {isAr ? "لم تتم إضافة أي غرف بعد. يرجى إضافة غرفة واحدة على الأقل." : "No rooms configured. Please add at least one room tier."}
+                  <div className="p-12 text-center border-dashed border-2 rounded-3xl bg-muted/10 space-y-3">
+                    <BedDouble className="w-12 h-12 text-amber-500/40 mx-auto" />
+                    <div className="space-y-1">
+                      <h4 className="text-sm font-black text-foreground">{isAr ? "لم يتم تكوين أي غرف بعد" : "No Room Tiers Configured Yet"}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {isAr
+                          ? "اضغط على زر (إضافة فئة غرفة جديدة) أو اختر أحد النماذج الجاهزة بالأعلى لبدء تحديد الأسعار والغرف."
+                          : "Click 'Add Room Tier' or select a preset above to configure rates, images, and inventory."}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleOpenAddRoom}
+                      className="mt-2 bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs rounded-xl"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      <span>{isAr ? "إضافة الغرفة الأولى الآن" : "Add First Room Now"}</span>
+                    </Button>
                   </div>
                 ) : (
-                  <div className="space-y-2">
-                    {form.rooms.map((room, idx) => (
-                      <Card
-                        key={idx}
-                        className="p-4 bg-card border rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs hover:border-amber-500/40 transition-all"
-                      >
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-black text-sm text-foreground">{room.nameEn}</span>
-                            {room.nameAr && <span className="text-xs text-muted-foreground font-semibold" dir="rtl">({room.nameAr})</span>}
-                            <Badge variant="outline" className="text-[10px] font-bold">
-                              {MEAL_PLAN_OPTIONS.find((m) => m.id === room.mealPlan)?.nameEn || "Bed & Breakfast"}
-                            </Badge>
-                          </div>
-                          <div className="flex items-center gap-3 text-xs text-muted-foreground font-medium flex-wrap">
-                            <span className="flex items-center gap-1 font-mono text-amber-500 font-extrabold text-sm">
-                              <DollarSign className="w-3.5 h-3.5" />
-                              {room.ratePerNight} / {isAr ? "ليلة" : "nt"}
-                            </span>
-                            <span>•</span>
-                            <span className="flex items-center gap-1">
-                              <Users className="w-3.5 h-3.5 text-sky-500" />
-                              {room.maxOccupancy} {isAr ? "أفراد" : "Guests"}
-                            </span>
-                            {(room.bedTypeAr || room.bedTypeEn) && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1 text-slate-300">
-                                  🛏️ {isAr ? (room.bedTypeAr || room.bedTypeEn) : (room.bedTypeEn || room.bedTypeAr)}
-                                </span>
-                              </>
-                            )}
-                            {(room.viewTypeAr || room.viewTypeEn) && (
-                              <>
-                                <span>•</span>
-                                <span className="flex items-center gap-1 text-amber-400 font-semibold">
-                                  🌄 {isAr ? (room.viewTypeAr || room.viewTypeEn) : (room.viewTypeEn || room.viewTypeAr)}
-                                </span>
-                              </>
-                            )}
-                            <span>•</span>
-                            <span className="flex items-center gap-1 font-bold text-foreground">
-                              <Layers className="w-3.5 h-3.5 text-emerald-500" />
-                              <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{room.inventory}</span> {isAr ? "غرفة متاحة" : "Available"}
-                            </span>
-                          </div>
-                        </div>
+                  <div className="space-y-3">
+                    {form.rooms.map((room, idx) => {
+                      const primaryName = isAr ? (room.nameAr || room.nameEn) : (room.nameEn || room.nameAr);
+                      const secondaryName = isAr ? (room.nameEn && room.nameEn !== room.nameAr ? room.nameEn : "") : (room.nameAr && room.nameAr !== room.nameEn ? room.nameAr : "");
+                      const mealPlanObj = MEAL_PLAN_OPTIONS.find((m) => m.id === room.mealPlan);
+                      const bedText = isAr ? (room.bedTypeAr || room.bedTypeEn || "مزدوجة / توأم") : (room.bedTypeEn || room.bedTypeAr || "Double / Twin Beds");
+                      const viewText = isAr ? (room.viewTypeAr || room.viewTypeEn || "إطلالة قياسية") : (room.viewTypeEn || room.viewTypeAr || "Standard View");
 
-                        {/* Inline Quick Edit Controls */}
-                        <div className="flex items-center gap-2 self-end sm:self-center shrink-0">
-                          <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-xl border">
-                            <span className="text-[10px] font-bold text-muted-foreground px-1">{isAr ? "العدد:" : "Qty:"}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateRoomField(idx, "inventory", Math.max(0, room.inventory - 1))}
-                              className="w-6 h-6 rounded-lg bg-background text-foreground font-bold hover:bg-muted text-xs flex items-center justify-center cursor-pointer"
-                            >
-                              -
-                            </button>
-                            <span className="w-7 text-center font-mono font-bold text-xs">{room.inventory}</span>
-                            <button
-                              type="button"
-                              onClick={() => handleUpdateRoomField(idx, "inventory", room.inventory + 1)}
-                              className="w-6 h-6 rounded-lg bg-background text-foreground font-bold hover:bg-muted text-xs flex items-center justify-center cursor-pointer"
-                            >
-                              +
-                            </button>
+                      const has5Languages = Boolean(room.nameEn && room.nameAr && room.nameEs && room.namePt && room.nameIt);
+
+                      return (
+                        <div
+                          key={idx}
+                          className={`p-4 bg-card border rounded-3xl flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4 shadow-sm hover:shadow-md transition-all duration-200 group ${
+                            room.isActive
+                              ? "border-border hover:border-amber-500/50"
+                              : "border-border/60 bg-muted/20 opacity-75"
+                          }`}
+                        >
+                          {/* Room Thumbnail Image with Overlay */}
+                          <div className="relative w-full md:w-52 h-36 rounded-2xl overflow-hidden shrink-0 border border-border/80 bg-slate-950 shadow-inner">
+                            <img
+                              src={room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200"}
+                              alt={primaryName}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                              onError={(e) => {
+                                e.currentTarget.src = "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200";
+                              }}
+                            />
+                            <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-transparent to-transparent" />
+
+                            {/* Top Badge: Active Status */}
+                            <div className="absolute top-2 right-2 rtl:right-2 ltr:left-2">
+                              {room.isActive ? (
+                                <Badge className="bg-emerald-500/90 text-slate-950 font-black text-[9px] px-2 py-0.5 shadow-xs">
+                                  {isAr ? "مفعلة ✓" : "Active ✓"}
+                                </Badge>
+                              ) : (
+                                <Badge variant="secondary" className="bg-slate-900/90 text-slate-400 font-bold text-[9px] px-2 py-0.5">
+                                  {isAr ? "معطلة" : "Inactive"}
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* Bottom Badge: Meal Plan */}
+                            <div className="absolute bottom-2 left-2 rtl:left-2 ltr:right-2 right-2 flex items-center justify-between">
+                              <Badge
+                                variant="secondary"
+                                className="bg-slate-950/90 text-amber-400 border border-amber-400/20 text-[10px] font-bold px-2 py-0.5 backdrop-blur-xs truncate max-w-[140px]"
+                              >
+                                {isAr ? (mealPlanObj?.nameAr || "شامل الإفطار") : (mealPlanObj?.nameEn || "Bed & Breakfast")}
+                              </Badge>
+                            </div>
                           </div>
 
-                          <Button
-                            type="button"
-                            size="icon-sm"
-                            variant="ghost"
-                            onClick={() => handleDeleteRoom(idx)}
-                            className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
-                            title={isAr ? "حذف الغرفة" : "Delete Room"}
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                          {/* Room Content & Metadata */}
+                          <div className="space-y-2 flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2 flex-wrap">
+                              <div>
+                                <h5 className="font-black text-base text-foreground flex items-center gap-2">
+                                  <span>{primaryName}</span>
+                                  {has5Languages && (
+                                    <span className="text-[10px] bg-amber-500/10 text-amber-500 border border-amber-500/30 px-1.5 py-0.2 rounded-md font-mono font-bold">
+                                      5 Locales
+                                    </span>
+                                  )}
+                                </h5>
+                                {secondaryName && (
+                                  <p className="text-xs text-muted-foreground font-semibold">
+                                    {secondaryName}
+                                  </p>
+                                )}
+                              </div>
+
+                              {/* Price Highlight */}
+                              <div className="text-right rtl:text-right ltr:text-left">
+                                <div className="text-base sm:text-lg font-black font-mono text-amber-500">
+                                  ${room.ratePerNight}
+                                  <span className="text-xs text-muted-foreground font-medium font-sans"> / {isAr ? "ليلة" : "night"}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Specs Chips Row */}
+                            <div className="flex items-center gap-2 text-xs flex-wrap">
+                              <span className="px-2.5 py-1 rounded-xl bg-muted/60 text-muted-foreground border flex items-center gap-1 font-bold">
+                                <Users className="w-3.5 h-3.5 text-sky-500" />
+                                <span>{room.maxOccupancy} {isAr ? "أفراد" : "Guests"}</span>
+                              </span>
+
+                              <span className="px-2.5 py-1 rounded-xl bg-muted/60 text-muted-foreground border flex items-center gap-1 font-bold">
+                                <span>🛏️</span>
+                                <span>{bedText}</span>
+                              </span>
+
+                              <span className="px-2.5 py-1 rounded-xl bg-muted/60 text-muted-foreground border flex items-center gap-1 font-bold">
+                                <span>🌄</span>
+                                <span className="text-amber-500">{viewText}</span>
+                              </span>
+
+                              {/* Stock Level Badge */}
+                              {room.inventory > 5 ? (
+                                <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 font-bold text-xs px-2.5 py-1">
+                                  <Layers className="w-3.5 h-3.5 mr-1" />
+                                  <span>{room.inventory} {isAr ? "غرفة متاحة" : "In Stock"}</span>
+                                </Badge>
+                              ) : room.inventory > 0 ? (
+                                <Badge className="bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/30 font-bold text-xs px-2.5 py-1">
+                                  <Layers className="w-3.5 h-3.5 mr-1" />
+                                  <span>{isAr ? `متبقي ${room.inventory} فقط` : `Low Stock: ${room.inventory}`}</span>
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-rose-500/15 text-rose-600 dark:text-rose-400 border-rose-500/30 font-bold text-xs px-2.5 py-1">
+                                  <span>{isAr ? "نفذت الغرف (0)" : "Sold Out (0)"}</span>
+                                </Badge>
+                              )}
+                            </div>
+
+                            {/* 5-Language Completeness Indicator */}
+                            <div className="flex items-center gap-1 pt-1 text-[10px] text-muted-foreground font-mono">
+                              <span className="text-muted-foreground font-semibold font-sans">{isAr ? "اللغات:" : "Locales:"}</span>
+                              {[
+                                { key: "nameEn", label: "EN" },
+                                { key: "nameAr", label: "AR" },
+                                { key: "nameEs", label: "ES" },
+                                { key: "namePt", label: "PT" },
+                                { key: "nameIt", label: "IT" },
+                              ].map((loc) => {
+                                const filled = Boolean((room as any)[loc.key]);
+                                return (
+                                  <span
+                                    key={loc.label}
+                                    className={`px-1.5 py-0.2 rounded font-bold ${
+                                      filled ? "bg-amber-500/15 text-amber-500" : "bg-muted text-muted-foreground/40"
+                                    }`}
+                                  >
+                                    {loc.label} {filled ? "✓" : "—"}
+                                  </span>
+                                );
+                              })}
+                            </div>
+                          </div>
+
+                          {/* Action Toolbar */}
+                          <div className="flex items-center gap-2 self-stretch md:self-center justify-between md:justify-end shrink-0 pt-2 md:pt-0 border-t md:border-t-0">
+                            {/* Inventory Stepper */}
+                            <div className="flex items-center gap-1 bg-muted/60 p-1 rounded-2xl border border-border/80 shadow-xs">
+                              <button
+                                type="button"
+                                onClick={() => handleQuickInventoryChange(idx, -1)}
+                                className="w-7 h-7 rounded-xl bg-background text-foreground font-black hover:bg-muted text-xs flex items-center justify-center cursor-pointer transition-colors"
+                                title={isAr ? "إنقاص العدد" : "Decrease Stock"}
+                              >
+                                -
+                              </button>
+                              <span className="w-8 text-center font-mono font-black text-xs text-amber-500">
+                                {room.inventory}
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleQuickInventoryChange(idx, 1)}
+                                className="w-7 h-7 rounded-xl bg-background text-foreground font-black hover:bg-muted text-xs flex items-center justify-center cursor-pointer transition-colors"
+                                title={isAr ? "زيادة العدد" : "Increase Stock"}
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            {/* Edit Room Button (Main Request) */}
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleOpenEditRoom(room, idx)}
+                              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-3.5 py-1.5 rounded-xl gap-1.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                            >
+                              <Edit3 className="w-3.5 h-3.5 stroke-[2.5]" />
+                              <span>{isAr ? "تعديل الغرفة" : "Edit Room"}</span>
+                            </Button>
+
+                            {/* Clone Room Button */}
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleDuplicateRoom(idx)}
+                              className="h-8 rounded-xl border-border hover:border-amber-500 text-muted-foreground hover:text-foreground text-xs font-bold gap-1 cursor-pointer"
+                              title={isAr ? "تكرار فئة الغرفة" : "Clone Room Tier"}
+                            >
+                              <Copy className="w-3.5 h-3.5 text-amber-500" />
+                              <span className="hidden xl:inline">{isAr ? "تكرار" : "Clone"}</span>
+                            </Button>
+
+                            {/* Active Toggle */}
+                            <button
+                              type="button"
+                              onClick={() => handleToggleRoomActive(idx)}
+                              className={`p-2 rounded-xl border transition-all cursor-pointer ${
+                                room.isActive
+                                  ? "bg-emerald-500/10 text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/20"
+                                  : "bg-muted text-muted-foreground border-border hover:bg-muted/80"
+                              }`}
+                              title={room.isActive ? (isAr ? "تعطيل الغرفة" : "Deactivate Room") : (isAr ? "تفعيل الغرفة" : "Activate Room")}
+                            >
+                              <CheckCircle2 className="w-4 h-4" />
+                            </button>
+
+                            {/* Delete Room Button */}
+                            <Button
+                              type="button"
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => handleDeleteRoom(idx)}
+                              className="h-8 w-8 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                              title={isAr ? "حذف الغرفة" : "Delete Room Tier"}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-                      </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -4526,13 +4588,23 @@ function HotelEditorDialog({
         </DialogFooter>
       </DialogContent>
 
-      {/* Media Library Picker Modal */}
+      {/* Media Library Picker Modal for Hotel Hero */}
       <MediaLibraryPickerModal
         open={isMediaPickerOpen}
         onClose={() => setIsMediaPickerOpen(false)}
         onSelect={handleSelectMediaFromPicker}
         selectedAssetId={form.heroMediaId}
         selectedAssetUrl={form.heroImageUrl}
+        locale={locale}
+      />
+
+      {/* Dedicated Room Editor Modal for Individual Rooms */}
+      <RoomEditorModal
+        open={isRoomEditorOpen}
+        onClose={() => setIsRoomEditorOpen(false)}
+        room={editingRoom}
+        roomIndex={editingRoomIndex}
+        onSave={handleSaveRoomFromModal}
         locale={locale}
       />
     </Dialog>

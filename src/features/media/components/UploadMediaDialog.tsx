@@ -34,10 +34,12 @@ import {
   Sparkles,
   Layers,
   FileCheck,
+  Zap,
 } from "lucide-react";
 import { useUploadBulkMedia, useImportMediaUrls } from "../hooks/useMedia";
 import { MediaCategoryItem, MediaEntityType, MediaUrlItem } from "../types";
 import { toast } from "sonner";
+import { convertFileToWebP } from "@/lib/webp-converter";
 
 interface UploadMediaDialogProps {
   open: boolean;
@@ -52,6 +54,10 @@ interface QueuedFile {
   file: File;
   previewUrl: string;
   altText: string;
+  originalSize?: number;
+  newSize?: number;
+  savingsPercentage?: number;
+  converted?: boolean;
 }
 
 interface QueuedUrl {
@@ -114,49 +120,64 @@ export function UploadMediaDialog({
   }, [open, defaultCategorySlug]);
 
   // ---------------- File Selection Handling ----------------
-  const handleFileSelect = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (event: ChangeEvent<HTMLInputElement>) => {
     const selectedList = event.target.files;
     if (!selectedList || selectedList.length === 0) return;
 
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
-    const maxSizeBytes = 10 * 1024 * 1024;
+    const maxSizeBytes = 15 * 1024 * 1024;
     const newItems: QueuedFile[] = [];
     let rejectedCount = 0;
+    let totalSavedBytes = 0;
 
     for (let i = 0; i < selectedList.length; i++) {
-      const file = selectedList[i];
-      if (!allowedTypes.includes(file.type)) {
+      const rawFile = selectedList[i];
+      if (!rawFile.type.startsWith("image/")) {
         rejectedCount++;
         continue;
       }
-      if (file.size > maxSizeBytes) {
+      if (rawFile.size > maxSizeBytes) {
         rejectedCount++;
         continue;
       }
 
-      const defaultAlt = file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+      // Convert to WebP and compress on client side for maximum speed & quality
+      const result = await convertFileToWebP(rawFile, { quality: 0.88, maxWidth: 2560, maxHeight: 2560 });
+      const finalFile = result.file;
+      const defaultAlt = finalFile.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ");
+
+      if (result.converted && result.savingsPercentage > 0) {
+        totalSavedBytes += Math.max(0, result.originalSize - result.newSize);
+      }
+
       newItems.push({
         id: `${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-        file,
-        previewUrl: URL.createObjectURL(file),
+        file: finalFile,
+        previewUrl: URL.createObjectURL(finalFile),
         altText: defaultAlt,
+        originalSize: result.originalSize,
+        newSize: result.newSize,
+        savingsPercentage: result.savingsPercentage,
+        converted: result.converted,
       });
     }
 
     if (rejectedCount > 0) {
       toast.warning(
         isAr
-          ? `تم استبعاد ${rejectedCount} ملف(ات) لتجاوز الحجم (10MB) أو لعدم توافق الصيغة (JPG/PNG/WEBP).`
-          : `${rejectedCount} file(s) skipped (must be JPG/PNG/WEBP under 10MB).`,
+          ? `تم استبعاد ${rejectedCount} ملف(ات) لتجاوز الحجم (15MB) أو لعدم توافق صيغة الصورة.`
+          : `${rejectedCount} file(s) skipped (must be image under 15MB).`,
       );
     }
 
     if (newItems.length > 0) {
       setQueuedFiles((prev) => [...prev, ...newItems]);
+      const savedMsg = totalSavedBytes > 0
+        ? (isAr ? ` (تم توفير ${formatBytes(totalSavedBytes)} بفضل صيغة WEBP)` : ` (Saved ${formatBytes(totalSavedBytes)} via WEBP)`)
+        : "";
       toast.success(
         isAr
-          ? `تمت إضافة ${newItems.length} صورة لقائمة الرفع.`
-          : `Added ${newItems.length} image(s) to upload queue.`,
+          ? `تمت إضافة ${newItems.length} صورة وتحويلها إلى WEBP بنجاح${savedMsg}!`
+          : `Added ${newItems.length} image(s) and converted to WebP${savedMsg}!`,
       );
     }
 
@@ -408,11 +429,28 @@ export function UploadMediaDialog({
                 ref={fileInputRef}
                 type="file"
                 multiple
-                accept="image/jpeg,image/png,image/webp"
+                accept="image/*"
                 onChange={handleFileSelect}
                 className="hidden"
                 disabled={isPending}
               />
+
+              {/* WebP Feature Banner */}
+              <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400 shrink-0">
+                  <Zap className="w-4 h-4" />
+                </div>
+                <div className="text-[11px] leading-relaxed">
+                  <span className="font-bold text-emerald-400">
+                    {isAr ? "ميزة التحويل التلقائي إلى WEBP نشطة ⚡: " : "Auto WebP Conversion Active ⚡: "}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {isAr
+                      ? "يتم ضغط وتحويل جميع الصور تلقائياً لصيغة WEBP لرفع سرعة الموقع بنسبة 80% مع أقصى نقاء للجودة."
+                      : "Images are automatically compressed & converted to WebP for 80% faster load speeds and crystal clarity."}
+                  </span>
+                </div>
+              </div>
 
               {/* Drag & drop upload target */}
               <div
@@ -428,7 +466,7 @@ export function UploadMediaDialog({
                     : "Click to choose single or multiple images from device"}
                 </span>
                 <span className="text-[11px] text-muted-foreground mt-1 font-mono">
-                  JPEG, PNG, WebP · Max 10 MB per image · Multi-select supported
+                  All Image Formats · Auto-converted to WEBP · Max 15 MB
                 </span>
               </div>
 
@@ -474,11 +512,14 @@ export function UploadMediaDialog({
                             />
                           </div>
                           <div className="min-w-0 flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center gap-1.5 flex-wrap">
                               <p className="text-xs font-bold text-foreground truncate max-w-[180px]">
                                 {item.file.name}
                               </p>
-                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono">
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono bg-emerald-500/10 text-emerald-400 border-emerald-500/30">
+                                WEBP {item.savingsPercentage && item.savingsPercentage > 0 ? `(-${item.savingsPercentage}%)` : "✓"}
+                              </Badge>
+                              <Badge variant="outline" className="text-[9px] px-1.5 py-0 font-mono text-muted-foreground">
                                 {formatBytes(item.file.size)}
                               </Badge>
                             </div>

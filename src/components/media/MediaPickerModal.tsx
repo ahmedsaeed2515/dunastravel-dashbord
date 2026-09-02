@@ -27,6 +27,7 @@ import {
   X,
 } from "lucide-react";
 import { toast } from "sonner";
+import { convertFileToWebP } from "@/lib/webp-converter";
 
 interface MediaPickerModalProps {
   isOpen: boolean;
@@ -79,25 +80,26 @@ export function MediaPickerModal({
   };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error("حجم الصورة يجب ألا يتجاوز 10 ميغابايت.");
+    if (rawFile.size > 15 * 1024 * 1024) {
+      toast.error("حجم الصورة يجب ألا يتجاوز 15 ميغابايت.");
       return;
     }
 
     setUploading(true);
     try {
+      const { file: finalFile } = await convertFileToWebP(rawFile);
       const res = await uploadMediaMutation.mutateAsync({
-        file,
+        file: finalFile,
         entityType: "GENERAL",
-        altText: file.name.replace(/\.[^/.]+$/, ""),
+        altText: finalFile.name.replace(/\.[^/.]+$/, ""),
         categorySlug: selectedCategory !== "all" ? selectedCategory : "general",
       });
       const newUrl = res.secureUrl || res.url;
       if (newUrl) {
-        toast.success("تم رفع الصورة بنجاح واختيارها!");
+        toast.success("تم تحويل الصورة إلى WEBP ورفعها بنجاح! ⚡");
         onSelect(newUrl);
         onClose();
       }

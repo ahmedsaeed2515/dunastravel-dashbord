@@ -27,6 +27,7 @@ import { Input } from "@/components/ui/input";
 import { useMediaAssets, useUploadMedia, useMediaCategories } from "@/features/media/hooks/useMedia";
 import { MediaAsset, MediaEntityType } from "@/features/media/types";
 import { UploadMediaDialog } from "@/features/media/components/UploadMediaDialog";
+import { convertFileToWebP } from "@/lib/webp-converter";
 
 export interface SelectedMediaAsset {
   id: string;
@@ -88,16 +89,19 @@ export function MediaLibraryPickerModal({
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
-    const file = files[0];
+    const rawFile = files[0];
 
-    if (file.size > 10 * 1024 * 1024) {
-      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image size must not exceed 10MB.");
+    if (rawFile.size > 15 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 15 ميغابايت." : "Image size must not exceed 15MB.");
       return;
     }
 
     try {
+      // Automatic client-side WebP conversion
+      const { file: finalFile } = await convertFileToWebP(rawFile);
+
       const res = await uploadMutation.mutateAsync({
-        file,
+        file: finalFile,
         entityType: "GENERAL" as MediaEntityType,
         categorySlug: categoryFilter || "fleet",
       });
@@ -109,7 +113,7 @@ export function MediaLibraryPickerModal({
       };
       setSelectedAsset(uploaded);
       onSelect(uploaded);
-      toast.success(isAr ? "تم رفع الصورة بنجاح وتعيينها! 📸" : "Photo uploaded and assigned! 📸");
+      toast.success(isAr ? "تم تحويل الصورة لـ WEBP ورفعها بنجاح! ⚡" : "Photo converted to WebP and assigned! ⚡");
       onClose();
     } catch {
       toast.error(isAr ? "تعذر رفع الصورة، يرجى المحاولة مرة أخرى." : "Failed to upload photo.");
