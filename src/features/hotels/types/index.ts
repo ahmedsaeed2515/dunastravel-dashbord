@@ -7,15 +7,15 @@ export interface HotelRoomRecord {
   description?: Record<string, any> | null;
   ratePerNight: number;
   currency: string;
-  mealPlan?: Record<string, string> | null;
+  mealPlan?: Record<string, string> | string | null;
   maxOccupancy: number;
   inventory: number;
   isActive: boolean;
-  bedType?: any;
-  viewType?: any;
+  bedType?: Record<string, string> | string | null;
+  viewType?: Record<string, string> | string | null;
   smokingAllowed?: boolean;
   petsAllowed?: boolean;
-  image?: string;
+  image?: string | null;
   gallery?: string[];
   amenities?: string[];
 }

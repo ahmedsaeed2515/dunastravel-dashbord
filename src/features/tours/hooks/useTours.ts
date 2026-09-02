@@ -1,6 +1,8 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { TourImagePayload, TourItineraryPayload, toursApi } from "../api/toursApi";
 import {
+  Tour,
+  TourStatus,
   TourQueryFilters,
   CreateTourPayload,
   UpdateTourPayload,
@@ -247,16 +249,62 @@ export function useTourLifecycleAction(action: TourLifecycleAction) {
     archive: toursApi.archiveTour,
     unarchive: toursApi.unarchiveTour,
   } as const;
+
   return useMutation({
     mutationFn: (slug: string) => operations[action](slug),
+    onMutate: async (slug: string) => {
+      // 1. Cancel outgoing queries
+      await queryClient.cancelQueries({ queryKey: queryKeys.tours.all });
+
+      // 2. Snapshot previous queries
+      const previousToursQueries = queryClient.getQueriesData({ queryKey: queryKeys.tours.all });
+
+      // 3. Target status and active state
+      const targetStatus: TourStatus =
+        action === 'publish'
+          ? 'PUBLISHED'
+          : action === 'unpublish' || action === 'unarchive'
+          ? 'DRAFT'
+          : 'ARCHIVED';
+      const targetIsActive = action === 'publish';
+
+      // 4. Instant optimistic update across all caches
+      queryClient.setQueriesData({ queryKey: queryKeys.tours.all }, (oldData: any) => {
+        if (!oldData) return oldData;
+        if (Array.isArray(oldData)) {
+          return oldData.map((t: Tour) =>
+            t.slug === slug ? { ...t, status: targetStatus, isActive: targetIsActive } : t
+          );
+        }
+        if (oldData.data && Array.isArray(oldData.data)) {
+          return {
+            ...oldData,
+            data: oldData.data.map((t: Tour) =>
+              t.slug === slug ? { ...t, status: targetStatus, isActive: targetIsActive } : t
+            ),
+          };
+        }
+        if (oldData.slug === slug) {
+          return { ...oldData, status: targetStatus, isActive: targetIsActive };
+        }
+        return oldData;
+      });
+
+      return { previousToursQueries };
+    },
+    onError: (error: ApiError, slug, context) => {
+      if (context?.previousToursQueries) {
+        context.previousToursQueries.forEach(([queryKey, data]) => {
+          queryClient.setQueryData(queryKey, data);
+        });
+      }
+      toast.error(error?.message || `Failed to ${action} tour`);
+    },
     onSuccess: (_, slug) => {
-      toast.success(`Tour ${action === 'unarchive' ? 'restored as draft' : `${action}d`} successfully`);
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.catalogOverview() });
+      queryClient.invalidateQueries({ queryKey: queryKeys.tours.stats() });
       queryClient.invalidateQueries({ queryKey: queryKeys.tours.detail(slug) });
-    },
-    onError: (error: ApiError) => {
-      toast.error(error?.message || `Failed to ${action} tour`);
     },
   });
 }

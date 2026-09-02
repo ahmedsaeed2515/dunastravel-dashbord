@@ -156,21 +156,174 @@ export const AMENITY_CATEGORIES = [
   },
 ];
 
-const MEAL_PLAN_OPTIONS = [
-  { id: "bb", nameEn: "Bed & Breakfast (BB)", nameAr: "شامل الإفطار" },
-  { id: "hb", nameEn: "Half Board (HB)", nameAr: "إقامة نصف شاملة (إفطار + عشاء)" },
-  { id: "fb", nameEn: "Full Board (FB)", nameAr: "إقامة كاملة (3 وجبات)" },
-  { id: "ai", nameEn: "All Inclusive (AI)", nameAr: "شامل كلياً" },
-  { id: "ro", nameEn: "Room Only (RO)", nameAr: "إقامة بدون وجبات" },
+export const MEAL_PLAN_OPTIONS = [
+  { id: "bb", nameEn: "Bed & Breakfast (BB)", nameAr: "شامل الإفطار (BB)", nameEs: "Alojamiento y Desayuno (BB)", namePt: "Café da Manhã Incluso (BB)", nameIt: "Pernottamento e Colazione (BB)" },
+  { id: "hb", nameEn: "Half Board (HB)", nameAr: "إقامة نصف شاملة (HB)", nameEs: "Media Pensión (HB)", namePt: "Meia Pensão (HB)", nameIt: "Mezza Pensione (HB)" },
+  { id: "fb", nameEn: "Full Board (FB)", nameAr: "إقامة كاملة (FB)", nameEs: "Pensión Completa (FB)", namePt: "Pensão Completa (FB)", nameIt: "Pensione Completa (FB)" },
+  { id: "ai", nameEn: "All Inclusive (AI)", nameAr: "شامل كلياً (AI)", nameEs: "Todo Incluido (AI)", namePt: "Tudo Incluído (AI)", nameIt: "All Inclusive (AI)" },
+  { id: "ro", nameEn: "Room Only (RO)", nameAr: "إقامة بدون وجبات (RO)", nameEs: "Solo Habitación (RO)", namePt: "Apenas Quarto (RO)", nameIt: "Solo Camera (RO)" },
 ];
 
-const ROOM_PRESETS = [
-  { slug: "single-room", nameEn: "Single Room", nameAr: "غرفة مفردة (سينجل)", rate: 75, maxOccupancy: 1, inventory: 10, mealPlan: "bb", bedEn: "1 Single Bed", bedAr: "سرير مفرد", viewEn: "City / Garden View", viewAr: "إطلالة على الحديقة / المدينة" },
-  { slug: "twin-room", nameEn: "Twin Room", nameAr: "غرفة توأم (سريرين منفصلين)", rate: 85, maxOccupancy: 2, inventory: 15, mealPlan: "bb", bedEn: "Double / Twin Beds", bedAr: "مزدوجة / توأم", viewEn: "Standard View", viewAr: "إطلالة قياسية" },
-  { slug: "double-room", nameEn: "Double Room", nameAr: "غرفة مزدوجة (دبل)", rate: 95, maxOccupancy: 2, inventory: 15, mealPlan: "bb", bedEn: "1 King Bed", bedAr: "1 سرير كينج مزدوج", viewEn: "Pyramids View", viewAr: "إطلالة على الأهرامات" },
-  { slug: "triple-room", nameEn: "Triple Room", nameAr: "غرفة ثلاثية (تريبل)", rate: 125, maxOccupancy: 3, inventory: 10, mealPlan: "bb", bedEn: "Double/Twin + Extra Bed", bedAr: "مزدوجة / توأم + سرير إضافي", viewEn: "Standard View", viewAr: "إطلالة قياسية" },
-  { slug: "executive-suite", nameEn: "Executive Suite", nameAr: "جناح تنفيذي (إكزكتيف سويت)", rate: 190, maxOccupancy: 3, inventory: 6, mealPlan: "bb", bedEn: "1 King Bed + Lounge", bedAr: "1 سرير كينج + صالون استراحة", viewEn: "Panoramic Pyramids View", viewAr: "إطلالة بانورامية على الأهرامات" },
-  { slug: "royal-pyramid-view-suite", nameEn: "Royal Pyramid View Suite", nameAr: "الجناح الملكي بإطلالة الأهرامات", rate: 280, maxOccupancy: 4, inventory: 4, mealPlan: "hb", bedEn: "Master King Bed + Royal Lounge", bedAr: "ماستر كينج + صالة ملكية", viewEn: "Front-Row Direct Pyramids View", viewAr: "إطلالة مباشرة صف أول على الأهرامات" },
+export const ROOM_AMENITIES_OPTIONS = [
+  { id: "wifi", labelEn: "High-Speed Wi-Fi", labelAr: "واي فاي فائق السرعة", labelEs: "Wi-Fi de Alta Velocidad", labelPt: "Wi-Fi de Alta Velocidade", labelIt: "Wi-Fi ad Alta Velocità", icon: Wifi },
+  { id: "ac", labelEn: "Climate AC", labelAr: "تكييف مركزي متطور", labelEs: "Aire Acondicionado", labelPt: "Ar Condicionado", labelIt: "Aria Condizionata", icon: Sun },
+  { id: "jacuzzi", labelEn: "Private Jacuzzi", labelAr: "جاكوزي خاص", labelEs: "Jacuzzi Privado", labelPt: "Jacuzzi Privada", labelIt: "Idromassaggio Privato", icon: Flame },
+  { id: "balcony", labelEn: "Private Balcony", labelAr: "شرفة / تراس خاص", labelEs: "Balcón Privado", labelPt: "Varanda Privada", labelIt: "Balcone Privato", icon: Palmtree },
+  { id: "minibar", labelEn: "Mini Bar", labelAr: "ميني بار ومشروبات", labelEs: "Minibar", labelPt: "Frigobar", labelIt: "Minibar", icon: Wine },
+  { id: "coffee", labelEn: "Coffee & Tea Maker", labelAr: "ماكينة قهوة وشاي", labelEs: "Cafetera y Té", labelPt: "Máquina de Café e Chá", labelIt: "Macchina per Caffè e Tè", icon: Coffee },
+  { id: "tv", labelEn: "Smart TV Satellite", labelAr: "شاشة ذكية وقنوات فضائية", labelEs: "Smart TV Satelital", labelPt: "Smart TV Satélite", labelIt: "Smart TV Satellitare", icon: Tv },
+  { id: "safe", labelEn: "Digital Safe Box", labelAr: "خزنة أمان رقمية", labelEs: "Caja Fuerte Digital", labelPt: "Cofre Digital", labelIt: "Cassaforte Digitale", icon: ShieldCheck },
+  { id: "bathroom", labelEn: "Luxury Marble Bath", labelAr: "حمام رخامي فاخر", labelEs: "Baño de Mármol de Lujo", labelPt: "Banheiro de Mármore de Luxo", labelIt: "Bagno in Marmo di Lusso", icon: Waves },
+  { id: "roomService", labelEn: "24/7 Room Service", labelAr: "خدمة غرف على مدار الساعة", labelEs: "Servicio de Habitaciones 24/7", labelPt: "Serviço de Quarto 24/7", labelIt: "Servizio in Camera 24/7", icon: Utensils },
+  { id: "linen", labelEn: "Egyptian Cotton Linen", labelAr: "مفروشات قطن مصري 100%", labelEs: "Sábanas de Algodón Egipcio", labelPt: "Lençóis de Algodão Egípcio", labelIt: "Lenzuola in Cotone Egiziano", icon: Sparkles },
+  { id: "soundproof", labelEn: "Soundproof Windows", labelAr: "نوافذ عازلة للصوت", labelEs: "Ventanas Insonorizadas", labelPt: "Janelas com Isolamento Acústico", labelIt: "Finestre Insonorizzate", icon: Shield },
+];
+
+export const ROOM_PRESETS = [
+  {
+    slug: "single-room",
+    nameEn: "Single Boutique Room",
+    nameAr: "غرفة مفردة فاخرة (سينجل)",
+    nameEs: "Habitación Individual Boutique",
+    namePt: "Quarto Individual Boutique",
+    nameIt: "Camera Singola Boutique",
+    rate: 75,
+    maxOccupancy: 1,
+    inventory: 10,
+    mealPlan: "bb",
+    bedEn: "1 Single Bed",
+    bedAr: "1 سرير مفرد",
+    bedEs: "1 Cama Individual",
+    bedPt: "1 Cama de Solteiro",
+    bedIt: "1 Letto Singolo",
+    viewEn: "City & Garden View",
+    viewAr: "إطلالة على الحديقة والمدينة",
+    viewEs: "Vista a la Ciudad y Jardín",
+    viewPt: "Vista da Cidade e Jardim",
+    viewIt: "Vista Città e Giardino",
+    image: "https://images.unsplash.com/photo-1631049307264-da0ec9d70304?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
+  },
+  {
+    slug: "twin-room",
+    nameEn: "Deluxe Twin Room",
+    nameAr: "غرفة ديلوكس توأم (سريرين منفصلين)",
+    nameEs: "Habitación Doble Twin Deluxe",
+    namePt: "Quarto Twin Deluxe",
+    nameIt: "Camera Twin Deluxe",
+    rate: 85,
+    maxOccupancy: 2,
+    inventory: 15,
+    mealPlan: "bb",
+    bedEn: "2 Twin Beds",
+    bedAr: "سريران منفصلان",
+    bedEs: "2 Camas Individuales",
+    bedPt: "2 Camas de Solteiro",
+    bedIt: "2 Letti Singoli",
+    viewEn: "Landmark & Oasis View",
+    viewAr: "إطلالة على المعالم والواحة",
+    viewEs: "Vista al Oasis",
+    viewPt: "Vista do Oásis",
+    viewIt: "Vista Oasi",
+    image: "https://images.unsplash.com/photo-1595576508898-0ad5c879a061?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "roomService"],
+  },
+  {
+    slug: "double-room",
+    nameEn: "Grand Double Pyramids View",
+    nameAr: "غرفة جراند دبل بإطلالة الأهرامات",
+    nameEs: "Habitación Doble Grand Vista Pirámides",
+    namePt: "Quarto Duplo Grand Vista Pirâmides",
+    nameIt: "Camera Matrimoniale Grand Vista Piramidi",
+    rate: 95,
+    maxOccupancy: 2,
+    inventory: 15,
+    mealPlan: "bb",
+    bedEn: "1 King Bed",
+    bedAr: "1 سرير كينج ملكي",
+    bedEs: "1 Cama King Size",
+    bedPt: "1 Cama King",
+    bedIt: "1 Letto King",
+    viewEn: "Direct Pyramids Panoramic View",
+    viewAr: "إطلالة بانورامية مباشرة على الأهرامات",
+    viewEs: "Vista Panorámica Directa a las Pirámides",
+    viewPt: "Vista Panorâmica Direta das Pirâmides",
+    viewIt: "Vista Panoramica Diretta sulle Piramidi",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "balcony", "roomService"],
+  },
+  {
+    slug: "triple-room",
+    nameEn: "Premium Triple Family Room",
+    nameAr: "غرفة عائلية ثلاثية بريميوم (تريبل)",
+    nameEs: "Habitación Triple Familiar Premium",
+    namePt: "Quarto Triplo Familiar Premium",
+    nameIt: "Camera Tripla Familiare Premium",
+    rate: 125,
+    maxOccupancy: 3,
+    inventory: 10,
+    mealPlan: "bb",
+    bedEn: "1 King Bed + 1 Single Bed",
+    bedAr: "1 سرير كينج + 1 سرير مفرد",
+    bedEs: "1 Cama King + 1 Cama Individual",
+    bedPt: "1 Cama King + 1 Cama de Solteiro",
+    bedIt: "1 Letto King + 1 Letto Singolo",
+    viewEn: "Resort Pool & Garden View",
+    viewAr: "إطلالة على مسبح المنتجع والحديقة",
+    viewEs: "Vista a la Piscina y Jardín",
+    viewPt: "Vista da Piscina e Jardim",
+    viewIt: "Vista Piscina e Giardino",
+    image: "https://images.unsplash.com/photo-1566665797739-1674de7a421a?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "roomService"],
+  },
+  {
+    slug: "executive-suite",
+    nameEn: "Executive Luxury Suite",
+    nameAr: "جناح تنفيذي فاخر (إكزكتيف سويت)",
+    nameEs: "Suite Ejecutiva de Lujo",
+    namePt: "Suíte Executiva de Luxo",
+    nameIt: "Suite Executive di Lusso",
+    rate: 190,
+    maxOccupancy: 3,
+    inventory: 6,
+    mealPlan: "bb",
+    bedEn: "1 King Bed + Private Salon Lounge",
+    bedAr: "1 سرير كينج + صالون استراحة خاص",
+    bedEs: "1 Cama King + Sala de Estar Privada",
+    bedPt: "1 Cama King + Sala de Estar Privada",
+    bedIt: "1 Letto King + Salotto Privato",
+    viewEn: "Panoramic Nile / Landmark View",
+    viewAr: "إطلالة بانورامية ساحرة على النيل / المعالم",
+    viewEs: "Vista Panorámica al Nilo",
+    viewPt: "Vista Panorâmica do Nilo",
+    viewIt: "Vista Panoramica sul Nilo",
+    image: "https://images.unsplash.com/photo-1582719478250-c89cae4dc85b?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "jacuzzi", "balcony", "roomService", "soundproof"],
+  },
+  {
+    slug: "royal-pyramid-view-suite",
+    nameEn: "Royal Presidential Suite",
+    nameAr: "الجناح الملكي الرئاسي بإطلالة الأهرامات",
+    nameEs: "Suite Presidencial Real Vista Pirámides",
+    namePt: "Suíte Presidencial Real Vista Pirâmides",
+    nameIt: "Suite Presidenziale Reale Vista Piramidi",
+    rate: 280,
+    maxOccupancy: 4,
+    inventory: 4,
+    mealPlan: "hb",
+    bedEn: "Master King Bed + Royal Majlis + Jacuzzi",
+    bedAr: "ماستر كينج + مجلس ملكي + جاكوزي خاص",
+    bedEs: "Cama King Master + Sala Real + Jacuzzi",
+    bedPt: "Cama King Master + Sala Real + Jacuzzi",
+    bedIt: "Letto King Master + Salone Reale + Jacuzzi",
+    viewEn: "Front-Row Direct Pyramids View",
+    viewAr: "إطلالة صف أول مباشرة على الأهرامات",
+    viewEs: "Vista Frontal Directa a las Pirámides",
+    viewPt: "Vista Frontal Direta das Pirâmides",
+    viewIt: "Vista Frontale Diretta sulle Piramidi",
+    image: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1200",
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "jacuzzi", "balcony", "roomService", "soundproof"],
+  },
 ];
 
 export interface FormRoomItem {
@@ -181,6 +334,11 @@ export interface FormRoomItem {
   nameEs: string;
   namePt: string;
   nameIt: string;
+  descEn?: string;
+  descAr?: string;
+  descEs?: string;
+  descPt?: string;
+  descIt?: string;
   ratePerNight: number;
   maxOccupancy: number;
   inventory: number;
@@ -188,8 +346,14 @@ export interface FormRoomItem {
   isActive: boolean;
   bedTypeEn?: string;
   bedTypeAr?: string;
+  bedTypeEs?: string;
+  bedTypePt?: string;
+  bedTypeIt?: string;
   viewTypeEn?: string;
   viewTypeAr?: string;
+  viewTypeEs?: string;
+  viewTypePt?: string;
+  viewTypeIt?: string;
   image?: string;
   gallery?: string[];
   amenities?: string[];
@@ -267,30 +431,64 @@ const defaultFormData = (): HotelFormData => ({
   isActive: true,
   rooms: [
     {
-      slug: "deluxe-nile-view",
-      nameEn: "Deluxe Nile View Room",
-      nameAr: "غرفة ديلوكس بإطلالة على النيل",
-      nameEs: "Habitación Deluxe con Vista al Nilo",
-      namePt: "Quarto Deluxe com Vista para o Nilo",
-      nameIt: "Camera Deluxe con Vista sul Nilo",
+      slug: "grand-double-pyramids",
+      nameEn: "Grand Double Pyramids View",
+      nameAr: "غرفة جراند دبل بإطلالة الأهرامات",
+      nameEs: "Habitación Doble Grand Vista Pirámides",
+      namePt: "Quarto Duplo Grand Vista Pirâmides",
+      nameIt: "Camera Matrimoniale Grand Vista Piramidi",
+      descEn: "Spacious luxury room with panoramic direct views of the Pyramids and plush King bed.",
+      descAr: "غرفة فندقية فاخرة وواسعة بإطلالة بانورامية مباشرة على الأهرامات وسرير كينج ملكي.",
+      descEs: "Espaciosa habitación de lujo con vista panorámica directa a las Pirámides y lujosa cama King.",
+      descPt: "Quarto espaçoso de luxo com vista panorâmica direta para as Pirâmides e cama King aconchegante.",
+      descIt: "Spaziosa camera di lusso con vista panoramica diretta sulle Piramidi e sontuoso letto King.",
       ratePerNight: 195,
       maxOccupancy: 2,
       inventory: 15,
       mealPlan: "bb",
       isActive: true,
+      bedTypeEn: "1 King Bed",
+      bedTypeAr: "1 سرير كينج ملكي",
+      bedTypeEs: "1 Cama King Size",
+      bedTypePt: "1 Cama King",
+      bedTypeIt: "1 Letto King",
+      viewTypeEn: "Direct Pyramids Panoramic View",
+      viewTypeAr: "إطلالة بانورامية مباشرة على الأهرامات",
+      viewTypeEs: "Vista Panorámica Directa a las Pirámides",
+      viewTypePt: "Vista Panorâmica Direta das Pirâmides",
+      viewTypeIt: "Vista Panoramica Diretta sulle Piramidi",
+      image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+      amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "balcony", "roomService"],
     },
     {
-      slug: "royal-suite",
+      slug: "royal-presidential-suite",
       nameEn: "Royal Presidential Suite",
       nameAr: "الجناح الملكي الرئاسي",
       nameEs: "Suite Presidencial Real",
       namePt: "Suíte Presidencial Real",
       nameIt: "Suite Presidenziale Reale",
+      descEn: "Ultimate presidential suite featuring a private Jacuzzi, master bedroom, and royal lounge.",
+      descAr: "الجناح الرئاسي الأرقى متضمناً جاكوزي خاص، غرفة نوم رئيسية ماستر، وصالة استقبال ملكية.",
+      descEs: "La suite presidencial definitiva con jacuzzi privado, dormitorio principal y salón real.",
+      descPt: "A suíte presidencial definitiva com banheira de hidromassagem privativa, quarto principal e sala real.",
+      descIt: "La suite presidenziale per eccellenza dotata di idromassaggio privato, camera da letto padronale e salone reale.",
       ratePerNight: 480,
       maxOccupancy: 4,
       inventory: 5,
-      mealPlan: "bb",
+      mealPlan: "hb",
       isActive: true,
+      bedTypeEn: "Master King Bed + Royal Majlis + Jacuzzi",
+      bedTypeAr: "ماستر كينج + مجلس ملكي + جاكوزي خاص",
+      bedTypeEs: "Cama King Master + Sala Real + Jacuzzi",
+      bedTypePt: "Cama King Master + Sala Real + Jacuzzi",
+      bedTypeIt: "Letto King Master + Salone Reale + Jacuzzi",
+      viewTypeEn: "Front-Row Direct Pyramids View",
+      viewTypeAr: "إطلالة صف أول مباشرة على الأهرامات",
+      viewTypeEs: "Vista Frontal Directa a las Pirámides",
+      viewTypePt: "Vista Frontal Direta das Pirâmides",
+      viewTypeIt: "Vista Frontale Diretta sulle Piramidi",
+      image: "https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=1200",
+      amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "jacuzzi", "balcony", "roomService", "soundproof"],
     },
   ],
 });
@@ -1818,6 +2016,915 @@ function MediaLibraryPickerModal({
 }
 
 // ----------------------------------------------------
+// Dedicated Room Editor Modal Component (5 Languages & Media)
+// ----------------------------------------------------
+interface RoomEditorModalProps {
+  open: boolean;
+  onClose: () => void;
+  room: FormRoomItem | null;
+  roomIndex: number | null;
+  onSave: (room: FormRoomItem, index: number | null) => void;
+  locale?: string;
+}
+
+function RoomEditorModal({
+  open,
+  onClose,
+  room,
+  roomIndex,
+  onSave,
+  locale = "ar",
+}: RoomEditorModalProps) {
+  const isAr = locale === "ar";
+  const [langTab, setLangTab] = useState<"en" | "ar" | "es" | "pt" | "it">("en");
+  const [isTranslating, setIsTranslating] = useState(false);
+
+  // Media picker & upload state
+  const [isMediaPickerOpen, setIsMediaPickerOpen] = useState(false);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [showUrlInput, setShowUrlInput] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const uploadMutation = useUploadMedia();
+
+  const [roomData, setRoomData] = useState<FormRoomItem>({
+    slug: "",
+    nameEn: "",
+    nameAr: "",
+    nameEs: "",
+    namePt: "",
+    nameIt: "",
+    descEn: "",
+    descAr: "",
+    descEs: "",
+    descPt: "",
+    descIt: "",
+    ratePerNight: 120,
+    maxOccupancy: 2,
+    inventory: 10,
+    mealPlan: "bb",
+    isActive: true,
+    bedTypeEn: "1 King Bed",
+    bedTypeAr: "1 سرير كينج ملكي",
+    bedTypeEs: "1 Cama King Size",
+    bedTypePt: "1 Cama King",
+    bedTypeIt: "1 Letto King",
+    viewTypeEn: "Panoramic View",
+    viewTypeAr: "إطلالة بانورامية",
+    viewTypeEs: "Vista Panorámica",
+    viewTypePt: "Vista Panorâmica",
+    viewTypeIt: "Vista Panoramica",
+    image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+    gallery: [],
+    amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
+    smokingAllowed: false,
+    petsAllowed: false,
+  });
+
+  useEffect(() => {
+    if (open) {
+      if (room) {
+        setRoomData({
+          id: room.id,
+          slug: room.slug || "",
+          nameEn: room.nameEn || "",
+          nameAr: room.nameAr || "",
+          nameEs: room.nameEs || "",
+          namePt: room.namePt || "",
+          nameIt: room.nameIt || "",
+          descEn: room.descEn || "",
+          descAr: room.descAr || "",
+          descEs: room.descEs || "",
+          descPt: room.descPt || "",
+          descIt: room.descIt || "",
+          ratePerNight: Number(room.ratePerNight) || 120,
+          maxOccupancy: Number(room.maxOccupancy) || 2,
+          inventory: Number(room.inventory) >= 0 ? Number(room.inventory) : 10,
+          mealPlan: room.mealPlan || "bb",
+          isActive: room.isActive ?? true,
+          bedTypeEn: room.bedTypeEn || "Double / Twin Beds",
+          bedTypeAr: room.bedTypeAr || "مزدوجة / توأم",
+          bedTypeEs: room.bedTypeEs || "Doble / Twin",
+          bedTypePt: room.bedTypePt || "Duplo / Twin",
+          bedTypeIt: room.bedTypeIt || "Matrimoniale / Twin",
+          viewTypeEn: room.viewTypeEn || "Standard View",
+          viewTypeAr: room.viewTypeAr || "إطلالة قياسية",
+          viewTypeEs: room.viewTypeEs || "Vista Estándar",
+          viewTypePt: room.viewTypePt || "Vista Padrão",
+          viewTypeIt: room.viewTypeIt || "Vista Standard",
+          image: room.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+          gallery: room.gallery || [],
+          amenities: room.amenities || ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
+          smokingAllowed: room.smokingAllowed ?? false,
+          petsAllowed: room.petsAllowed ?? false,
+        });
+      } else {
+        setRoomData({
+          slug: "",
+          nameEn: "",
+          nameAr: "",
+          nameEs: "",
+          namePt: "",
+          nameIt: "",
+          descEn: "",
+          descAr: "",
+          descEs: "",
+          descPt: "",
+          descIt: "",
+          ratePerNight: 120,
+          maxOccupancy: 2,
+          inventory: 10,
+          mealPlan: "bb",
+          isActive: true,
+          bedTypeEn: "1 King Bed",
+          bedTypeAr: "1 سرير كينج ملكي",
+          bedTypeEs: "1 Cama King Size",
+          bedTypePt: "1 Cama King",
+          bedTypeIt: "1 Letto King",
+          viewTypeEn: "Panoramic View",
+          viewTypeAr: "إطلالة بانورامية",
+          viewTypeEs: "Vista Panorámica",
+          viewTypePt: "Vista Panorâmica",
+          viewTypeIt: "Vista Panoramica",
+          image: "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
+          gallery: [],
+          amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
+          smokingAllowed: false,
+          petsAllowed: false,
+        });
+      }
+      setLangTab("en");
+      setShowUrlInput(false);
+    }
+  }, [open, room]);
+
+  const slugify = (text: string) =>
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-|-$/g, "");
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    const file = files[0];
+
+    if (file.size > 10 * 1024 * 1024) {
+      toast.error(isAr ? "حجم الصورة يجب ألا يتجاوز 10 ميغابايت." : "Image size must not exceed 10MB.");
+      return;
+    }
+
+    setIsUploadingPhoto(true);
+    try {
+      const res = await uploadMutation.mutateAsync({
+        file,
+        entityType: "HOTEL" as MediaEntityType,
+        categorySlug: "hotels",
+      });
+      const url = res.secureUrl || res.url;
+      setRoomData((prev) => ({
+        ...prev,
+        image: url,
+        gallery: [url, ...(prev.gallery || []).filter((g) => g !== url)],
+      }));
+      toast.success(isAr ? "تم رفع وتعيين صورة الغرفة بنجاح! 📸" : "Room photo uploaded and set! 📸");
+    } catch {
+      toast.error(isAr ? "تعذر رفع صورة الغرفة." : "Failed to upload room photo.");
+    } finally {
+      setIsUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectMediaAsset = (asset: { id: string; url: string; altText?: string }) => {
+    setRoomData((prev) => ({
+      ...prev,
+      image: asset.url,
+      gallery: [asset.url, ...(prev.gallery || []).filter((g) => g !== asset.url)],
+    }));
+    setIsMediaPickerOpen(false);
+    toast.success(isAr ? "تم اختيار صورة الغرفة بنجاح!" : "Room photo selected!");
+  };
+
+  const handleAutoTranslateRoom = async () => {
+    setIsTranslating(true);
+    try {
+      const fallbackName = roomData.nameEn || roomData.nameAr || "Deluxe Luxury Suite";
+      const fallbackDesc = roomData.descAr || roomData.descEn || "غرفة فندقية فاخرة ومجهزة بأعلى معايير الراحة والضيافة.";
+
+      const translated = await autoTranslateMissingEntityFields(roomData, {
+        nameKeys: { ar: "nameAr", en: "nameEn", es: "nameEs", pt: "namePt", it: "nameIt" },
+        descKeys: { ar: "descAr", en: "descEn", es: "descEs", pt: "descPt", it: "descIt" },
+        fallbackName,
+        fallbackDesc,
+      });
+
+      const bedEn = translated.bedTypeEn || translated.bedTypeAr || "1 King Bed";
+      const bedAr = translated.bedTypeAr || translated.bedTypeEn || "1 سرير كينج ملكي";
+      const viewEn = translated.viewTypeEn || translated.viewTypeAr || "Panoramic View";
+      const viewAr = translated.viewTypeAr || translated.viewTypeEn || "إطلالة بانورامية";
+
+      setRoomData({
+        ...translated,
+        bedTypeEn: bedEn,
+        bedTypeAr: bedAr,
+        bedTypeEs: translated.bedTypeEs || bedEn,
+        bedTypePt: translated.bedTypePt || bedEn,
+        bedTypeIt: translated.bedTypeIt || bedEn,
+        viewTypeEn: viewEn,
+        viewTypeAr: viewAr,
+        viewTypeEs: translated.viewTypeEs || viewEn,
+        viewTypePt: translated.viewTypePt || viewEn,
+        viewTypeIt: translated.viewTypeIt || viewEn,
+      });
+
+      toast.success(isAr ? "✨ تمت ترجمة بيانات الغرفة للغات الخمس بنجاح!" : "✨ Room data translated across 5 languages!");
+    } catch {
+      toast.error(isAr ? "تعذر إكمال الترجمة التلقائية للغرفة." : "Room auto-translation failed.");
+    } finally {
+      setIsTranslating(false);
+    }
+  };
+
+  const handleToggleAmenity = (amenityId: string) => {
+    setRoomData((prev) => {
+      const current = prev.amenities || [];
+      const exists = current.includes(amenityId);
+      return {
+        ...prev,
+        amenities: exists ? current.filter((id) => id !== amenityId) : [...current, amenityId],
+      };
+    });
+  };
+
+  const handleSaveModal = () => {
+    if (!roomData.nameEn.trim()) {
+      toast.error(isAr ? "يرجى كتابة اسم الغرفة بالإنجليزية على الأقل." : "Room English name is required.");
+      setLangTab("en");
+      return;
+    }
+    const cleanSlug = roomData.slug.trim() ? slugify(roomData.slug) : slugify(roomData.nameEn);
+    const finalRoom: FormRoomItem = {
+      ...roomData,
+      slug: cleanSlug,
+      nameAr: roomData.nameAr.trim() || roomData.nameEn.trim(),
+      nameEs: roomData.nameEs.trim() || roomData.nameEn.trim(),
+      namePt: roomData.namePt.trim() || roomData.nameEn.trim(),
+      nameIt: roomData.nameIt.trim() || roomData.nameEn.trim(),
+      ratePerNight: Number(roomData.ratePerNight) || 100,
+      inventory: Number(roomData.inventory) >= 0 ? Number(roomData.inventory) : 10,
+      maxOccupancy: Number(roomData.maxOccupancy) || 2,
+    };
+
+    onSave(finalRoom, roomIndex);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
+      <DialogContent className="max-w-3xl p-0 overflow-hidden border border-amber-500/30 rounded-3xl bg-card shadow-2xl">
+        {/* Modal Header */}
+        <DialogHeader className="p-6 pb-4 bg-linear-to-r from-amber-500/15 via-primary/10 to-amber-500/5 border-b border-border/80">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-3 bg-amber-500/20 text-amber-500 rounded-2xl shrink-0 shadow-xs">
+                <BedDouble className="w-6 h-6 stroke-[2.4]" />
+              </div>
+              <div>
+                <DialogTitle className="text-lg font-black text-foreground flex items-center gap-2">
+                  <span>
+                    {roomIndex !== null
+                      ? (isAr ? "تعديل بيانات فئة الغرفة" : "Edit Room Tier & Inventory")
+                      : (isAr ? "إضافة فئة غرفة جديدة" : "Add New Room Tier")}
+                  </span>
+                  <Sparkles className="w-4 h-4 text-amber-500" />
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground mt-0.5 font-semibold">
+                  {isAr
+                    ? "التحكم في مواصفات الغرفة، الترجمات باللغات الـ 5، السعر، عدد الغرف المتاحة، والمرافق."
+                    : "Configure room specifications, 5-language localization, rates, available quota, and amenities."}
+                </DialogDescription>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="border-amber-500/40 text-amber-500 font-mono font-black text-xs px-2.5 py-1">
+                ${roomData.ratePerNight} / nt • {roomData.inventory} rm
+              </Badge>
+            </div>
+          </div>
+        </DialogHeader>
+
+        {/* Modal Body */}
+        <div className="p-6 max-h-[72vh] overflow-y-auto space-y-5">
+          {/* Top Multi-language Bar & AI Auto-Translate */}
+          <div className="p-3.5 rounded-2xl bg-muted/40 border border-border/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Globe2 className="w-4 h-4 text-amber-500" />
+                <span className="text-xs font-black text-foreground">
+                  {isAr ? "بيانات الغرفة باللغات الـ 5 (العربية، الإنجليزية، الإسبانية، البرتغالية، الإيطالية):" : "Room Content across 5 Locales:"}
+                </span>
+              </div>
+
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                onClick={handleAutoTranslateRoom}
+                disabled={isTranslating}
+                className="h-8 text-xs font-bold gap-1.5 rounded-xl border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 cursor-pointer shadow-xs shrink-0"
+              >
+                {isTranslating ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <span>{isAr ? "جاري الترجمة..." : "Translating..."}</span>
+                  </>
+                ) : (
+                  <>
+                    <Wand2 className="w-3.5 h-3.5" />
+                    <span>{isAr ? "✨ ترجمة بالذكاء الاصطناعي" : "✨ AI Auto-Translate"}</span>
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Language Switcher Tabs */}
+            <div className="flex items-center gap-1.5 overflow-x-auto pb-1">
+              {(
+                [
+                  { id: "en", label: "🇬🇧 English", nameKey: "nameEn" },
+                  { id: "ar", label: "🇸🇦 العربية", nameKey: "nameAr" },
+                  { id: "es", label: "🇪🇸 Español", nameKey: "nameEs" },
+                  { id: "pt", label: "🇵🇹 Português", nameKey: "namePt" },
+                  { id: "it", label: "🇮🇹 Italiano", nameKey: "nameIt" },
+                ] as const
+              ).map((tab) => {
+                const isActive = langTab === tab.id;
+                const hasValue = Boolean(roomData[tab.nameKey]);
+                return (
+                  <button
+                    key={tab.id}
+                    type="button"
+                    onClick={() => setLangTab(tab.id)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shrink-0 border ${
+                      isActive
+                        ? "bg-amber-500 text-slate-950 border-amber-500 shadow-xs scale-[1.02]"
+                        : "bg-background text-muted-foreground border-border hover:bg-muted"
+                    }`}
+                  >
+                    <span>{tab.label}</span>
+                    {hasValue && <Check className={`w-3 h-3 ${isActive ? "text-slate-950" : "text-emerald-500"}`} />}
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Active Language Specific Fields */}
+            <div className="space-y-3 pt-2 bg-background/60 p-4 rounded-2xl border border-border/60">
+              {langTab === "en" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇬🇧 Room Name (English) *</label>
+                    <Input
+                      value={roomData.nameEn}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, nameEn: e.target.value, slug: slugify(e.target.value) }))}
+                      placeholder="e.g. Deluxe Nile View Room"
+                      className="h-10 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇬🇧 Bed Type (English)</label>
+                      <Input
+                        value={roomData.bedTypeEn || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, bedTypeEn: e.target.value }))}
+                        placeholder="e.g. 1 King Bed or 2 Twin Beds"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇬🇧 View Type (English)</label>
+                      <Input
+                        value={roomData.viewTypeEn || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, viewTypeEn: e.target.value }))}
+                        placeholder="e.g. Pyramids View or Sea View"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇬🇧 Room Description & Features (English)</label>
+                    <Textarea
+                      rows={2}
+                      value={roomData.descEn || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, descEn: e.target.value }))}
+                      placeholder="Spacious luxury room with marble bathroom, high ceiling and private balcony..."
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {langTab === "ar" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇸🇦 اسم فئة الغرفة (العربية) *</label>
+                    <Input
+                      value={roomData.nameAr}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, nameAr: e.target.value }))}
+                      placeholder="مثال: غرفة ديلوكس بإطلالة على النيل"
+                      className="h-10 text-xs font-bold"
+                      dir="rtl"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇸🇦 نوع السرير (العربية)</label>
+                      <Input
+                        value={roomData.bedTypeAr || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, bedTypeAr: e.target.value }))}
+                        placeholder="مثال: سرير كينج ملكي مزدوج"
+                        className="h-9 text-xs"
+                        dir="rtl"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇸🇦 نوع الإطلالة (العربية)</label>
+                      <Input
+                        value={roomData.viewTypeAr || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, viewTypeAr: e.target.value }))}
+                        placeholder="مثال: إطلالة بانورامية على الأهرامات"
+                        className="h-9 text-xs"
+                        dir="rtl"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇸🇦 وصف وتجهيزات الغرفة (العربية)</label>
+                    <Textarea
+                      rows={2}
+                      value={roomData.descAr || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, descAr: e.target.value }))}
+                      placeholder="غرفة فندقية فاخرة ومجهزة بأحدث وسائل الراحة وحمام رخامي وشرفة خاصة..."
+                      className="text-xs"
+                      dir="rtl"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {langTab === "es" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇪🇸 Nombre de la Habitación (Español)</label>
+                    <Input
+                      value={roomData.nameEs}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, nameEs: e.target.value }))}
+                      placeholder="ej. Habitación Deluxe con Vista al Nilo"
+                      className="h-10 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇪🇸 Tipo de Cama (Español)</label>
+                      <Input
+                        value={roomData.bedTypeEs || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, bedTypeEs: e.target.value }))}
+                        placeholder="ej. 1 Cama King Size"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇪🇸 Tipo de Vista (Español)</label>
+                      <Input
+                        value={roomData.viewTypeEs || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, viewTypeEs: e.target.value }))}
+                        placeholder="ej. Vista Panorámica a las Pirámides"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇪🇸 Descripción (Español)</label>
+                    <Textarea
+                      rows={2}
+                      value={roomData.descEs || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, descEs: e.target.value }))}
+                      placeholder="Habitación espaciosa con acabados de primera clase y balcón privado..."
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {langTab === "pt" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇵🇹 Nome do Quarto (Português)</label>
+                    <Input
+                      value={roomData.namePt}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, namePt: e.target.value }))}
+                      placeholder="ex. Quarto Deluxe com Vista para o Nilo"
+                      className="h-10 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇵🇹 Tipo de Cama (Português)</label>
+                      <Input
+                        value={roomData.bedTypePt || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, bedTypePt: e.target.value }))}
+                        placeholder="ex. 1 Cama King"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇵🇹 Tipo de Vista (Português)</label>
+                      <Input
+                        value={roomData.viewTypePt || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, viewTypePt: e.target.value }))}
+                        placeholder="ex. Vista Panorâmica das Pirâmides"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇵🇹 Descrição (Português)</label>
+                    <Textarea
+                      rows={2}
+                      value={roomData.descPt || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, descPt: e.target.value }))}
+                      placeholder="Quarto luxuoso com comodidades modernas e varanda privativa..."
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {langTab === "it" && (
+                <div className="space-y-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇮🇹 Nome della Camera (Italiano)</label>
+                    <Input
+                      value={roomData.nameIt}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, nameIt: e.target.value }))}
+                      placeholder="es. Camera Deluxe con Vista sul Nilo"
+                      className="h-10 text-xs font-bold"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇮🇹 Tipo di Letto (Italiano)</label>
+                      <Input
+                        value={roomData.bedTypeIt || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, bedTypeIt: e.target.value }))}
+                        placeholder="es. 1 Letto King"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-extrabold text-foreground">🇮🇹 Tipo di Vista (Italiano)</label>
+                      <Input
+                        value={roomData.viewTypeIt || ""}
+                        onChange={(e) => setRoomData((prev) => ({ ...prev, viewTypeIt: e.target.value }))}
+                        placeholder="es. Vista Panoramica sulle Piramidi"
+                        className="h-9 text-xs"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-extrabold text-foreground">🇮🇹 Descrizione (Italiano)</label>
+                    <Textarea
+                      rows={2}
+                      value={roomData.descIt || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, descIt: e.target.value }))}
+                      placeholder="Camera di lusso elegante con comfort di prima classe e balcone privato..."
+                      className="text-xs"
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Pricing, Inventory & Capacity Section */}
+          <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3">
+            <h5 className="text-xs font-black text-foreground flex items-center gap-1.5">
+              <DollarSign className="w-4 h-4 text-amber-500" />
+              <span>{isAr ? "التسعير، التوافر والسعة للأفراد:" : "Pricing, Inventory & Capacity:"}</span>
+            </h5>
+
+            <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-foreground">{isAr ? "سعر الليلة ($ USD) *" : "Rate/Night ($ USD) *"}</label>
+                <div className="relative">
+                  <Input
+                    type="number"
+                    min="1"
+                    value={roomData.ratePerNight}
+                    onChange={(e) => setRoomData((prev) => ({ ...prev, ratePerNight: Number(e.target.value) }))}
+                    className="h-10 text-xs font-mono font-black pl-7"
+                  />
+                  <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">$</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-foreground">{isAr ? "عدد الغرف المتاحة (Inventory) *" : "Available Rooms (Stock) *"}</label>
+                <div className="flex items-center gap-1">
+                  <button
+                    type="button"
+                    onClick={() => setRoomData((prev) => ({ ...prev, inventory: Math.max(0, prev.inventory - 1) }))}
+                    className="w-9 h-10 rounded-xl bg-card border font-bold hover:bg-muted text-xs flex items-center justify-center cursor-pointer"
+                  >
+                    -
+                  </button>
+                  <Input
+                    type="number"
+                    min="0"
+                    value={roomData.inventory}
+                    onChange={(e) => setRoomData((prev) => ({ ...prev, inventory: Number(e.target.value) }))}
+                    className="h-10 text-xs font-mono font-black text-center text-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setRoomData((prev) => ({ ...prev, inventory: prev.inventory + 1 }))}
+                    className="w-9 h-10 rounded-xl bg-card border font-bold hover:bg-muted text-xs flex items-center justify-center cursor-pointer"
+                  >
+                    +
+                  </button>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-foreground">{isAr ? "أقصى سعة للأفراد *" : "Max Occupancy *"}</label>
+                <select
+                  value={roomData.maxOccupancy}
+                  onChange={(e) => setRoomData((prev) => ({ ...prev, maxOccupancy: Number(e.target.value) }))}
+                  className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
+                >
+                  <option value={1}>👤 1 Guest</option>
+                  <option value={2}>👥 2 Guests (Double/Twin)</option>
+                  <option value={3}>👥👤 3 Guests (Triple)</option>
+                  <option value={4}>👨‍👩‍👧‍👦 4 Guests (Family Suite)</option>
+                  <option value={5}>👨‍👩‍👧‍👦👤 5 Guests (Large Family)</option>
+                  <option value={6}>👨‍👩‍👧‍👦👥 6 Guests (Luxury Villa)</option>
+                </select>
+              </div>
+
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-foreground">{isAr ? "خطة الوجبات (Meal Plan) *" : "Meal Plan *"}</label>
+                <select
+                  value={roomData.mealPlan}
+                  onChange={(e) => setRoomData((prev) => ({ ...prev, mealPlan: e.target.value }))}
+                  className="w-full h-10 px-2.5 rounded-xl border bg-background text-xs font-bold cursor-pointer"
+                >
+                  {MEAL_PLAN_OPTIONS.map((plan) => (
+                    <option key={plan.id} value={plan.id}>
+                      {isAr ? plan.nameAr : plan.nameEn}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </div>
+          </div>
+
+          {/* Room Photo & Media Section */}
+          <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <h5 className="text-xs font-black text-foreground flex items-center gap-1.5">
+                <ImageIcon className="w-4 h-4 text-amber-500" />
+                <span>{isAr ? "صورة الغرفة الفاخرة (Room Featured Photo):" : "Room Featured Photo & Media:"}</span>
+              </h5>
+
+              {roomData.image ? (
+                <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/30 text-[10px] font-bold">
+                  {isAr ? "الصورة محددة ✓" : "Photo Selected ✓"}
+                </Badge>
+              ) : (
+                <Badge variant="outline" className="text-amber-500 text-[10px] font-bold">
+                  {isAr ? "صورة افتراضية" : "Default Image"}
+                </Badge>
+              )}
+            </div>
+
+            {/* Hidden file input */}
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={handleFileUpload}
+            />
+
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+              {/* Photo Preview */}
+              <div className="relative w-full sm:w-48 h-32 rounded-2xl overflow-hidden border border-border bg-slate-950 shrink-0 shadow-xs group">
+                <img
+                  src={roomData.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200"}
+                  alt="Room Preview"
+                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  onError={(e) => {
+                    e.currentTarget.src = "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200";
+                  }}
+                />
+                <div className="absolute inset-0 bg-linear-to-t from-slate-950/80 via-transparent to-transparent" />
+                <div className="absolute bottom-2 right-2 rtl:right-2 ltr:left-2 text-[10px] text-amber-400 font-mono font-bold bg-slate-950/80 px-2 py-0.5 rounded-md backdrop-blur-xs">
+                  {roomData.image ? (isAr ? "صورة مخصصة" : "Custom Photo") : (isAr ? "معاينة افتراضية" : "Preview")}
+                </div>
+              </div>
+
+              {/* Photo Actions */}
+              <div className="flex-1 space-y-2">
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  {isAr
+                    ? "اختر صورة عالية الجودة تعكس فخامة هذه الغرفة بدقة وتظهر في بطاقات الحجز والموقع العام."
+                    : "Upload a high-resolution photo of this room to display on booking cards and website."}
+                </p>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={isUploadingPhoto}
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    {isUploadingPhoto ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-3.5 h-3.5" />
+                    )}
+                    <span>{isUploadingPhoto ? (isAr ? "جاري الرفع..." : "Uploading...") : (isAr ? "رفع صورة 📸" : "Upload Photo 📸")}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsMediaPickerOpen(true)}
+                    className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>{isAr ? "مكتبة الوسائط 🖼️" : "Media Library 🖼️"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowUrlInput(!showUrlInput)}
+                    className="rounded-xl text-xs font-bold gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>{isAr ? "رابط مباشر 🔗" : "Direct URL 🔗"}</span>
+                  </Button>
+
+                  {roomData.image && (
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRoomData((prev) => ({ ...prev, image: "" }))}
+                      className="rounded-xl text-xs font-bold text-destructive hover:bg-destructive/10 cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>{isAr ? "مسح" : "Clear"}</span>
+                    </Button>
+                  )}
+                </div>
+
+                {showUrlInput && (
+                  <div className="pt-2">
+                    <Input
+                      placeholder="https://images.unsplash.com/..."
+                      value={roomData.image || ""}
+                      onChange={(e) => setRoomData((prev) => ({ ...prev, image: e.target.value }))}
+                      className="h-9 text-xs font-mono"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+
+          {/* Room Amenities Multi-select */}
+          <div className="space-y-2.5">
+            <div className="flex items-center justify-between">
+              <h5 className="text-xs font-black text-foreground flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-amber-500" />
+                <span>{isAr ? "مرافق وتجهيزات الغرفة الحصرية:" : "Room Amenities & In-Room Comforts:"}</span>
+              </h5>
+              <Badge variant="outline" className="text-amber-500 font-bold text-[10px] border-amber-500/30">
+                {(roomData.amenities || []).length} {isAr ? "مرافق مختارة" : "Selected"}
+              </Badge>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              {ROOM_AMENITIES_OPTIONS.map((am) => {
+                const Icon = am.icon;
+                const isSelected = (roomData.amenities || []).includes(am.id);
+                return (
+                  <button
+                    key={am.id}
+                    type="button"
+                    onClick={() => handleToggleAmenity(am.id)}
+                    className={`p-2.5 rounded-xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-amber-500/10 border-amber-500/60 text-foreground shadow-xs"
+                        : "bg-background border-border text-muted-foreground hover:bg-muted/40"
+                    }`}
+                  >
+                    <div className={`p-1.5 rounded-lg ${isSelected ? "bg-amber-500 text-slate-950" : "bg-muted text-muted-foreground"}`}>
+                      <Icon className="w-3.5 h-3.5" />
+                    </div>
+                    <span className="text-[11px] font-bold truncate">{isAr ? am.labelAr : am.labelEn}</span>
+                    {isSelected && <Check className="w-3.5 h-3.5 text-amber-500 ml-auto shrink-0" />}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Policies & Status */}
+          <div className="p-4 rounded-2xl bg-muted/20 border border-border/80 flex flex-wrap items-center justify-between gap-4 text-xs font-bold">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={roomData.smokingAllowed || false}
+                onChange={(e) => setRoomData((prev) => ({ ...prev, smokingAllowed: e.target.checked }))}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer"
+              />
+              <span>{isAr ? "يسمح بالتدخين في الغرفة 🚬" : "Smoking Allowed in Room 🚬"}</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={roomData.petsAllowed || false}
+                onChange={(e) => setRoomData((prev) => ({ ...prev, petsAllowed: e.target.checked }))}
+                className="w-4 h-4 rounded text-amber-500 focus:ring-amber-500 cursor-pointer"
+              />
+              <span>{isAr ? "يسمح باصطحاب الحيوانات الأليفة 🐾" : "Pets Allowed 🐾"}</span>
+            </label>
+
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={roomData.isActive}
+                onChange={(e) => setRoomData((prev) => ({ ...prev, isActive: e.target.checked }))}
+                className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 cursor-pointer"
+              />
+              <span className={roomData.isActive ? "text-emerald-600 dark:text-emerald-400 font-extrabold" : "text-muted-foreground"}>
+                {roomData.isActive ? (isAr ? "فئة الغرفة نشطة ومتاحة للحجز ✨" : "Active & Bookable ✨") : (isAr ? "فئة الغرفة معطلة مؤقتاً" : "Inactive")}
+              </span>
+            </label>
+          </div>
+        </div>
+
+        {/* Modal Footer */}
+        <DialogFooter className="p-4 bg-muted/40 border-t flex flex-row items-center justify-between">
+          <div className="text-xs text-muted-foreground font-semibold">
+            {roomData.nameEn ? `Slug: ${roomData.slug || slugify(roomData.nameEn)}` : ""}
+          </div>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={onClose}
+              className="rounded-xl text-xs"
+            >
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+
+            <Button
+              type="button"
+              size="sm"
+              onClick={handleSaveModal}
+              className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 rounded-xl shadow-xs cursor-pointer gap-1.5"
+            >
+              <Check className="w-4 h-4 stroke-3" />
+              <span>{roomIndex !== null ? (isAr ? "حفظ تعديلات الغرفة" : "Save Room Changes") : (isAr ? "إضافة فئة الغرفة" : "Add Room Tier")}</span>
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+
+      {/* Media Library Picker for Room */}
+      <MediaLibraryPickerModal
+        open={isMediaPickerOpen}
+        onClose={() => setIsMediaPickerOpen(false)}
+        onSelect={handleSelectMediaAsset}
+        selectedAssetUrl={roomData.image}
+        locale={locale}
+      />
+    </Dialog>
+  );
+}
+
+// ----------------------------------------------------
 // Hotel Editor Modal Component
 // ----------------------------------------------------
 function HotelEditorDialog({
@@ -1844,20 +2951,10 @@ function HotelEditorDialog({
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const heroFileInputRef = useRef<HTMLInputElement | null>(null);
 
-  const [isAddingRoom, setIsAddingRoom] = useState(false);
-  const [newRoom, setNewRoom] = useState<FormRoomItem>({
-    slug: "",
-    nameEn: "",
-    nameAr: "",
-    nameEs: "",
-    namePt: "",
-    nameIt: "",
-    ratePerNight: 150,
-    maxOccupancy: 2,
-    inventory: 10,
-    mealPlan: "bb",
-    isActive: true,
-  });
+  // Dedicated Room Editor Modal State
+  const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(false);
+  const [editingRoom, setEditingRoom] = useState<FormRoomItem | null>(null);
+  const [editingRoomIndex, setEditingRoomIndex] = useState<number | null>(null);
 
   const createMutation = useCreateHotel();
   const updateMutation = useUpdateHotel();
@@ -1963,18 +3060,29 @@ function HotelEditorDialog({
                 nameEs: (r.name as any)?.es || (r.name as any)?.en || r.slug,
                 namePt: (r.name as any)?.pt || (r.name as any)?.en || r.slug,
                 nameIt: (r.name as any)?.it || (r.name as any)?.en || r.slug,
-                ratePerNight: r.ratePerNight,
-                maxOccupancy: r.maxOccupancy,
-                inventory: r.inventory || 10,
-                mealPlan: typeof (r.mealPlan) === 'string' ? r.mealPlan : "bb",
+                ratePerNight: Number(r.ratePerNight) || 100,
+                maxOccupancy: Number(r.maxOccupancy) || 2,
+                inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,
+                mealPlan: typeof (r.mealPlan) === 'string' ? r.mealPlan : (r.mealPlan?.en || "bb"),
                 isActive: r.isActive ?? true,
                 bedTypeEn: r.bedType?.en || (typeof r.bedType === 'string' ? r.bedType : "Double / Twin Beds"),
                 bedTypeAr: r.bedType?.ar || (typeof r.bedType === 'string' ? r.bedType : "مزدوجة / توأم"),
+                bedTypeEs: r.bedType?.es || (typeof r.bedType === 'string' ? r.bedType : "Doble / Twin"),
+                bedTypePt: r.bedType?.pt || (typeof r.bedType === 'string' ? r.bedType : "Duplo / Twin"),
+                bedTypeIt: r.bedType?.it || (typeof r.bedType === 'string' ? r.bedType : "Matrimoniale / Twin"),
                 viewTypeEn: r.viewType?.en || (typeof r.viewType === 'string' ? r.viewType : "Standard View"),
                 viewTypeAr: r.viewType?.ar || (typeof r.viewType === 'string' ? r.viewType : "إطلالة قياسية"),
-                image: r.image || "",
+                viewTypeEs: r.viewType?.es || (typeof r.viewType === 'string' ? r.viewType : "Vista Estándar"),
+                viewTypePt: r.viewType?.pt || (typeof r.viewType === 'string' ? r.viewType : "Vista Padrão"),
+                viewTypeIt: r.viewType?.it || (typeof r.viewType === 'string' ? r.viewType : "Vista Standard"),
+                descEn: r.description?.en || (typeof r.description === 'string' ? r.description : ""),
+                descAr: r.description?.ar || (typeof r.description === 'string' ? r.description : ""),
+                descEs: r.description?.es || (typeof r.description === 'string' ? r.description : ""),
+                descPt: r.description?.pt || (typeof r.description === 'string' ? r.description : ""),
+                descIt: r.description?.it || (typeof r.description === 'string' ? r.description : ""),
+                image: r.image || "https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=1200",
                 gallery: r.gallery || [],
-                amenities: r.amenities || [],
+                amenities: r.amenities || ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
                 smokingAllowed: r.smokingAllowed ?? false,
                 petsAllowed: r.petsAllowed ?? false,
               }))
@@ -1986,7 +3094,7 @@ function HotelEditorDialog({
         setIsSlugManual(false);
       }
       setActiveTab("basic");
-      setIsAddingRoom(false);
+      setIsRoomEditorOpen(false);
     }
   }, [hotel, open]);
 
@@ -2010,22 +3118,58 @@ function HotelEditorDialog({
 
   const [isTranslating, setIsTranslating] = useState(false);
 
-  // Smart translation fill helper
+  // Smart translation fill helper (Hotel + All Rooms in 5 Languages)
   const handleSmartFillTranslations = async () => {
     setIsTranslating(true);
     try {
       const fallbackName = form.nameEn || form.nameAr || "Luxury Hotel & Resort";
       const fallbackDesc = form.descAr || form.descEn || "إقامة فندقية فاخرة من فئة 5 نجوم مع مرافق متكاملة وخدمة استثنائية.";
 
-      const updated = await autoTranslateMissingEntityFields(form, {
+      const updatedHotel = await autoTranslateMissingEntityFields(form, {
         nameKeys: { ar: "nameAr", en: "nameEn", es: "nameEs", pt: "namePt", it: "nameIt" },
         descKeys: { ar: "descAr", en: "descEn", es: "descEs", pt: "descPt", it: "descIt" },
         fallbackName,
         fallbackDesc,
       });
 
-      setForm(updated);
-      toast.success(isAr ? "✨ تمت ترجمة الحقول الشاغرة للغات الخمس بنجاح!" : "✨ Empty fields translated across 5 languages successfully!");
+      // Also translate all configured rooms across 5 languages
+      const updatedRooms = await Promise.all(
+        form.rooms.map(async (r) => {
+          const roomFallbackName = r.nameEn || r.nameAr || "Deluxe Hotel Room";
+          const roomFallbackDesc = r.descAr || r.descEn || "غرفة فندقية فاخرة ومريحة.";
+          const translatedRoom = await autoTranslateMissingEntityFields(r, {
+            nameKeys: { ar: "nameAr", en: "nameEn", es: "nameEs", pt: "namePt", it: "nameIt" },
+            descKeys: { ar: "descAr", en: "descEn", es: "descEs", pt: "descPt", it: "descIt" },
+            fallbackName: roomFallbackName,
+            fallbackDesc: roomFallbackDesc,
+          });
+
+          const bedEn = translatedRoom.bedTypeEn || translatedRoom.bedTypeAr || "Double / Twin Beds";
+          const bedAr = translatedRoom.bedTypeAr || translatedRoom.bedTypeEn || "مزدوجة / توأم";
+          const viewEn = translatedRoom.viewTypeEn || translatedRoom.viewTypeAr || "Panoramic View";
+          const viewAr = translatedRoom.viewTypeAr || translatedRoom.viewTypeEn || "إطلالة بانورامية";
+
+          return {
+            ...translatedRoom,
+            bedTypeEn: bedEn,
+            bedTypeAr: bedAr,
+            bedTypeEs: translatedRoom.bedTypeEs || bedEn,
+            bedTypePt: translatedRoom.bedTypePt || bedEn,
+            bedTypeIt: translatedRoom.bedTypeIt || bedEn,
+            viewTypeEn: viewEn,
+            viewTypeAr: viewAr,
+            viewTypeEs: translatedRoom.viewTypeEs || viewEn,
+            viewTypePt: translatedRoom.viewTypePt || viewEn,
+            viewTypeIt: translatedRoom.viewTypeIt || viewEn,
+          };
+        })
+      );
+
+      setForm({
+        ...updatedHotel,
+        rooms: updatedRooms,
+      });
+      toast.success(isAr ? "✨ تمت ترجمة بيانات الفندق وكافة الغرف للغات الخمس بنجاح!" : "✨ Hotel & all rooms translated across 5 languages successfully!");
     } catch (err: any) {
       toast.error(isAr ? "تعذر إكمال الترجمة التلقائية." : "Auto-translation failed.");
     } finally {
@@ -2043,59 +3187,86 @@ function HotelEditorDialog({
     }));
   };
 
-  // Room Management Helpers
-  const handleAddRoom = () => {
-    if (!newRoom.nameEn.trim()) {
-      toast.error(isAr ? "يرجى إدخال اسم الغرفة بالإنجليزية." : "Room English name is required.");
-      return;
-    }
-    const roomSlug = newRoom.slug.trim() ? slugify(newRoom.slug) : slugify(newRoom.nameEn);
-    const roomToAdd: FormRoomItem = {
-      ...newRoom,
-      slug: roomSlug,
-      nameAr: newRoom.nameAr.trim() || newRoom.nameEn,
-      nameEs: newRoom.nameEs.trim() || newRoom.nameEn,
-      namePt: newRoom.namePt.trim() || newRoom.nameEn,
-      nameIt: newRoom.nameIt.trim() || newRoom.nameEn,
-    };
+  // Room Management Actions
+  const handleOpenAddRoom = () => {
+    setEditingRoom(null);
+    setEditingRoomIndex(null);
+    setIsRoomEditorOpen(true);
+  };
 
-    setForm((prev) => ({
-      ...prev,
-      rooms: [...prev.rooms, roomToAdd],
-    }));
-
-    setNewRoom({
-      slug: "",
-      nameEn: "",
-      nameAr: "",
-      nameEs: "",
-      namePt: "",
-      nameIt: "",
-      ratePerNight: 150,
-      maxOccupancy: 2,
-      inventory: 10,
-      mealPlan: "bb",
-      isActive: true,
-    });
-    setIsAddingRoom(false);
-    toast.success(isAr ? "تمت إضافة الغرفة بنجاح!" : "Room tier added successfully!");
+  const handleOpenEditRoom = (room: FormRoomItem, index: number) => {
+    setEditingRoom(room);
+    setEditingRoomIndex(index);
+    setIsRoomEditorOpen(true);
   };
 
   const handleApplyRoomPreset = (preset: typeof ROOM_PRESETS[0]) => {
-    setNewRoom({
-      slug: preset.slug,
+    const newPresetRoom: FormRoomItem = {
+      slug: `${preset.slug}-${Date.now().toString().slice(-4)}`,
       nameEn: preset.nameEn,
       nameAr: preset.nameAr,
-      nameEs: preset.nameEn,
-      namePt: preset.nameEn,
-      nameIt: preset.nameEn,
+      nameEs: preset.nameEs,
+      namePt: preset.namePt,
+      nameIt: preset.nameIt,
       ratePerNight: preset.rate,
       maxOccupancy: preset.maxOccupancy,
       inventory: preset.inventory,
       mealPlan: preset.mealPlan,
       isActive: true,
-    });
-    setIsAddingRoom(true);
+      bedTypeEn: preset.bedEn,
+      bedTypeAr: preset.bedAr,
+      bedTypeEs: preset.bedEs,
+      bedTypePt: preset.bedPt,
+      bedTypeIt: preset.bedIt,
+      viewTypeEn: preset.viewEn,
+      viewTypeAr: preset.viewAr,
+      viewTypeEs: preset.viewEs,
+      viewTypePt: preset.viewPt,
+      viewTypeIt: preset.viewIt,
+      image: preset.image,
+      gallery: [preset.image],
+      amenities: preset.amenities,
+    };
+
+    setForm((prev) => ({
+      ...prev,
+      rooms: [...prev.rooms, newPresetRoom],
+    }));
+    toast.success(isAr ? `تمت إضافة فئة "${preset.nameAr}" بنجاح!` : `Preset "${preset.nameEn}" added!`);
+  };
+
+  const handleDuplicateRoom = (index: number) => {
+    const source = form.rooms[index];
+    if (!source) return;
+    const duplicated: FormRoomItem = {
+      ...source,
+      id: undefined,
+      slug: `${source.slug}-copy-${Date.now().toString().slice(-4)}`,
+      nameEn: `${source.nameEn} (Copy)`,
+      nameAr: `${source.nameAr} (نسخة)`,
+      nameEs: `${source.nameEs} (Copia)`,
+      namePt: `${source.namePt} (Cópia)`,
+      nameIt: `${source.nameIt} (Copia)`,
+    };
+    setForm((prev) => ({
+      ...prev,
+      rooms: [...prev.rooms.slice(0, index + 1), duplicated, ...prev.rooms.slice(index + 1)],
+    }));
+    toast.success(isAr ? "تم تكرار فئة الغرفة بنجاح 📋" : "Room tier cloned successfully 📋");
+  };
+
+  const handleSaveRoomFromModal = (savedRoom: FormRoomItem, index: number | null) => {
+    if (index !== null) {
+      setForm((prev) => ({
+        ...prev,
+        rooms: prev.rooms.map((r, i) => (i === index ? savedRoom : r)),
+      }));
+    } else {
+      setForm((prev) => ({
+        ...prev,
+        rooms: [...prev.rooms, savedRoom],
+      }));
+    }
   };
 
   const handleDeleteRoom = (index: number) => {
@@ -2106,11 +3277,19 @@ function HotelEditorDialog({
     toast.info(isAr ? "تم حذف فئة الغرفة." : "Room removed.");
   };
 
-  const handleUpdateRoomField = (index: number, field: keyof FormRoomItem, val: any) => {
+  const handleQuickInventoryChange = (index: number, delta: number) => {
     setForm((prev) => ({
       ...prev,
-      rooms: prev.rooms.map((r, i) => (i === index ? { ...r, [field]: val } : r)),
+      rooms: prev.rooms.map((r, i) => (i === index ? { ...r, inventory: Math.max(0, r.inventory + delta) } : r)),
     }));
+  };
+
+  const handleToggleRoomActive = (index: number) => {
+    setForm((prev) => ({
+      ...prev,
+      rooms: prev.rooms.map((r, i) => (i === index ? { ...r, isActive: !r.isActive } : r)),
+    }));
+    toast.success(isAr ? "تم تحديث حالة تفعيل الغرفة" : "Room status toggled");
   };
 
   const handleSave = async () => {

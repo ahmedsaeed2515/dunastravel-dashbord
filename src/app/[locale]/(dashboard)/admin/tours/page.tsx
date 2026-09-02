@@ -232,24 +232,15 @@ export default function ToursPage() {
   const removeTour = useSoftDeleteTour();
   const publishMutation = useTourLifecycleAction('publish');
   const unpublishMutation = useTourLifecycleAction('unpublish');
-  const [togglingSlug, setTogglingSlug] = useState<string | null>(null);
 
-  const handleTogglePublish = async (tour: Tour) => {
+  const handleTogglePublish = (tour: Tour) => {
     const isCurrentlyPublished = tour.status === "PUBLISHED" && tour.isActive;
-    try {
-      setTogglingSlug(tour.slug);
-      if (isCurrentlyPublished) {
-        await unpublishMutation.mutateAsync(tour.slug);
-        toast.success(isAr ? `تم إيقاف نشر الرحلة (${tour.slug}) وتحويلها لمسودة` : `Tour unpublished: ${tour.slug}`);
-      } else {
-        await publishMutation.mutateAsync(tour.slug);
-        toast.success(isAr ? `تم نشر وتفعيل الرحلة (${tour.slug}) على الموقع` : `Tour published: ${tour.slug}`);
-      }
-      refetch();
-    } catch (err: any) {
-      toast.error(err?.message || (isAr ? "فشل في تحديث حالة النشر" : "Failed to update publish status"));
-    } finally {
-      setTogglingSlug(null);
+    if (isCurrentlyPublished) {
+      unpublishMutation.mutate(tour.slug);
+      toast.success(isAr ? `تم إيقاف نشر الرحلة (${tour.slug}) وتحويلها لمسودة` : `Tour unpublished: ${tour.slug}`);
+    } else {
+      publishMutation.mutate(tour.slug);
+      toast.success(isAr ? `تم نشر وتفعيل الرحلة (${tour.slug}) بالموقع` : `Tour published: ${tour.slug}`);
     }
   };
 
@@ -698,14 +689,11 @@ export default function ToursPage() {
                             <Switch
                               size="sm"
                               checked={tour.status === "PUBLISHED" && tour.isActive}
-                              disabled={togglingSlug === tour.slug}
                               onCheckedChange={() => handleTogglePublish(tour)}
                               onClick={(e) => e.stopPropagation()}
                             />
                             <span className={`text-[10px] font-black ${tour.status === "PUBLISHED" && tour.isActive ? "text-emerald-400" : "text-rose-400"}`}>
-                              {togglingSlug === tour.slug ? (
-                                <Loader2 className="w-3 h-3 animate-spin inline" />
-                              ) : tour.status === "PUBLISHED" && tour.isActive ? (
+                              {tour.status === "PUBLISHED" && tour.isActive ? (
                                 isAr ? "منشور بالموقع" : "Live"
                               ) : (
                                 isAr ? "غير ظاهر" : "Hidden"

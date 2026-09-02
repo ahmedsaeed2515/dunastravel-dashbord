@@ -25,7 +25,6 @@ function PublishToggleCell({ tour, currentLocale }: { tour: Tour; currentLocale:
       <Switch
         size="sm"
         checked={isPublished}
-        disabled={isPending}
         onCheckedChange={() => {
           if (isPublished) {
             unpublish(tour.slug);
@@ -36,9 +35,7 @@ function PublishToggleCell({ tour, currentLocale }: { tour: Tour; currentLocale:
         title={isPublished ? (isAr ? "إلغاء النشر (تحويل لمسودة)" : "Unpublish (Draft)") : (isAr ? "نشر وتفعيل الرحلة" : "Publish Tour")}
       />
       <span className={`text-[11px] font-bold ${isPublished ? "text-emerald-500" : "text-muted-foreground"}`}>
-        {isPending ? (
-          <Loader2 className="h-3 w-3 animate-spin inline" />
-        ) : isPublished ? (
+        {isPublished ? (
           isAr ? "منشور" : "Live"
         ) : (
           isAr ? "مسودة" : "Draft"
