@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -170,17 +171,12 @@ const PROVIDER_METADATA: Record<
 
 export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Navigation & Wizard State
-  const [testingId, setTestingId] = useState<string | null>(null);
-  const [testingAllProvider, setTestingAllProvider] = useState<string | null>(null);
   const [showAddWizard, setShowAddWizard] = useState(false);
   const [wizardStep, setWizardStep] = useState<1 | 2>(1);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingKey, setEditingKey] = useState<ApiKeyPoolEntry | null>(null);
-  const [showAdvanced, setShowAdvanced] = useState(false);
 
   // Wizard Form State
   const [selectedProvider, setSelectedProvider] = useState<string>("google");
-  const [selectedModel, setSelectedModel] = useState("gemini-2.0-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [showEditApiKey, setShowEditApiKey] = useState(false);
@@ -201,46 +197,63 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const [registryModels, setRegistryModels] = useState<ModelCapabilityItem[]>([]);
   const [providers, setProviders] = useState<ProviderRegistryItem[]>([]);
   const [routingData, setRoutingData] = useState<RoutingPolicyData | null>(null);
-  const [loadingRegistry, setLoadingRegistry] = useState(true);
   const [modelSearch, setModelSearch] = useState("");
   const [modelProviderFilter, setModelProviderFilter] = useState("all");
+  const [showAdvanced, setShowAdvanced] = useState(false);
+  const [testingAllProvider, setTestingAllProvider] = useState<string | null>(null);
 
-  // Load authoritative data from backend on mount
-  useEffect(() => {
-    loadRegistryData();
+  // Discovery & Test status per key in table
+  const [testingId, setTestingId] = useState<string | null>(null);
+
+  // Edit Modal State
+  const [editingKey, setEditingKey] = useState<ApiKeyPoolEntry | null>(null);
+  const [showEditModal, setShowEditModal] = useState(false);
+
+
+  // ──────────────────────────────────────────────────────────────────
+  // DATA FETCHING & LIFECYCLE
+  // ──────────────────────────────────────────────────────────────────
+
+  const fetchRegistryAndRouting = useCallback(async () => {
+    try {
+      const [modelsRes, provRes, routingRes] = await Promise.allSettled([
+        aiApi.getAllModels(),
+        aiApi.getProviders(),
+        aiApi.getRoutingPolicy(),
+      ]);
+
+      if (modelsRes.status === "fulfilled" && modelsRes.value) {
+        setRegistryModels(modelsRes.value.models || []);
+        setProviders(modelsRes.value.providers || []);
+      }
+      if (routingRes.status === "fulfilled" && routingRes.value) {
+        setRoutingData(routingRes.value);
+      }
+    } catch {
+      // Non-critical background fetch failure
+    }
   }, []);
 
-  const loadRegistryData = async () => {
-    setLoadingRegistry(true);
-    try {
-      const [modelsRes, routingRes] = await Promise.all([
-        aiApi.getAllModels().catch(() => ({ models: [], providers: [] })),
-        aiApi.getRoutingPolicy().catch(() => null),
-      ]);
-      setRegistryModels(modelsRes.models || []);
-      setProviders(modelsRes.providers || []);
-      if (routingRes) setRoutingData(routingRes);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to load model registry.");
-    } finally {
-      setLoadingRegistry(false);
-    }
-  };
+  useEffect(() => {
+    fetchRegistryAndRouting();
+  }, [fetchRegistryAndRouting]);
 
-  // Discover Live Models from Provider
-  const handleDiscoverLiveModels = async (provId: string, customKey?: string, customUrl?: string, credId?: string) => {
-    const keyToUse = customKey !== undefined ? customKey.trim() : apiKey.trim();
-    const urlToUse = customUrl !== undefined ? customUrl.trim() : customBaseUrl.trim();
-    if (!keyToUse && !credId) {
-      toast.error(
-        isAr
-          ? "يرجى إدخال مفتاح API أولاً لاكتشاف الموديلات الحية."
-          : "Please enter an API key to discover live models."
-      );
-      return;
-    }
+  // ──────────────────────────────────────────────────────────────────
+  // HANDLERS
+  // ──────────────────────────────────────────────────────────────────
+
+  // Live Model Discovery
+  const handleDiscoverLiveModels = async (
+    provId: string,
+    keyToUse?: string,
+    urlToUse?: string,
+    credId?: string
+  ) => {
+    if (!provId || provId === "anthropic") return;
+
     setIsDiscoveringLiveModels(true);
     setLiveDiscoveryError(null);
+
     try {
       const res = await aiApi.refreshProviderModels(provId, {
         apiKey: keyToUse || undefined,
@@ -257,8 +270,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             : `🎉 Discovered ${models.length} active models directly from ${PROVIDER_METADATA[provId]?.name || provId}!`
         );
         const available = models.filter((m) => m.status === "AVAILABLE");
-        if (available.length > 0 && !available.some((m) => m.id === selectedModel)) {
-          setSelectedModel(available[0].id);
+        if (available.length > 0 && (!selectedModel || !available.some((m) => m.id === selectedModel))) {
+          const primary = available.find((m) => m.id === "gemini-2.5-flash")?.id || available[0].id;
+          setSelectedModel(primary);
         }
       } else {
         toast.warning(isAr ? "لم يتم العثور على موديلات متوافقة." : "No compatible models found.");
@@ -271,16 +285,6 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       setIsDiscoveringLiveModels(false);
     }
   };
-
-  // Models available for the currently selected provider in the wizard
-  const availableModelsForProvider = useMemo(() => {
-    if (!Array.isArray(registryModels)) return [];
-    const prov = (selectedProvider || "").toLowerCase();
-    if (prov === "custom") {
-      return registryModels.filter((m) => (m?.provider || "").toLowerCase() === "custom");
-    }
-    return registryModels.filter((m) => (m?.provider || "").toLowerCase() === prov);
-  }, [registryModels, selectedProvider]);
 
   // Provider definition lookup
   const currentProviderDef = useMemo(() => {
@@ -307,7 +311,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     const defaultModel =
       providerModels.find((m) => m.isDefault)?.id ||
       providerModels[0]?.id ||
-      (providerId === "google" ? "gemini-2.0-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
+      (providerId === "google" ? "gemini-2.5-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
 
     setSelectedModel(defaultModel);
     setLabel(
@@ -326,7 +330,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Open the wizard
   const handleOpenAddWizard = () => {
     setSelectedProvider("google");
-    setSelectedModel("gemini-2.0-flash");
+    setSelectedModel("gemini-2.5-flash");
     setApiKey("");
     setCustomBaseUrl("");
     setLabel("Google Gemini Production Key");
@@ -342,7 +346,10 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const handleOpenEditModal = (k: ApiKeyPoolEntry) => {
     setEditingKey(k);
     setSelectedProvider(k.provider);
-    setSelectedModel(k.model);
+    const validModel = k.model === "gemini-2.0-flash" || k.model === "gemini-1.5-flash" || !k.model
+      ? (k.provider === "google" ? "gemini-2.5-flash" : "gpt-4o-mini")
+      : k.model;
+    setSelectedModel(validModel);
     setApiKey("");
     setCustomBaseUrl(k.baseUrl || "");
     setLabel(k.label || "");
@@ -372,7 +379,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       const modelToTest =
         selectedModel ||
         (selectedProvider === "google"
-          ? "gemini-2.0-flash"
+          ? "gemini-2.5-flash"
           : selectedProvider === "openai"
           ? "gpt-4o-mini"
           : undefined);
@@ -685,7 +692,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.economy?.model || "gemini-2.0-flash"}
+                {routingData?.table?.economy?.model || "gemini-2.5-flash"}
               </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "للأسئلة الشائعة والتحية واستفسارات السياسات البسيطة" : "FAQ, policies, basic catalog queries & greetings"}
@@ -709,8 +716,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.normal?.model || "gemini-2.0-flash"}
+                {routingData?.table?.normal?.model || "gemini-2.5-flash"}
               </h4>
+
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "محادثات الكونسيرج الفاخر وتخصيص الباقات السياحية" : "High-touch luxury travel dialogue & recommendation"}
               </p>
@@ -1016,9 +1024,10 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Model */}
                         <td className="px-4 py-3 font-mono text-foreground font-semibold">
                           <span className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px]">
-                            {entry.model || (entry.provider === "google" ? "gemini-2.0-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
+                            {entry.model || (entry.provider === "google" ? "gemini-2.5-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
                           </span>
                         </td>
+
 
                         {/* Masked Key */}
                         <td className="px-4 py-3 font-mono text-[11px] text-muted-foreground">
@@ -1368,7 +1377,13 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
             {/* STEP 2: API KEY & MODEL SELECTION */}
             {wizardStep === 2 && (
-              <form onSubmit={handleSaveCredential} className="p-5 space-y-4 text-xs">
+              <form onSubmit={handleSaveCredential} autoComplete="off" className="p-5 space-y-4 text-xs">
+                {/* Anti-browser autofill decoy fields */}
+                <div className="hidden" aria-hidden="true" style={{ display: "none" }}>
+                  <input type="text" name="fake_username_prevent_autofill" tabIndex={-1} autoComplete="off" />
+                  <input type="password" name="fake_password_prevent_autofill" tabIndex={-1} autoComplete="new-password" />
+                </div>
+
                 {/* Provider Instructions Alert Box */}
                 <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3.5 space-y-2">
                   <div className="flex items-center justify-between">
@@ -1429,6 +1444,11 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                     <div className="relative flex-1">
                       <Input
                         type={showApiKey ? "text" : "password"}
+                        name="provider_secret_token_field"
+                        id="wizard_provider_secret_token_field"
+                        autoComplete="new-password"
+                        data-lpignore="true"
+                        data-form-type="other"
                         value={apiKey}
                         onChange={(e) => {
                           setApiKey(e.target.value);
@@ -1453,6 +1473,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         className="font-mono text-xs h-9 bg-background pe-9"
                         required
                       />
+
                       <button
                         type="button"
                         onClick={() => setShowApiKey(!showApiKey)}
@@ -1666,7 +1687,13 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
               </button>
             </div>
 
-            <form onSubmit={handleSaveEdit} className="space-y-3.5 text-xs">
+            <form onSubmit={handleSaveEdit} autoComplete="off" className="space-y-3.5 text-xs">
+              {/* Anti-browser autofill decoy fields */}
+              <div className="hidden" aria-hidden="true" style={{ display: "none" }}>
+                <input type="text" name="fake_username_prevent_autofill_edit" tabIndex={-1} autoComplete="off" />
+                <input type="password" name="fake_password_prevent_autofill_edit" tabIndex={-1} autoComplete="new-password" />
+              </div>
+
               <div className="grid grid-cols-2 gap-2.5">
                 <div>
                   <label className="font-bold uppercase text-[10px] text-muted-foreground block mb-1">
@@ -1698,6 +1725,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                   {isAr ? "تسمية المفتاح" : "Label"}
                 </label>
                 <Input
+                  name="custom_credential_display_label"
+                  id="custom_credential_display_label"
+                  autoComplete="off"
                   value={label}
                   onChange={(e) => setLabel(e.target.value)}
                   placeholder="e.g. Production Gemini Key"
@@ -1742,11 +1772,17 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                 <div className="relative">
                   <Input
                     type={showEditApiKey ? "text" : "password"}
+                    name="edit_provider_secret_token_field"
+                    id="edit_provider_secret_token_field"
+                    autoComplete="new-password"
+                    data-lpignore="true"
+                    data-form-type="other"
                     value={apiKey}
                     onChange={(e) => setApiKey(e.target.value)}
                     placeholder={isAr ? "اتركه فارغاً للاحتفاظ بالمفتاح المشفر الحالي" : "Leave blank to keep existing encrypted key"}
                     className="font-mono text-xs h-9 bg-background pe-9"
                   />
+
                   <button
                     type="button"
                     onClick={() => setShowEditApiKey(!showEditApiKey)}

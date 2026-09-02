@@ -36,12 +36,15 @@ const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([
 
 export const PROVIDER_MODEL_PRESETS: Record<string, ModelPreset[]> = {
   google: [
-    { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", nameAr: "جيمناي 3.6 فلاش (الرسمي الموصى به للإنتاجية — استجابة ~500ms)", badge: "Official Primary", isPopular: true },
-    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش (المتقدم فائق السرعة والاستقرار)", badge: "Fast & Stable", isPopular: true },
-    { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", nameAr: "جيمناي 3.5 فلاش لايت (اقتصادي خفيف وسريع)", badge: "Economy", isPopular: true },
+    { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيمناي 2.5 فلاش (الموصى به للإنتاجية — استجابة ~500ms)", badge: "Official Primary", isPopular: true },
+    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite", nameAr: "جيمناي 2.5 فلاش لايت (اقتصادي خفيف وسريع)", badge: "Economy", isPopular: true },
+    { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", nameAr: "جيمناي 2.5 برو (تحليل عميق وتفكير فائق)", badge: "Reasoning", isPopular: true },
     { id: "gemini-3.7-flash", name: "Gemini 3.7 Flash", nameAr: "جيمناي 3.7 فلاش (الموديل الأحدث للـ Agentic)", badge: "Agentic Suite", isPopular: true },
+    { id: "gemini-3.6-flash", name: "Gemini 3.6 Flash", nameAr: "جيمناي 3.6 فلاش (فائق السرعة والاستقرار)", badge: "Fast & Stable", isPopular: true },
+    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش", badge: "Balanced", isPopular: false },
     { id: "gemini-3.1-flash-lite", name: "Gemini 3.1 Flash-Lite", nameAr: "جيمناي 3.1 فلاش لايت", badge: "Economy", isPopular: false },
   ],
+
   openai: [
     { id: "gpt-4o-mini", name: "GPT-4o Mini", nameAr: "جي بي تي 4 أومني ميني (سريع واقتصادي)", badge: "Economy", isPopular: true },
     { id: "gpt-4o", name: "GPT-4o (Omni)", nameAr: "جي بي تي 4 أومني (المتوازن المتقدم)", badge: "Balanced", isPopular: true },
@@ -135,6 +138,20 @@ export function ModelSelector({
     normalizedProvider === "custom" && !isCurrentValueInPresets && Boolean(value)
   );
 
+  // Auto-migrate retired or empty model selection to active primary model
+  useEffect(() => {
+    if (isCustomMode) return;
+    if (isCurrentValueDeprecated || !value) {
+      const bestFallback = hasLiveModels
+        ? (availableLiveModels.find((m) => m.id === "gemini-2.5-flash")?.id || availableLiveModels[0]?.id)
+        : (fallbackPresets.find((p) => p.id === "gemini-2.5-flash")?.id || fallbackPresets[0]?.id || (normalizedProvider === "google" ? "gemini-2.5-flash" : "gpt-4o-mini"));
+      if (bestFallback && bestFallback !== value) {
+        onChange(bestFallback);
+      }
+    }
+  }, [isCurrentValueDeprecated, value, hasLiveModels, availableLiveModels, fallbackPresets, isCustomMode, normalizedProvider, onChange]);
+
+
   return (
     <div className="space-y-2 text-xs">
       <div className="flex items-center justify-between">
@@ -208,8 +225,13 @@ export function ModelSelector({
           {/* Search bar if many models */}
           {availableLiveModels.length > 5 && (
             <div className="relative">
-              <Search className="h-3 w-3 absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground" />
+              <Search className="h-3 w-3 absolute start-2.5 top-1/2 -translate-y-1/2 text-muted-foreground pointer-events-none" />
               <Input
+                name="model_search_filter_prevent_autofill"
+                id="model_search_filter_prevent_autofill"
+                autoComplete="off"
+                data-lpignore="true"
+                data-form-type="other"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder={isAr ? "تصفية الموديلات المكتشفة..." : "Search discovered models..."}
@@ -217,6 +239,7 @@ export function ModelSelector({
               />
             </div>
           )}
+
 
           {/* Model Selection Dropdown */}
           <div className="relative">
