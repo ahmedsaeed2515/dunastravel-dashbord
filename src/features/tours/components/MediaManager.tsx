@@ -137,6 +137,7 @@ export function MediaManager({ tour }: MediaManagerProps) {
             <Button
               type="button"
               size="sm"
+              aria-label="Upload image"
               onClick={() => setIsAddingNew(true)}
               className="font-bold gap-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer shadow-xs"
             >

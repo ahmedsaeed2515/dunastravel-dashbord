@@ -8,6 +8,7 @@ const mocks = vi.hoisted(() => ({ createSlot: vi.fn() }));
 vi.mock("../hooks/useTours", () => ({
   useTourAvailabilities: () => ({ data: [], isLoading: false, isError: false, refetch: vi.fn() }),
   useCreateTourAvailability: () => ({ mutate: mocks.createSlot, isPending: false }),
+  useCreateBatchTourAvailability: () => ({ mutate: vi.fn(), isPending: false }),
   useUpdateTourAvailability: () => ({ mutate: vi.fn(), isPending: false }),
   useDeleteTourAvailability: () => ({ mutate: vi.fn(), isPending: false }),
 }));

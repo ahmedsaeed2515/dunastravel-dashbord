@@ -169,6 +169,18 @@ const PROVIDER_METADATA: Record<
   },
 };
 
+const cleanClientApiKey = (raw: string): string => {
+  if (!raw || typeof raw !== "string") return "";
+  let cleaned = raw.trim().replace(/[\u200B-\u200D\uFEFF\x00-\x1F\x7F-\x9F]/g, "").trim();
+  let prev = "";
+  while (cleaned !== prev && cleaned.length > 0) {
+    prev = cleaned;
+    cleaned = cleaned.replace(/^(Bearer|GEMINI_API_KEY=|OPENAI_API_KEY=|OPENROUTER_API_KEY=|ANTHROPIC_API_KEY=|DEEPSEEK_API_KEY=|XAI_API_KEY=|API_KEY=|apiKey=|api_key=)\s*/i, "").trim();
+    cleaned = cleaned.replace(/^["'`]+|["'`]+$/g, "").trim();
+  }
+  return cleaned;
+};
+
 export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Navigation & Wizard State
   const [showAddWizard, setShowAddWizard] = useState(false);
@@ -385,10 +397,11 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
           : selectedProvider === "openai"
           ? "gpt-4o-mini"
           : undefined);
+      const cleanedKey = cleanClientApiKey(apiKey);
       const res = await aiApi.testConnection({
         provider: selectedProvider,
         model: modelToTest,
-        apiKey: apiKey.trim(),
+        apiKey: cleanedKey,
       });
       setTestResult(res);
 
@@ -431,23 +444,44 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       return;
     }
 
-    // Pre-flight client-side format validation
-    const trimmedKey = apiKey.trim();
-    if (selectedProvider === "google" && (!trimmedKey.startsWith("AIza") || trimmedKey.length < 30)) {
-      toast.error(
-        isAr
-          ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ المفتاح بـ 'AIza' (مثال: AIzaSy...) ويتكون من حوالي 39 حرفاً. يمكنك الحصول على مفتاح مجاني من https://aistudio.google.com/apikey"
-          : "Invalid Google Gemini API key format. Key must start with 'AIza' (e.g. AIzaSy...) and contain ~39 characters. Get your key from https://aistudio.google.com/apikey"
-      );
+    // Pre-flight client-side format validation & sanitization
+    const trimmedKey = cleanClientApiKey(apiKey);
+    if (!trimmedKey || trimmedKey.length < 5) {
+      toast.error(isAr ? "يرجى إدخال مفتاح الـ API." : "Please enter the API key.");
       return;
-    } else if (selectedProvider === "openai" && (!trimmedKey.startsWith("sk-") || trimmedKey.length < 20)) {
-      toast.error(
-        isAr
-          ? "مفتاح OpenAI غير صالح. يجب أن يبدأ بـ 'sk-' أو 'sk-proj-' ويتكون من 20 حرفاً على الأقل."
-          : "Invalid OpenAI API key format. Key must start with 'sk-' and be at least 20 characters."
-      );
-      return;
-    } else if (selectedProvider === "openrouter" && (!trimmedKey.startsWith("sk-or-") || trimmedKey.length < 20)) {
+    }
+
+    if (selectedProvider === "google") {
+      if (trimmedKey.startsWith("sk-or-")) {
+        toast.error(isAr ? "هذا المفتاح يتبع مزود OpenRouter وليس Google Gemini!" : "This key belongs to OpenRouter, not Google Gemini!");
+        return;
+      }
+      if (trimmedKey.startsWith("sk-")) {
+        toast.error(isAr ? "هذا المفتاح يتبع مزود OpenAI (يبدأ بـ sk-)، يرجى اختيار OpenAI أو إدخال مفتاح Gemini يبدأ بـ AIza!" : "This key belongs to OpenAI (starts with sk-). Please switch provider to OpenAI or enter a Gemini key starting with AIza!");
+        return;
+      }
+      if (trimmedKey.length < 15) {
+        toast.error(
+          isAr
+            ? "مفتاح Google Gemini قصير جداً. مفاتيح Google AI Studio تبدأ بـ 'AIza' (مثال: AIzaSy...) وتتكون من حوالي 39 حرفاً. يمكنك الحصول على مفتاح مجاني من https://aistudio.google.com/apikey"
+            : "Invalid Google Gemini API key format. Key must start with 'AIza' (e.g. AIzaSy...) and contain ~39 characters. Get your key from https://aistudio.google.com/apikey"
+        );
+        return;
+      }
+    } else if (selectedProvider === "openai") {
+      if (trimmedKey.startsWith("AIza")) {
+        toast.error(isAr ? "هذا المفتاح يتبع مزود Google Gemini! يرجى اختيار Google Gemini كمزود." : "This key belongs to Google Gemini! Please select Google Gemini as provider.");
+        return;
+      }
+      if (trimmedKey.length < 15) {
+        toast.error(
+          isAr
+            ? "مفتاح OpenAI غير صالح. يجب أن يبدأ بـ 'sk-' أو 'sk-proj-' ويتكون من 20 حرفاً على الأقل."
+            : "Invalid OpenAI API key format. Key must start with 'sk-' and be at least 20 characters."
+        );
+        return;
+      }
+    } else if (selectedProvider === "openrouter" && (!trimmedKey.startsWith("sk-or-") || trimmedKey.length < 15)) {
       toast.error(
         isAr
           ? "مفتاح OpenRouter غير صالح. يجب أن يبدأ بـ 'sk-or-'."
@@ -487,15 +521,21 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     e.preventDefault();
     if (!editingKey) return;
 
-    const trimmedKey = apiKey.trim();
+    const trimmedKey = cleanClientApiKey(apiKey);
     if (trimmedKey && !trimmedKey.includes("••")) {
-      if (selectedProvider === "google" && (!trimmedKey.startsWith("AIza") || trimmedKey.length < 30)) {
-        toast.error(
-          isAr
-            ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ بـ 'AIza' (مثال: AIzaSy...)."
-            : "Invalid Google Gemini API key. Key must start with 'AIza'."
-        );
-        return;
+      if (selectedProvider === "google") {
+        if (trimmedKey.startsWith("sk-")) {
+          toast.error(isAr ? "هذا المفتاح يتبع OpenAI وليس Google Gemini!" : "This key belongs to OpenAI, not Google Gemini!");
+          return;
+        }
+        if (trimmedKey.length < 15) {
+          toast.error(
+            isAr
+              ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ بـ 'AIza' (مثال: AIzaSy...)."
+              : "Invalid Google Gemini API key. Key must start with 'AIza'."
+          );
+          return;
+        }
       }
     }
 

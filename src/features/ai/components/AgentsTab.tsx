@@ -38,8 +38,20 @@ import {
 import { toast } from "sonner";
 import { AgentItemData, aiApi } from "../api/aiApi";
 
+const DEFAULT_GUIDER_PROMPT = `You are GuideR, the premier luxury AI Travel Concierge for Dunas Travel.
+You represent the pinnacle of bespoke Egyptian hospitality.
+Adhere strictly to these principles:
+1. ONLY recommend real tours, hotels, and services available in Dunas Travel's grounded catalog.
+2. Ground all dynamic facts (prices, dates, availability) in live structured data.
+3. Respond in the exact language the traveler used (Arabic, English, Spanish, Portuguese, Italian).
+4. For custom multi-day plans, provide structured day-by-day itineraries with private transfers, 5-star accommodations, and private Egyptologist guides.`;
+
+const DEFAULT_GUIDELINES = "التحدث بأسلوب راقي جداً، التركيز على الراحة، الدهبيات الخاصة، وأجنحة كبار الشخصيات.";
+
 interface AgentsTabProps {
   agents: AgentItemData[];
+  activeSystemPrompt?: string;
+  activePersonality?: string;
   onRefresh: () => void;
   onNavigateToLab: (agentSlug: string) => void;
   t: any;
@@ -48,6 +60,8 @@ interface AgentsTabProps {
 
 export function AgentsTab({
   agents,
+  activeSystemPrompt,
+  activePersonality,
   onRefresh,
   onNavigateToLab,
   t,
@@ -104,8 +118,25 @@ export function AgentsTab({
     setDescEn(agent.descriptionJsonb?.en || agent.description || "");
     setAvatar(agent.avatar || "👑");
     setRole(agent.role || "مستشار سياحي فاخر");
-    setSystemPrompt(agent.systemPrompt || "");
-    setPersonalityGuidelines(agent.personalityGuidelines || "");
+
+    // Smart Fallback: If agent.systemPrompt is empty/null, load from live config or default preset
+    const resolvedPrompt = 
+      (agent.systemPrompt && agent.systemPrompt.trim().length > 0)
+        ? agent.systemPrompt
+        : (activeSystemPrompt && activeSystemPrompt.trim().length > 0)
+        ? activeSystemPrompt
+        : DEFAULT_GUIDER_PROMPT;
+    setSystemPrompt(resolvedPrompt);
+
+    // Smart Fallback: If agent.personalityGuidelines is empty/null, load from live config or default preset
+    const resolvedGuidelines = 
+      (agent.personalityGuidelines && agent.personalityGuidelines.trim().length > 0)
+        ? agent.personalityGuidelines
+        : (activePersonality && activePersonality.trim().length > 0)
+        ? activePersonality
+        : DEFAULT_GUIDELINES;
+    setPersonalityGuidelines(resolvedGuidelines);
+
     setTone(agent.tone || "فاخر واحترافي");
     setShowModal(true);
   };
@@ -159,6 +190,14 @@ You represent the pinnacle of bespoke Egyptian hospitality.
         toast.success(isAr ? "تم إنشاء الشخصية والبرومبت بنجاح!" : "Persona created successfully!");
       } else if (editingAgent) {
         await aiApi.updateAgent(editingAgent.id, payload);
+        // If this agent is currently the active live assistant on the website, sync to AiConfig systemInstructions directly
+        if (editingAgent.isActive || activeAgent?.id === editingAgent.id) {
+          await aiApi.updateConfig({ 
+            systemInstructions: systemPrompt.trim(),
+            salesPersonality: personalityGuidelines.trim() || undefined,
+            toneOfVoice: tone.trim() || undefined
+          }).catch(() => null);
+        }
         toast.success(isAr ? "تم حفظ التعديلات وتحديث البرومبت!" : "Persona updated successfully!");
       }
 

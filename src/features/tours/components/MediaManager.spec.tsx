@@ -7,12 +7,18 @@ import type { Tour } from "../types";
 const mocks = vi.hoisted(() => ({ uploadMedia: vi.fn(), reorderImage: vi.fn() }));
 
 vi.mock("../hooks/useTours", () => ({
+  useAddTourImage: () => ({ mutate: vi.fn(), isPending: false }),
   useRemoveTourImage: () => ({ mutate: vi.fn(), isPending: false }),
   useReorderTourImage: () => ({ mutate: mocks.reorderImage, isPending: false }),
   useSetTourHeroImage: () => ({ mutate: vi.fn(), isPending: false }),
 }));
 vi.mock("@/features/media/hooks/useMedia", () => ({
   useUploadMedia: () => ({ mutate: mocks.uploadMedia, isPending: false }),
+  useUploadBulkMedia: () => ({ mutate: vi.fn(), isPending: false }),
+  useImportMediaUrls: () => ({ mutate: vi.fn(), isPending: false }),
+  useMediaCategories: () => ({ data: [], isLoading: false }),
+  useMediaAssets: () => ({ data: { items: [], total: 0 }, isLoading: false }),
+  useMediaSummary: () => ({ data: null, isLoading: false }),
 }));
 
 const tour = {

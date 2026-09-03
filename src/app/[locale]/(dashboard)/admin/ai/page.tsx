@@ -30,7 +30,8 @@ import {
   AiOverviewMetrics, 
   AiAnalyticsData, 
   ApiKeyPoolEntry, 
-  AgentItemData 
+  AgentItemData,
+  AiConfigData 
 } from "@/features/ai/api/aiApi";
 import { OverviewTab } from "@/features/ai/components/OverviewTab";
 import { AgentsTab } from "@/features/ai/components/AgentsTab";
@@ -118,6 +119,7 @@ export default function AdminAiControlCenterPage() {
   const [analytics, setAnalytics] = useState<AiAnalyticsData | null>(null);
   const [keyPool, setKeyPool] = useState<ApiKeyPoolEntry[]>([]);
   const [agents, setAgents] = useState<AgentItemData[]>([]);
+  const [aiConfig, setAiConfig] = useState<AiConfigData | null>(null);
   const [activeProvider, setActiveProvider] = useState("google");
   const [activeModel, setActiveModel] = useState("gemini-3.6-flash");
   const [loading, setLoading] = useState(true);
@@ -138,6 +140,7 @@ export default function AdminAiControlCenterPage() {
       if (Array.isArray(keyPoolRes)) setKeyPool(keyPoolRes);
       if (Array.isArray(agentsRes)) setAgents(agentsRes);
       if (configRes) {
+        setAiConfig(configRes);
         setActiveProvider(configRes.provider || "google");
         setActiveModel(configRes.model || "gemini-3.6-flash");
       }
@@ -340,6 +343,8 @@ export default function AdminAiControlCenterPage() {
           {activeTab === "agents" && (
             <AgentsTab
               agents={agents}
+              activeSystemPrompt={aiConfig?.systemInstructions}
+              activePersonality={aiConfig?.salesPersonality}
               onRefresh={fetchGlobalAiData}
               onNavigateToLab={handleNavigateToLab}
               t={t}

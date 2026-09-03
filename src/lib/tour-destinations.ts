@@ -296,5 +296,9 @@ export function publicDestinationLabelsForTour(tour: Tour): string[] {
 
 export function isTourVisibleOnWebsite(tour: Tour): boolean {
   if (!tour) return false;
-  return tour.status === "PUBLISHED" && Boolean(tour.isActive);
+  return (
+    tour.status === "PUBLISHED" &&
+    Boolean(tour.isActive) &&
+    publicDestinationLabelsForTour(tour).length > 0
+  );
 }

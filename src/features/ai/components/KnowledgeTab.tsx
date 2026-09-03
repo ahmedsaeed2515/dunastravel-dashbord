@@ -47,7 +47,8 @@ import {
   Zap,
   Lock,
   Flame,
-  Clock
+  Clock,
+  Save
 } from "lucide-react";
 import { toast } from "sonner";
 import { 
@@ -355,6 +356,26 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
       toast.success(isAr ? "✓ تم حفظ وتحديث المحتوى!" : "✓ Content saved!");
       fetchCanonicalEntities();
       if (locItem) fetchVersions(locItem.id);
+
+      setActiveDrawerEntity((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          title: selectedDrawerLocale === "en" || selectedDrawerLocale === "ar" ? editTitle.trim() : prev.title,
+          locales: {
+            ...prev.locales,
+            [selectedDrawerLocale]: {
+              ...(prev.locales[selectedDrawerLocale] || {}),
+              id: locItem?.id || prev.locales[selectedDrawerLocale]?.id || "saved-item",
+              title: editTitle.trim(),
+              content: editContent.trim(),
+              status: editStatus,
+              locale: selectedDrawerLocale,
+              updatedAt: new Date().toISOString(),
+            },
+          },
+        };
+      });
     } catch (err: any) {
       toast.error(err?.message || "Failed to save content.");
     } finally {
@@ -996,33 +1017,35 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
                     })}
                   </div>
 
-                  {/* Source-Managed Notice */}
-                  {activeDrawerEntity.sourceType === "SOURCE_MANAGED" ? (
-                    <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-4 space-y-2">
+                  {/* Informative Header / Notice */}
+                  {activeDrawerEntity.sourceType === "SOURCE_MANAGED" && (
+                    <div className="rounded-xl border border-blue-500/30 bg-blue-500/5 p-3.5 space-y-1.5">
                       <div className="flex items-center justify-between">
-                        <span className="font-bold text-foreground flex items-center gap-1.5">
-                          <Lock className="h-4 w-4 text-blue-500" />
-                          {isAr ? "معلومات مستمدة ومحمية من قاعدة البيانات الأصلية" : "Source Protected Database Entity"}
+                        <span className="font-bold text-xs text-foreground flex items-center gap-1.5">
+                          <Edit3 className="h-3.5 w-3.5 text-blue-500" />
+                          {isAr ? "تعديل محتوى وتفاصيل المعلومة" : "Edit Content & Knowledge Details"}
                         </span>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => window.open(`/admin/tours`, "_blank")}
-                          className="h-7 text-[11px] font-bold gap-1 cursor-pointer"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                          {isAr ? "تعديل في الكتالوج" : "Edit in Catalog"}
-                        </Button>
+                        {activeDrawerEntity.sourceEntityType === "TOUR" && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => window.open(`/admin/tours`, "_blank")}
+                            className="h-6 text-[10px] font-bold gap-1 cursor-pointer"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                            {isAr ? "معاينة في الكتالوج" : "View in Catalog"}
+                          </Button>
+                        )}
                       </div>
                       <p className="text-[11px] text-muted-foreground leading-relaxed">
                         {isAr
-                          ? "الأسعار والتواريخ والبرامج مستمدة مباشرة من كتالوج الرحلات ولا يمكن تعديلها يدوياً هنا لضمان عدم وجود أخطاء. إذا أردت توجيه GuideR بطريقة خاصة، استخدم تبويب «تخصيص GuideR»."
-                          : "Transactional facts (pricing, dates, capacity) are synced from the business database. Use GuideR Customization tab to add specific sales guidance."}
+                          ? "يمكنك تعديل العنوان والمحتوى وحفظهما مباشرة. سيتم تحديث معرفة الذكاء الاصطناعي بهذه التعديلات فوراً لهذه اللغة."
+                          : "You can edit the title and content and save them directly. AI knowledge will be updated immediately for this language."}
                       </p>
                     </div>
-                  ) : null}
+                  )}
 
-                  {/* Form for manual editing / viewing */}
+                  {/* Form for editing content */}
                   <form onSubmit={handleSaveManualContent} className="space-y-3.5">
                     <div>
                       <label className="font-bold uppercase text-[10px] text-muted-foreground block mb-1">
@@ -1031,8 +1054,9 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
                       <Input
                         value={editTitle}
                         onChange={(e) => setEditTitle(e.target.value)}
-                        disabled={activeDrawerEntity.sourceType === "SOURCE_MANAGED"}
+                        placeholder={isAr ? "اكتب عنوان المعلومة..." : "Enter title..."}
                         className="h-9 text-xs font-bold bg-background"
+                        required
                       />
                     </div>
 
@@ -1043,33 +1067,33 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
                       <Textarea
                         value={editContent}
                         onChange={(e) => setEditContent(e.target.value)}
-                        disabled={activeDrawerEntity.sourceType === "SOURCE_MANAGED"}
+                        placeholder={isAr ? "اكتب النص الكامل للمعلومة هنا..." : "Enter content text here..."}
                         rows={10}
                         className="text-xs leading-relaxed bg-background"
+                        required
                       />
                     </div>
 
-                    {activeDrawerEntity.sourceType === "MANUALLY_MANAGED" && (
-                      <div className="flex items-center justify-between pt-2">
-                        <select
-                          value={editStatus}
-                          onChange={(e) => setEditStatus(e.target.value as any)}
-                          className="h-9 px-3 rounded-xl border border-border bg-background text-xs font-bold"
-                        >
-                          <option value="PUBLISHED">{isAr ? "منشور (Published)" : "Published"}</option>
-                          <option value="DRAFT">{isAr ? "مسودة (Draft)" : "Draft"}</option>
-                          <option value="ARCHIVED">{isAr ? "مؤرشف (Archived)" : "Archived"}</option>
-                        </select>
+                    <div className="flex items-center justify-between pt-2">
+                      <select
+                        value={editStatus}
+                        onChange={(e) => setEditStatus(e.target.value as any)}
+                        className="h-9 px-3 rounded-xl border border-border bg-background text-xs font-bold cursor-pointer"
+                      >
+                        <option value="PUBLISHED">{isAr ? "منشور (Published)" : "Published"}</option>
+                        <option value="DRAFT">{isAr ? "مسودة (Draft)" : "Draft"}</option>
+                        <option value="ARCHIVED">{isAr ? "مؤرشف (Archived)" : "Archived"}</option>
+                      </select>
 
-                        <Button
-                          type="submit"
-                          disabled={savingContent}
-                          className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 cursor-pointer shadow-sm"
-                        >
-                          {savingContent ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ التعديلات" : "Save Content")}
-                        </Button>
-                      </div>
-                    )}
+                      <Button
+                        type="submit"
+                        disabled={savingContent}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 cursor-pointer shadow-sm flex items-center gap-1.5"
+                      >
+                        <Save className="h-3.5 w-3.5" />
+                        {savingContent ? (isAr ? "جاري الحفظ..." : "Saving...") : (isAr ? "حفظ التعديلات" : "Save Content")}
+                      </Button>
+                    </div>
                   </form>
                 </div>
               )}
