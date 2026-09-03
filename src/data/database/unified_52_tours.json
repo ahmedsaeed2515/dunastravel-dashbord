@@ -35240,6 +35240,1878 @@
           "it": "50$ mance e visto: 60$ in Giordania."
         }
       ]
+    },
+    {
+      "id": "tour-siwa-oasis-alexandria",
+      "slug": "siwa-oasis-alexandria",
+      "title": {
+        "ar": "واحة سيوة + الإسكندرية – رحلة استكشافية (5 أيام / 4 ليال)",
+        "en": "Siwa Oasis & Alexandria Expedition (5 Days / 4 Nights)",
+        "es": "Expedición Oasis Siwa y Alejandría (5 Días / 4 Noches)",
+        "it": "Spedizione Oasi di Siwa e Alessandria (5 Giorni / 4 Notti)",
+        "pt": "Expedição Oásis de Siwa e Alexandria (5 Dias / 4 Noites)"
+      },
+      "subtitle": {
+        "ar": "بحر الرمال الأعظم وعيون كليوباترا وسحر البحر المتوسط بالإسكندرية",
+        "en": "Great Sand Sea, Cleopatra Spring, and Mediterranean charm of Alexandria",
+        "es": "Gran Mar de Arena, Baño de Cleopatra y encanto mediterráneo de Alejandría",
+        "it": "Grande Mare di Sabbia, Bagno di Cleopatra e fascino di Alessandria",
+        "pt": "Grande Mar de Areia, Banho de Cleópatra e charme de Alexandria"
+      },
+      "overview": {
+        "ar": "رحلة استكشافية ساحرة للصحراء الغربية وواحة سيوة الأسطورية. اكتشف بحيرات الملح وعيون المياه الكبريتية وبحر الرمال الأعظم، واختم رحلتك بجولة تاريخية في عروس المتوسط الإسكندرية.",
+        "en": "An extraordinary expedition into the Western Desert and mystical Siwa Oasis. Discover salt lakes, Cleopatra spring, the Great Sand Sea, and finish with historic Alexandria by the Mediterranean.",
+        "es": "Expedición al Oasis de Siwa en el desierto occidental y la histórica Alejandría.",
+        "it": "Spedizione straordinaria nell’Oasi di Siwa e nella storica Alessandria.",
+        "pt": "Expedição inesquecível ao Oásis de Siwa e à histórica Alexandria."
+      },
+      "duration": {
+        "ar": "5 أيام / 4 ليالٍ",
+        "en": "5 Days / 4 Nights",
+        "es": "5 Días / 4 Noches",
+        "it": "5 Giorni / 4 Notti",
+        "pt": "5 Dias / 4 Noites"
+      },
+      "category": "Extension",
+      "country": "Egypt",
+      "city": "Siwa",
+      "basePriceUsd": 650,
+      "price": 650,
+      "tags": [
+        "egypt-extensions",
+        "extension",
+        "safari",
+        "adventure",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "بحيرات الملح وعيون كليوباترا",
+          "بحر الرمال الأعظم والتزلج على الرمال",
+          "قلعة شالي وجبل الموتى",
+          "مكتبة الإسكندرية وقلعة قايتباي"
+        ],
+        "en": [
+          "Salt Lakes & Cleopatra Springs",
+          "Great Sand Sea Safari & Dune Bashing",
+          "Shali Fortress & Mountain of the Dead",
+          "Alexandria Library & Qaitbay Citadel"
+        ],
+        "es": [
+          "Lagos Salados y Manantiales de Cleopatra",
+          "Safari en el Gran Mar de Arena",
+          "Fortaleza de Shali",
+          "Biblioteca de Alejandría"
+        ],
+        "it": [
+          "Laghi Salati e Sorgenti di Cleopatra",
+          "Safari nel Gran Mare di Sabbia",
+          "Fortezza di Shali",
+          "Biblioteca di Alessandria"
+        ],
+        "pt": [
+          "Lagos de Sal e Nascentes de Cleópatra",
+          "Safari no Grande Mar de Areia",
+          "Fortaleza de Shali",
+          "Biblioteca de Alexandria"
+        ]
+      },
+      "included": {
+        "ar": [
+          "النقل ذهاباً وإياباً بالحافلة أو الميكروباص بين القاهرة – سيوة – القاهرة",
+          "01 ليلة في مرسى مطروح مع الإفطار والعشاء (بدون مشروبات)",
+          "03 ليالٍ في سيوة مع إقامة كاملة (بدون مشروبات)",
+          "01 ليلة في مخيم بالإسكندرية مع الإفطار والعشاء (بدون مشروبات)",
+          "جولة إلى دير القديس بيشوي ومتحف الحرب العالمية الثانية",
+          "جولة إلى جبل الموتى، معبد آمون، حمام كليوباترا، بحر الرمال الأعظم، جبل الدكرور، وغروب فطناس",
+          "جميع الانتقالات في سيارة مكيفة",
+          "مرافقة ممثل من فريقنا طوال الرحلة"
+        ],
+        "en": [
+          "Round-trip transportation by bus or minibus Cairo – Siwa – Cairo",
+          "01 night in Marsa Matruh with breakfast and dinner (w/o drinks)",
+          "03 nights in Siwa with full board (w/o drinks)",
+          "01 night in a camp in Alexandria with breakfast and dinner (w/o drinks)",
+          "Tour to Saint Bishoy Monastery and WWII Museum",
+          "Tour to Mountain of the Dead, Temple of Amun, Cleopatra's Bath, Great Sand Sea, Gebal Dakror, and Fatnas Island sunset",
+          "All transfers in air-conditioned vehicle",
+          "Accompaniment by a team representative throughout the trip"
+        ],
+        "es": [
+          "Transporte de ida y vuelta en autobús o microbús El Cairo – Siwa – El Cairo",
+          "01 noche de alojamiento en Marsa Matrouh con desayuno y cena (bebidas no incluidas)",
+          "03 noches de alojamiento en Siwa con pensión completa (bebidas no incluidas)",
+          "01 noche de alojamiento en Alejandría con desayuno y cena (bebidas no incluidas)",
+          "Excursión al Monasterio de San Bishoy y al Museo de la Segunda Guerra Mundial",
+          "Excursión a la Montaña de la Muerte, Templo de Amón, Baño de Cleopatra, Gran Mar de Arena, Gebel Dakrour y puesta de sol en la Isla Fatnas",
+          "Todos los traslados en vehículo con aire acondicionado",
+          "Acompañamiento de un representante de nuestro equipo durante todo el viaje"
+        ],
+        "it": [
+          "Trasporto di andata e ritorno in autobus o minibus Il Cairo – Siwa – Il Cairo",
+          "01 notte di sistemazione a Marsa Matrouh con colazione e cena (bevande escluse)",
+          "03 notti di sistemazione a Siwa in pensione completa (colazione e cena escluse)",
+          "01 notte di sistemazione ad Alessandria con colazione e cena (bevande escluse)",
+          "Escursione al Monastero di San Bishoy e al Museo della Seconda Guerra Mondiale",
+          "Escursione alla Montagna della Morte, Tempio di Amon, Bagno di Cleopatra, Grande Mar di Sabbia, Gebel Dakrour e tramonto sull'Isola di Fatnas",
+          "Tutti i trasferimenti in veicolo con aria condizionata",
+          "Assistenza di un rappresentante del nostro team per l'intero viaggio"
+        ],
+        "pt": [
+          "Transporte de ida e volta em ônibus ou micro-ônibus Cairo – Siwa – Cairo",
+          "01 noite de hospedagem em Marsa Matrouh com café da manhã e jantar (bebidas não inclusas)",
+          "03 noites de hospedagem em Siwa com pensão completa (bebidas não inclusas)",
+          "01 noite de hospedagem em Alexandria com café da manhã e jantar (bebidas não inclusas)",
+          "Passeio ao Monastério de São Bishoy e ao Museu da Segunda Guerra Mundial",
+          "Passeio à Montanha da Morte, Templo de Amon, Banho de Cleópatra, Grande Mar de Areia, Gebel Dakrour e pôr do sol na Ilha Fatnas",
+          "Todos os traslados em veículo com ar-condicionado",
+          "Acompanhamento de um representante da nossa equipe durante toda a viagem"
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "المشروبات والنفقات الشخصية"
+        ],
+        "en": [
+          "Drinks and personal expenses"
+        ],
+        "es": [
+          "Bebidas y gastos personales"
+        ],
+        "it": [
+          "Bevande e spese personali"
+        ],
+        "pt": [
+          "Bebidas e despesas pessoais"
+        ]
+      },
+      "heroImage": "/imgs/services/service-317.webp",
+      "images": [
+        "/imgs/services/service-317.webp",
+        "https://images.unsplash.com/photo-1509316975850-ff9c5deb0cd9?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1572252009286-268acec5ca0a?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "القاهرة / وادي النطرون / مرسى مطروح",
+            "en": "Cairo / Wadi El Natrun / Marsa Matruh",
+            "es": "El Cairo / Wadi El Natrun / Marsa Matruh",
+            "it": "Il Cairo / Wadi El Natrun / Marsa Matruh",
+            "pt": "Cairo / Wadi El Natrun / Marsa Matruh"
+          },
+          "description": {
+            "ar": "بعد تناول وجبة الإفطار في الفندق، المغادرة مبكراً جداً باتجاه وادي النطرون، وسمي بهذا الاسم نسبة إلى 8 بحيرات مختلفة في المنطقة تنتج ملح النطرون. زيارة دير الأنبا بيشوي (116 كم)، وهو أشهر أديرة الكنيسة القبطية الأرثوذكسية بالإسكندرية. التحرك بعد ذلك إلى العلمين (176 كم) على ضفاف البحر الأبيض المتوسط، والتوقف لتناول الغداء في مطعم محلي (بدون مشروبات). في فترة بعد الظهر، سنزور متحف الحرب العالمية الثانية ومقابر الكومنولث، ثم نتابع السير على طول الساحل حتى نصل إلى مرسى مطروح (184 كم). الوصول إلى الفندق في مرسى مطروح، تناول العشاء (بدون مشروبات) والمبيت.",
+            "en": "After breakfast at the hotel, early departure towards the Wadi El Natroun Valley, named after the 8 different lakes in the region where natron salt is produced. Visit to the Monastery of Anba Bishoy (116KM), the most famous monastery of the Coptic Orthodox Church of Alexandria. Continue to El Alamein (176KM) on the shores of the Mediterranean, stop for lunch at a local restaurant (excluding drinks). In the afternoon, we will visit the WWII Museum and the Commonwealth Tombs, continuing along the Mediterranean coast to Marsa Matrouh (184KM). Arrival at the Marsa Matrouh Hotel. Dinner (excluding drinks) and overnight stay.",
+            "es": "Después del desayuno en el hotel, salida muy temprano hacia el valle de Wadi El Natroun, llamado así por los 8 lagos diferentes de la región donde se produce la sal de natrón. Visita al Monasterio de Anba Bishoy (116 KM), el monasterio más famoso de la Iglesia Ortodoxa Copta de Alejandría. Continuación hacia El Alamein (176 KM) a orillas del Mediterráneo, parada para almorzar en un restaurante local (sin bebidas). Por la tarde visitaremos el Museo de la Segunda Guerra Mundial y las Tumbas de la Commonwealth, continuación por la costa mediterránea hasta Marsa Matrouh (184 KM). Llegada al hotel en Marsa Matrouh. Cena (sin bebidas) y alojamiento.",
+            "it": "Dopo la colazione in hotel, partenza molto presto verso la valle di Wadi El Natroun, nome dovuto agli 8 diversi laghi della regione dove si produce il sale di natron. Visita al Monastero di Anba Bishoy (116KM), il più famoso monastero della Chiesa Ortodossa Copta di Alessandria. Continuazione verso El Alamein (176KM) sulle sponde del Mediterraneo, sosta per il pranzo in un ristorante locale (bevande escluse). Nel pomeriggio visiteremo il Museo della Seconda Guerra Mondiale e le Tombe del Commonwealth, proseguendo lungo la costa mediterranea fino a Marsa Matrouh (184KM). Arrivo all'hotel di Marsa Matrouh. Cena (bevande escluse) e pernottamento.",
+            "pt": "Após o café da manhã no hotel, saída bem cedo em direção ao Vale de Wadi El Natroun, nome dado devido aos 8 diferentes lagos da região onde se produz o sal de natrão. Visita ao Monastério de Anba Bishoy (116 km), o mais famoso monastério da Igreja Ortodoxa Copta de Alexandria. Continuação até El Alamein (176 km) às margens do Mediterrâneo, parada para almoço em um restaurante local (sem bebidas). À tarde, visitaremos o Museu da Segunda Guerra Mundial e as Tumbas da Commonwealth, seguindo pelas margens do Mediterrâneo até Marsa Matrouh (184 km). Chegada e acomodação no Hotel em Marsa Matrouh. Jantar (sem bebidas) e pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "مرسى مطروح / سيوة",
+            "en": "Marsa Matruh / Siwa",
+            "es": "Marsa Matruh / Siwa",
+            "it": "Marsa Matruh / Siwa",
+            "pt": "Marsa Matruh / Siwa"
+          },
+          "description": {
+            "ar": "بعد الإفطار، مغادرة الفندق وزيارة كهف روميل الذي يحتوي على نقوش صخرية يعود تاريخها إلى أكثر من 5 آلاف عام. التحرك بعد ذلك إلى واحة سيوة (307 كم) عبر الصحراء الكبرى. الوصول والتسكين في فندق (Siwa Shali Resort) حيث سنأخذ قسطاً من الراحة، يليه غداء في مطعم محلي (بدون مشروبات). في أواخر فترة بعد الظهر، جولة في قرية شالي القديمة لمشاهدة غروب الشمس الساحر. العودة إلى الفندق، العشاء (بدون مشروبات) والمبيت.",
+            "en": "After breakfast, check out from the hotel and visit Rommel's Cave, featuring rock paintings dating back more than 5,000 years. Continue to Siwa Oasis (307KM) crossing the Sahara Desert. Arrival and accommodation at the Siwa Shali Resort Hotel, where we will have some time to rest. Stop for lunch at a local restaurant (excluding drinks). Late afternoon, a walk through the Shali Old Village to contemplate the sunset. Return to the hotel, dinner (excluding drinks), and overnight stay.",
+            "es": "Después del desayuno, salida del hotel y visita a la Cueva de Rommel, con pinturas rupestres que datan de hace más de 5,000 años. Continuación hacia el Oasis de Siwa (307 KM), cruzando el desierto del Sahara. Llegada y alojamiento en el hotel Siwa Shali Resort, donde tendremos tiempo para descansar. Parada para almorzar en un restaurante local (sin bebidas). Al final de la tarde, paseo por el pueblo antiguo de Shali (Shali Old Village), donde contemplaremos la puesta de sol. Regreso al hotel, cena (sin bebidas) y alojamiento.",
+            "it": "Dopo la colazione, partenza dall'hotel e visita alla Grotta di Rommel, con pitture rupestri risalenti a più di 5.000 anni fa. Continuazione verso l'Oasi di Siwa (307KM), attraversando il deserto del Sahara. Arrivo e sistemazione presso l'hotel Siwa Shali Resort, dove avremo tempo per riposare. Sosta per il pranzo in un ristorante locale (bevande escluse). Nel tardo pomeriggio, passeggiata nel villaggio antico di Shali, dove ammireremo il tramonto. Rientro in hotel, cena (bevande escluse) e pernottamento.",
+            "pt": "Após o café da manhã, saída do hotel e visita à Caverna de Rommel, com pinturas rupestres datadas de mais de 5 mil anos. Continuação até o Oásis de Siwa (307 km), atravessando o deserto do Saara. Chegada e alojamento no Hotel Siwa Shali Resort, onde teremos um tempo para descanso. Parada para almoço em um restaurante local (sem bebidas). No final da tarde, passeio pela Vila Antiga de Shali (Shali Old Village), onde contemplaremos o pôr do sol. Retorno ao hotel, jantar (sem bebidas) e pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "الإسكندرية / القاهرة",
+            "en": "Alexandria / Cairo",
+            "es": "Alejandría / El Cairo",
+            "it": "Alessandria / Il Cairo",
+            "pt": "Alexandria / Cairo"
+          },
+          "description": {
+            "ar": "بعد الإفطار في الفندق، ننطلق في جولة لزيارة العاصمة القديمة لمصر لأكثر من 1000 عام، الشهيرة بمنارة الإسكندرية (إحدى عجائب الدنيا السبع القديمة). سنزور مقابر كوم الشقافة الأثرية، عمود السواري (المبني من قطعة واحدة من الجرانيت الأحمر بوزن 396 طناً)، قصر المنتزه، وقلعة قايتباي التي بُنيت في نفس موقع منارة الإسكندرية القديمة. سنزور أيضاً مكتبة الإسكندرية الشهيرة (تغلق أيام الجمعة)، وهي واحدة من أكبر وأهم المكتبات في العالم. التوقف لتناول الغداء في مطعم محلي (بدون مشروبات). بعد ذلك، نعود إلى القاهرة (218 كم) مباشرة إلى المطار أو إلى الفندق الذي تختارونه. النهاية.",
+            "en": "After breakfast at the hotel, we will visit the ancient capital of Egypt for over 1,000 years, famous for the Lighthouse of Alexandria (one of the 7 wonders of the ancient world). We will visit the Kom El Shoqafa catacombs, Pompey's Pillar (a monument carved from a single piece of red granite weighing 396 tons), Montazah Palace, and the Qaitbay Citadel, built on the exact site of the former lighthouse. We will also visit the famous Library of Alexandria (closed on Fridays), one of the largest and most important in the world. Stop for an included lunch at a local restaurant (excluding drinks). Next, we return to Cairo (218 km) directly to the airport or your chosen hotel. End of services.",
+            "es": "Después del desayuno en el hotel, saldremos para visitar la antigua capital de Egipto por más de 1000 años, famosa por el Faro de Alejandría (una de las 7 maravillas del mundo antiguo). Visitaremos las catacumbas de Kom el Shoqafa, el Pilar de Pompeyo (monumento construido en una sola piedra de granito rojo de 396 toneladas), el Palacio de Montazah y la Ciudadela de Qaitbay, construida en el lugar exacto donde estuvo el farol. También visitaremos la famosa Biblioteca de Alejandría (cerrada los viernes), una de las más grandes e importantes del mundo. Parada para almorzar incluido en un restaurante local (sin bebidas). Luego, regresaremos a El Cairo (218 km) directo al aeropuerto o a su hotel elegido. Fin.",
+            "it": "Dopo la colazione in hotel, visiteremo l'antica capitale dell'Egitto per oltre 1000 anni, famosa per il Faro di Alessandria (una delle 7 meraviglie del mondo antico). Visiteremo le catacombe di Kom el Shoqafa, la Colonna di Pompeo (monumento ricavato da un unico blocco di granito rosso di 396 tonnellate), il Palazzo Montazah e la Cittadella di Qaitbay, costruita nell'esatto punto in cui sorgeva il faro. Visiteremo anche la celebre Biblioteca di Alessandria (chiusa il venerdì), una delle più grandi e importanti al mondo. Sosta per il pranzo incluso in un ristorante locale (bevande escluse). Successivamente, rientro al Cairo (218 km) direttamente in aeroporto o presso l'hotel scelto. Fine dei servizi.",
+            "pt": "Após o café da manhã no hotel, sairemos para uma visita à antiga capital do Egito por mais de 1000 anos, famosa pelo Farol de Alexandria (uma das 7 maravilhas do mundo antigo). Visitaremos as catacumbas de Kom el Shoqafa, o Pilar de Pompeu (monumento construído em uma única pedra de granito vermelho com 396 toneladas), o Palácio de Montazah e a Cidadela de Qaitbay, que foi construída no exato lugar onde ficava o farol. Também visitaremos a famosa Biblioteca de Alexandria (fechada às sextas-feiras), uma das maiores e mais importantes do mundo. Parada para almoço incluso em restaurante local (sem bebidas). Em seguida, retornaremos para o Cairo (218 km) direto para o aeroporto ou para o seu hotel escolhido. Fim dos serviços."
+          },
+          "meals": null
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "سيوة / الصحراء الكبرى",
+            "en": "Siwa / The Great Sahara Desert",
+            "es": "Siwa / El Gran Desierto",
+            "it": "Siwa / Il Grande Deserto",
+            "pt": "Siwa / O Grande Deserto"
+          },
+          "description": {
+            "ar": "بعد الإفطار، سنزور جبل الموتى، معبد أمون (معبد الوحي)، وعين كليوباترا. التوقف لتناول الغداء (بدون مشروبات). في فترة بعد الظهر، ننطلق بسيارات 4x4 إلى بحر الرمال الأعظم، والوصول إلى المخيم الصحراوي. العشاء (بدون مشروبات) والمبيت في الخيام.",
+            "en": "After breakfast, we will visit the Mountain of the Dead, the Temple of Amun, and Cleopatra's Baths. Stop for lunch (excluding drinks). In the afternoon, we will head out in a 4x4 vehicle to the Great Sand Sea, arriving at the desert tents. Dinner (excluding drinks) and overnight stay in the camp.",
+            "es": "Después del desayuno, visitaremos la Montaña de la Morte, el Templo de Amón y los Baños de Cleopatra. Parada para almorzar (sin bebidas). Por la tarde saldremos en vehículo 4x4 hacia el Gran Mar de Arena, llegada a las tiendas del desierto. Cena (sin bebidas) y alojamiento en el campamento.",
+            "it": "Dopo la colazione, visiteremo la Montagna della Morte, il Tempio di Amon e i Bagni di Cleopatra. Sosta per il pranzo (bevande escluse). Nel pomeriggio partiremo in veicolo 4x4 verso il Grande Mar di Sabbia, arrivo alle tende del deserto. Cena (bevande escluse) e pernottamento nel campo.",
+            "pt": "Após o café da manhã, visitaremos a Montanha da Morte, o Templo de Amón e os Banhos de Cleópatra. Parada para almoço (sem bebidas). À tarde, sairemos em veículo 4x4 rumo ao Grande Mar de Areia, com chegada às tendas do deserto. Jantar (sem bebidas) e pernoite no acampamento."
+          },
+          "meals": null
+        },
+        {
+          "day": 5,
+          "title": {
+            "ar": "سيوة / الإسكندرية",
+            "en": "Siwa / Alexandria",
+            "es": "Siwa / Alejandría",
+            "it": "Siwa / Alessandria",
+            "pt": "Siwa / Alexandria"
+          },
+          "description": {
+            "ar": "بعد الإفطار في الفندق، نتحرك باتجاه مدينة الإسكندرية (598 كم). التوقف في مرسى مطروح لتناول الغداء في مطعم محلي (بدون مشروبات)، ثم مواصلة الطريق إلى الإسكندرية والوصول إلى الفندق. العشاء مشمول (بدون مشروبات) والمبيت.",
+            "en": "After breakfast at the hotel, departure for Alexandria (598km). Stop in Marsa Matrouh for lunch at a local restaurant (excluding drinks). Afterwards, continue to Alexandria and check into the hotel. Dinner included (excluding drinks) and overnight stay.",
+            "es": "Después del desayuno en el hotel, saldremos con destino a Alejandría (598 km). Parada en Marsa Matrouh para almorzar en un restaurante local (sin bebidas). A continuación, continuación hacia Alejandría y llegada al hotel. Cena incluida (sin bebidas) y alojamiento.",
+            "it": "Dopo la colazione in hotel, partenza per Alessandria (598km). Sosta a Marsa Matrouh per il pranzo in un ristorante locale (bevande escluse). Successivamente, continuazione verso Alessandria e arrivo in hotel. Cena inclusa (bevande escluse) e pernottamento.",
+            "pt": "Após o café da manhã no hotel, sairemos com destino a Alexandria (598 km). Parada em Marsa Matrouh para almoço em um restaurante local (sem bebidas). Em seguida, continuação até Alexandria e chegada ao hotel. Jantar incluso (sem bebidas) e pernoite."
+          },
+          "meals": null
+        }
+      ]
+    },
+    {
+      "id": "tour-honeymoon-egypt",
+      "slug": "honeymoon-egypt",
+      "title": {
+        "ar": "شهر العسل في مصر",
+        "en": "Honeymoon in Egypt",
+        "es": "Luna de Miel en Egipto",
+        "it": "Luna di Miele in Egitto",
+        "pt": "Lua de Mel no Egito"
+      },
+      "subtitle": {
+        "ar": "القاهرة • رحلة نيلية فاخرة • استجمام البحر الأحمر بالغردقة (10 أيام / 9 ليال)",
+        "en": "Cairo • Deluxe Nile Cruise • Hurghada Red Sea (10 Days / 9 Nights)",
+        "es": "El Cairo • Crucero de Lujo por el Nilo • Hurghada Mar Rojo (10 Días / 9 Noches)",
+        "it": "Il Cairo • Crociera di Lusso sul Nilo • Hurghada Mar Rosso (10 Giorni / 9 Notti)",
+        "pt": "Cairo • Cruzeiro de Luxo no Nilo • Hurghada Mar Vermelho (10 Dias / 9 Noites)"
+      },
+      "overview": {
+        "ar": "رحلة رومانسية حالمة تجمع بين سحر مصر القديمة وجمال البحر الأحمر الهادئ، مصممة خصيصاً للأزواج والباحثين عن الاستجمام والأجواء الشاعرية الخاصة مع عشاء رومانسي واستقبال بالورد وجلسات تصوير احترافية.",
+        "en": "A dream romantic journey combining the magic of ancient Egypt and the serene beauty of the Red Sea, specially crafted for couples seeking relaxation, intimate moments, candlelit dinners, and pure luxury.",
+        "es": "Un viaje romántico de ensueño que combina la magia del antiguo Egipto con la tranquilidad del Mar Rojo, diseñado especialmente para parejas.",
+        "it": "Un viaggio romantico da sogno che unisce la magia dell’antico Egitto alla serenità del Mar Rosso, pensato appositamente per le coppie.",
+        "pt": "Uma viagem romântica de sonho que combina a magia do antigo Egito com a tranquilidade do Mar Vermelho, especialmente para casais."
+      },
+      "duration": {
+        "ar": "10 أيام / 9 ليالٍ",
+        "en": "10 Days / 9 Nights",
+        "es": "10 Días / 9 Noches",
+        "it": "10 Giorni / 9 Notti",
+        "pt": "10 Dias / 9 Noites"
+      },
+      "category": "Honeymoon",
+      "country": "Egypt",
+      "city": "Cairo",
+      "basePriceUsd": 2400,
+      "price": 2400,
+      "tags": [
+        "egypt-honeymoon",
+        "honeymoon",
+        "romantic",
+        "luxury",
+        "featured",
+        "popular",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "استقبال رومانسي خاص بالورود وسلة فواكه وشوكولاتة فاخرة",
+          "جلسة تصوير احترافية خاصة للعروسين عند أهرامات الجيزة ونهر النيل",
+          "كروز نيلي 5 نجوم ديلوكس مع عشاء رومانسي خاص على ضوء الشموع",
+          "إقامة شاملة كلياً All-Inclusive في أفخم منتجعات شاطئ الغردقة",
+          "جولة خاصة في القاهرة التاريخية والمتحف المصري الكبير"
+        ],
+        "en": [
+          "Romantic VIP welcome with flowers, fruit basket and luxury chocolates",
+          "Professional private photoshoot session for the couple at the Pyramids & Nile",
+          "5-Star Deluxe Nile Cruise with private candlelit romantic dinner",
+          "All-Inclusive beach resort stay in luxury Hurghada resort",
+          "Private historic Cairo & Grand Egyptian Museum tour"
+        ],
+        "es": [
+          "Bienvenida romántica con flores y detalles de lujo",
+          "Sesión de fotos profesional privada para la pareja en las Pirámides",
+          "Crucero de lujo por el Nilo con cena romántica a la luz de las velas",
+          "Estancia todo incluido en resort de lujo en Hurghada",
+          "Visitas privadas en El Cairo y Gran Museo Egipcio"
+        ],
+        "it": [
+          "Accoglienza romantica VIP con fiori e cesto di frutta",
+          "Servizio fotografico professionale per la coppia alle Piramidi",
+          "Crociera di lusso sul Nilo con cena romantica a lume di candela",
+          "Soggiorno All-Inclusive in resort di lusso a Hurghada",
+          "Tour privato del Cairo storico e del Grande Museo Egizio"
+        ],
+        "pt": [
+          "Boas-vindas românticas VIP com flores e mimos de luxo",
+          "Sessão de fotos profissional para o casal nas Pirâmides e Nilo",
+          "Cruzeiro de luxo no Nilo com jantar romântico à luz de velas",
+          "Estadia All-Inclusive em resort de luxo em Hurghada",
+          "Tour privado pelo Cairo histórico e Grande Museu Egípcio"
+        ]
+      },
+      "included": {
+        "ar": [
+          "إقامة 3 ليالٍ في فندق 5 نجوم فاخر بالقاهرة مع إفطار.",
+          "إقامة 3 ليالٍ في كروز النيل 5 نجوم ديلوكس إقامة كاملة (Full Board).",
+          "إقامة 3 ليالٍ في منتجع شاطئي 5 نجوم في الغردقة بنظام شامل All-Inclusive.",
+          "طيران داخلي (القاهرة - الأقصر / أسوان - الغردقة / الغردقة - القاهرة).",
+          "تنقلات خاصة بسيارات مرسيدس / VIP فاخرة.",
+          "مرشد سياحي خاص باللغة المفضلة وتذاكر كافة المزارات.",
+          "ترقية مجانية للغرف والأجنحة (حسب التوفر).",
+          "خدمة كونسيرج ودعم سياحي 24 ساعة طوال الرحلة."
+        ],
+        "en": [
+          "3 nights in 5-star luxury Cairo hotel with breakfast.",
+          "3 nights in 5-star Deluxe Nile Cruise (Full Board).",
+          "3 nights in 5-star beachfront Hurghada resort (All-Inclusive).",
+          "Domestic flights: Cairo-Luxor, Aswan-Hurghada, Hurghada-Cairo.",
+          "Private VIP transfers in luxury vehicles.",
+          "Private professional guide and all entrance fees.",
+          "Complimentary room/suite upgrade upon availability.",
+          "24/7 dedicated travel concierge assistance."
+        ],
+        "es": [
+          "3 noches en hotel 5 estrellas en El Cairo con desayuno.",
+          "3 noches en Crucero por el Nilo 5 estrellas Deluxe (Pensión Completa).",
+          "3 noches en resort 5 estrellas en Hurghada (Todo Incluido).",
+          "Vuelos domésticos incluidos en la ruta.",
+          "Traslados privados VIP.",
+          "Guía privado y entradas a monumentos.",
+          "Atención 24/7 de concierge."
+        ],
+        "it": [
+          "3 notti in hotel 5 stelle al Cairo con colazione.",
+          "3 notti in Crociera sul Nilo 5 stelle Deluxe (Pensione Completa).",
+          "3 notti in resort 5 stelle a Hurghada (All-Inclusive).",
+          "Voli interni inclusi.",
+          "Trasferimenti privati VIP.",
+          "Guida privata e biglietti d’ingresso inclusi.",
+          "Assistenza concierge dedicata 24/7."
+        ],
+        "pt": [
+          "3 noites em hotel 5 estrelas no Cairo com café da manhã.",
+          "3 noites em Cruzeiro no Nilo 5 estrelas Deluxe (Pensão Completa).",
+          "3 noites em resort 5 estrelas em Hurghada (All-Inclusive).",
+          "Voos domésticos incluídos.",
+          "Traslados privativos VIP.",
+          "Guia privativo e ingressos para atrações.",
+          "Assistência concierge 24 horas."
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "تذاكر الطيران الدولية.",
+          "تأشيرة دخول مصر (25$).",
+          "المشروبات الكحولية الفاخرة خارج الباقة.",
+          "الإكراميات والمصروفات الشخصية."
+        ],
+        "en": [
+          "International flights.",
+          "Entry visa fee ($25).",
+          "Premium alcohol outside package.",
+          "Tips and personal expenses."
+        ],
+        "es": [
+          "Vuelos internacionales.",
+          "Visado de entrada.",
+          "Gastos personales y propinas."
+        ],
+        "it": [
+          "Voli internazionali.",
+          "Visto di ingresso.",
+          "Spese personali e mance."
+        ],
+        "pt": [
+          "Voos internacionais.",
+          "Visto de entrada.",
+          "Despesas pessoais e gorjetas."
+        ]
+      },
+      "heroImage": "https://hl-tourism.com/media/typecms/Honeymoon_Planning_Guide_2025_Complete_Resource.webp",
+      "images": [
+        "https://hl-tourism.com/media/typecms/Honeymoon_Planning_Guide_2025_Complete_Resource.webp",
+        "https://images.unsplash.com/photo-1510414842594-a61c69b5ae57?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1540555700478-4be289fbecef?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "اليوم 1: الوصول إلى القاهرة والاستقبال الرومانسي",
+            "en": "Day 1: Arrival in Cairo - Romantic Welcome",
+            "es": "Día 1: Llegada a El Cairo - Bienvenida Romántica",
+            "it": "Giorno 1: Arrivo al Cairo - Benvenuto Romantico",
+            "pt": "Dia 1: Chegada ao Cairo - Boas-vindas Românticas"
+          },
+          "description": {
+            "ar": "الوصول إلى مطار القاهرة الدولي، الاستقبال بالورود، ونقل خاص إلى فندق 5 نجوم مع سلة فاكهة وترقية جناح.",
+            "en": "Arrival at Cairo International Airport, flower reception and private transfer to 5-star hotel with honeymoon amenities.",
+            "es": "Llegada a El Cairo, recepción con flores y traslado privado a hotel 5 estrellas.",
+            "it": "Arrivo al Cairo, accoglienza con fiori e trasferimento privato in hotel 5 stelle.",
+            "pt": "Chegada ao Cairo, recepção com flores e traslado privativo para hotel 5 estrelas."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "اليوم 2: أهرامات الجيزة وجلسة تصوير العروسين",
+            "en": "Day 2: Giza Pyramids & Couple Photoshoot",
+            "es": "Día 2: Pirámides de Giza y Sesión Fotográfica",
+            "it": "Giorno 2: Piramidi di Giza e Servizio Fotografico",
+            "pt": "Dia 2: Pirâmides de Gizé e Sessão de Fotos"
+          },
+          "description": {
+            "ar": "جولة خاصة لزيارة الأهرامات وأبو الهول مع مصور فوتوغرافي محترف لالتقاط أجمل اللقطات التذكارية للعروسين.",
+            "en": "Private tour to Giza Pyramids and Sphinx with professional couple photo session, followed by Saqqara.",
+            "es": "Tour privado a las Pirámides de Giza con sesión fotográfica para la pareja.",
+            "it": "Tour privato delle Piramidi con servizio fotografico per gli sposi.",
+            "pt": "Tour privativo pelas Pirâmides com sessão de fotos para o casal."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "اليوم 3: القاهرة التاريخية والمتحف الكبير",
+            "en": "Day 3: Historic Cairo & Grand Egyptian Museum",
+            "es": "Día 3: El Cairo Histórico y Gran Museo Egipcio",
+            "it": "Giorno 3: Il Cairo Storico e Grande Museo Egizio",
+            "pt": "Dia 3: Cairo Histórico e Grande Museu Egípcio"
+          },
+          "description": {
+            "ar": "زيارة المتحف المصري الكبير، قلعة صلاح الدين، الحي القبطي وجولة تسوق رومانسية في خان الخليلي.",
+            "en": "Visit Grand Egyptian Museum, Citadel of Saladin, Coptic Cairo and Khan el Khalili bazaar.",
+            "es": "Visita del Gran Museo Egipcio, Ciudadela y bazar Jan el Jalili.",
+            "it": "Visita del Grande Museo Egizio, Cittadella e bazar di Khan el Khalili.",
+            "pt": "Visita ao Grande Museu Egípcio, Cidadela e bazar Khan el Khalili."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "اليوم 4: القاهرة – الأقصر – كروز النيل الفاخر",
+            "en": "Day 4: Cairo – Luxor – Luxury Nile Cruise",
+            "es": "Día 4: El Cairo – Luxor – Crucero de Lujo",
+            "it": "Giorno 4: Il Cairo – Luxor – Crociera di Lusso",
+            "pt": "Dia 4: Cairo – Luxor – Cruzeiro de Luxo"
+          },
+          "description": {
+            "ar": "طيران داخلي إلى الأقصر، الصعود إلى الفندق العائم الفاخر وزيارة معبدي الكرنك والأقصر، عشاء رومانسي على سطح السفينة.",
+            "en": "Flight to Luxor, embark on luxury Nile Cruise, visit Karnak and Luxor temples. Candlelit dinner on board.",
+            "es": "Vuelo a Luxor, embarque en crucero de lujo y visita a Karnak y Luxor.",
+            "it": "Volo a Luxor, imbarco su crociera di lusso e visita di Karnak e Luxor.",
+            "pt": "Voo para Luxor, embarque no cruzeiro de luxo e visita a Karnak e Luxor."
+          },
+          "meals": {
+            "ar": "إقامة كاملة (كروز)",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 5,
+          "title": {
+            "ar": "اليوم 5: وادي الملوك والإبحار إلى إدفو",
+            "en": "Day 5: Valley of the Kings & Sail to Edfu",
+            "es": "Día 5: Valle de los Reyes y Navegación a Edfu",
+            "it": "Giorno 5: Valle dei Re e Navigazione verso Edfu",
+            "pt": "Dia 5: Vale dos Reis e Navegação para Edfu"
+          },
+          "description": {
+            "ar": "زيارة مقابر الملوك، معبد حتشبسوت وتمثالي ممنون. ثم الإبحار الهادئ على النيل نحو إدفو مع غروب ساحر.",
+            "en": "Visit Valley of the Kings, Hatshepsut Temple, Colossi of Memnon. Romantic sunset sailing towards Edfu.",
+            "es": "Valle de los Reyes, templo de Hatshepsut y navegación romántica al atardecer.",
+            "it": "Valle dei Re, tempio di Hatshepsut e romantica navigazione al tramonto.",
+            "pt": "Vale dos Reis, templo de Hatshepsut e navegação romântica ao pôr do sol."
+          },
+          "meals": {
+            "ar": "إقامة كاملة (كروز)",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 6,
+          "title": {
+            "ar": "اليوم 6: معبد إدفو – كوم أمبو – أسوان",
+            "en": "Day 6: Edfu – Kom Ombo – Aswan",
+            "es": "Día 6: Edfu – Kom Ombo – Asuán",
+            "it": "Giorno 6: Edfu – Kom Ombo – Assuan",
+            "pt": "Dia 6: Edfu – Kom Ombo – Aswan"
+          },
+          "description": {
+            "ar": "زيارة معبد حورس ومعبد كوم أمبو، ثم مواصلة الإبحار إلى أسوان وحفلة نوبية خاصة على متن السفينة.",
+            "en": "Visit Edfu and Kom Ombo temples, sail to Aswan with special Nubian evening on board.",
+            "es": "Visita de Edfu y Kom Ombo, navegación a Asuán.",
+            "it": "Visita di Edfu e Kom Ombo, navigazione verso Assuan.",
+            "pt": "Visita a Edfu e Kom Ombo, navegação para Aswan."
+          },
+          "meals": {
+            "ar": "إقامة كاملة (كروز)",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 7,
+          "title": {
+            "ar": "اليوم 7: أسوان – الغردقة والبحر الأحمر",
+            "en": "Day 7: Aswan – Hurghada Red Sea Resort",
+            "es": "Día 7: Asuán – Hurghada Mar Rojo",
+            "it": "Giorno 7: Assuan – Hurghada Mar Rosso",
+            "pt": "Dia 7: Aswan – Hurghada Mar Vermelho"
+          },
+          "description": {
+            "ar": "زيارة معبد فيلة ثم الانتقال إلى الغردقة، الوصول إلى المنتجع الفاخر والاستمتاع بإقامة شاملة كلياً.",
+            "en": "Visit Philae Temple, transfer to Hurghada 5-star beachfront resort on All-Inclusive basis.",
+            "es": "Visita de Filé y traslado a resort de lujo en Hurghada con Todo Incluido.",
+            "it": "Visita di File e trasferimento a Hurghada in resort 5 stelle All-Inclusive.",
+            "pt": "Visita a Philae e traslado para resort 5 estrelas em Hurghada com All-Inclusive."
+          },
+          "meals": {
+            "ar": "شامل كلياً (All-Inclusive)",
+            "en": "All-Inclusive"
+          }
+        },
+        {
+          "day": 8,
+          "title": {
+            "ar": "اليوم 8: استجمام شاطئي خاص في الغردقة",
+            "en": "Day 8: Beach Relaxation & Marine Excursion",
+            "es": "Día 8: Relax en la Playa y Actividades Marinas",
+            "it": "Giorno 8: Relax in Spiaggia e Attività Marine",
+            "pt": "Dia 8: Relaxamento na Praia e Atividades Marinhas"
+          },
+          "description": {
+            "ar": "يوم حر للعروسين للاسترخاء على الشاطئ الخاص بالمنتجع، أو رحلة يخت خاصة لمشاهدة الشعب المرجانية والدلافين.",
+            "en": "Full leisure day for the couple to enjoy private beach, spa treatments, or private yacht snorkeling trip.",
+            "es": "Día libre para disfrutar de la playa, spa y paseo en barco por los arrecifes.",
+            "it": "Giornata libera di relax in spiaggia, trattamenti spa o escursione in barca.",
+            "pt": "Dia livre para relaxar na praia, tratamentos de spa ou passeio de barco."
+          },
+          "meals": {
+            "ar": "شامل كلياً (All-Inclusive)",
+            "en": "All-Inclusive"
+          }
+        },
+        {
+          "day": 9,
+          "title": {
+            "ar": "اليوم 9: الغردقة / العودة إلى القاهرة",
+            "en": "Day 9: Hurghada / Return to Cairo",
+            "es": "Día 9: Hurghada / Regreso a El Cairo",
+            "it": "Giorno 9: Hurghada / Ritorno al Cairo",
+            "pt": "Dia 9: Hurghada / Retorno ao Cairo"
+          },
+          "description": {
+            "ar": "صباح شاطئي ممتع ثم طيران داخلي للعودة إلى القاهرة وعشاء ختامي فاخر مطل على النيل.",
+            "en": "Leisure morning, flight back to Cairo. Evening farewell dinner overlooking the Nile.",
+            "es": "Mañana libre y vuelo de regreso a El Cairo. Cena de despedida frente al Nilo.",
+            "it": "Mattinata libera e volo di ritorno al Cairo. Cena di arrivederci sul Nilo.",
+            "pt": "Manhã livre e voo de retorno ao Cairo. Jantar de despedida com vista para o Nilo."
+          },
+          "meals": {
+            "ar": "شامل كلياً (All-Inclusive)",
+            "en": "All-Inclusive"
+          }
+        },
+        {
+          "day": 10,
+          "title": {
+            "ar": "اليوم 10: وداع مصر والمغادرة النهائية",
+            "en": "Day 10: Farewell Egypt & Final Departure",
+            "es": "Día 10: Despedida y Salida Final",
+            "it": "Giorno 10: Arrivederci Egitto e Partenza",
+            "pt": "Dia 10: Despedida do Egito e Partida"
+          },
+          "description": {
+            "ar": "الإفطار في الفندق والانتقال بسيارة خاصة إلى مطار القاهرة الدولي للعودة مع أجمل ذكريات العمر.",
+            "en": "Breakfast at hotel and private transfer to Cairo International Airport for final departure.",
+            "es": "Desayuno y traslado privado al aeropuerto para el vuelo de regreso.",
+            "it": "Colazione e trasferimento privato all’aeroporto per la partenza.",
+            "pt": "Café da manhã e traslado privativo ao aeroporto para partida."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tour-holy-family-egypt",
+      "slug": "holy-family-egypt",
+      "title": {
+        "ar": "رحلة مسار العائلة المقدسة في مصر",
+        "en": "Journey of the Holy Family in Egypt",
+        "es": "Ruta de la Sagrada Familia en Egipto",
+        "it": "Cammino della Sacra Famiglia in Egitto",
+        "pt": "Rota da Sagrada Família no Egito"
+      },
+      "subtitle": {
+        "ar": "10 أيام / 09 ليال - مسار الأديرة القبطية والمعالم الروحية والتاريخية الخالدة",
+        "en": "10 Days / 9 Nights - Ancient Coptic Monasteries and Sacred Spiritual Trail",
+        "es": "10 Días / 9 Noches - Antiguos Monasterios Coptos y Ruta Espiritual",
+        "it": "10 Giorni / 9 Notti - Antichi Monasteri Copti e Percorso Spirituale",
+        "pt": "10 Dias / 9 Noites - Antigos Monastérios Coptas e Rota Espiritual"
+      },
+      "overview": {
+        "ar": "رحلة إيمانية وروحانية تاريخية تتبع خطى العائلة المقدسة في مصر. تشمل زيارة أديرة وادي النطرون العريقة، كنائس مصر القديمة والمغارة المقدسة، دير المحرق بأسيوط، ومعالم جبل الطير بالمنيا برعاية كاملة وتنظيم فاخر.",
+        "en": "A sacred spiritual and historical journey tracing the footsteps of the Holy Family across Egypt. Visit ancient monasteries of Wadi El Natrun, Old Cairo holy crypts, Deir Al-Muharraq in Asyut, and Gabal Al-Teir in Minya.",
+        "es": "Un viaje espiritual siguiendo los pasos de la Sagrada Familia por Egipto, visitando monasterios de Wadi Natrun y El Cairo Antiguo.",
+        "it": "Un pellegrinaggio sacro sulle orme della Sacra Famiglia in Egitto attraverso antichi monasteri e luoghi di culto.",
+        "pt": "Uma jornada espiritual histórica seguindo os passos da Sagrada Família no Egito por mosteiros ancestrais."
+      },
+      "duration": {
+        "ar": "10 أيام / 9 ليالٍ",
+        "en": "10 Days / 9 Nights",
+        "es": "10 Días / 9 Noches",
+        "it": "10 Giorni / 9 Notti",
+        "pt": "10 Dias / 9 Noites"
+      },
+      "category": "Religious",
+      "country": "Egypt",
+      "city": "Cairo",
+      "basePriceUsd": 1950,
+      "price": 1950,
+      "tags": [
+        "egypt-religious",
+        "religious",
+        "coptic",
+        "cultural",
+        "featured",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "زيارة كنائس مصر القديمة: الكنيسة المعلقة، كنيسة أبي سرجة والمغارة المقدسة",
+          "جولة أديرة وادي النطرون: دير الأنبا مقار ودير البراموس ودير السريان",
+          "موقع جبل الطير الأثري بالمنيا ودير العذراء مريم",
+          "دير المحرق بأسيوط (آخر محطات إقامة العائلة المقدسة في صعيد مصر)",
+          "جولة أهرامات الجيزة ومتحف الحضارة والمتحف القبطي"
+        ],
+        "en": [
+          "Visit Old Cairo: Hanging Church, Church of St. Sergius and Bacchus, Holy Crypt",
+          "Wadi El Natrun Monasteries: St. Macarius, Paromeos, and Syrian Monasteries",
+          "Gabal Al-Teir sacred mountain & Church of the Virgin in Minya",
+          "Deir Al-Muharraq in Asyut (Holy Family long sanctuary in Upper Egypt)",
+          "Giza Pyramids, Coptic Museum and National Museum of Egyptian Civilization"
+        ],
+        "es": [
+          "Iglesias de El Cairo Antiguo y la Cripta Sagrada",
+          "Monasterios milenarios de Wadi El Natrun",
+          "Santuario de Gabal Al-Teir en Menia",
+          "Monasterio de Al-Muharraq en Asiut",
+          "Pirámides de Giza y Museo Copto"
+        ],
+        "it": [
+          "Chiese del Cairo Vecchio e la Cripta Sacra",
+          "Monasteri millenari di Wadi El Natrun",
+          "Santuario di Gabal Al-Teir a Minya",
+          "Monastero di Deir Al-Muharraq ad Asyut",
+          "Piramidi di Giza e Museo Copto"
+        ],
+        "pt": [
+          "Igrejas do Cairo Antigo e Cripta Sagrada",
+          "Monastérios milenares de Wadi El Natrun",
+          "Santuário de Gabal Al-Teir em Minya",
+          "Monastério de Deir Al-Muharraq em Asyut",
+          "Pirâmides de Gizé e Museu Copta"
+        ]
+      },
+      "included": {
+        "ar": [
+          "إقامة 9 ليالٍ في فنادق 4 و 5 نجوم مع الإفطار والعشاء.",
+          "جميع التنقلات بحافلات سياحية خاصة مكيفة ومجهزة.",
+          "مرشد سياحي متخصص في التاريخ القبطي والآثار الدينية.",
+          "رسوم دخول جميع الأديرة والكنائس والمزارات الأثرية.",
+          "توفير التنسيقات والتصاريح الخاصة لزيارة الأديرة."
+        ],
+        "en": [
+          "9 nights accommodation in 4 & 5-star hotels with breakfast & dinner.",
+          "Private deluxe air-conditioned coach transfers throughout.",
+          "Specialized theologian & Coptic history expert guide.",
+          "Entrance tickets to all monasteries, churches, and museums.",
+          "Full pilgrimage permits and institutional coordination."
+        ],
+        "es": [
+          "9 noches de alojamiento en hoteles 4 y 5 estrellas con media pensión.",
+          "Traslados en autobús de lujo con aire acondicionado.",
+          "Guía experto en historia copta y peregrinaciones.",
+          "Entradas a todos los monasterios e iglesias."
+        ],
+        "it": [
+          "9 notti in hotel 4 e 5 stelle con mezza pensione.",
+          "Trasferimenti in autobus privato granturismo climatizzato.",
+          "Guida specializzata in storia copta e teologia.",
+          "Ingressi a tutti i monasteri e chiese menzionate."
+        ],
+        "pt": [
+          "9 noites de hospedagem em hotéis 4 e 5 estrelas com meia pensão.",
+          "Traslados privativos em ônibus de luxo com ar condicionado.",
+          "Guia especialista em história cristã e copta.",
+          "Ingressos para todos os mosteiros e santuários."
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "تذاكر الطيران الدولي.",
+          "التأشيرة.",
+          "الإكراميات والمصروفات الشخصية."
+        ],
+        "en": [
+          "International airfare.",
+          "Entry visa.",
+          "Tips and personal expenses."
+        ],
+        "es": [
+          "Vuelos internacionales.",
+          "Visado.",
+          "Propinas y gastos personales."
+        ],
+        "it": [
+          "Voli internazionali.",
+          "Visto.",
+          "Mance e spese personali."
+        ],
+        "pt": [
+          "Voos internacionais.",
+          "Visto.",
+          "Gorjetas e extras pessoais."
+        ]
+      },
+      "heroImage": "https://sft-nationaltours.com/wp-content/uploads/2024/11/holy-family-egypt_tg_1397-870x555.jpg",
+      "images": [
+        "https://sft-nationaltours.com/wp-content/uploads/2024/11/holy-family-egypt_tg_1397-870x555.jpg",
+        "https://images.unsplash.com/photo-1544971587-b842c27f8c14?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "itinerary": []
+    },
+    {
+      "id": "tour-hurghada-4d3n",
+      "slug": "hurghada-4d3n",
+      "title": {
+        "ar": "الجونة والغردقة – إقامة شاطئية ممتدة (4 أيام / 3 ليال)",
+        "en": "Hurghada & El Gouna Red Sea Extension (4 Days / 3 Nights)",
+        "es": "Extensión El Gouna y Hurghada Mar Rojo (4 Días / 3 Noches)",
+        "it": "Estensione El Gouna e Hurghada Mar Rosso (4 Giorni / 3 Notti)",
+        "pt": "Extensão El Gouna e Hurghada Mar Vermelho (4 Dias / 3 Noites)"
+      },
+      "subtitle": {
+        "ar": "استرخاء كامل على شواطئ البحر الأحمر ومنتجعات All-Inclusive فاخرة",
+        "en": "Complete relaxation on Red Sea beaches and 5-star all-inclusive resorts",
+        "es": "Relajación en las playas del Mar Rojo con régimen Todo Incluido",
+        "it": "Relax sulle spiagge del Mar Rosso e resort 5 stelle All-Inclusive",
+        "pt": "Relaxamento nas praias do Mar Vermelho em resort All-Inclusive"
+      },
+      "overview": {
+        "ar": "أضف لمسة من الاستجمام الشاطئي لبرنامجك السياحي في مصر مع إقامة 3 ليالٍ في منتجع 5 نجوم فاخر بالغردقة والجونة بنظام شامل كلياً مع رحلات غطس واسترخاء.",
+        "en": "Add pure coastal relaxation to your Egypt holiday with 3 nights at a luxury 5-star beachfront resort in Hurghada and El Gouna on an All-Inclusive basis.",
+        "es": "Añada días de playa a su viaje por Egipto con estancia todo incluido en Hurghada.",
+        "it": "Aggiungi giorni di relax al mare al tuo viaggio in Egitto a Hurghada.",
+        "pt": "Adicione dias de praia à sua viagem no Egito com tudo incluído em Hurghada."
+      },
+      "duration": {
+        "ar": "4 أيام / 3 ليالٍ",
+        "en": "4 Days / 3 Nights",
+        "es": "4 Días / 3 Noches",
+        "it": "4 Giorni / 3 Notti",
+        "pt": "4 Dias / 3 Noites"
+      },
+      "category": "Extension",
+      "country": "Egypt",
+      "city": "Hurghada",
+      "basePriceUsd": 450,
+      "price": 450,
+      "tags": [
+        "egypt-extensions",
+        "extension",
+        "beach",
+        "luxury",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "رحلة اختيارية: رحلة سفاري في الصحراء مع عشاء بدوي",
+          "رحلة اختيارية: رحلة بحرية إلى جزيرة جفتون"
+        ],
+        "en": [
+          "Optional Tour: Desert Safari with Bedouin Dinner",
+          "Optional Tour: Boat Trip to Giftun Island"
+        ],
+        "es": [
+          "Excursión opcional: Safari por el desierto con cena beduina",
+          "Excursión opcional: Paseo en barco a la isla de Giftun"
+        ],
+        "it": [
+          "Escursione facoltativa: Safari nel deserto con cena beduina",
+          "Escursione facoltativa: Gita in barca all'isola di Giftun"
+        ],
+        "pt": [
+          "Passeio opcional: Safari no deserto com jantar Beduíno",
+          "Passeio opcional: Passeio de barco até a Ilha de Giftun"
+        ]
+      },
+      "included": {
+        "ar": [
+          "إقامة لمدة 3 ليالٍ في الغردقة في فندق من الفئة المختارة بنظام الإقامة الكاملة (All Inclusive) شاملة الضرائب.",
+          "الانتقالات: من المطار إلى الفندق ومن الفندق إلى المطار (خدمة منتظمة/جماعية)."
+        ],
+        "en": [
+          "03 nights of accommodation in Hurghada at a hotel of the chosen category with an all-inclusive system and taxes.",
+          "Transfers: Airport / Hotel / Airport (regular/shared service)."
+        ],
+        "es": [
+          "03 noches de alojamiento en Hurghada en un hotel de la categoría elegida con régimen de todo incluido y tasas.",
+          "Traslados: Aeropuerto / Hotel / Aeropuerto en servicio regular (compartido)."
+        ],
+        "it": [
+          "03 notti di pernottamento a Hurghada in un hotel della categoria prescelta con trattamento all-inclusive e tasse.",
+          "Trasferimenti: Aeroporto / Hotel / Aeroporto in servizio regolare (condiviso)."
+        ],
+        "pt": [
+          "03 noites de hospedagem em Hurghada em hotel de categoria escolhida com sistema all-inclusive e taxas.",
+          "Traslados: Aeroporto / Hotel / Aeroporto em serviço regular."
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "الطيران الداخلي بالدرجة الاقتصادية: (القاهرة / الغردقة / القاهرة)."
+        ],
+        "en": [
+          "Domestic flights in economy class: Cairo / Hurghada / Cairo."
+        ],
+        "es": [
+          "Vuelos domésticos en clase turista: El Cairo / Hurghada / El Cairo."
+        ],
+        "it": [
+          "Voli nazionali in classe economica: Il Cairo / Hurghada / Il Cairo."
+        ],
+        "pt": [
+          "Voos domésticos em classe econômica: Cairo / Hurghada / Cairo."
+        ]
+      },
+      "heroImage": "https://1.bp.blogspot.com/-HqmKDzZ73hY/XgSOtrhSAOI/AAAAAAAARdc/cxtywSwZxLIaZPfw98FzQHYtiPblmzg2gCLcBGAsYHQ/w1200-h630-p-k-no-nu/%D8%A3%D9%81%D8%B6%D9%84-%D8%A7%D9%84%D8%A3%D9%86%D8%B4%D8%B7%D8%A9-%D8%A7%D9%84%D8%B3%D9%8A%D8%A7%D8%AD%D9%8A%D8%A9-%D9%81%D9%89-%D8%A7%D9%84%D8%BA%D8%B1%D8%AF%D9%82%D8%A9-825x510.jpg",
+      "images": [
+        "https://1.bp.blogspot.com/-HqmKDzZ73hY/XgSOtrhSAOI/AAAAAAAARdc/cxtywSwZxLIaZPfw98FzQHYtiPblmzg2gCLcBGAsYHQ/w1200-h630-p-k-no-nu/%D8%A3%D9%81%D8%B6%D9%84-%D8%A7%D9%84%D8%A3%D9%86%D8%B4%D8%B7%D8%A9-%D8%A7%D9%84%D8%B3%D9%8A%D8%A7%D8%AD%D9%8A%D8%A9-%D9%81%D9%89-%D8%A7%D9%84%D8%BA%D8%B1%D8%AF%D9%82%D8%A9-825x510.jpg",
+        "https://images.unsplash.com/photo-1544885935-98dd03b09034?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "الغردقة: الاسترخاء في منتجع البحر الأحمر الفاخر (إقامة شاملة)",
+            "en": "Hurghada: Luxury Red Sea Resort Relaxation (All-Inclusive)",
+            "es": "Hurghada: Relax en Resort de Lujo en el Mar Rojo (Todo Incluido)",
+            "it": "Hurghada: Relax in Resort di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Hurghada: Relaxamento em Resort de Luxo no Mar Vermelho (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "يوم حر، والإقامة تشمل جميع الوجبات والمشروبات (All Inclusive).",
+            "en": "Free day with all-inclusive accommodation.",
+            "es": "Día libre y alojamiento con todo incluido.",
+            "it": "Giornata libera e sistemazione con formula all-inclusive.",
+            "pt": "Dia livre e hospedagem com sistema all-inclusive."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "الغردقة: الاسترخاء في منتجع البحر الأحمر الفاخر (إقامة شاملة)",
+            "en": "Hurghada: Luxury Red Sea Resort Relaxation (All-Inclusive)",
+            "es": "Hurghada: Relax en Resort de Lujo en el Mar Rojo (Todo Incluido)",
+            "it": "Hurghada: Relax in Resort di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Hurghada: Relaxamento em Resort de Luxo no Mar Vermelho (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "الانتقال إلى مطار القاهرة لركوب الطائرة المتوجهة إلى الغردقة. الوصول والانتقال إلى الفندق المختار. بقية اليوم حر، ثم عشاء ومبيت.",
+            "en": "Transfer to Cairo Airport and board your flight to Hurghada. Arrival and transfer to your chosen hotel. Remainder of the day at leisure, dinner, and overnight stay.",
+            "es": "Traslado al Aeropuerto de El Cairo y el embarque en el vuelo a Hurghada. Llegada y traslado al hotel elegido. Resto del día libre, cena y alojamiento.",
+            "it": "Trasferimento all'aeroporto del Cairo e imbarco sul volo per Hurghada. Arrivo e trasferimento all'hotel prescelto. Resto della giornata libera, cena e pernottamento.",
+            "pt": "Traslado ao Aeroporto do Cairo e embarque em voo para Hurghada. Chegada e traslado para o hotel escolhido. Restante do dia livre, jantar e pernoite."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "الغردقة: الاسترخاء في منتجع البحر الأحمر الفاخر (إقامة شاملة)",
+            "en": "Hurghada: Luxury Red Sea Resort Relaxation (All-Inclusive)",
+            "es": "Hurghada: Relax en Resort de Lujo en el Mar Rojo (Todo Incluido)",
+            "it": "Hurghada: Relax in Resort di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Hurghada: Relaxamento em Resort de Luxo no Mar Vermelho (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "يوم حر، والإقامة تشمل جميع الوجبات والمشروبات (All Inclusive).",
+            "en": "Free day with all-inclusive accommodation.",
+            "es": "Día libre y alojamiento con todo incluido.",
+            "it": "Giornata libera e sistemazione con formula all-inclusive.",
+            "pt": "Dia livre e hospedagem com sistema all-inclusive."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "الغردقة: الاسترخاء في منتجع البحر الأحمر الفاخر (إقامة شاملة)",
+            "en": "Hurghada: Luxury Red Sea Resort Relaxation (All-Inclusive)",
+            "es": "Hurghada: Relax en Resort de Lujo en el Mar Rojo (Todo Incluido)",
+            "it": "Hurghada: Relax in Resort di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Hurghada: Relaxamento em Resort de Luxo no Mar Vermelho (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "الإفطار في الفندق، ثم المغادرة إلى مطار الغردقة لركوب الطائرة المتوجهة إلى مطار القاهرة الدولي للعودة إلى بلدك. نهاية خدماتنا.",
+            "en": "Breakfast at the hotel and departure to Hurghada Airport to board the flight to Cairo International Airport. Return to your home country. End of our services.",
+            "es": "Desayuno en el hotel y salida hacia el Aeropuerto de Hurghada para embarcar en el vuelo con destino al Aeropuerto Internacional de El Cairo. Regreso a su país de origen. Fin de nuestros servicios.",
+            "it": "Colazione in hotel e partenza per l'aeroporto di Hurghada, imbarco sul volo per l'aeroporto internazionale del Cairo. Rientro nel proprio paese d'origine. Fine dei nostri servizi.",
+            "pt": "Café da manhã no hotel e saída para o Aeroporto de Hurghada, embalagem em voo com destino ao Aeroporto Internacional do Cairo. Retorno ao seu país de origem. Fim dos nossos serviços."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tour-classic-program",
+      "slug": "classic-program",
+      "title": {
+        "ar": "برنامج مصر الكلاسيكي",
+        "en": "Classic Egypt Programme",
+        "es": "Programa Clásico Egipto",
+        "it": "Programma Classico Egitto",
+        "pt": "Programa Clássico Egito"
+      },
+      "subtitle": {
+        "ar": "زيارة القاهرة، الأهرامات، والمتحف المصري الكبير ورحلة نيلية فاخرة",
+        "en": "Explore Cairo, the Great Pyramids, Grand Museum & Luxury Nile Cruise",
+        "es": "Visita El Cairo, Pirámides de Giza y Crucero de Lujo por el Nilo",
+        "it": "Visita Il Cairo, Piramidi di Giza e Crociera di Lusso sul Nilo",
+        "pt": "Visita ao Cairo, Pirâmides de Gizé e Cruzeiro de Luxo no Nilo"
+      },
+      "overview": {
+        "ar": "رحلة لا تُنسى عبر عجائب مصر العريقة. من غموض أهرامات الجيزة إلى سحر النيل، ومن مقابر الفراعنة إلى أجواء القاهرة التاريخية النابضة بالحياة — هذا البرنامج الكلاسيكي مصمم لمن يريد اكتشاف مصر بشكل كامل ومريح وأصيل.",
+        "en": "An unforgettable journey through Egypt's millennia-old wonders. From the mystery of the Pyramids of Giza to the magic of the Nile, from the tombs of the Pharaohs to the vibrant atmosphere of historic Cairo — this classic programme is designed for those who want to experience Egypt in a complete, comfortable and authentic way.",
+        "es": "Un viaje inolvidable a través de las maravillas milenarias de Egipto. Desde el misterio de las Pirámides de Guiza hasta la magia del Nilo y el vibrante Cairo histórico.",
+        "it": "Un viaggio indimenticabile attraverso le meraviglie millenarie dell’Egitto. Dalle Piramidi di Giza alla magia del Nilo e all’atmosfera storica del Cairo.",
+        "pt": "Uma viagem inesquecível pelas maravilhas milenares do Egito. Do mistério das Pirâmides de Gizé à magia do Nilo e ao vibrante Cairo histórico."
+      },
+      "duration": {
+        "ar": "8 أيام / 7 ليالٍ",
+        "en": "8 Days / 7 Nights",
+        "es": "8 Días / 7 Noches",
+        "it": "8 Giorni / 7 Notti",
+        "pt": "8 Dias / 7 Noites"
+      },
+      "category": "Classic",
+      "country": "Egypt",
+      "city": "Cairo",
+      "basePriceUsd": 1890,
+      "price": 1890,
+      "tags": [
+        "egypt-classic",
+        "classic",
+        "luxury",
+        "cultural",
+        "featured",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "زيارة الأهرامات الشهيرة في الجيزة وأبو الهول",
+          "رحلة نيلية بإقامة كاملة من أسوان إلى الأقصر",
+          "معابد فيلة وكوم أمبو وإدفو والكرنك والأقصر",
+          "جولة اختيارية إلى أبو سمبل",
+          "استكشاف القاهرة التاريخية: القلعة، مسجد الألباستر، خان الخليلي، والمتحف المصري"
+        ],
+        "en": [
+          "Visit to the iconic Pyramids of Giza and the Sphinx",
+          "Nile cruise with full board from Aswan to Luxor",
+          "Temples of Philae, Kom Ombo, Edfu, Karnak and Luxor",
+          "Optional excursion to Abu Simbel",
+          "Historic Cairo exploration: Citadel, Alabaster Mosque, Khan el Khalili, Egyptian Museum"
+        ],
+        "es": [
+          "Visita a las Pirámides de Guiza y la Esfinge",
+          "Crucero por el Nilo con pensión completa",
+          "Templos de Filé, Kom Ombo, Edfu, Karnak y Lúxor",
+          "Excursión opcional a Abu Simbel",
+          "Exploración de El Cairo histórico y Museo Egipcio"
+        ],
+        "it": [
+          "Visita alle Piramidi di Giza e alla Sfinge",
+          "Crociera sul Nilo con pensione completa",
+          "Templi di File, Kom Ombo, Edfu, Karnak e Luxor",
+          "Escursione opzionale ad Abu Simbel",
+          "Visita del Cairo storico e Museo Egizio"
+        ],
+        "pt": [
+          "Visita às Pirâmides de Gizé e à Esfinge",
+          "Cruzeiro pelo Nilo com pensão completa",
+          "Templos de Philae, Kom Ombo, Edfu, Karnak e Luxor",
+          "Excursão opcional a Abu Simbel",
+          "Exploração do Cairo histórico e Museu Egípcio"
+        ]
+      },
+      "included": {
+        "ar": [
+          "جميع وسائل النقل بسيارات سياحية مكيفة حديثة.",
+          "المساعدة في المطارات من قبل ممثلينا.",
+          "مرشد سياحي معتمد يتحدث لغتك خلال كافة الجولات.",
+          "رسوم وتذاكر الدخول للمزارات المذكورة.",
+          "04 ليالٍ في القاهرة مع الإفطار + 03 ليالٍ في كروز النيل إقامة كاملة."
+        ],
+        "en": [
+          "All modern AC transfers from start to finish.",
+          "Airport reception and full assistance.",
+          "Certified professional guide speaking your language.",
+          "Entrance tickets to mentioned sites.",
+          "04 nights Cairo (B&B) + 03 nights Nile Cruise (Full Board)."
+        ],
+        "es": [
+          "Todos los traslados en vehículos con aire acondicionado.",
+          "Asistencia completa en aeropuertos.",
+          "Guía oficial en español durante las visitas.",
+          "Entradas a los monumentos mencionados.",
+          "4 noches en El Cairo (AD) + 3 noches en Crucero por el Nilo (PC)."
+        ],
+        "it": [
+          "Tutti i trasferimenti con veicoli climatizzati.",
+          "Assistenza negli aeroporti all’arrivo e partenza.",
+          "Guida professionale parlante italiano durante le visite.",
+          "Biglietti d’ingresso ai monumenti menzionati.",
+          "4 notti al Cairo (B&B) + 3 notti in Crociera sul Nilo (Pensione Completa)."
+        ],
+        "pt": [
+          "Todos os traslados em veículos modernos com ar condicionado.",
+          "Assistência completa nos aeroportos.",
+          "Guia profissional em português durante as visitas.",
+          "Ingressos para os monumentos mencionados.",
+          "4 noites no Cairo (com café) + 3 noites Cruzeiro no Nilo (Pensão Completa)."
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "تذاكر الطيران الدولي والمحلي.",
+          "رسوم التأشيرة للدخول (25$).",
+          "الإكراميات العامة والمصاريف الشخصية."
+        ],
+        "en": [
+          "International and domestic flights.",
+          "Entry visa fee ($25).",
+          "General tips and personal expenses."
+        ],
+        "es": [
+          "Vuelos internacionales y domésticos.",
+          "Visado de entrada.",
+          "Propinas generales y gastos personales."
+        ],
+        "it": [
+          "Voli internazionali e domestici.",
+          "Visto di ingresso.",
+          "Mance ed extra personali."
+        ],
+        "pt": [
+          "Voos internacionais e domésticos.",
+          "Visto de entrada.",
+          "Gorjetas gerais e despesas pessoais."
+        ]
+      },
+      "heroImage": "https://res.cloudinary.com/degbrq3ck/image/upload/v1783029636/Classic_Program_gfal0s.jpg",
+      "images": [
+        "https://res.cloudinary.com/degbrq3ck/image/upload/v1783029636/Classic_Program_gfal0s.jpg",
+        "https://images.unsplash.com/photo-1568322445389-f64ac2515020?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1539650116574-8efeb43e2750?auto=format&fit=crop&w=1200&q=80",
+        "https://images.unsplash.com/photo-1572252821143-035a024856f2?auto=format&fit=crop&w=1200&q=80"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "الوصول إلى القاهرة",
+            "en": "Arrival in Cairo",
+            "es": "Llegada a El Cairo",
+            "it": "Arrivo al Cairo",
+            "pt": "Chegada ao Cairo"
+          },
+          "description": {
+            "ar": "الاستقبال في مطار القاهرة الدولي والمساعدة ونقل خاص إلى الفندق.",
+            "en": "Arrival at Cairo airport, reception and transfer to hotel.",
+            "es": "Llegada a El Cairo y traslado al hotel.",
+            "it": "Arrivo al Cairo e trasferimento in hotel.",
+            "pt": "Chegada ao Cairo e traslado ao hotel."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "أهرامات الجيزة وأبو الهول وسقارة",
+            "en": "Giza Pyramids, Sphinx & Saqqara",
+            "es": "Pirámides de Giza y Saqqara",
+            "it": "Piramidi di Giza e Saqqara",
+            "pt": "Pirâmides de Gizé e Saqqara"
+          },
+          "description": {
+            "ar": "زيارة أهرامات الجيزة الثلاثة وأبو الهول، ثم جولة استكشافية إلى هرم زوسر المدرج بسقارة.",
+            "en": "Full day excursion to the Pyramids of Giza, Sphinx and Saqqara Step Pyramid.",
+            "es": "Visita de día completo a las Pirámides de Giza, Esfinge y Saqqara.",
+            "it": "Visita delle Piramidi di Giza, Sfinge e Saqqara.",
+            "pt": "Visita às Pirâmides de Gizé, Esfinge e Saqqara."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "القاهرة / أسوان ومعبد فيلة",
+            "en": "Cairo to Aswan & Philae Temple",
+            "es": "El Cairo a Asuán y Templo de File",
+            "it": "Il Cairo ad Assuan e Tempio di File",
+            "pt": "Cairo para Aswan e Templo de Philae"
+          },
+          "description": {
+            "ar": "طيران داخلي إلى أسوان، الصعود إلى الفندق العائم وزيارة معبد فيلة الرائع للإلهة إيزيس.",
+            "en": "Flight to Aswan, embark on Nile cruise, visit romantic Philae Island Temple.",
+            "es": "Vuelo a Asuán, embarque en crucero y visita a Filé.",
+            "it": "Volo ad Assuan, imbarco e visita del tempio di File.",
+            "pt": "Voo para Aswan, embarque no cruzeiro e visita ao Templo de Philae."
+          },
+          "meals": {
+            "ar": "إفطار وغداء وعشاء",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "أبو سمبل والإبحار إلى كوم أمبو",
+            "en": "Abu Simbel & Sail to Kom Ombo",
+            "es": "Abu Simbel y Navegación a Kom Ombo",
+            "it": "Abu Simbel e Navigazione a Kom Ombo",
+            "pt": "Abu Simbel e Navegação para Kom Ombo"
+          },
+          "description": {
+            "ar": "جولة اختيارية لمعبدي رمسيس الثاني ونفرتاري بأبو سمبل، ثم الإبحار إلى كوم أمبو وزيارة المعبد المزدوج.",
+            "en": "Visit colossal Abu Simbel temples, sail to Kom Ombo and visit temple of Sobek & Haroeris.",
+            "es": "Visita a Abu Simbel y navegación hacia Kom Ombo.",
+            "it": "Visita di Abu Simbel e navigazione verso Kom Ombo.",
+            "pt": "Visita a Abu Simbel e navegação para Kom Ombo."
+          },
+          "meals": {
+            "ar": "إفطار وغداء وعشاء",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 5,
+          "title": {
+            "ar": "معبد إدفو والإبحار إلى الأقصر",
+            "en": "Edfu Temple & Sail to Luxor",
+            "es": "Templo de Edfu y Llegada a Luxor",
+            "it": "Tempio di Edfu e Arrivo a Luxor",
+            "pt": "Templo de Edfu e Chegada a Luxor"
+          },
+          "description": {
+            "ar": "زيارة معبد حورس بإدفو بواسطة الحنطور، والإبحار عبر هويس إسنا وصولاً إلى الأقصر.",
+            "en": "Visit Horus temple at Edfu by horse carriage, sail through Esna lock to Luxor.",
+            "es": "Visita de Edfu y llegada a Luxor atravesando la esclusa de Esna.",
+            "it": "Visita del tempio di Edfu e arrivo a Luxor.",
+            "pt": "Visita ao templo de Edfu e chegada a Luxor."
+          },
+          "meals": {
+            "ar": "إفطار وغداء وعشاء",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 6,
+          "title": {
+            "ar": "وادي الملوك والكرنك ومعبد الأقصر",
+            "en": "Valley of the Kings, Karnak & Luxor Temples",
+            "es": "Valle de los Reyes, Karnak y Luxor",
+            "it": "Valle dei Re, Karnak e Luxor",
+            "pt": "Vale dos Reis, Karnak e Luxor"
+          },
+          "description": {
+            "ar": "استكشاف وادي الملوك، معبد حتشبسوت، تمثالي ممنون، ثم مجمع معابد الكرنك العظيم ومعبد الأقصر.",
+            "en": "Discover Valley of the Kings, Hatshepsut Temple, Colossi of Memnon, Karnak and Luxor temples.",
+            "es": "Descubra el Valle de los Reyes, Hatshepsut, Karnak y Templo de Luxor.",
+            "it": "Valle dei Re, tempio di Hatshepsut, Karnak e Luxor.",
+            "pt": "Vale dos Reis, Templo de Hatshepsut, Karnak e Luxor."
+          },
+          "meals": {
+            "ar": "إفطار وغداء وعشاء",
+            "en": "Full Board"
+          }
+        },
+        {
+          "day": 7,
+          "title": {
+            "ar": "الأقصر / القاهرة التاريخية",
+            "en": "Luxor to Cairo & Historic Cairo Tour",
+            "es": "Luxor a El Cairo y Tour Histórico",
+            "it": "Luxor al Cairo e Tour Storico",
+            "pt": "Luxor ao Cairo e Tour Histórico"
+          },
+          "description": {
+            "ar": "العودة للقاهرة بالطيران وزيارة القلعة، مسجد محمد علي، الحي القبطي وسوق خان الخليلي العريق.",
+            "en": "Fly to Cairo. Explore Saladin Citadel, Alabaster Mosque, Coptic Quarter and Khan el Khalili.",
+            "es": "Vuelo a El Cairo, Ciudadela, Barrio Copto y bazar Jan el Jalili.",
+            "it": "Volo al Cairo, Cittadella, Quartiere Copto e bazar di Khan el Khalili.",
+            "pt": "Voo para o Cairo, Cidadela, Bairro Copta e bazar Khan el Khalili."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        },
+        {
+          "day": 8,
+          "title": {
+            "ar": "المغادرة النهائية",
+            "en": "Final Departure",
+            "es": "Salida Final",
+            "it": "Partenza Finale",
+            "pt": "Partida Final"
+          },
+          "description": {
+            "ar": "الإفطار في الفندق والانتقال إلى مطار القاهرة الدولي للعودة إلى الوطن.",
+            "en": "Breakfast at hotel and private transfer to Cairo International Airport for departure.",
+            "es": "Desayuno y traslado al aeropuerto de El Cairo para el vuelo de regreso.",
+            "it": "Colazione e trasferimento all’aeroporto del Cairo per il volo di ritorno.",
+            "pt": "Café da manhã e traslado ao aeroporto do Cairo para voo de retorno."
+          },
+          "meals": {
+            "ar": "إفطار",
+            "en": "Breakfast"
+          }
+        }
+      ]
+    },
+    {
+      "id": "tour-egypt-jordan-combined-14d",
+      "slug": "egypt-jordan-combined-14d",
+      "title": {
+        "ar": "رحلة مصر والأردن الدينية والتاريخية الكبرى - 14 يوماً",
+        "en": "Grand Egypt & Jordan Pilgrimage - 14 Days",
+        "es": "Gran Peregrinación Egipto y Jordania - 14 Días",
+        "it": "Grande Pellegrinaggio Egitto e Giordania - 14 Giorni",
+        "pt": "Grande Peregrinação Egito e Jordânia - 14 Dias"
+      },
+      "subtitle": {
+        "ar": "من مسار العائلة المقدسة والأهرامات إلى البتراء ووادي رم وجبل نيبو",
+        "en": "From the Holy Family trail & Pyramids to Petra, Wadi Rum & Mount Nebo",
+        "es": "Desde la Sagrada Familia y Pirámides hasta Petra y Monte Nebo",
+        "it": "Dalla Sacra Famiglia e Piramidi a Petra e Monte Nebo",
+        "pt": "Da Sagrada Família e Pirâmides até Petra e Monte Nebo"
+      },
+      "overview": {
+        "ar": "قم بالسير على خطى العائلة المقدسة عبر الأديرة القبطية القديمة في مصر واكتشف العجائب المقدسة في الأرض المقدسة. رحلات موجهة بخبرة وإثراء روحي تم تصميمها بعناية مطلقة.",
+        "en": "Walk in the footsteps of the Holy Family through Egypt\\'s ancient Coptic monasteries and discover the sacred wonders of the Holy Land. Expertly guided, spiritually enriching journeys crafted with absolute care.",
+        "es": "Siga los pasos de la Sagrada Familia a través de los antiguos monasterios coptos de Egipto y descubra las maravillas sagradas de Tierra Santa. Viajes espiritualmente enriquecedores guiados por expertos y elaborados con absoluto cuidado.",
+        "it": "Segui le orme della Sacra Famiglia attraverso gli antichi monasteri copti dell'Egitto e scopri le sacre meraviglie della Terra Santa. Viaggi sapientemente guidati e spiritualmente arricchenti realizzati con assoluta cura.",
+        "pt": "Siga os passos da Sagrada Família pelos antigos mosteiros coptas do Egito e descubra as maravilhas sagradas da Terra Santa. Viagens habilmente guiadas e espiritualmente enriquecedoras, elaboradas com cuidado absoluto."
+      },
+      "duration": {
+        "ar": "14 يوماً / 13 ليلة",
+        "en": "14 Days / 13 Nights",
+        "es": "14 Días / 13 Noches",
+        "it": "14 Giorni / 13 Notti",
+        "pt": "14 Dias / 13 Noites"
+      },
+      "category": "Religious",
+      "country": "Egypt",
+      "city": null,
+      "basePriceUsd": 2490,
+      "price": 2490,
+      "tags": [
+        "egypt-religious",
+        "religious",
+        "multi-country",
+        "cultural",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "أهرامات الجيزة، أبو الهول، والمتحف المصري الكبير (GEM).",
+          "رحلة حج روحية على طول المسار القبطي وبئر العائلة المقدسة.",
+          "زيارات إلى الأديرة الصحراوية التاريخية في وادي النطرون، أسيوط، وجبل الطير.",
+          "كنيسة المغارة (دير القديس سمعان الخراز) في جبل المقطم.",
+          "خريطة فلسطين الفسيفسائية البيزنطية الشهيرة في مأدبا وجبل نيبو.",
+          "جولة خاصة لمدة يوم كامل في مدينة البتراء الوردية.",
+          "رصد النجوم وجولة بسيارات الدفع الرباعي (4x4) لمدة ساعتين في رمال وادي رم الحمراء."
+        ],
+        "en": [
+          "Giza Pyramids, Sphinx and the Grand Egyptian Museum (GEM).",
+          "Spiritual pilgrimage along the Coptic Route and Holy Family well.",
+          "Visits to historical desert monasteries of Wadi El Natrun, Asiut, and Mount Al Tair.",
+          "The Cave Church (Monastery of Saint Simon) in the Mokattam Mountain.",
+          "Famous Byzantine mosaic map of Palestine in Madaba and Mount Nebo.",
+          "Full-day private tour of the Rose-Red City of Petra.",
+          "Stargazing and 2-hour 4x4 Jeep tour in the red sands of Wadi Rum."
+        ],
+        "es": [
+          "Las Pirámides de Guiza, la Esfinge y el Gran Museo Egipcio (GEM).",
+          "Peregrinación espiritual a lo largo de la Ruta Copta y el pozo de la Sagrada Familia.",
+          "Visitas a los históricos monasterios del desierto de Wadi El Natrun, Asiut y Monte Al Tair.",
+          "La Iglesia de la Cueva (Monasterio de San Simón) en la montaña de Mokattam.",
+          "El famoso mapa de mosaico bizantino de Palestina en Mádaba y el Monte Nebo.",
+          "Tour privado de un día completo por la Ciudad Rosa de Petra.",
+          "Observación de estrellas y recorrido de 2 horas en vehículo 4x4 por las arenas rojas de Wadi Rum."
+        ],
+        "it": [
+          "Piramidi di Giza, la Sfinge e il Grande Museo Egizio (GEM).",
+          "Pellegrinaggio spirituale lungo la Rotta Copta e il pozzo della Sacra Famiglia.",
+          "Visite agli storici monasteri nel deserto di Wadi El Natrun, Assiut e Monte Al Tair.",
+          "La Chiesa della grotta (Monastero di San Simone) sul monte Mokattam.",
+          "Famosa mappa a mosaico bizantina della Palestina a Madaba e il Monte Nebo.",
+          "Tour privato di un'intera giornata della Città Rosa di Petra.",
+          "Osservazione delle stelle e tour di 2 ore in Jeep 4x4 tra le sabbie rosse del Wadi Rum."
+        ],
+        "pt": [
+          "Pirâmides de Gizé, Esfinge e o Grande Museu Egípcio (GEM).",
+          "Peregrinação espiritual ao longo da Rota Copta e o poço da Sagrada Família.",
+          "Visitas aos históricos mosteiros do deserto de Wadi El Natrun, Assiut e Monte Al Tair.",
+          "A Igreja da Caverna (Mosteiro de São Simão) na montanha de Mokattam.",
+          "Famoso mapa de mosaico bizantino da Palestina em Madaba e o Monte Nebo.",
+          "Tour privado de um dia inteiro pela Cidade Rosa de Petra.",
+          "Observação de estrelas e passeio de 2 horas de jipe 4x4 nas areias vermelhas de Wadi Rum."
+        ]
+      },
+      "included": {
+        "ar": [
+          "الإقامة في فنادق الفئة المختارة مع الإفطار والعشاء (نصف إقامة)",
+          "جميع الانتقالات في حافلات سياحية حديثة ومكيفة الهواء",
+          "مرشد سياحي محترف يتحدث لغتك خلال الزيارات",
+          "رسوم الدخول إلى البتراء ووادي رم وجرش وجميع المعالم المذكورة",
+          "جولة سفاري بسيارات الجيب 4x4 في صحراء وادي رم لمدة ساعتين",
+          "خدمة الاستقبال والمساعدة في مطار عمان الدولي"
+        ],
+        "en": [
+          "Accommodation in chosen category hotels on Half Board basis (Breakfast & Dinner)",
+          "All transfers and tours by modern air-conditioned motorcoach",
+          "Professional licensed guide speaking your language during visits",
+          "Entrance fees to Petra, Wadi Rum, Jerash, and all sites in the itinerary",
+          "2-hour 4x4 Jeep safari tour in Wadi Rum desert",
+          "Meet & assist service at Queen Alia International Airport in Amman"
+        ],
+        "es": [
+          "Alojamiento en hoteles de categoría elegida en régimen de media pensión (desayuno y cena)",
+          "Todos los traslados y visitas en modernos autocares climatizados",
+          "Guía profesional de habla hispana durante las visitas",
+          "Entradas a Petra, Wadi Rum, Jerash y todos los sitios del itinerario",
+          "Recorrido de 2 horas en vehículo 4x4 por el desierto de Wadi Rum",
+          "Servicio de asistencia en el Aeropuerto Internacional de Ammán"
+        ],
+        "it": [
+          "Sistemazione in hotel della categoria prescelta in trattamento di mezza pensione (colazione e cena)",
+          "Tutti i trasferimenti e le visite in moderni pullman con aria condizionata",
+          "Guida professionale autorizzata in lingua italiana durante le visite",
+          "Biglietti d'ingresso a Petra, Wadi Rum, Jerash e tutti i siti menzionati",
+          "Escursione di 2 ore in jeep 4x4 nel deserto del Wadi Rum",
+          "Servizio di accoglienza e assistenza all'Aeroporto Internazionale di Amman"
+        ],
+        "pt": [
+          "Hospedagem em hotéis da categoria escolhida em regime de meia-pensão (café da manhã e jantar)",
+          "Todos os traslados e passeios em ônibus modernos com ar-condicionado",
+          "Guia profissional de língua portuguesa durante as visitas",
+          "Ingressos para Petra, Wadi Rum, Jerash e todas as atrações do itinerário",
+          "Passeio de 2 horas em veículo 4x4 no deserto de Wadi Rum",
+          "Serviço de assistência no Aeroporto Internacional Rainha Alia em Amã"
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "تذاكر الطيران الدولي",
+          "رسوم التأشيرة إذا كانت غير مشمولة في الباقة المجانية",
+          "المشروبات، وجبات الغداء، والمصاريف الشخصية",
+          "إكراميات سائق الجيب في وادي رم وركوب الخيل في البتراء",
+          "التأمين الشخصي وتأمين السفر"
+        ],
+        "en": [
+          "International flights",
+          "Entry visa fees if not applicable for free group visa",
+          "Drinks, lunches, and personal expenses",
+          "Tips for Wadi Rum jeep driver and horse boy in Petra",
+          "Personal travel insurance"
+        ],
+        "es": [
+          "Vuelos internacionales",
+          "Tasas de visado (salvo en los casos de visado grupal gratuito)",
+          "Bebidas, almuerzos y gastos personales",
+          "Propinas locales obligatorias (chófer de jeep en Wadi Rum y caballo en Petra)",
+          "Seguro de viaje personal"
+        ],
+        "it": [
+          "Voli internazionali",
+          "Tasse per il visto (salvo ove concesso visto di gruppo gratuito)",
+          "Bevande, pranzi e spese personali",
+          "Mance per autista jeep a Wadi Rum e conduttore cavallo a Petra",
+          "Assicurazione personale di viaggio"
+        ],
+        "pt": [
+          "Voos internacionais",
+          "Taxas de visto (exceto quando qualificado para visto de grupo gratuito)",
+          "Bebidas, almoços e despesas de caráter pessoal",
+          "Gorjetas locais para motorista do jipe em Wadi Rum e condutor do cavalo em Petra",
+          "Seguro de viagem pessoal"
+        ]
+      },
+      "heroImage": "https://sft-nationaltours.com/wp-content/uploads/2024/11/holy-family-egypt_tg_1397-870x555.jpg",
+      "images": [
+        "https://sft-nationaltours.com/wp-content/uploads/2024/11/holy-family-egypt_tg_1397-870x555.jpg",
+        "https://images.unsplash.com/photo-1548013146-72479768bada?w=1200&q=80",
+        "https://images.unsplash.com/photo-1509822929464-92b5d5e8827b?w=1200&q=80",
+        "https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=1200&q=80"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "القاهرة / Tell basta / Tanis / Ismailia / القاهرة",
+            "en": "Cairo / Tell basta / Tanis / Ismailia / Cairo",
+            "es": "El Cairo / Tell basta / Tanis / Ismailia / El Cairo",
+            "it": "Il Cairo / Tell basta / Tanis / Ismailia / Il Cairo",
+            "pt": "Cairo / Tell basta / Tanis / Ismailia / Cairo"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار والمغادرة صباحاً بالحافلة السياحية متوجهين إلى تل بسطة (الواقعة في مدينة الزقازيق). سنزور بقايا أحد المعابد المصرية والبئر الذي تزودت منه العائلة المقدسة بالماء. سنتابع الرحلة إلى صان الحجر (تانيس)، المدينة التي كانت عاصمة لمصر لفترة من الزمن خلال الدولة الحديثة. بعد ذلك، المتابعة إلى الإسماعيلية لتناول وجبة الغداء وجولة بانورامية في المدينة. العودة إلى الفندق في القاهرة والمبيت.",
+            "en": "Breakfast and departure in the morning by tourist bus towards Tell Basta (located in the city of Zagazig). We will visit the ruins of one of the Egyptian temples and the well from which the Holy Family fetched water. We will continue to Tanis, a city that was for a period the capital of Egypt during the New Kingdom and, according to some Egyptologists, corresponds to ancient Pi-Ramesses. Then, continuation to Ismailia for lunch and a panoramic tour of the city, known as the greenest in Egypt. Return to the hotel in Cairo and overnight stay.",
+            "es": "Desayuno y salida por la mañana en autobús turístico con destino a Tell Basta (situada en la ciudad de Zagazig). Visitaremos las ruinas de uno de los templos egipcios y el pozo del que se abasteció de agua la Sagrada Familia. Seguiremos viaje hasta Tanis, ciudad que por un período fue capital de Egipto durante el Imperio Nuevo. A continuación, continuación hasta Ismailía para almorzar y visita panorámica de la ciudad. Regreso al hotel en El Cairo y alojamiento.",
+            "it": "Colazione e partenza al mattino in autobus turistico con destinazione Tell Basta (situata nella città di Zagazig). Visiteremo le rovine di uno dei templi egizi e il pozzo da cui la Sacra Famiglia si approvvigionò di acqua. Proseguiremo fino a Tanis, città che per un periodo fu capitale dell'Egitto durante il Nuovo Regno. Successivamente, continuazione fino a Ismailia per il pranzo e visita panoramica della città. Rientro in hotel al Cairo e pernottamento.",
+            "pt": "Café da manhã e saída pela manhã em ônibus turístico com destino a Tell Basta (localizada na cidade de Zagazig). Visitaremos as ruínas de um dos templos egípcios e o poço do qual a Sagrada Família se abasteceu de água. Seguiremos viagem até Tanis, cidade que por um período foi capital do Egito durante o Novo Reino. Em seguida, continuação até Ismailía para almoço e visita panorâmica da cidade. Retorno ao hotel no Cairo e pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "القاهرة / وادي النطرون / القاهرة",
+            "en": "Cairo / Wadi El Natrun / Cairo",
+            "es": "El Cairo / Wadi El Natrun / El Cairo",
+            "it": "Il Cairo / Wadi El Natrun / Il Cairo",
+            "pt": "Cairo / Wadi El Natrun / Cairo"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار والمغادرة صباحاً إلى وادي النطرون، الواقع على بعد 120 كم من العاصمة. سنزور ثلاثة أديرة قبطية مهمة: دير البراموس، دير الأنبا بيشوي، ودير السيدة العذراء (السريان). تناول وجبة الغداء في مطعم محلي. العودة إلى القاهرة. بعد الظهر وقت حر. المبيت في القاهرة.",
+            "en": "Breakfast and departure in the morning to Wadi El Natrun, located 120 km from the capital. We will visit three important Coptic monasteries: Deir Al Baramos, Deir Anba Bechoy, and Deir Santa Maria. Lunch at a local restaurant. Return to Cairo. Free afternoon. Overnight stay in Cairo.",
+            "es": "Desayuno y salida por la mañana hacia Wadi El Natrun, ubicada a 120 km de la capital. Visitaremos tres importantes monasterios coptos: Deir Al Baramos, Deir Anba Bechoy y Deir Santa María. Almuerzo en un restaurante local. Regreso a El Cairo. Tarde libre. Alojamiento en El Cairo.",
+            "it": "Colazione e partenza al mattino per Wadi El Natrun, situata a 120 km dalla capitale. Visiteremo tre importanti monasteri copti: Deir Al Baramos, Deir Anba Bechoy e Deir Santa Maria. Pranzo in un ristorante locale. Rientro al Cairo. Pomeriggio libero. Pernottamento al Cairo.",
+            "pt": "Café da manhã e saída pela manhã para Wadi El Natrun, localizada a 120 km da capital. Visitaremos três importantes mosteiros coptas: Deir Al Baramos, Deir Anba Bechoy e Deir Santa Maria. Almoço em um restaurante local. Retorno ao Cairo. Tarde livre. Pernoite no Cairo."
+          },
+          "meals": null
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "القاهرة / المنيا",
+            "en": "Cairo / El Minya",
+            "es": "El Cairo / El Minya",
+            "it": "Il Cairo / El Minya",
+            "pt": "Cairo / El Minya"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار والمغادرة باتجاه جنوب مصر، إلى المنيا (على بعد 250 كم من العاصمة). زيارة دير العذراء، الواقع في جبل الطير. تناول وجبتي الغداء والعشاء في الفندق. التسكين والمبيت في المنيا.",
+            "en": "Breakfast and departure towards the south of Egypt, to El Minya (250 km from the capital). Visit to the Monastery of the Virgin, situated on Mount Al Tair. Lunch and dinner at the hotel. Accommodation and overnight stay in El Minya.",
+            "es": "Desayuno y salida en dirección al sur de Egipto, hacia El Minya (a 250 km de la capital). Visita al Monasterio de la Virgen, situado en el Monte Al Tair. Almuerzo y cena en el hotel. Hospedaje y alojamiento en El Minya.",
+            "it": "Colazione e partenza in direzione del sud dell'Egitto, verso El Minya (a 250 km dalla capitale). Visita al Monastero della Vergine, situato sul Monte Al Tair. Pranzo e cena in hotel. Sistemazione e pernottamento a El Minya.",
+            "pt": "Café da manhã e saída em direção ao sul do Egito, para El Minya (a 250 km da capital). Visita ao Mosteiro da Virgem, localizado no Monte Al Tair. Almoço e jantar no hotel. Hospedagem e pernoite em El Minya."
+          },
+          "meals": null
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "الوصول إلى مطار القاهرة الدولي والاستقبال",
+            "en": "Arrival at Cairo International Airport & VIP Welcome",
+            "es": "Llegada al Aeropuerto de El Cairo y Bienvenida VIP",
+            "it": "Arrivo all'Aeroporto del Cairo e Benvenuto VIP",
+            "pt": "Chegada ao Aeroporto do Cairo e Boas-Vindas VIP"
+          },
+          "description": {
+            "ar": "الوصول إلى مطار القاهرة. الاستقبال والنقل إلى الفندق والمبيت.",
+            "en": "Arrival at Cairo Airport. Reception and transfer to the hotel and overnight stay.",
+            "es": "Llegada al Aeropuerto de El Cairo. Recepción y traslado al hotel y alojamiento.",
+            "it": "Arrivo all'aeroporto del Cairo. Ricevimento e trasferimento in hotel e pernottamento.",
+            "pt": "Chegada ao Aeroporto do Cairo. Recepção e traslado ao hotel e pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 5,
+          "title": {
+            "ar": "أهرامات الجيزة، أبو الهول والمتحف المصري الكبير (GEM)",
+            "en": "Pyramids of Giza, Sphinx & Grand Egyptian Museum",
+            "es": "Pirámides de Giza, Esfinge y Gran Museo Egipcio (GEM)",
+            "it": "Piramidi di Giza, Sfinge e Grande Museo Egizio (GEM)",
+            "pt": "Pirâmides de Gizé, Esfinge e Grande Museu Egípcio (GEM)"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار في الفندق. التحرك إلى مجمع الجيزة وزيارة الأهرامات الثلاثة الكبرى: خوفو، خفرع، ومنقرع. وزيارة معبد الوادي للملك خفرع وتمثال أبو الهول. تناول وجبة الغداء في مطعم محلي. زيارة المتحف المصري الكبير (GEM)، وهو أكبر متحف مخصص لمصر القديمة، والذي يضم حوالي 100 ألف قطعة أثرية، بما في ذلك المجموعة الكاملة لتوت عنخ آمون، والتي تُعرض لأول مرة في مكان واحد. العودة إلى الفندق والمبيت في القاهرة. ملاحظة: الدخول إلى داخل الهرم الأكبر يتطلب تذكرة إضافية، يتم شراؤها محلياً، بعدد محدود وغير مشمولة في البرنامج.",
+            "en": "Breakfast at the hotel. Departure to the Giza Complex and visit to the three great pyramids: Cheops, Chephren, and Mykerinus. Visit to the Valley Temple of King Chephren and the Sphinx. Lunch at a local restaurant. Visit to the Grand Egyptian Museum (GEM), the largest museum dedicated to Ancient Egypt, housing around 100,000 artifacts, including the complete collection of Tutankhamun, exhibited for the first time in a single location. Return to the hotel and overnight stay in Cairo. Note: Entry into the interior of the Great Pyramid requires an extra ticket, purchased locally, in limited numbers, and is not included.",
+            "es": "Desayuno en el hotel. Salida hacia el Complejo de Giza y visita a las tres grandes pirámides: Keops, Kefrén y Micerino. Visita al Templo del Valle del rey Kefrén y a la Esfinge. Almuerzo en un restaurante local. Visita al Gran Museo Egipcio (GEM), el museo más grande dedicado al Antiguo Egipto, que alberga alrededor de 100 mil artefactos, incluida la colección completa de Tutankamón, expuesta por primera vez en un único lugar. Regreso al hotel y alojamiento en El Cairo. Nota: La entrada al interior de la Gran Pirámide requiere un billete extra, adquirido localmente, en número limitado y no está incluido.",
+            "it": "Colazione in hotel. Partenza per il Complesso di Giza e visita alle tre grandi piramidi: Cheope, Chefren e Micerino. Visita al Tempio della Valle del re Chefren e alla Sfinge. Pranzo in un ristorante locale. Visita al Grande Museo Egizio (GEM), il più grande museo dedicato all'Antico Egitto, che ospita circa 100.000 manufatti, inclusa la collezione completa di Tutankhamon, esposta per la prima volta in un unico luogo. Rientro in hotel e pernottamento al Cairo. Nota: L'ingresso all'interno della Grande Piramide richiede un biglietto extra, acquistabile in loco, in numero limitato e non incluso.",
+            "pt": "Café da manhã no hotel. Saída para o Complexo de Gizé e visita às três grandes pirâmides: Quéops, Quéfren e Miquerinos. Visita ao Templo do Vale do rei Quéfren e à Esfinge. Almoço em um restaurante local. Visita ao Grande Museu Egípcio (GEM), o maior museu dedicado ao Antigo Egito, que abriga cerca de 100 mil artefatos, incluindo a coleção completa de Tutancâmon, exposta pela primeira vez em um único local. Retorno ao hotel e pernoite no Cairo. Observação: A entrada no interior da Grande Pirâmide exige um bilhete extra, adquirido localmente, em número limitado e não está incluído."
+          },
+          "meals": null
+        },
+        {
+          "day": 6,
+          "title": {
+            "ar": "القاهرة / El matarya / Mostorod / القاهرة",
+            "en": "Cairo / El matarya / Mostorod / Cairo",
+            "es": "El Cairo / El matarya / Mostorod / El Cairo",
+            "it": "Il Cairo / El matarya / Mostorod / Il Cairo",
+            "pt": "Cairo / El matarya / Mostorod / Cairo"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار والمغادرة صباحاً إلى حي المطرية، حيث سنزور كنيسة العذراء والشجرة التي حمت ظلالها العائلة المقدسة. سنتابع الرحلة إلى مسطرد لزيارة كنيسة العذراء، ثم الانتقال إلى مدينة بلبيس لزيارة كنيسة السيدة العذراء مريم. تناول وجبة الغداء في مطعم محلي. العودة إلى القاهرة. بعد الظهر وقت حر. المبيت في القاهرة.",
+            "en": "Breakfast and departure in the morning to the neighborhood of El Matarya, where we will visit the Church of the Virgin and the tree whose shade protected the Holy Family. We will continue to Mostorod to visit the Church of the Virgin. Afterwards, transfer to the city of Belbeis, 55 km from Cairo, to visit the Church of the Virgin Mary. Lunch at a local restaurant. Return to Cairo. Free afternoon. Overnight stay in Cairo.",
+            "es": "Desayuno y salida por la mañana hacia el barrio de El Matarya, donde visitaremos la Iglesia de la Virgen y el árbol cuya sombra protegió a la Sagrada Familia. Seguiremos viaje hasta Mostorod para visitar la Iglesia de la Virgen. Después, traslado a la ciudad de Belbeis para visitar la Iglesia de la Virgen María. Almuerzo en un restaurante local. Regreso a El Cairo. Tarde libre. Alojamiento en El Cairo.",
+            "it": "Colazione e partenza al mattino per il quartiere di El Matarya, dove visiteremo la Chiesa della Vergine e l'albero la cui ombra protesse la Sacra Famiglia. Proseguiremo fino a Mostorod per visitare la Chiesa della Vergine. Poi, trasferimento alla città di Belbeis per visitare la Chiesa della Vergine Maria. Pranzo in un ristorante locale. Rientro al Cairo. Pomeriggio libero. Pernottamento al Cairo.",
+            "pt": "Café da manhã e saída pela manhã ao bairro de El Matarya, onde visitaremos a Igreja da Virgem e a árvore cuja sombra protegeu a Sagrada Família. Seguiremos até Mostorod para visitar a Igreja da Virgem. Depois, traslado à cidade de Belbeis para visitar a Igreja da Virgem Maria. Almoço em um restaurante local. Retorno ao Cairo. Tarde livre. Pernoite no Cairo."
+          },
+          "meals": null
+        },
+        {
+          "day": 7,
+          "title": {
+            "ar": "القاهرة / Coptic quarter",
+            "en": "Cairo / Coptic quarter",
+            "es": "El Cairo / Coptic quarter",
+            "it": "Il Cairo / Coptic quarter",
+            "pt": "Cairo / Coptic quarter"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار. زيارة الحي القبطي، بما في ذلك كنائس أبي سرجة، وأبو سيفين، والقديسة بربارة. تناول وجبة الغداء. في فترة بعد الظهر، التحرك إلى حي المعادي لزيارة كنيسة العذراء مريم بالمعادي (العدوية). العودة إلى الفندق في القاهرة والمبيت.",
+            "en": "Breakfast. Visit to the Coptic Quarter, including the churches of Saint Sergius, Abu Seifein, and Saint Barbara. Lunch. In the afternoon, departure to the neighborhood of El Maadi, south of the city, to see the Church of Al Adra Al Adawia. Return to the hotel in Cairo and overnight stay.",
+            "es": "Desayuno. Visita al Barrio Copto, incluyendo las iglesias de San Sergio, Abu Seifein y Santa Bárbara. Almuerzo. Por la tarde, salida hacia el barrio de El Maadi para conocer la Iglesia de Al Adra Al Adawia. Regreso al hotel en El Cairo y alojamiento.",
+            "it": "Colazione. Visita al Quartiere Copto, incluse le chiese di San Sergio, Abu Seifein e Santa Barbara. Pranzo. Nel pomeriggio, partenza per il quartiere di El Maadi per conoscere la Chiesa di Al Adra Al Adawia. Rientro in hotel al Cairo e pernottamento.",
+            "pt": "Café da manhã. Visita ao Bairro Copta, incluindo as igrejas de São Sérgio, Abu Seifein e Santa Bárbara. Almoço. À tarde, saída para o bairro de El Maadi para conhecer a Igreja de Al Adra Al Adawia. Retorno ao hotel no Cairo e pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 8,
+          "title": {
+            "ar": "المنيا / أسيوط / المنيا",
+            "en": "El Minya / Asiut / El Minya",
+            "es": "El Minya / Asiut / El Minya",
+            "it": "El Minya / Asiut / El Minya",
+            "pt": "El Minya / Asiut / El Minya"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار. المغادرة إلى أسيوط، عاصمة المحافظة، على بعد 120 كم جنوب المنيا. سنزور دير المحرق، الواقع في جبل قسقام. تناول وجبتي الغداء والعشاء في الفندق. المبيت في المنيا.",
+            "en": "Breakfast. Departure to Asiut, the provincial capital, 120 km south of El Minya. We will visit the Monastery of Al Moharrak, located on Mount Qusqam. Lunch and dinner at the hotel. Overnight stay in El Minya.",
+            "es": "Desayuno. Salida hacia Asiut, capital de la provincia, a 120 km al sur de El Minya. Visitaremos el Monasterio de Al Moharrak, localizado en el Monte Qusqam. Almuerzo y cena en el hotel. Alojamiento en El Minya.",
+            "it": "Colazione. Partenza per Asiut, capoluogo della provincia, a 120 km a sud di El Minya. Visiteremo il Monastero di Al Moharrak, situato sul Monte Qusqam. Pranzo e cena in hotel. Pernottamento a El Minya.",
+            "pt": "Café da manhã. Saída para Asiut, capital da província, a 120 km ao sul de El Minya. Visitaremos o Mosteiro de Al Moharrak, situado no Monte Qusqam. Almoço e jantar no hotel. Pernoite em El Minya."
+          },
+          "meals": null
+        },
+        {
+          "day": 9,
+          "title": {
+            "ar": "المنيا / القاهرة",
+            "en": "El Minya / Cairo",
+            "es": "El Minya / El Cairo",
+            "it": "El Minya / Il Cairo",
+            "pt": "El Minya / Cairo"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار والمغادرة إلى القاهرة عبر طريق آخر، مستغلين الرحلة لزيارة دير العائلة المقدسة في جبل درنكة. تناول غداء خفيف (بكنك). الوصول إلى القاهرة. المبيت.",
+            "en": "Breakfast and departure to Cairo via another route, taking advantage of the journey to visit the Monastery of the Holy Family on Mount Dronka. Picnic lunch. Arrival in Cairo. Overnight stay.",
+            "es": "Desayuno y salida hacia El Cairo por otra ruta, aprovechando el trayecto para visitar el Monasterio de la Sagrada Familia, en el Monte Dronka. Almuerzo tipo picnic. Llegada a El Cairo. Alojamiento.",
+            "it": "Colazione e partenza per il Cairo attraverso un'altra rotta, approfittando del tragitto per visitare il Monastero della Sacra Famiglia, sul Monte Dronka. Pranzo tipo picnic. Arrivo al Cairo. Pernottamento.",
+            "pt": "Café da manhã e saída para o Cairo por outra rota, aproveitando o trajeto para visitar o Mosteiro da Sagrada Família, no Monte Dronka. Almoço tipo piquenique. Chegada ao Cairo. Pernoite."
+          },
+          "meals": null
+        },
+        {
+          "day": 10,
+          "title": {
+            "ar": "الإفطار والانتقال إلى المطار لرحلة العودة الدولية",
+            "en": "Breakfast & Transfer to Airport for Return Flight",
+            "es": "Desayuno y Traslado al Aeropuerto para Vuelo de Regreso",
+            "it": "Colazione e Trasferimento in Aeroporto per il Volo di Ritorno",
+            "pt": "Café da Manhã e Traslado ao Aeroporto para Voo de Retorno"
+          },
+          "description": {
+            "ar": "تناول وجبة الإفطار، وفي الموعد المحدد، الانتقال إلى المطار لاستقلال طائرة العودة إلى بلدك.",
+            "en": "Breakfast and, at the scheduled time, transfer to the airport for the return flight to the country of origin.",
+            "es": "Desayuno y, a la hora prevista, traslado al aeropuerto para embarcar de regreso al país de origen.",
+            "it": "Colazione e, all'orario previsto, trasferimento in aeroporto per l'imbarco di ritorno al paese d'origine.",
+            "pt": "Café da manhã e, no horário previsto, traslado ao aeroporto para embarque de volta ao país de origem."
+          },
+          "meals": null
+        }
+      ]
+    },
+    {
+      "id": "tour-sharm-4d3n",
+      "slug": "sharm-4d3n",
+      "title": {
+        "ar": "شرم الشيخ – تمديد فاخر على البحر الأحمر (4 أيام / 3 ليال)",
+        "en": "Sharm El Sheikh VIP Extension (4 Days / 3 Nights)",
+        "es": "Extensión VIP Sharm El Sheikh (4 Días / 3 Noches)",
+        "it": "Estensione VIP Sharm El Sheikh (4 Giorni / 3 Notti)",
+        "pt": "Extensão VIP Sharm El Sheikh (4 Dias / 3 Noites)"
+      },
+      "subtitle": {
+        "ar": "سحر سيناء والشعب المرجانية ورأس محمد مع سفاري صحراوي اختياري",
+        "en": "Sinai charm, coral reefs of Ras Mohammed, and optional desert safari",
+        "es": "Encanto del Sinaí, arrecifes de coral y safari por el desierto",
+        "it": "Fascino del Sinai, barriere coralline e safari nel deserto",
+        "pt": "Encanto do Sinai, recifes de corais e safári no deserto"
+      },
+      "overview": {
+        "ar": "تمديد مميز في مدينة السلام شرم الشيخ؛ استمتع بشواطئ خليج نعمة ورأس محمد وجولات السفاري الصحراوي تحت سماء سيناء مع إقامة شاملة كلياً.",
+        "en": "Premium beach extension in Sharm El Sheikh. Enjoy coral reefs of Ras Mohammed, desert safaris, and 5-star all-inclusive luxury.",
+        "es": "Extensión de playa en Sharm El Sheikh con buceo en Ras Mohammed y estancia de lujo.",
+        "it": "Estensione mare a Sharm El Sheikh con immersioni e safari nel deserto.",
+        "pt": "Extensão de praia em Sharm El Sheikh com mergulho e safári no deserto."
+      },
+      "duration": {
+        "ar": "4 أيام / 3 ليالٍ",
+        "en": "4 Days / 3 Nights",
+        "es": "4 Días / 3 Noches",
+        "it": "4 Giorni / 3 Notti",
+        "pt": "4 Dias / 3 Noites"
+      },
+      "category": "Extension",
+      "country": "Egypt",
+      "city": "Sharm El Sheikh",
+      "basePriceUsd": 480,
+      "price": 480,
+      "tags": [
+        "egypt-extensions",
+        "extension",
+        "beach",
+        "diving",
+        "dunas-master-source"
+      ],
+      "highlights": {
+        "ar": [
+          "رحلة اختيارية: جبل سانت كاترين ودير سانت كاترين",
+          "رحلة اختيارية: جولة صحراء سيناء بسيارة 4×4"
+        ],
+        "en": [
+          "Optional Tour: Mount Sinai and St. Catherine's Monastery",
+          "Optional Tour: Sinai Desert Tour by 4×4"
+        ],
+        "es": [
+          "Excursión opcional: Monte Sinaí y Monasterio de Santa Catalina",
+          "Excursión opcional: Recorrido por el Desierto del Sinaí en 4×4"
+        ],
+        "it": [
+          "Escursione opzionale: Monte Sinai e Monastero di Santa Caterina",
+          "Escursione opzionale: Tour del Deserto del Sinai in 4×4"
+        ],
+        "pt": [
+          "Passeio opcional: Monte Sinai e Mosteiro de Santa Catarina",
+          "Passeio opcional: Passeio pelo Deserto do Sinai em 4×4"
+        ]
+      },
+      "included": {
+        "ar": [
+          "03 ليالي إقامة في شرم الشيخ في فئة الفندق المختارة مع نظام شامل وجميع الضرائب.",
+          "النقل: مطار / فندق / مطار (خدمة منتظمة مشتركة)."
+        ],
+        "en": [
+          "03 nights accommodation in Sharm El Sheikh in chosen hotel category with all-inclusive system and taxes.",
+          "Transfers: Airport / Hotel / Airport in regular shared service."
+        ],
+        "es": [
+          "03 noches de alojamiento en Sharm El Sheikh en la categoría de hotel seleccionada con régimen de todo incluido e impuestos.",
+          "Traslados: Aeropuerto / Hotel / Aeropuerto en servicio regular compartido."
+        ],
+        "it": [
+          "03 notti di alloggio a Sharm El Sheikh nella categoria alberghiera scelta con sistema all-inclusive e tasse.",
+          "Trasferimenti: Aeroporto / Hotel / Aeroporto in servizio regolare condiviso."
+        ],
+        "pt": [
+          "03 noites de hospedagem em Sharm El Sheik em hotel de categoria escolhida com sistema de all inclusive e taxas.",
+          "Traslados: Aeroporto / Hotel / Aeroporto em serviço regular."
+        ]
+      },
+      "excluded": {
+        "ar": [
+          "الرحلات الجوية الداخلية بالدرجة الاقتصادية: القاهرة / شرم / القاهرة."
+        ],
+        "en": [
+          "Domestic flights in economy class: Cairo / Sharm / Cairo."
+        ],
+        "es": [
+          "Vuelos domésticos en clase económica: El Cairo / Sharm / El Cairo."
+        ],
+        "it": [
+          "Voli domestici in classe economica: Il Cairo / Sharm / Il Cairo."
+        ],
+        "pt": [
+          "Voos domésticos em classe econômica: Cairo / Sharm / Cairo."
+        ]
+      },
+      "heroImage": "https://nileholiday.com/wp-content/uploads/2019/10/sharm-el-sheikh-top-attractions-1-1920x750.jpg",
+      "images": [
+        "https://images.unsplash.com/photo-1583212292454-1fe6229603b7?auto=format&fit=crop&w=1200&q=80",
+        "https://nileholiday.com/wp-content/uploads/2019/10/sharm-el-sheikh-top-attractions-1-1920x750.jpg"
+      ],
+      "itinerary": [
+        {
+          "day": 1,
+          "title": {
+            "ar": "شرم الشيخ: الاسترخاء على شواطئ البحر الأحمر الفاخرة (إقامة شاملة)",
+            "en": "Sharm El Sheikh: Red Sea Luxury Beach Stay (All-Inclusive)",
+            "es": "Sharm El Sheikh: Estancia de Lujo en la Playa (Todo Incluido)",
+            "it": "Sharm El Sheikh: Soggiorno di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Sharm El Sheikh: Resort de Luxo na Praia (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "يوم حر وإقامة مع نظام شامل (All Inclusive).",
+            "en": "Free day and accommodation with all-inclusive.",
+            "es": "Día libre y alojamiento en régimen de todo incluido.",
+            "it": "Giorno libero e sistemazione in all-inclusive.",
+            "pt": "Dia livre e hospedagem com all inclusive."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 2,
+          "title": {
+            "ar": "القاهرة / شرم الشيخ",
+            "en": "Cairo / Sharm El Sheikh",
+            "es": "El Cairo / Sharm El Sheikh",
+            "it": "Il Cairo / Sharm El Sheikh",
+            "pt": "Cairo / Sharm El Sheikh"
+          },
+          "description": {
+            "ar": "النقل إلى مطار القاهرة والصعود على متن الرحلة الجوية المتجهة إلى شرم الشيخ. الوصول والنقل إلى الفندق المختار. باقي اليوم حر، عشاء وليلة.",
+            "en": "Transfer to Cairo Airport and boarding the flight to Sharm El Sheikh. Arrival and transfer to the chosen hotel. Rest of the day free, dinner and overnight stay.",
+            "es": "Traslado al Aeropuerto del Cairo y embarque en vuelo con destino a Sharm El Sheikh. Llegada y traslado al hotel seleccionado. Resto del día libre, cena y pernoctación.",
+            "it": "Trasferimento all'Aeroporto del Cairo e imbarco sul volo per Sharm El Sheikh. Arrivo e trasferimento all'hotel scelto. Resto della giornata libero, cena e pernottamento.",
+            "pt": "Traslado ao Aeroporto do Cairo e embarque em voo com destino a Sharm El Sheikh. Chegada e traslado para o Hotel escolhido. Restante do dia livre, jantar e pernoite."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 3,
+          "title": {
+            "ar": "شرم الشيخ: الاسترخاء على شواطئ البحر الأحمر الفاخرة (إقامة شاملة)",
+            "en": "Sharm El Sheikh: Red Sea Luxury Beach Stay (All-Inclusive)",
+            "es": "Sharm El Sheikh: Estancia de Lujo en la Playa (Todo Incluido)",
+            "it": "Sharm El Sheikh: Soggiorno di Lusso sul Mar Rosso (All-Inclusive)",
+            "pt": "Sharm El Sheikh: Resort de Luxo na Praia (Tudo Incluído)"
+          },
+          "description": {
+            "ar": "يوم حر وإقامة مع نظام شامل (All Inclusive).",
+            "en": "Free day and accommodation with all-inclusive.",
+            "es": "Día libre y alojamiento en régimen de todo incluido.",
+            "it": "Giorno libero e sistemazione in all-inclusive.",
+            "pt": "Dia livre e hospedagem com all inclusive."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        },
+        {
+          "day": 4,
+          "title": {
+            "ar": "شرم الشيخ / القاهرة",
+            "en": "Sharm El Sheikh / Cairo",
+            "es": "Sharm El Sheikh / El Cairo",
+            "it": "Sharm El Sheikh / Il Cairo",
+            "pt": "Sharm El Sheikh / Cairo"
+          },
+          "description": {
+            "ar": "إفطار في الفندق والمغادرة إلى مطار شرم الشيخ للصعود على متن الرحلة الجوية المتجهة إلى مطار القاهرة الدولي. العودة إلى بلدك الأصلي. نهاية خدماتنا.",
+            "en": "Breakfast at the hotel and departure to Sharm El Sheikh Airport to board the flight to Cairo International Airport. Return to your home country. End of our services.",
+            "es": "Desayuno en el hotel y salida hacia el Aeropuerto de Sharm El Sheikh para embarcar en el vuelo con destino al Aeropuerto Internacional del Cairo. Regreso a su país de origen. Fin de nuestros servicios.",
+            "it": "Colazione in hotel e partenza per l'Aeroporto di Sharm El Sheikh per imbarcarsi sul volo diretto all'Aeroporto Internazionale del Cairo. Ritorno al vostro paese d'origine. Fine dei nostri servizi.",
+            "pt": "Café da manhã no Hotel e saída para o Aeroporto de Sharm El Sheikh, embarque em voo com destino ao Aeroporto Internacional do Cairo. Retorno ao seu país de origem. Fim dos nossos serviços."
+          },
+          "meals": {
+            "ar": "شامل كلياً",
+            "en": "All Inclusive",
+            "es": "Todo Incluido",
+            "it": "Tutto Incluso",
+            "pt": "Tudo Incluído"
+          }
+        }
+      ]
     }
-  ]
+  ],
+  "totalTours": 59
 }

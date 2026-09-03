@@ -41,10 +41,47 @@ export function getFrontendBaseUrl(): string {
 
 /**
  * Returns the public frontend URL for a given tour by slug.
+ * Routes properly to specific program pages if the tour belongs to a program.
  */
 export function getFrontendTourUrl(slug?: string): string {
   const baseUrl = getFrontendBaseUrl();
   if (!slug || !slug.trim()) return baseUrl;
+  const s = slug.trim().toLowerCase();
+
+  if (s === 'classic-program') {
+    return `${baseUrl}/programs/classic/classic-program`;
+  }
+  if (s === 'honeymoon-egypt') {
+    return `${baseUrl}/programs/honeymooners/honeymoon-egypt`;
+  }
+  if (s === 'hurghada-4d3n' || s === 'sharm-4d3n' || s === 'siwa-oasis-alexandria') {
+    return `${baseUrl}/programs/extension/${encodeURIComponent(s)}`;
+  }
+  if (s === 'holy-family-egypt' || s === 'egypt-jordan-combined-14d') {
+    return `${baseUrl}/programs/religious`;
+  }
+
   const cleanSlug = encodeURIComponent(slug.trim());
   return `${baseUrl}/tours/${cleanSlug}`;
+}
+
+/**
+ * Returns the public frontend URL for one of the 5 Egypt VIP Packages.
+ */
+export function getFrontendPackageUrl(packageId: string): string {
+  const baseUrl = getFrontendBaseUrl();
+  switch (packageId) {
+    case 'egypt-classic':
+      return `${baseUrl}/programs/classic/classic-program`;
+    case 'egypt-honeymoon':
+      return `${baseUrl}/programs/honeymooners`;
+    case 'egypt-religious':
+      return `${baseUrl}/programs/religious`;
+    case 'egypt-multi-country':
+      return `${baseUrl}/programs/multi-country`;
+    case 'egypt-extensions':
+      return `${baseUrl}/programs/extension`;
+    default:
+      return `${baseUrl}/destinations/egypt`;
+  }
 }
