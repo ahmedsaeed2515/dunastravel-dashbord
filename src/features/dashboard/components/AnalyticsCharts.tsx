@@ -321,7 +321,7 @@ export function AnalyticsCharts({
 
             {/* Peak Month Badge placed dynamically */}
             {peakItem && (
-              <div className="absolute top-0 end-8 sm:end-10 flex items-center gap-1 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-md animate-bounce">
+              <div className="absolute top-0 inset-e-8 sm:inset-e-10 flex items-center gap-1 bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-md shadow-md animate-bounce">
                 <Crown className="w-3 h-3 fill-slate-950" />
                 <span>{isAr ? "القمة 👑" : "Peak 👑"}</span>
               </div>
