@@ -49,6 +49,8 @@ import {
   Heart,
   Globe,
   Sun,
+  ChevronLeft,
+  ChevronRight,
 } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -375,6 +377,21 @@ export const DestinationsManager: React.FC = React.memo(() => {
   const [isEditorOpen, setIsEditorOpen] = useState<boolean>(false);
   const [transferringTrip, setTransferringTrip] = useState<TripModel | null>(null);
   const [isTransferOpen, setIsTransferOpen] = useState<boolean>(false);
+
+  const packagesTrackRef = useRef<HTMLDivElement>(null);
+
+  const handleScrollPackages = useCallback(
+    (direction: 'prev' | 'next') => {
+      if (packagesTrackRef.current) {
+        const step = 260;
+        // In Arabic (RTL): prev moves right (+), next moves left (-)
+        // In English (LTR): prev moves left (-), next moves right (+)
+        const sign = direction === 'prev' ? (isAr ? 1 : -1) : (isAr ? -1 : 1);
+        packagesTrackRef.current.scrollBy({ left: sign * step, behavior: 'smooth' });
+      }
+    },
+    [isAr]
+  );
 
   const activeDestination = useMemo(() => {
     return destinations.find((d) => d.id === activeDestId) || destinations[0];
@@ -745,54 +762,84 @@ export const DestinationsManager: React.FC = React.memo(() => {
               )}
             </div>
 
-            {/* Quick Package Navigation Pills */}
-            <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none pt-2 border-t border-amber-500/20">
+            {/* Quick Package Navigation Pills with Scroll Buttons */}
+            <div className="flex items-center gap-1.5 pt-2 border-t border-amber-500/20">
               <button
                 type="button"
-                onClick={() => setActivePackageId(null)}
-                className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
-                  activePackageId === null
-                    ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md scale-[1.02]'
-                    : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/70'
-                }`}
+                onClick={() => handleScrollPackages('prev')}
+                className="p-2 rounded-xl bg-card border border-amber-500/30 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 hover:border-amber-500/60 transition-all cursor-pointer shrink-0 shadow-xs flex items-center justify-center active:scale-95"
+                title={isAr ? 'تمرير لليمين / السابق' : 'Scroll Left / Previous'}
+                aria-label={isAr ? 'تمرير لليمين' : 'Scroll left'}
               >
-                <span>🌟</span>
-                <span>{isAr ? 'كافة الباقات الـ 5' : 'All 5 Packages'}</span>
-                <span
-                  className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                    activePackageId === null ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
-                  }`}
-                >
-                  {egyptPackageCounts.all}
-                </span>
+                {isAr ? <ChevronRight className="w-4 h-4 text-amber-500" /> : <ChevronLeft className="w-4 h-4 text-amber-500" />}
               </button>
 
-              {egyptPackages.map((pkg) => {
-                const isActive = activePackageId === pkg.id;
-                const count = egyptPackageCounts[pkg.id] || 0;
-                return (
-                  <button
-                    key={pkg.id}
-                    type="button"
-                    onClick={() => setActivePackageId(isActive ? null : pkg.id)}
-                    className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
-                      isActive
-                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md scale-[1.02]'
-                        : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/70'
+              <div
+                ref={packagesTrackRef}
+                onWheel={(e) => {
+                  if (e.deltaY !== 0 && packagesTrackRef.current) {
+                    packagesTrackRef.current.scrollLeft += e.deltaY;
+                  }
+                }}
+                className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none scroll-smooth flex-1"
+              >
+                <button
+                  type="button"
+                  onClick={() => setActivePackageId(null)}
+                  className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
+                    activePackageId === null
+                      ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md scale-[1.02]'
+                      : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/70'
+                  }`}
+                >
+                  <span>🌟</span>
+                  <span>{isAr ? 'كافة الباقات الـ 5' : 'All 5 Packages'}</span>
+                  <span
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                      activePackageId === null ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
                     }`}
                   >
-                    <span>{pkg.icon}</span>
-                    <span>{isAr ? pkg.titleAr.split('(')[0].trim() : pkg.titleEn}</span>
-                    <span
-                      className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
-                        isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
+                    {egyptPackageCounts.all}
+                  </span>
+                </button>
+
+                {egyptPackages.map((pkg) => {
+                  const isActive = activePackageId === pkg.id;
+                  const count = egyptPackageCounts[pkg.id] || 0;
+                  return (
+                    <button
+                      key={pkg.id}
+                      type="button"
+                      onClick={() => setActivePackageId(isActive ? null : pkg.id)}
+                      className={`px-3.5 py-2 rounded-2xl text-xs font-black transition-all cursor-pointer shrink-0 border flex items-center gap-2 ${
+                        isActive
+                          ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-md scale-[1.02]'
+                          : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/70'
                       }`}
                     >
-                      {count}
-                    </span>
-                  </button>
-                );
-              })}
+                      <span>{pkg.icon}</span>
+                      <span>{isAr ? pkg.titleAr.split('(')[0].trim() : pkg.titleEn}</span>
+                      <span
+                        className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
+                          isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
+                        }`}
+                      >
+                        {count}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <button
+                type="button"
+                onClick={() => handleScrollPackages('next')}
+                className="p-2 rounded-xl bg-card border border-amber-500/30 text-muted-foreground hover:text-amber-500 hover:bg-amber-500/10 hover:border-amber-500/60 transition-all cursor-pointer shrink-0 shadow-xs flex items-center justify-center active:scale-95"
+                title={isAr ? 'تمرير لليسار / التالي' : 'Scroll Right / Next'}
+                aria-label={isAr ? 'تمرير لليسار' : 'Scroll right'}
+              >
+                {isAr ? <ChevronLeft className="w-4 h-4 text-amber-500" /> : <ChevronRight className="w-4 h-4 text-amber-500" />}
+              </button>
             </div>
           </div>
 
