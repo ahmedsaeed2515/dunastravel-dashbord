@@ -3202,7 +3202,7 @@ function HotelEditorDialog({
 
   const handleApplyRoomPreset = (preset: typeof ROOM_PRESETS[0]) => {
     const newPresetRoom: FormRoomItem = {
-      slug: `${preset.slug}-${Date.now().toString().slice(-4)}`,
+      slug: `${preset.slug}-${form.rooms.length + 1}`,
       nameEn: preset.nameEn,
       nameAr: preset.nameAr,
       nameEs: preset.nameEs,
