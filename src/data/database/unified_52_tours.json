@@ -36938,8 +36938,8 @@
       "category": "Extension",
       "country": "Egypt",
       "city": "Sharm El Sheikh",
-      "basePriceUsd": 480,
-      "price": 480,
+      "basePriceUsd": 0,
+      "price": 0,
       "tags": [
         "egypt-extensions",
         "extension",
