@@ -177,12 +177,12 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
                 </div>
               </div>
 
-              {/* Subtitle Badge */}
-              <div className="mt-4 pt-3.5 border-t border-border/60 flex items-center justify-between">
+              {/* Subtitle Badge & Action Link */}
+              <div className="mt-4 pt-3.5 border-t border-border/60 flex flex-col items-start gap-2">
                 <span className={`text-xs font-extrabold px-3 py-1 rounded-full border ${card.badgeColor}`}>
                   {card.badge}
                 </span>
-                <span className="text-xs font-extrabold text-muted-foreground group-hover:text-amber-500 transition-colors flex items-center gap-1">
+                <span className="text-xs font-extrabold text-muted-foreground group-hover:text-amber-500 transition-colors flex items-center gap-1 pt-0.5">
                   {isAr ? "عرض ←" : "View →"}
                 </span>
               </div>
