@@ -53,8 +53,6 @@ describe('KPIGrid', () => {
     expect(screen.getByText(/15,000/)).toBeInTheDocument();
     expect(screen.getByText('Total Bookings')).toBeInTheDocument();
     expect(screen.getByText('120')).toBeInTheDocument();
-    expect(screen.getByText('Tour Occupancy')).toBeInTheDocument();
-    expect(screen.getByText('85%')).toBeInTheDocument();
   });
 
   it('renders skeleton cards when loading', () => {

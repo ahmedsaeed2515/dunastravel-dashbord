@@ -87,18 +87,6 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       href: adminRoutes.tours,
     },
     {
-      title: isAr ? "إشغال الرحلات" : "Tour Occupancy",
-      value: capacity?.occupancyRate == null ? "—" : `${capacity.occupancyRate}%`,
-      badge: isAr
-        ? `${seatsSold.toLocaleString()} مباع من ${totalSeats.toLocaleString()} مقعد`
-        : `${seatsSold.toLocaleString()} / ${totalSeats.toLocaleString()} seats sold`,
-      badgeColor: "bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20",
-      icon: Map,
-      iconColor: "text-indigo-500 dark:text-indigo-400",
-      iconBg: "bg-indigo-500/10 border-indigo-500/20",
-      href: adminRoutes.tours,
-    },
-    {
       title: isAr ? "استفسارات العملاء" : "Customer Inquiries",
       value: operational?.openInquiriesCount ?? 0,
       badge: isAr
