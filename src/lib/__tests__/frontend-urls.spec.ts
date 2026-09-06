@@ -52,8 +52,11 @@ describe("frontend-urls utility", () => {
 
   it("generates correct tour URL when slug is provided", () => {
     process.env.NEXT_PUBLIC_FRONTEND_URL = "https://dunastravel-frontend.vercel.app";
+    expect(getFrontendTourUrl("cairo-express-4d")).toBe(
+      "https://dunastravel-frontend.vercel.app/tours/cairo-express-4d"
+    );
     expect(getFrontendTourUrl("siwa-oasis-alexandria")).toBe(
-      "https://dunastravel-frontend.vercel.app/tours/siwa-oasis-alexandria"
+      "https://dunastravel-frontend.vercel.app/programs/extension/siwa-oasis-alexandria"
     );
   });
 

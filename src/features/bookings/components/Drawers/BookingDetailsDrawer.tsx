@@ -6,6 +6,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import { useRestoreBooking } from "../../hooks/useBookings";
 import { useBookingDetail } from "../../hooks/useBookingDetail";
 import {
@@ -70,6 +73,8 @@ const formatAmountSafe = (val?: string | number, currency = "USD") => {
 };
 
 export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChange }: BookingDetailsDrawerProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
   const tBookings = useTranslations("bookings");
   const tCommon = useTranslations("common");
   const tNav = useTranslations("navigation");
@@ -207,14 +212,24 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                     Itinerary & Destination
                   </h4>
                   {booking.tourSlug && (
-                    <a
-                      href={`/tours/${booking.tourSlug}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-xs text-primary hover:underline flex items-center gap-1 font-medium"
-                    >
-                      View Live Tour <ExternalLink className="w-3 h-3" />
-                    </a>
+                    <div className="flex items-center gap-3">
+                      <Link
+                        href={`/${locale}/admin/tours/${booking.tourSlug}`}
+                        target="_blank"
+                        className="text-xs text-primary hover:underline flex items-center gap-1 font-semibold"
+                      >
+                        {locale === "ar" ? "عرض في الداشبورد 📊" : "View in Dashboard"} <ExternalLink className="w-3 h-3" />
+                      </Link>
+                      <span className="text-muted-foreground/50">•</span>
+                      <a
+                        href={getFrontendTourUrl(booking.tourSlug)}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-xs text-sky-500 hover:underline flex items-center gap-1 font-medium"
+                      >
+                        {locale === "ar" ? "عرض بالموقع المباشر 🌐" : "View Live Website"} <Globe className="w-3 h-3" />
+                      </a>
+                    </div>
                   )}
                 </div>
 
@@ -679,7 +694,7 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                 <div className="relative border-s border-border ms-4 space-y-6 pt-2">
                   {booking.activityLogs.map((log: any, i: number) => (
                     <div key={log.id || i} className="relative ps-6">
-                      <div className="absolute w-2.5 h-2.5 bg-primary rounded-full -start-[5px] top-1.5 ring-4 ring-background" />
+                      <div className="absolute w-2.5 h-2.5 bg-primary rounded-full -inset-s-1.25 top-1.5 ring-4 ring-background" />
                       <div className="font-semibold text-sm text-foreground">{(log.action || "UPDATE").replace(/_/g, ' ')}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</div>
                     </div>
