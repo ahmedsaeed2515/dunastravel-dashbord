@@ -8,6 +8,8 @@ import { RequirePermission } from "@/components/shared/auth/RequirePermission";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 
+import { BookingsHeaderStats } from "@/features/bookings/components/BookingsHeaderStats";
+
 export default function BookingsPage() {
   const tBookings = useTranslations("bookings");
 
@@ -22,6 +24,8 @@ export default function BookingsPage() {
           </RequirePermission>
         }
       />
+
+      <BookingsHeaderStats />
 
       <div className="rounded-xl border border-border/80 bg-card p-4 sm:p-6 shadow-xs">
         <Suspense fallback={<TableSkeleton />}>
