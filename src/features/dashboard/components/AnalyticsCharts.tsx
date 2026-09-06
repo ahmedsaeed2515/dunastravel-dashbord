@@ -14,7 +14,8 @@ import {
   Plus,
   X,
   Calendar,
-  Trash2
+  Trash2,
+  AlertTriangle
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { useParams } from "next/navigation";
@@ -57,6 +58,7 @@ export function AnalyticsCharts({
   const [isAddYearOpen, setIsAddYearOpen] = useState(false);
   const [newYearInput, setNewYearInput] = useState("");
   const [yearError, setYearError] = useState<string | null>(null);
+  const [yearToDelete, setYearToDelete] = useState<string | null>(null);
   const addYearRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -128,11 +130,17 @@ export function AnalyticsCharts({
     setIsAddYearOpen(false);
   };
 
-  const handleDeleteYear = (presetToDelete: string, e: React.MouseEvent) => {
+  const onRequestDeleteYear = (presetToDelete: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (presetToDelete === "6m") return;
     if (yearPresets.filter((p) => p !== "6m").length <= 1) return; // Keep at least one year
 
+    setYearToDelete(presetToDelete);
+  };
+
+  const handleConfirmDeleteYear = () => {
+    if (!yearToDelete) return;
+    const presetToDelete = yearToDelete;
     const updatedPresets = yearPresets.filter((p) => p !== presetToDelete);
     savePresets(updatedPresets);
 
@@ -140,6 +148,7 @@ export function AnalyticsCharts({
       const fallback = updatedPresets[0] || "2026";
       onFilterChange?.({ ...filters, preset: fallback });
     }
+    setYearToDelete(null);
   };
 
   const trendItems = useMemo<RevenueTrendItem[]>(() => {
@@ -285,10 +294,10 @@ export function AnalyticsCharts({
                       role="button"
                       tabIndex={0}
                       title={isAr ? `إزالة سنة ${preset}` : `Remove year ${preset}`}
-                      onClick={(e) => handleDeleteYear(preset, e)}
+                      onClick={(e) => onRequestDeleteYear(preset, e)}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter' || e.key === ' ') {
-                          handleDeleteYear(preset, e as any);
+                          onRequestDeleteYear(preset, e as any);
                         }
                       }}
                       className={`p-0.5 rounded-full transition-colors ${
@@ -589,6 +598,44 @@ export function AnalyticsCharts({
           </Link>
         </div>
       </div>
+      {/* Delete Year Confirmation Modal */}
+      {yearToDelete && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-xs animate-in fade-in duration-200">
+          <div className="bg-card border border-border w-full max-w-md rounded-2xl p-6 shadow-2xl space-y-4 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3">
+              <div className="size-10 rounded-full bg-rose-500/10 text-rose-500 border border-rose-500/20 flex items-center justify-center shrink-0">
+                <AlertTriangle className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-base font-bold text-foreground">
+                  {isAr ? `تأكيد حذف سنة ${yearToDelete}` : `Confirm Deleting Year ${yearToDelete}`}
+                </h3>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {isAr ? `هل أنت متأكد من رغبتك في إزالة سنة ${yearToDelete} من فلتر الإيرادات؟` : `Are you sure you want to remove ${yearToDelete} from the revenue filter presets?`}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/60">
+              <button
+                type="button"
+                onClick={() => setYearToDelete(null)}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-muted hover:bg-muted/80 text-foreground transition-colors cursor-pointer"
+              >
+                {isAr ? "إلغاء" : "Cancel"}
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDeleteYear}
+                className="px-4 py-2 text-xs font-semibold rounded-xl bg-rose-600 hover:bg-rose-700 text-white shadow-lg shadow-rose-600/20 transition-all cursor-pointer flex items-center gap-1.5"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                <span>{isAr ? "نعم، قم بالحذف" : "Yes, Delete"}</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }
