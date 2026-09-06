@@ -280,13 +280,13 @@ function SidebarTrigger({
         "bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-amber-500/40 text-slate-700 dark:text-amber-400",
         "hover:border-amber-500 hover:text-amber-500 dark:hover:text-amber-300",
         "hover:shadow-[0_0_22px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95",
-        isOpen && "bg-gradient-to-br from-amber-500/25 via-amber-500/15 to-amber-500/30 border-amber-500/70 shadow-[0_0_25px_rgba(245,158,11,0.65)] text-amber-500 dark:text-amber-400 animate-glow-pulse",
+        isOpen && "bg-linear-to-br from-amber-500/25 via-amber-500/15 to-amber-500/30 border-amber-500/70 shadow-[0_0_25px_rgba(245,158,11,0.65)] text-amber-500 dark:text-amber-400 animate-glow-pulse",
         className
       )}
       {...(props as any)}
     >
       {/* Ambient background glow element */}
-      <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/20 to-amber-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm pointer-events-none" />
+      <span className="absolute inset-0 rounded-full bg-linear-to-tr from-amber-500/20 to-amber-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm pointer-events-none" />
 
       {/* Click ripple/ping effect */}
       <span className="absolute inset-0 rounded-full bg-amber-500/40 opacity-0 group-active:opacity-100 group-active:animate-ping transition-all duration-150 pointer-events-none" />
