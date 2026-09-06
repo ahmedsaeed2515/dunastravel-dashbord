@@ -7,7 +7,7 @@ export interface DashboardFilters {
   currency?: string;
   locale?: 'en' | 'ar' | 'es' | 'pt' | 'it';
   timezone?: 'UTC' | 'Africa/Cairo';
-  preset?: 'all' | '30d' | '90d' | '6m' | '12m' | '2026' | '2025';
+  preset?: 'all' | '30d' | '90d' | '6m' | '12m' | '2026' | '2025' | (string & {});
   year?: string;
 }
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Card } from "@/components/ui/card";
 import { 
   BarChart3, 
@@ -10,7 +10,11 @@ import {
   ChevronLeft, 
   Flame,
   PieChart,
-  ArrowDownRight
+  ArrowDownRight,
+  Plus,
+  X,
+  Calendar,
+  Trash2
 } from "lucide-react";
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from "recharts";
 import { useParams } from "next/navigation";
@@ -33,6 +37,9 @@ interface AnalyticsChartsProps {
   isLoadingRevenue?: boolean;
 }
 
+const STORAGE_KEY = "dunastravel_revenue_year_presets";
+const DEFAULT_PRESETS = ["2026", "2025", "2024", "6m"];
+
 export function AnalyticsCharts({
   revenueTrend,
   topDestinations,
@@ -45,9 +52,95 @@ export function AnalyticsCharts({
   const isAr = params?.locale === "ar";
   const [isMounted, setIsMounted] = useState(false);
 
+  // Dynamic Year Presets State
+  const [yearPresets, setYearPresets] = useState<string[]>(DEFAULT_PRESETS);
+  const [isAddYearOpen, setIsAddYearOpen] = useState(false);
+  const [newYearInput, setNewYearInput] = useState("");
+  const [yearError, setYearError] = useState<string | null>(null);
+  const addYearRef = useRef<HTMLDivElement>(null);
+
   useEffect(() => {
     setIsMounted(true);
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          setYearPresets(parsed);
+        }
+      }
+    } catch {
+      // Fallback to default presets
+    }
   }, []);
+
+  // Close add year dropdown on outside click
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (addYearRef.current && !addYearRef.current.contains(event.target as Node)) {
+        setIsAddYearOpen(false);
+        setYearError(null);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const savePresets = (presets: string[]) => {
+    setYearPresets(presets);
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(presets));
+    } catch {
+      // Ignore storage errors
+    }
+  };
+
+  const handleAddYear = (yearVal?: string) => {
+    const targetYear = (yearVal || newYearInput).trim();
+    if (!/^\d{4}$/.test(targetYear)) {
+      setYearError(isAr ? "يرجى إدخال سنة مكونة من 4 أرقام (مثال: 2027)" : "Please enter a valid 4-digit year (e.g. 2027)");
+      return;
+    }
+    const numYear = parseInt(targetYear, 10);
+    if (numYear < 2000 || numYear > 2099) {
+      setYearError(isAr ? "يرجى إدخال سنة منطقية (بين 2000 و 2099)" : "Please enter a year between 2000 and 2099");
+      return;
+    }
+
+    if (!yearPresets.includes(targetYear)) {
+      // Keep "6m" at the end, sort numeric years descending
+      const numericYears = yearPresets.filter((y) => /^\d{4}$/.test(y));
+      if (!numericYears.includes(targetYear)) {
+        numericYears.push(targetYear);
+      }
+      numericYears.sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+
+      const updatedPresets = yearPresets.includes("6m")
+        ? [...numericYears, "6m"]
+        : numericYears;
+
+      savePresets(updatedPresets);
+    }
+
+    onFilterChange?.({ ...filters, preset: targetYear });
+    setNewYearInput("");
+    setYearError(null);
+    setIsAddYearOpen(false);
+  };
+
+  const handleDeleteYear = (presetToDelete: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (presetToDelete === "6m") return;
+    if (yearPresets.filter((p) => p !== "6m").length <= 1) return; // Keep at least one year
+
+    const updatedPresets = yearPresets.filter((p) => p !== presetToDelete);
+    savePresets(updatedPresets);
+
+    if (filters?.preset === presetToDelete) {
+      const fallback = updatedPresets[0] || "2026";
+      onFilterChange?.({ ...filters, preset: fallback });
+    }
+  };
 
   const trendItems = useMemo<RevenueTrendItem[]>(() => {
     if (Array.isArray(revenueTrend)) return revenueTrend;
@@ -132,6 +225,16 @@ export function AnalyticsCharts({
 
   const activePreset = filters?.preset || "2026";
 
+  // Quick year suggestions to show in the add year popup
+  const currentYearNum = new Date().getFullYear();
+  const yearSuggestions = [
+    String(currentYearNum + 1),
+    String(currentYearNum),
+    String(currentYearNum - 1),
+    String(currentYearNum - 2),
+    String(currentYearNum - 3),
+  ].filter((y) => !yearPresets.includes(y));
+
   return (
     <Card className="p-5 sm:p-6 bg-card border border-border/80 rounded-3xl shadow-sm space-y-6">
       {/* 1. Header Section */}
@@ -156,26 +259,137 @@ export function AnalyticsCharts({
           </p>
         </div>
 
-        {/* Year & Period Filter Buttons */}
-        <div className="flex items-center gap-1.5 bg-muted/60 p-1 rounded-2xl border border-border">
-          {(["2026", "2025", "6m"] as const).map((preset) => {
+        {/* Dynamic Year & Period Filter Bar with Add/Remove support */}
+        <div className="flex items-center gap-1.5 bg-muted/60 p-1.5 rounded-2xl border border-border flex-wrap relative">
+          {yearPresets.map((preset) => {
             const isSelected = activePreset === preset;
+            const isDeletable = preset !== "6m" && yearPresets.filter((p) => p !== "6m").length > 1;
             const label = preset === "6m" ? (isAr ? "آخر 6 أشهر" : "Last 6 Months") : preset;
+            
             return (
-              <button
-                key={preset}
-                type="button"
-                onClick={() => onFilterChange?.({ ...filters, preset })}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer ${
-                  isSelected
-                    ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
-                    : "text-muted-foreground hover:text-foreground"
-                }`}
-              >
-                {label}
-              </button>
+              <div key={preset} className="relative group flex items-center">
+                <button
+                  type="button"
+                  onClick={() => onFilterChange?.({ ...filters, preset })}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-extrabold transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${
+                    isSelected
+                      ? "bg-amber-600 text-white shadow-md shadow-amber-600/20"
+                      : "text-muted-foreground hover:text-foreground hover:bg-muted/80"
+                  }`}
+                >
+                  <span>{label}</span>
+
+                  {/* Quick Delete button on hover for custom years */}
+                  {isDeletable && (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      title={isAr ? `إزالة سنة ${preset}` : `Remove year ${preset}`}
+                      onClick={(e) => handleDeleteYear(preset, e)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          handleDeleteYear(preset, e as any);
+                        }
+                      }}
+                      className={`p-0.5 rounded-full transition-colors ${
+                        isSelected
+                          ? "hover:bg-amber-700 text-amber-100"
+                          : "opacity-0 group-hover:opacity-100 hover:bg-rose-500/20 text-rose-500"
+                      }`}
+                    >
+                      <X className="w-3 h-3" />
+                    </span>
+                  )}
+                </button>
+              </div>
             );
           })}
+
+          {/* Add Year Button & Dropdown Container */}
+          <div className="relative" ref={addYearRef}>
+            <button
+              type="button"
+              onClick={() => {
+                setIsAddYearOpen(!isAddYearOpen);
+                setYearError(null);
+              }}
+              className="px-2.5 py-1.5 rounded-xl text-xs font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center gap-1 transition-all duration-200 cursor-pointer"
+              title={isAr ? "إضافة سنة جديدة للمقارنة" : "Add new year"}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              <span>{isAr ? "سنة" : "Year"}</span>
+            </button>
+
+            {/* Add Year Popover Form */}
+            {isAddYearOpen && (
+              <div className="absolute top-full inset-s-0 sm:inset-e-0 mt-2 w-72 p-4 rounded-2xl bg-card border border-border shadow-xl z-50 space-y-3 animate-in fade-in zoom-in-95 duration-150">
+                <div className="flex items-center justify-between border-b border-border pb-2">
+                  <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                    <Calendar className="w-3.5 h-3.5 text-amber-500" />
+                    {isAr ? "إضافة سنة جديدة" : "Add Year"}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => setIsAddYearOpen(false)}
+                    className="text-muted-foreground hover:text-foreground p-1 rounded-md"
+                  >
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+
+                {/* Input form */}
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="number"
+                      placeholder={isAr ? "مثال: 2027" : "e.g. 2027"}
+                      value={newYearInput}
+                      onChange={(e) => setNewYearInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleAddYear();
+                      }}
+                      className="w-full px-3 py-1.5 text-xs rounded-xl bg-muted border border-border focus:border-amber-500 focus:outline-none font-mono"
+                      min="2000"
+                      max="2099"
+                      autoFocus
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleAddYear()}
+                      className="px-3 py-1.5 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold transition-all shrink-0 cursor-pointer"
+                    >
+                      {isAr ? "إضافة" : "Add"}
+                    </button>
+                  </div>
+
+                  {yearError && (
+                    <p className="text-[11px] text-rose-500 font-semibold">{yearError}</p>
+                  )}
+                </div>
+
+                {/* Quick suggestions if any */}
+                {yearSuggestions.length > 0 && (
+                  <div className="pt-1 border-t border-border/60">
+                    <span className="text-[10px] font-bold text-muted-foreground block mb-1.5">
+                      {isAr ? "اقتراحات سريعة:" : "Quick Suggestions:"}
+                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {yearSuggestions.slice(0, 4).map((sug) => (
+                        <button
+                          key={sug}
+                          type="button"
+                          onClick={() => handleAddYear(sug)}
+                          className="px-2 py-0.5 rounded-lg bg-muted hover:bg-amber-500/10 text-muted-foreground hover:text-amber-600 dark:hover:text-amber-400 border border-border/60 text-[11px] font-mono font-bold transition-all cursor-pointer"
+                        >
+                          +{sug}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

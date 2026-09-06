@@ -86,6 +86,9 @@ export default function DashboardPage() {
       <AnalyticsCharts
         revenueTrend={revenueTrend}
         topDestinations={topDestinations}
+        summary={summary}
+        filters={filters}
+        onFilterChange={handleFilterChange}
         isLoadingRevenue={isLoadingRevenue || isLoadingDestinations}
       />
 
