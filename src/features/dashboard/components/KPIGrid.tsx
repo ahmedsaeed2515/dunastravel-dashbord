@@ -103,9 +103,19 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
     {
       title: isAr ? "الزوار النشطون الآن" : "Live Active Visitors",
       value: summaryData?.conversion?.activeVisitors ?? summaryData?.operational?.activeVisitors ?? 0,
-      badge: isAr
-        ? `🟢 نشط الآن (${summaryData?.conversion?.visitorViews ?? 0} إجمالي الزيارات)`
-        : `🟢 Active now (${summaryData?.conversion?.visitorViews ?? 0} total views)`,
+      badge: (
+        <span className="inline-flex items-center gap-1.5">
+          <span className="relative flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+          </span>
+          <span>
+            {isAr
+              ? `نشط الآن (${summaryData?.conversion?.visitorViews ?? 0} إجمالي الزيارات)`
+              : `Active now (${summaryData?.conversion?.visitorViews ?? 0} total views)`}
+          </span>
+        </span>
+      ),
       badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold",
       icon: Users,
       iconColor: "text-emerald-500 dark:text-emerald-400",
