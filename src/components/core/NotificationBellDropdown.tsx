@@ -13,6 +13,7 @@ import {
   AlertCircle,
   ChevronRight,
   Loader2,
+  Volume2,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -173,17 +174,32 @@ export function NotificationBellDropdown() {
               </span>
             )}
           </div>
-          {unreadCount > 0 && (
+          <div className="flex items-center gap-1">
             <Button
               variant="ghost"
               size="sm"
-              onClick={handleMarkAllAsRead}
-              className="text-xs text-muted-foreground hover:text-primary gap-1 h-7 px-2"
+              onClick={(e) => {
+                e.stopPropagation();
+                playNotificationSound();
+              }}
+              title={validLocale === "ar" ? "تجربة الصوت" : "Test Sound"}
+              className="text-xs text-muted-foreground hover:text-amber-500 gap-1 h-7 px-2"
             >
-              <CheckCheck className="w-3.5 h-3.5" />
-              <span>{validLocale === "ar" ? "قراءة الكل" : "Mark all read"}</span>
+              <Volume2 className="w-3.5 h-3.5 text-amber-500" />
+              <span className="text-[11px]">{validLocale === "ar" ? "تجربة الصوت" : "Test Sound"}</span>
             </Button>
-          )}
+            {unreadCount > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleMarkAllAsRead}
+                className="text-xs text-muted-foreground hover:text-primary gap-1 h-7 px-2"
+              >
+                <CheckCheck className="w-3.5 h-3.5" />
+                <span>{validLocale === "ar" ? "قراءة الكل" : "Mark all read"}</span>
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* List */}
