@@ -75,6 +75,7 @@ export function useTrafficAnalytics(filters?: DashboardFilters) {
     queryKey: ["dashboard", "traffic", filters],
     queryFn: () => dashboardApi.getTrafficAnalytics(filters),
     ...QUERY_CONFIG_METRICS,
+    refetchInterval: 5000,
   });
 }
 
