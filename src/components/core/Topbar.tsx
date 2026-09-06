@@ -100,7 +100,7 @@ export const Topbar = memo(function Topbar() {
     >
       {/* Left: Sidebar Trigger */}
       <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        <SidebarTrigger className="p-2 rounded-xl bg-slate-100 dark:bg-slate-800/80 text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white transition-colors border border-slate-200 dark:border-slate-700/60" />
+        <SidebarTrigger />
       </div>
 
       {/* Right: Controls */}

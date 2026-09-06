@@ -261,25 +261,70 @@ function SidebarTrigger({
   className,
   onClick,
   ...props
-}: React.ComponentProps<typeof Button>) {
-  const { toggleSidebar } = useSidebar()
+}: React.ComponentProps<"button">) {
+  const { toggleSidebar, state, openMobile, isMobile } = useSidebar()
+  const isOpen = isMobile ? openMobile : state === "expanded"
 
   return (
-    <Button
+    <button
+      type="button"
       data-sidebar="trigger"
       data-slot="sidebar-trigger"
-      variant="ghost"
-      size="icon-sm"
-      className={cn(className)}
+      aria-label="Toggle Sidebar"
       onClick={(event) => {
-        onClick?.(event)
+        onClick?.(event as any)
         toggleSidebar()
       }}
-      {...props}
+      className={cn(
+        "relative group flex items-center justify-center size-10 rounded-full transition-all duration-300 select-none cursor-pointer outline-none overflow-hidden shrink-0",
+        "bg-slate-100/90 dark:bg-slate-800/90 border border-slate-200/90 dark:border-amber-500/40 text-slate-700 dark:text-amber-400",
+        "hover:border-amber-500 hover:text-amber-500 dark:hover:text-amber-300",
+        "hover:shadow-[0_0_22px_rgba(245,158,11,0.5)] hover:scale-105 active:scale-95",
+        isOpen && "bg-gradient-to-br from-amber-500/25 via-amber-500/15 to-amber-500/30 border-amber-500/70 shadow-[0_0_25px_rgba(245,158,11,0.65)] text-amber-500 dark:text-amber-400 animate-glow-pulse",
+        className
+      )}
+      {...(props as any)}
     >
-      <PanelLeftIcon className="rtl:rotate-180" />
+      {/* Ambient background glow element */}
+      <span className="absolute inset-0 rounded-full bg-gradient-to-tr from-amber-500/20 to-amber-400/30 opacity-0 group-hover:opacity-100 transition-opacity duration-300 blur-sm pointer-events-none" />
+
+      {/* Click ripple/ping effect */}
+      <span className="absolute inset-0 rounded-full bg-amber-500/40 opacity-0 group-active:opacity-100 group-active:animate-ping transition-all duration-150 pointer-events-none" />
+
+      {/* 3 Horizontal Lines inside Circle (Hamburger) */}
+      <svg
+        className="w-5 h-5 relative z-10 transition-all duration-300 group-hover:scale-110 group-hover:drop-shadow-[0_0_8px_rgba(245,158,11,0.9)]"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <line
+          x1="4" y1="6" x2="20" y2="6"
+          className={cn(
+            "transition-all duration-300 origin-center",
+            isOpen && "translate-y-1.5 rotate-45 stroke-amber-500"
+          )}
+        />
+        <line
+          x1="4" y1="12" x2="20" y2="12"
+          className={cn(
+            "transition-all duration-300",
+            isOpen && "opacity-0 scale-x-0"
+          )}
+        />
+        <line
+          x1="4" y1="18" x2="20" y2="18"
+          className={cn(
+            "transition-all duration-300 origin-center",
+            isOpen && "-translate-y-1.5 -rotate-45 stroke-amber-500"
+          )}
+        />
+      </svg>
       <span className="sr-only">Toggle Sidebar</span>
-    </Button>
+    </button>
   )
 }
 
