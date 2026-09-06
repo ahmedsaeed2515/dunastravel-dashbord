@@ -122,7 +122,7 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       icon: Users,
       iconColor: "text-emerald-500 dark:text-emerald-400",
       iconBg: "bg-emerald-500/10 border-emerald-500/20 animate-pulse",
-      href: adminRoutes.dashboard,
+      href: adminRoutes.bookings,
     },
     {
       title: isAr ? "المبالغ المحصلة والمتبقية" : "Collected & Balance",
