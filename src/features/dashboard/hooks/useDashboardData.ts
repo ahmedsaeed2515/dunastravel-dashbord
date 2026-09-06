@@ -19,6 +19,7 @@ export function useDashboardSummary(filters?: DashboardFilters) {
     queryKey: ["dashboard", "summary", filters],
     queryFn: () => dashboardApi.getSummary(filters),
     ...QUERY_CONFIG_METRICS,
+    refetchInterval: 5000,
   });
 }
 

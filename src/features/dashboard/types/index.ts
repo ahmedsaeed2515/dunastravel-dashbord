@@ -32,6 +32,7 @@ export interface ExecutiveSummary {
     rate: number;
     totalConversions: number;
     visitorViews: number;
+    activeVisitors?: number;
   };
   capacity: {
     totalCapacity: number;
@@ -45,6 +46,7 @@ export interface ExecutiveSummary {
     openInquiriesCount: number;
     unreadContactsCount: number;
     failedNotificationsCount: number;
+    activeVisitors?: number;
   };
   dateRange: {
     from: string;

@@ -7,7 +7,8 @@ import {
   CalendarCheck,
   Map,
   MessageSquare,
-  Bell
+  Bell,
+  Users
 } from "lucide-react";
 import { CardSkeleton } from "@/components/shared/ui/Skeletons";
 import { useParams } from "next/navigation";
@@ -112,16 +113,16 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
       href: adminRoutes.communications,
     },
     {
-      title: isAr ? "معدل تحويل الزوار" : "Visitor Conversion",
-      value: summaryData?.conversion?.rate == null ? "—" : `${summaryData.conversion.rate}%`,
+      title: isAr ? "الزوار النشطون الآن" : "Live Active Visitors",
+      value: summaryData?.conversion?.activeVisitors ?? summaryData?.operational?.activeVisitors ?? 0,
       badge: isAr
-        ? `${summaryData?.conversion?.totalConversions ?? 0} حجز من ${summaryData?.conversion?.visitorViews ?? 0} زيارة`
-        : `${summaryData?.conversion?.totalConversions ?? 0} conversions / ${summaryData?.conversion?.visitorViews ?? 0} views`,
-      badgeColor: "bg-teal-500/10 text-teal-600 dark:text-teal-400 border-teal-500/20",
-      icon: DollarSign,
-      iconColor: "text-teal-500 dark:text-teal-400",
-      iconBg: "bg-teal-500/10 border-teal-500/20",
-      href: adminRoutes.bookings,
+        ? `🟢 نشط الآن (${summaryData?.conversion?.visitorViews ?? 0} إجمالي الزيارات)`
+        : `🟢 Active now (${summaryData?.conversion?.visitorViews ?? 0} total views)`,
+      badgeColor: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 font-bold",
+      icon: Users,
+      iconColor: "text-emerald-500 dark:text-emerald-400",
+      iconBg: "bg-emerald-500/10 border-emerald-500/20 animate-pulse",
+      href: adminRoutes.dashboard,
     },
     {
       title: isAr ? "المبالغ المحصلة والمتبقية" : "Collected & Balance",
