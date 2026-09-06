@@ -1,33 +1,31 @@
 /**
- * Notification Sound Synthesizer & WAV Fallback Generator
- * Supports Web Audio API + HTML5 Audio Data URI fallback + Autoplay Policy unlocking.
+ * Reliable Notification Sound Synthesizer & Audio Player
  */
 
-let sharedAudioCtx: AudioContext | null = null;
 let cachedWavDataUri: string | null = null;
+let globalAudioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {
   if (typeof window === "undefined") return null;
-  if (!sharedAudioCtx) {
+  if (!globalAudioCtx) {
     const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
     if (AudioCtx) {
-      sharedAudioCtx = new AudioCtx();
+      globalAudioCtx = new AudioCtx();
     }
   }
-  return sharedAudioCtx;
+  return globalAudioCtx;
 }
 
-// Auto-unlock AudioContext on user interaction anywhere on page
+// Unlock audio context on any user interaction
 if (typeof window !== "undefined") {
-  const unlockAudio = () => {
+  const unlock = () => {
     const ctx = getAudioContext();
     if (ctx && ctx.state === "suspended") {
       ctx.resume().catch(() => {});
     }
   };
-
-  ["click", "touchstart", "pointerdown", "keydown"].forEach((event) => {
-    window.addEventListener(event, unlockAudio, { passive: true });
+  ["click", "touchstart", "pointerdown", "keydown"].forEach((evt) => {
+    window.addEventListener(evt, unlock, { passive: true });
   });
 }
 
@@ -35,7 +33,7 @@ function getChimeWavDataUri(): string {
   if (cachedWavDataUri) return cachedWavDataUri;
 
   const sampleRate = 22050;
-  const duration = 0.4;
+  const duration = 0.45;
   const numSamples = Math.floor(sampleRate * duration);
   const buffer = new ArrayBuffer(44 + numSamples * 2);
   const view = new DataView(buffer);
@@ -64,15 +62,15 @@ function getChimeWavDataUri(): string {
     const t = i / sampleRate;
     let sample = 0;
 
-    // High double chime (E5 659.25Hz + B5 987.77Hz)
-    if (t < 0.28) {
-      const env1 = Math.exp(-t * 14);
-      sample += Math.sin(2 * Math.PI * 659.25 * t) * env1 * 0.45;
+    // Pleasant double chime: Note 1 (E5 - 659.25Hz) + Note 2 (B5 - 987.77Hz)
+    if (t < 0.3) {
+      const env1 = Math.exp(-t * 12);
+      sample += Math.sin(2 * Math.PI * 659.25 * t) * env1 * 0.5;
     }
-    if (t >= 0.07) {
-      const t2 = t - 0.07;
-      const env2 = Math.exp(-t2 * 11);
-      sample += Math.sin(2 * Math.PI * 987.77 * t2) * env2 * 0.55;
+    if (t >= 0.08) {
+      const t2 = t - 0.08;
+      const env2 = Math.exp(-t2 * 10);
+      sample += Math.sin(2 * Math.PI * 987.77 * t2) * env2 * 0.6;
     }
 
     const sample16 = Math.max(-1, Math.min(1, sample)) * 32767;
@@ -91,46 +89,62 @@ function getChimeWavDataUri(): string {
 export const playNotificationSound = (): void => {
   if (typeof window === "undefined") return;
 
+  // 1. Try HTML5 Audio with WAV Data URI (works independently of AudioContext state)
   try {
-    const ctx = getAudioContext();
+    const dataUri = getChimeWavDataUri();
+    const audio = new Audio(dataUri);
+    audio.volume = 0.9;
+    const promise = audio.play();
+    if (promise !== undefined) {
+      promise.catch((err) => {
+        console.warn("HTML5 audio play blocked:", err);
+      });
+    }
+  } catch (err) {
+    console.warn("HTML5 Audio error:", err);
+  }
 
-    if (ctx && ctx.state === "running") {
+  // 2. Try Web Audio API (Synthesizer)
+  try {
+    const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+    if (!AudioCtx) return;
+
+    const ctx = getAudioContext() || new AudioCtx();
+
+    const playOscillators = () => {
       const now = ctx.currentTime;
 
-      // Note 1 (E5)
       const osc1 = ctx.createOscillator();
       const gain1 = ctx.createGain();
       osc1.type = "sine";
       osc1.frequency.setValueAtTime(659.25, now);
-      gain1.gain.setValueAtTime(0.25, now);
-      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.3);
+      gain1.gain.setValueAtTime(0.3, now);
+      gain1.gain.exponentialRampToValueAtTime(0.0001, now + 0.35);
       osc1.connect(gain1);
       gain1.connect(ctx.destination);
       osc1.start(now);
-      osc1.stop(now + 0.3);
+      osc1.stop(now + 0.35);
 
-      // Note 2 (B5)
       const osc2 = ctx.createOscillator();
       const gain2 = ctx.createGain();
       osc2.type = "sine";
       osc2.frequency.setValueAtTime(987.77, now + 0.08);
-      gain2.gain.setValueAtTime(0.3, now + 0.08);
-      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.45);
+      gain2.gain.setValueAtTime(0.35, now + 0.08);
+      gain2.gain.exponentialRampToValueAtTime(0.0001, now + 0.5);
       osc2.connect(gain2);
       gain2.connect(ctx.destination);
       osc2.start(now + 0.08);
-      osc2.stop(now + 0.45);
-      return;
-    }
+      osc2.stop(now + 0.5);
+    };
 
-    // Try HTML5 Audio fallback with WAV Data URI
-    const dataUri = getChimeWavDataUri();
-    const audio = new Audio(dataUri);
-    audio.volume = 0.8;
-    audio.play().catch((err) => {
-      console.warn("HTML5 Audio playback blocked or failed:", err);
-    });
+    if (ctx.state === "suspended") {
+      ctx.resume().then(() => {
+        playOscillators();
+      }).catch(() => {});
+    } else {
+      playOscillators();
+    }
   } catch (err) {
-    console.warn("Notification sound play error:", err);
+    console.warn("Web Audio synth error:", err);
   }
 };
