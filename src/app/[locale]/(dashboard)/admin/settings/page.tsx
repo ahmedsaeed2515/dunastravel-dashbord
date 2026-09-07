@@ -1,12 +1,9 @@
 "use client";
 
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Globe, DollarSign, RefreshCw, Lock } from "lucide-react";
+import { Globe, Lock } from "lucide-react";
 import { RequirePermission } from "@/components/shared/auth/RequirePermission";
-import { useExchangeRates } from "@/features/currency/hooks/useCurrency";
 import { useSetting, useUpdateSetting } from "@/features/settings/hooks/useSettings";
 import { Switch } from "@/components/ui/switch";
 import { PageHeader } from "@/components/shared/PageHeader";
@@ -14,9 +11,7 @@ import { useTranslations } from "next-intl";
 
 export default function SettingsPage() {
   const tSettings = useTranslations("settings");
-  const tCommon = useTranslations("common");
 
-  const { data: ratesData, isLoading: isLoadingRates } = useExchangeRates();
   const { data: requireAuthSetting, isLoading: isLoadingAuthSetting } = useSetting('AUTH_REQUIRE_EMAIL_VERIFICATION', false);
   const { data: rawActiveLocales, isLoading: isLoadingLocales } = useSetting('ACTIVE_LOCALES', {
     en: true,
@@ -79,9 +74,6 @@ export default function SettingsPage() {
           <TabsList className="bg-muted/60 p-1 border border-border/60 font-bold">
             <TabsTrigger value="localization" className="gap-2 text-xs font-bold">
               <Globe className="h-3.5 w-3.5" /> اللغات والترجمة (Localization)
-            </TabsTrigger>
-            <TabsTrigger value="currencies" className="gap-2 text-xs font-bold">
-              <DollarSign className="h-3.5 w-3.5" /> العملات وأسعار الصرف (Currencies)
             </TabsTrigger>
             <TabsTrigger value="authentication" className="gap-2 text-xs font-bold">
               <Lock className="h-3.5 w-3.5" /> الأمان وسياسة الدخول (Security)
@@ -152,41 +144,6 @@ export default function SettingsPage() {
                     </div>
                   );
                 })}
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="currencies" className="m-0">
-            <Card className="border-border/80 shadow-xs bg-card rounded-2xl">
-              <CardHeader>
-                <div className="flex justify-between items-center">
-                  <div>
-                    <CardTitle className="text-base font-bold">أسعار صرف العملات اللحظية</CardTitle>
-                  </div>
-                  <Button variant="outline" size="xs" className="gap-1.5 font-bold rounded-xl">
-                    <RefreshCw className="h-3.5 w-3.5" /> مزامنة وتحديث
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold uppercase text-muted-foreground">USD (العملة الأساسية $)</label>
-                    <Input value="1.0000" disabled className="dir-ltr text-start font-mono rounded-xl font-bold" />
-                  </div>
-                  {isLoadingRates ? (
-                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm font-bold">{tCommon("loading")}</div>
-                  ) : ratesData?.rates ? (
-                    Object.entries(ratesData.rates).map(([currency, rate]) => (
-                      <div key={currency} className="space-y-1">
-                        <label className="text-xs font-bold uppercase text-muted-foreground">{currency}</label>
-                        <Input value={rate as number} disabled className="dir-ltr text-start font-mono rounded-xl font-bold" />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="col-span-full py-8 text-center text-muted-foreground text-sm font-bold">—</div>
-                  )}
-                </div>
               </CardContent>
             </Card>
           </TabsContent>
