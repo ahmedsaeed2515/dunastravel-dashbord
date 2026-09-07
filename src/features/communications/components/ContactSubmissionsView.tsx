@@ -44,6 +44,7 @@ export function ContactSubmissionsView() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
+      if (search !== debouncedSearch) setPage(1);
     }, 350);
     return () => clearTimeout(timer);
   }, [search]);
