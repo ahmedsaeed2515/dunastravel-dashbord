@@ -28,7 +28,7 @@ export function WelcomeBanner() {
             </span>
           </h1>
 
-          <p className="text-white keep-white text-xs sm:text-sm leading-relaxed max-w-2xl font-medium">
+          <p className="welcome-banner-desc text-amber-400 text-xs sm:text-sm leading-relaxed max-w-2xl font-semibold">
             منصة مستقلة للتحكم الكامل ببيانات موقع Dunas Travel، إدارة 8 واجهات سياحية، البرامج الفاخرة، الحجوزات، الرسائل، والإشعارات المباشرة باللغات الخمس (العربية، الإسبانية، البرتغالية، الإنجليزية، الإيطالية).
           </p>
 

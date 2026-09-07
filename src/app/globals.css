@@ -350,16 +350,19 @@ html.light-mode .welcome-banner-card {
 }
 
 .light .welcome-banner-card h1,
-.light .welcome-banner-card p,
 .light .welcome-banner-card span,
 .light .welcome-banner-card div,
 .light .welcome-banner-card .text-white,
 html.light-mode .welcome-banner-card h1,
-html.light-mode .welcome-banner-card p,
 html.light-mode .welcome-banner-card span,
 html.light-mode .welcome-banner-card div,
 html.light-mode .welcome-banner-card .text-white {
   color: #ffffff !important;
+}
+
+.light .welcome-banner-card .welcome-banner-desc,
+html.light-mode .welcome-banner-card .welcome-banner-desc {
+  color: #fbbf24 !important;
 }
 
 .light .welcome-banner-card .text-slate-300,
