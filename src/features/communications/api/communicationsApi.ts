@@ -2,6 +2,7 @@ import { apiClient } from "@/lib/axios";
 import { 
   NotificationDeliveryLog, 
   CommunicationMetrics, 
+  InquiryMetrics,
   NotificationDeliveryLogQueryFilters, 
   PaginatedResponse,
   Inquiry,
@@ -16,6 +17,10 @@ import {
 export const communicationsApi = {
   getMetrics: async (): Promise<CommunicationMetrics> => {
     return apiClient.get<CommunicationMetrics, CommunicationMetrics>("/admin/communications/logs/metrics");
+  },
+
+  getInquiryMetrics: async (): Promise<InquiryMetrics> => {
+    return apiClient.get<InquiryMetrics, InquiryMetrics>("/admin/inquiries/metrics");
   },
 
   getLogs: async (filters: NotificationDeliveryLogQueryFilters): Promise<PaginatedResponse<NotificationDeliveryLog>> => {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { useInquiries } from "../hooks/useCommunications";
+import { useState, useMemo, useEffect } from "react";
+import { useInquiries, useInquiryMetrics } from "../hooks/useCommunications";
 import { InquiryQueryFilters } from "../types";
 import { InquiriesTable } from "./InquiriesTable";
 import { Input } from "@/components/ui/input";
@@ -28,23 +28,37 @@ export function InquiriesView() {
   const isAr = locale === "ar";
 
   const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [page, setPage] = useState(1);
+
+  // Debounce the search input to avoid API calls on every keystroke
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      if (search !== debouncedSearch) setPage(1);
+    }, 350);
+    return () => clearTimeout(timer);
+  }, [search]);
 
   const filters: InquiryQueryFilters = useMemo(
     () => ({
       page,
       limit: 15,
       status: selectedStatus === "ALL" ? undefined : selectedStatus,
-      search: search.trim() || undefined,
+      search: debouncedSearch.trim() || undefined,
     }),
-    [page, selectedStatus, search]
+    [page, selectedStatus, debouncedSearch]
   );
 
   const { data, isLoading, isFetching, refetch } = useInquiries(filters);
+  const { data: metricsData } = useInquiryMetrics();
 
-  // Calculate local stats from current returned data or totals
+  // Combine live backend metrics with local fallback
   const stats = useMemo(() => {
+    if (metricsData) {
+      return metricsData;
+    }
     const list = data?.data || [];
     const total = data?.meta?.total ?? list.length;
     const newlyReceived = list.filter((i) => i.status === "NEWLY_RECEIVED").length;
@@ -69,7 +83,7 @@ export function InquiriesView() {
       closed,
       pipelineValue,
     };
-  }, [data]);
+  }, [metricsData, data]);
 
   const statusTabs = [
     { id: "ALL", labelAr: "جميع الطلبات 📋", labelEn: "All Inquiries 📋" },
@@ -218,6 +232,7 @@ export function InquiriesView() {
           data={data?.data ?? []}
           isLoading={isLoading}
           pageCount={data?.meta?.totalPages ?? 0}
+          currentPage={page}
           onPageChange={(p) => setPage(p)}
         />
       </div>

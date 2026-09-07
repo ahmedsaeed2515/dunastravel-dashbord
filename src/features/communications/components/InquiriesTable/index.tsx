@@ -17,14 +17,20 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 
+import { useLocale } from "next-intl";
+
 interface InquiriesTableProps {
   data: Inquiry[];
   isLoading: boolean;
   pageCount: number;
+  currentPage?: number;
   onPageChange: (page: number) => void;
 }
 
-export function InquiriesTable({ data, isLoading, pageCount, onPageChange }: InquiriesTableProps) {
+export function InquiriesTable({ data, isLoading, pageCount, currentPage = 1, onPageChange }: InquiriesTableProps) {
+  const locale = useLocale();
+  const isAr = locale === "ar";
+
   const table = useReactTable({
     data,
     columns,
@@ -55,8 +61,8 @@ export function InquiriesTable({ data, isLoading, pageCount, onPageChange }: Inq
         <TableBody>
           {isLoading ? (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                Loading inquiries...
+              <TableCell colSpan={columns.length} className="h-24 text-center text-xs text-muted-foreground font-medium">
+                {isAr ? "جاري تحميل الطلبات والاستفسارات..." : "Loading inquiries..."}
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows?.length ? (
@@ -71,30 +77,39 @@ export function InquiriesTable({ data, isLoading, pageCount, onPageChange }: Inq
             ))
           ) : (
             <TableRow>
-              <TableCell colSpan={columns.length} className="h-24 text-center">
-                No inquiries found.
+              <TableCell colSpan={columns.length} className="h-24 text-center text-xs text-muted-foreground font-medium">
+                {isAr ? "لا توجد استفسارات مطابقة لخيارات البحث الحالية." : "No inquiries found."}
               </TableCell>
             </TableRow>
           )}
         </TableBody>
       </Table>
-      <div className="flex items-center justify-end space-x-2 py-4 px-4 border-t">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(1)} 
-          disabled={isLoading}
-        >
-          Previous
-        </Button>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => onPageChange(2)}
-          disabled={isLoading}
-        >
-          Next
-        </Button>
+      <div className="flex items-center justify-between py-4 px-4 border-t">
+        <div className="text-xs text-muted-foreground font-medium">
+          {isAr
+            ? `صفحة ${currentPage} من ${Math.max(1, pageCount)}`
+            : `Page ${currentPage} of ${Math.max(1, pageCount)}`}
+        </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(Math.max(1, currentPage - 1))} 
+            disabled={isLoading || currentPage <= 1}
+            className="rounded-xl text-xs font-bold cursor-pointer"
+          >
+            {isAr ? "السابق" : "Previous"}
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onPageChange(currentPage + 1)}
+            disabled={isLoading || currentPage >= pageCount}
+            className="rounded-xl text-xs font-bold cursor-pointer"
+          >
+            {isAr ? "التالي" : "Next"}
+          </Button>
+        </div>
       </div>
     </div>
   );

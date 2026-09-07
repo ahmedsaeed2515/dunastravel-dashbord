@@ -15,11 +15,11 @@ export function StatusBadge({ status, className }: StatusBadgeProps) {
   const upper = status.toUpperCase().trim();
   let variant: "default" | "secondary" | "success" | "warning" | "destructive" | "info" | "outline" = "secondary";
 
-  if (["CONFIRMED", "COMPLETED", "PUBLISHED", "PAID", "ACTIVE", "APPROVED", "RESOLVED"].includes(upper)) {
+  if (["CONFIRMED", "COMPLETED", "PUBLISHED", "PAID", "ACTIVE", "APPROVED", "RESOLVED", "SENT", "DELIVERED", "CONVERTED_TO_BOOKING"].includes(upper)) {
     variant = "success";
-  } else if (["PENDING", "DRAFT", "NEW", "OPEN", "IN_PROGRESS"].includes(upper)) {
+  } else if (["PENDING", "DRAFT", "NEW", "OPEN", "IN_PROGRESS", "NEWLY_RECEIVED", "QUOTED", "READ"].includes(upper)) {
     variant = "warning";
-  } else if (["CANCELLED", "FAILED", "SUSPENDED", "REJECTED", "EXPIRED"].includes(upper)) {
+  } else if (["CANCELLED", "FAILED", "SUSPENDED", "REJECTED", "EXPIRED", "EXHAUSTED", "CLOSED"].includes(upper)) {
     variant = "destructive";
   } else if (["VIP"].includes(upper)) {
     variant = "default";

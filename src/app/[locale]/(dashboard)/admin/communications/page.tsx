@@ -9,19 +9,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Mail, MessageSquare, BellRing, Smartphone, Plus, Trash2, Edit } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { InquiriesView } from "@/features/communications/components/InquiriesView";
+import { CommunicationsView } from "@/features/communications/components/CommunicationsView";
+import { ContactSubmissionsView } from "@/features/communications/components/ContactSubmissionsView";
 import { 
   useTemplates, 
   useCreateTemplate, 
   useUpdateTemplate, 
   useDeleteTemplate,
-  useDeliveryLogs,
-  useContactSubmissions
 } from "@/features/communications/hooks/useCommunications";
 import { CreateTemplateDialog } from "@/features/communications/components/CreateTemplateDialog";
 import { EmailTemplate, CreateEmailTemplatePayload, UpdateEmailTemplatePayload } from "@/features/communications/types";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
+import { format } from "date-fns";
 
 export default function CommunicationsPage() {
   const tComm = useTranslations("communications");
@@ -38,9 +39,6 @@ export default function CommunicationsPage() {
   const { mutate: createTemplate, isPending: isCreating } = useCreateTemplate();
   const { mutate: updateTemplate, isPending: isUpdating } = useUpdateTemplate();
   const { mutate: deleteTemplate, isPending: isDeleting } = useDeleteTemplate();
-
-  const { data: deliveryLogsData, isLoading: isLoadingLogs } = useDeliveryLogs({ page: 1, limit: 10 });
-  const { data: contactSubmissionsData, isLoading: isLoadingSubmissions } = useContactSubmissions({ page: 1, limit: 10 });
 
   const handleCreateClick = () => {
     setEditingTemplate(null);
@@ -81,19 +79,21 @@ export default function CommunicationsPage() {
         title={tComm("title")}
         description={tComm("description")}
         actions={
-          <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
-            <Plus className="h-4 w-4" />
-            <span>{tCommon("create")}</span>
-          </Button>
+          activeTab === "templates" ? (
+            <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
+              <Plus className="h-4 w-4" />
+              <span>{tCommon("create")}</span>
+            </Button>
+          ) : null
         }
       />
 
-      <Tabs value={activeTab} onValueChange={(val: any) => setActiveTab(val || "ALL")} className="space-y-6">
+      <Tabs value={activeTab} onValueChange={(val) => setActiveTab(val || "inquiries")} className="space-y-6">
         <TabsList className="bg-background/60 backdrop-blur-md border border-border/50 font-bold">
-          <TabsTrigger value="inquiries" className="gap-2"><MessageSquare className="h-4 w-4" /> {tNav("inquiries")}</TabsTrigger>
-          <TabsTrigger value="submissions" className="gap-2"><MessageSquare className="h-4 w-4" /> صندوق الوارد (Inbox)</TabsTrigger>
-          <TabsTrigger value="templates" className="gap-2"><Mail className="h-4 w-4" /> قوالب البريد (Templates)</TabsTrigger>
-          <TabsTrigger value="logs" className="gap-2"><BellRing className="h-4 w-4" /> سجلات الإرسال (Logs)</TabsTrigger>
+          <TabsTrigger value="inquiries" className="gap-2"><MessageSquare className="h-4 w-4" /> {tComm("tabInquiries")}</TabsTrigger>
+          <TabsTrigger value="submissions" className="gap-2"><MessageSquare className="h-4 w-4" /> {tComm("tabInbox")}</TabsTrigger>
+          <TabsTrigger value="templates" className="gap-2"><Mail className="h-4 w-4" /> {tComm("tabTemplates")}</TabsTrigger>
+          <TabsTrigger value="logs" className="gap-2"><BellRing className="h-4 w-4" /> {tComm("tabLogs")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="inquiries" className="m-0 space-y-6">
@@ -119,7 +119,7 @@ export default function CommunicationsPage() {
                   </CardHeader>
                   <CardContent>
                     <div className="text-xs text-muted-foreground line-clamp-3">
-                      {template.bodyHtml || "—"}
+                      {template.bodyHtml ? template.bodyHtml.replace(/<[^>]*>?/gm, "") : "—"}
                     </div>
                   </CardContent>
                   
@@ -162,101 +162,11 @@ export default function CommunicationsPage() {
         </TabsContent>
 
         <TabsContent value="submissions" className="m-0 space-y-6">
-          <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60 rounded-2xl">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-              <div>
-                <CardTitle className="font-bold text-base">رسائل واستفسارات صندوق الوارد</CardTitle>
-                <CardDescription className="text-xs">استعراض ومتابعة الرسائل الواردة من نماذج الاتصال على الموقع.</CardDescription>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>المرجع</TableHead>
-                    <TableHead>{tCommon("name")}</TableHead>
-                    <TableHead>{tCommon("email")}</TableHead>
-                    <TableHead>{tCommon("status")}</TableHead>
-                    <TableHead>{tCommon("date")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingSubmissions ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-4">{tCommon("loading")}</TableCell></TableRow>
-                  ) : contactSubmissionsData?.data?.length ? (
-                    contactSubmissionsData.data.map((sub: any) => (
-                      <TableRow key={sub.referenceCode}>
-                        <TableCell className="font-medium dir-ltr inline-block">{sub.referenceCode}</TableCell>
-                        <TableCell>{sub.name}</TableCell>
-                        <TableCell className="dir-ltr text-start">{sub.email}</TableCell>
-                        <TableCell>
-                          <StatusBadge status={sub.status} />
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(sub.createdAt).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center py-4">{tComm("noMessages")}</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+          <ContactSubmissionsView />
         </TabsContent>
 
-        <TabsContent value="logs" className="m-0">
-          <Card className="border-border/40 shadow-sm backdrop-blur-xl bg-background/60">
-            <CardHeader className="flex flex-row items-center justify-between border-b pb-4">
-              <div>
-                <CardTitle>{tComm("title")}</CardTitle>
-              </div>
-            </CardHeader>
-            <CardContent className="p-0">
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>{tCommon("type")}</TableHead>
-                    <TableHead>{tCommon("email")}</TableHead>
-                    <TableHead>{tCommon("description")}</TableHead>
-                    <TableHead>{tCommon("status")}</TableHead>
-                    <TableHead>{tCommon("date")}</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {isLoadingLogs ? (
-                    <TableRow><TableCell colSpan={5} className="text-center py-4">{tCommon("loading")}</TableCell></TableRow>
-                  ) : deliveryLogsData?.data?.length ? (
-                    deliveryLogsData.data.map((log: any) => (
-                      <TableRow key={log.id}>
-                        <TableCell>
-                          <Badge variant="outline" className="gap-1.5">
-                            {log.channel === 'SMS' ? <Smartphone className="h-3 w-3" /> : <Mail className="h-3 w-3" />}
-                            {log.channel}
-                          </Badge>
-                        </TableCell>
-                        <TableCell className="font-medium dir-ltr text-start">
-                          {log.recipient}
-                        </TableCell>
-                        <TableCell className="text-muted-foreground text-sm">
-                          {log.subject}
-                        </TableCell>
-                        <TableCell>
-                          <StatusBadge status={log.status} />
-                        </TableCell>
-                        <TableCell className="text-sm text-muted-foreground">
-                          {new Date(log.createdAt).toLocaleString()}
-                        </TableCell>
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow><TableCell colSpan={5} className="text-center py-4">{tComm("noMessages")}</TableCell></TableRow>
-                  )}
-                </TableBody>
-              </Table>
-            </CardContent>
-          </Card>
+        <TabsContent value="logs" className="m-0 space-y-6">
+          <CommunicationsView />
         </TabsContent>
       </Tabs>
 

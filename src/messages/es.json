@@ -415,7 +415,21 @@
     "title": "Comunicaciones y Bandeja de Entrada",
     "description": "Gestione notificaciones de clientes, envíos de correo y plantillas.",
     "noMessages": "No se encontraron mensajes",
-    "noMessagesDesc": "Los mensajes de contacto y alertas del sistema aparecerán aquí."
+    "noMessagesDesc": "Los mensajes de contacto y alertas del sistema aparecerán aquí.",
+    "tabInquiries": "Consultas y Solicitudes",
+    "tabInbox": "Bandeja de Entrada",
+    "tabTemplates": "Plantillas de Correo",
+    "tabLogs": "Registros de Envío",
+    "deliveryLogsTitle": "Registros de Entrega de Notificaciones",
+    "deliveryLogsSubtitle": "Supervise el envío de correos, registros de despacho y reintentos.",
+    "templateSubject": "Asunto del Correo",
+    "templateBody": "Cuerpo HTML de la Plantilla",
+    "notificationTypes": {
+      "CUSTOMER_ACKNOWLEDGMENT": "Confirmación de Solicitud del Cliente",
+      "INTERNAL_SALES_ALERT": "Alerta Interna de Ventas",
+      "USER_VERIFICATION": "Verificación de Cuenta de Usuario",
+      "PASSWORD_RESET": "Enlace de Restablecimiento de Contraseña"
+    }
   },
   "content": {
     "title": "Contenido y CMS",
@@ -719,6 +733,13 @@
     "OPEN": "Abierto",
     "IN_PROGRESS": "En progreso",
     "CLOSED": "Cerrado",
+    "SENT": "Enviado",
+    "EXHAUSTED": "Intentos agotados",
+    "DELIVERED": "Entregado",
+    "NEWLY_RECEIVED": "Recién recibido",
+    "QUOTED": "Presupuestado",
+    "CONVERTED_TO_BOOKING": "Convertido en reserva",
+    "READ": "Leído",
     "RESOLVED": "Resuelto",
     "VIP": "VIP",
     "UNKNOWN": "Desconocido"

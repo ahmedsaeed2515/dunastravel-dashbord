@@ -20,22 +20,34 @@ import { useTranslations } from "next-intl";
 export const columns: ColumnDef<NotificationDeliveryLog>[] = [
   {
     accessorKey: "recipientEmail",
-    header: "Recipient",
+    header: "البريد الإلكتروني",
     cell: ({ row }) => (
       <div className="font-medium dir-ltr text-start">{row.original.recipientEmail}</div>
     ),
   },
   {
     accessorKey: "notificationType",
-    header: "Type",
+    header: "نوع الإشعار والهدف",
     cell: ({ row }) => {
-      const type = row.original.notificationType.replace(/_/g, " ");
-      return <div className="text-sm text-muted-foreground capitalize">{type.toLowerCase()}</div>;
+      const type = row.original.notificationType;
+      const typeLabels: Record<string, string> = {
+        CUSTOMER_ACKNOWLEDGMENT: "تأكيد طلب العميل",
+        INTERNAL_SALES_ALERT: "تنبيه مبيعات داخلي",
+        USER_VERIFICATION: "رمز التحقق من الحساب",
+        PASSWORD_RESET: "استعادة كلمة المرور",
+      };
+      const label = typeLabels[type] || type.replace(/_/g, " ");
+      return (
+        <div className="flex flex-col">
+          <span className="text-xs font-bold text-foreground">{label}</span>
+          <span className="text-[10px] text-muted-foreground font-mono">{type}</span>
+        </div>
+      );
     },
   },
   {
     accessorKey: "originReferenceCode",
-    header: "Reference",
+    header: "المرجع",
     cell: ({ row }) => (
       <Badge variant="outline" className="font-mono text-xs dir-ltr inline-block">
         {row.original.originReferenceCode}
@@ -44,33 +56,47 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: "الحالة التشغيلية",
     cell: ({ row }) => {
       const status = row.original.status;
-      return <StatusBadge status={status} />;
+      const reason = row.original.failureReason;
+      return (
+        <div className="flex flex-col gap-1">
+          <StatusBadge status={status} />
+          {reason && (
+            <span 
+              title={reason} 
+              className="text-[10px] text-rose-500 font-medium max-w-[180px] truncate cursor-help"
+            >
+              ⚠️ {reason}
+            </span>
+          )}
+        </div>
+      );
     },
   },
   {
     accessorKey: "attempts",
-    header: "Attempts",
+    header: "المحاولات",
     cell: ({ row }) => (
-      <div className="text-sm dir-ltr inline-block">
-        {row.original.attempts} {row.original.attempts >= 3 && <AlertTriangle className="inline h-3 w-3 text-rose-500 ms-1" />}
+      <div className="text-xs dir-ltr inline-flex items-center gap-1 font-mono font-bold">
+        <span>{row.original.attempts} / 3</span>
+        {row.original.attempts >= 3 && <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />}
       </div>
     ),
   },
   {
     accessorKey: "createdAt",
-    header: "Timestamp",
+    header: "تاريخ وساعة الإرسال",
     cell: ({ row }) => {
       let formatted = "—";
       if (row.original.createdAt) {
         const d = new Date(row.original.createdAt);
         if (!isNaN(d.getTime())) {
-          try { formatted = format(d, "MMM d, yyyy HH:mm"); } catch {}
+          try { formatted = format(d, "dd/MM/yyyy HH:mm"); } catch {}
         }
       }
-      return <div className="text-muted-foreground text-sm">{formatted}</div>;
+      return <div className="text-muted-foreground text-xs font-mono dir-ltr text-start">{formatted}</div>;
     },
   },
   {
@@ -88,19 +114,20 @@ function ActionCell({ log }: { log: NotificationDeliveryLog }) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground">
+      <DropdownMenuTrigger type="button" className="h-8 w-8 p-0 inline-flex items-center justify-center rounded-md hover:bg-accent hover:text-accent-foreground text-muted-foreground cursor-pointer">
         <MoreHorizontal className="h-4 w-4" />
       </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
+      <DropdownMenuContent align="end" className="text-xs font-bold">
         <DropdownMenuLabel>{tCommon("actions")}</DropdownMenuLabel>
         
         {(log.status === "FAILED" || log.status === "EXHAUSTED") && (
           <DropdownMenuItem 
             onClick={() => retryMutation.mutate(log.id)}
-            className="text-amber-600 focus:text-amber-600 cursor-pointer"
+            disabled={retryMutation.isPending}
+            className="text-amber-600 focus:text-amber-600 cursor-pointer flex items-center gap-1.5"
           >
-            <RotateCcw className="me-2 h-4 w-4" />
-            {tCommon("confirm")}
+            <RotateCcw className="h-4 w-4" />
+            <span>إعادة إرسال الإشعار (Retry)</span>
           </DropdownMenuItem>
         )}
       </DropdownMenuContent>

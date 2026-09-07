@@ -90,9 +90,27 @@ export function InquiryDetailsDrawer({
 
   const handleStatusChange = async (newStatus: string) => {
     setStatus(newStatus);
+    const amountNum = quoteInput ? parseFloat(quoteInput) : undefined;
     await updateInquiry.mutateAsync({
       referenceCode: inquiry.referenceCode,
-      data: { status: newStatus },
+      data: {
+        status: newStatus,
+        ...(newStatus === "APPROVED" && amountNum && !isNaN(amountNum) && amountNum > 0
+          ? { quotedAmountUsd: amountNum }
+          : {}),
+      },
+    });
+  };
+
+  const handleApproveQuote = async () => {
+    const amountNum = quoteInput ? parseFloat(quoteInput) : undefined;
+    setStatus("APPROVED");
+    await updateInquiry.mutateAsync({
+      referenceCode: inquiry.referenceCode,
+      data: {
+        status: "APPROVED",
+        ...(amountNum && !isNaN(amountNum) && amountNum > 0 ? { quotedAmountUsd: amountNum } : {}),
+      },
     });
   };
 
@@ -205,7 +223,7 @@ export function InquiryDetailsDrawer({
                   <SelectItem value="IN_PROGRESS">{isAr ? "قيد المتابعة والتحضير (IN_PROGRESS)" : "In Progress"}</SelectItem>
                   <SelectItem value="QUOTED">{isAr ? "تم تقديم عرض السعر 💰 (QUOTED)" : "Quote Sent"}</SelectItem>
                   <SelectItem value="APPROVED">{isAr ? "موافقة العميل على العرض ✨ (APPROVED)" : "Approved"}</SelectItem>
-                  <SelectItem value="CONVERTED_TO_BOOKING">{isAr ? "تم التحويل لحجز رسمي 🎟️ (CONVERTED)" : "Converted"}</SelectItem>
+                  {/* CONVERTED_TO_BOOKING is intentionally excluded — use the Convert to Booking button below */}
                   <SelectItem value="CLOSED">{isAr ? "مغلق 🔒 (CLOSED)" : "Closed"}</SelectItem>
                 </SelectContent>
               </Select>
@@ -264,15 +282,30 @@ export function InquiryDetailsDrawer({
                 </div>
               </div>
 
-              <div className="flex items-end">
+              <div className="flex flex-col sm:flex-row gap-2 sm:col-span-2 pt-1">
                 <Button
                   type="button"
                   onClick={handleSaveQuote}
                   disabled={updateInquiry.isPending}
-                  className="w-full h-10 bg-purple-600 hover:bg-purple-700 text-white font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs"
+                  variant="outline"
+                  className="flex-1 h-10 border-purple-500/40 hover:bg-purple-500/10 text-purple-700 dark:text-purple-300 font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs"
                 >
                   {updateInquiry.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>{isAr ? "حفظ وتثبيت العرض 💰" : "Save Quote & Update"}</span>
+                </Button>
+
+                <Button
+                  type="button"
+                  onClick={handleApproveQuote}
+                  disabled={updateInquiry.isPending || (inquiry.status === "APPROVED" && status === "APPROVED")}
+                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs"
+                >
+                  {updateInquiry.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
+                  <span>
+                    {(inquiry.status === "APPROVED" || status === "APPROVED")
+                      ? (isAr ? "تم اعتماد العرض ✨" : "Quote Approved ✨")
+                      : (isAr ? "اعتماد وموافقة العميل على العرض ✨" : "Approve Quote ✨")}
+                  </span>
                 </Button>
               </div>
             </div>

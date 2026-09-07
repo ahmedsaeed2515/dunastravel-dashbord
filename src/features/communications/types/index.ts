@@ -21,6 +21,17 @@ export interface CommunicationMetrics {
   successRate: number; // Percentage
 }
 
+export interface InquiryMetrics {
+  total: number;
+  newlyReceived: number;
+  inProgress: number;
+  quoted: number;
+  approved: number;
+  converted: number;
+  closed: number;
+  pipelineValue: number;
+}
+
 export interface NotificationDeliveryLogQueryFilters {
   page?: number;
   limit?: number;
@@ -108,6 +119,7 @@ export interface ContactSubmissionQueryFilters {
   page?: number;
   limit?: number;
   status?: string;
+  search?: string;
   email?: string;
   dateFrom?: string;
   dateTo?: string;

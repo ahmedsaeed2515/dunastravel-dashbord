@@ -83,9 +83,9 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
               name="subject"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{tComm("title")}</FormLabel>
+                  <FormLabel>{tComm("templateSubject")}</FormLabel>
                   <FormControl>
-                    <Input placeholder={tComm("title")} {...field} />
+                    <Input placeholder={tComm("templateSubject")} {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -97,7 +97,7 @@ export function CreateTemplateDialog({ open, onOpenChange, onSubmit, isSubmittin
               name="bodyHtml"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>{tComm("description")}</FormLabel>
+                  <FormLabel>{tComm("templateBody")}</FormLabel>
                   <FormControl>
                     <Textarea 
                       placeholder="<p>Dear {{name}}, ...</p>" 

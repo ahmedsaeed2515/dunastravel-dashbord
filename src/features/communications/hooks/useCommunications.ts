@@ -7,6 +7,7 @@ import { toast } from "sonner";
 export const communicationsKeys = {
   all: ["communications"] as const,
   metrics: () => [...communicationsKeys.all, "metrics"] as const,
+  inquiryMetrics: () => [...communicationsKeys.all, "inquiryMetrics"] as const,
   logs: (filters: NotificationDeliveryLogQueryFilters) => [...communicationsKeys.all, "logs", filters] as const,
   inquiries: (filters: InquiryQueryFilters) => [...communicationsKeys.all, "inquiries", filters] as const,
   templates: () => [...communicationsKeys.all, "templates"] as const,
@@ -17,6 +18,14 @@ export function useCommunicationMetrics() {
   return useQuery({
     queryKey: communicationsKeys.metrics(),
     queryFn: () => communicationsApi.getMetrics(),
+    refetchInterval: 30000,
+  });
+}
+
+export function useInquiryMetrics() {
+  return useQuery({
+    queryKey: communicationsKeys.inquiryMetrics(),
+    queryFn: () => communicationsApi.getInquiryMetrics(),
     refetchInterval: 30000,
   });
 }

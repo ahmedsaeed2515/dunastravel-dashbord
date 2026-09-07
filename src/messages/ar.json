@@ -415,7 +415,21 @@
     "title": "المراسلات والتنبيهات",
     "description": "إدارة إشعارات العملاء، الحملات البريدية، وقوالب الرسائل.",
     "noMessages": "لا توجد رسائل",
-    "noMessagesDesc": "ستظهر رسائل الاتصال والتنبيهات هنا."
+    "noMessagesDesc": "ستظهر رسائل الاتصال والتنبيهات هنا.",
+    "tabInquiries": "الاستفسارات والطلبات",
+    "tabInbox": "صندوق الوارد",
+    "tabTemplates": "قوالب البريد",
+    "tabLogs": "سجلات الإرسال",
+    "deliveryLogsTitle": "سجلات إرسال الرسائل والإشعارات",
+    "deliveryLogsSubtitle": "متابعة تسليم رسائل البريد الإلكتروني والإشعارات وسجل المحاولات.",
+    "templateSubject": "موضوع الرسالة",
+    "templateBody": "محتوى قالب البريد (HTML)",
+    "notificationTypes": {
+      "CUSTOMER_ACKNOWLEDGMENT": "تأكيد استلام طلب العميل",
+      "INTERNAL_SALES_ALERT": "تنبيه مبيعات داخلي",
+      "USER_VERIFICATION": "رمز التحقق من الحساب",
+      "PASSWORD_RESET": "إعادة تعيين كلمة المرور"
+    }
   },
   "content": {
     "title": "إدارة المحتوى CMS",
@@ -719,6 +733,13 @@
     "OPEN": "مفتوح",
     "IN_PROGRESS": "قيد التنفيذ",
     "CLOSED": "مغلق",
+    "SENT": "تم الإرسال",
+    "EXHAUSTED": "استُنفدت المحاولات",
+    "DELIVERED": "تم التسليم",
+    "NEWLY_RECEIVED": "جديد بانتظار المراجعة",
+    "QUOTED": "تم تقديم العرض",
+    "CONVERTED_TO_BOOKING": "محول لحجز رسمي",
+    "READ": "تمت القراءة",
     "RESOLVED": "تم حله",
     "VIP": "VIP",
     "UNKNOWN": "غير معروف"

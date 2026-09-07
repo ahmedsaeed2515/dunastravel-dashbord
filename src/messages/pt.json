@@ -415,7 +415,21 @@
     "title": "Comunicações e caixa de entrada",
     "description": "Gerencie notificações de clientes, envios de e-mail e modelos de mensagens.",
     "noMessages": "Nenhuma mensagem encontrada",
-    "noMessagesDesc": "Envios da caixa de contato e alertas do sistema aparecerão aqui."
+    "noMessagesDesc": "Envios da caixa de contato e alertas do sistema aparecerão aqui.",
+    "tabInquiries": "Consultas e Solicitações",
+    "tabInbox": "Caixa de Entrada",
+    "tabTemplates": "Modelos de E-mail",
+    "tabLogs": "Registros de Envio",
+    "deliveryLogsTitle": "Registros de Entrega de Notificações",
+    "deliveryLogsSubtitle": "Monitore o envio de e-mails, registros de despacho e tentativas.",
+    "templateSubject": "Assunto do E-mail",
+    "templateBody": "Corpo HTML do Modelo",
+    "notificationTypes": {
+      "CUSTOMER_ACKNOWLEDGMENT": "Confirmação de Solicitação do Cliente",
+      "INTERNAL_SALES_ALERT": "Alerta Interno de Vendas",
+      "USER_VERIFICATION": "Verificação de Conta de Usuário",
+      "PASSWORD_RESET": "Redefinição de Senha"
+    }
   },
   "content": {
     "title": "Conteúdo e CMS",
@@ -719,6 +733,13 @@
     "OPEN": "Aberto",
     "IN_PROGRESS": "Em andamento",
     "CLOSED": "Fechado",
+    "SENT": "Enviado",
+    "EXHAUSTED": "Tentativas esgotadas",
+    "DELIVERED": "Entregue",
+    "NEWLY_RECEIVED": "Recém-recebido",
+    "QUOTED": "Orçado",
+    "CONVERTED_TO_BOOKING": "Convertido em reserva",
+    "READ": "Lido",
     "RESOLVED": "Resolvido",
     "VIP": "VIP",
     "UNKNOWN": "Desconhecido"

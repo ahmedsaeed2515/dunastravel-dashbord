@@ -415,7 +415,21 @@
     "title": "Comunicazioni e posta in arrivo",
     "description": "Gestisci le notifiche ai clienti, le e-mail di gruppo e i modelli di messaggio.",
     "noMessages": "Nessun messaggio trovato",
-    "noMessagesDesc": "I messaggi di contatto e gli avvisi di sistema appariranno qui."
+    "noMessagesDesc": "I messaggi di contatto e gli avvisi di sistema appariranno qui.",
+    "tabInquiries": "Richieste e Domande",
+    "tabInbox": "Posta in Arrivo",
+    "tabTemplates": "Modelli Email",
+    "tabLogs": "Registri di Invio",
+    "deliveryLogsTitle": "Registri di Consegna delle Notifiche",
+    "deliveryLogsSubtitle": "Monitora la consegna delle e-mail, i registri di invio e i tentativi.",
+    "templateSubject": "Oggetto dell'email",
+    "templateBody": "Corpo HTML del Modello",
+    "notificationTypes": {
+      "CUSTOMER_ACKNOWLEDGMENT": "Conferma Richiesta Cliente",
+      "INTERNAL_SALES_ALERT": "Notifica Interna Vendite",
+      "USER_VERIFICATION": "Verifica Account Utente",
+      "PASSWORD_RESET": "Reimposta Password"
+    }
   },
   "content": {
     "title": "Contenuti e CMS",
@@ -719,6 +733,13 @@
     "OPEN": "Aperto",
     "IN_PROGRESS": "In corso",
     "CLOSED": "Chiuso",
+    "SENT": "Inviato",
+    "EXHAUSTED": "Tentativi esauriti",
+    "DELIVERED": "Consegnato",
+    "NEWLY_RECEIVED": "Appena ricevuto",
+    "QUOTED": "Preventivato",
+    "CONVERTED_TO_BOOKING": "Convertito in prenotazione",
+    "READ": "Letto",
     "RESOLVED": "Risolto",
     "VIP": "VIP",
     "UNKNOWN": "Sconosciuto"

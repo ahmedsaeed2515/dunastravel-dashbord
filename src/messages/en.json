@@ -415,7 +415,21 @@
     "title": "Communications & Inbox",
     "description": "Manage customer notifications, email broadcasts, and message templates.",
     "noMessages": "No Messages Found",
-    "noMessagesDesc": "Contact inbox submissions and system alerts will appear here."
+    "noMessagesDesc": "Contact inbox submissions and system alerts will appear here.",
+    "tabInquiries": "Inquiries & Requests",
+    "tabInbox": "Inbox",
+    "tabTemplates": "Email Templates",
+    "tabLogs": "Delivery Logs",
+    "deliveryLogsTitle": "Notification & Message Delivery Logs",
+    "deliveryLogsSubtitle": "Monitor email delivery, dispatch logs, and retry attempts.",
+    "templateSubject": "Email Subject",
+    "templateBody": "Template HTML Body",
+    "notificationTypes": {
+      "CUSTOMER_ACKNOWLEDGMENT": "Customer Inquiry Acknowledgment",
+      "INTERNAL_SALES_ALERT": "Internal Sales Notification",
+      "USER_VERIFICATION": "User Account Verification",
+      "PASSWORD_RESET": "Password Reset Link"
+    }
   },
   "content": {
     "title": "Content & CMS",
@@ -719,6 +733,13 @@
     "OPEN": "Open",
     "IN_PROGRESS": "In Progress",
     "CLOSED": "Closed",
+    "SENT": "Sent",
+    "EXHAUSTED": "Attempts Exhausted",
+    "DELIVERED": "Delivered",
+    "NEWLY_RECEIVED": "Newly Received",
+    "QUOTED": "Quote Sent",
+    "CONVERTED_TO_BOOKING": "Converted to Booking",
+    "READ": "Read",
     "RESOLVED": "Resolved",
     "VIP": "VIP",
     "UNKNOWN": "Unknown"
