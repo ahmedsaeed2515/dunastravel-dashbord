@@ -35,6 +35,11 @@ export const companiesApi = {
     return apiClient.patch<{ count: number }, { count: number }>("/admin/companies/bulk/update", payload);
   },
 
+  exportCompaniesCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
+    const csv = await apiClient.get<string, string>("/admin/companies/export/csv", { params: filters });
+    return new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  },
+
   exportCsvUrl: (filters: CompanyQueryFilters): string => {
     const params = new URLSearchParams(filters as Record<string, string>).toString();
     return `${env.NEXT_PUBLIC_API_URL}/admin/companies/export/csv?${params}`;

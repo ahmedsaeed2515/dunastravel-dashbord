@@ -178,17 +178,32 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold">حالة الحجز</Label>
-                  <Select onValueChange={(val) => val && setStatus(val as BookingStatus)} defaultValue={status}>
+                  <Select value={status} onValueChange={(val) => val && setStatus(val as BookingStatus)}>
                     <SelectTrigger className="w-full font-bold text-xs rounded-xl">
                       <SelectValue placeholder="اختر حالة الحجز" />
                     </SelectTrigger>
                     <SelectContent className="font-bold text-xs">
-                      <SelectItem value="PENDING">قيد الانتظار (Pending)</SelectItem>
-                      <SelectItem value="CONFIRMED">مؤكد ومقبول (Confirmed)</SelectItem>
-                      <SelectItem value="CANCELLED">ملغي (Cancelled)</SelectItem>
-                      <SelectItem value="COMPLETED">مكتمل ومنتهي (Completed)</SelectItem>
+                      {booking.status === "CANCELLED" || booking.status === "COMPLETED" ? (
+                        <SelectItem value={booking.status}>
+                          {booking.status === "CANCELLED" ? "ملغي (حالة نهائية)" : "مكتمل (حالة نهائية)"}
+                        </SelectItem>
+                      ) : (
+                        <>
+                          <SelectItem value="PENDING">قيد الانتظار (Pending)</SelectItem>
+                          <SelectItem value="CONFIRMED">مؤكد ومقبول (Confirmed)</SelectItem>
+                          <SelectItem value="CANCELLED">ملغي (Cancelled)</SelectItem>
+                          {booking.status === "CONFIRMED" && (
+                            <SelectItem value="COMPLETED">مكتمل ومنتهي (Completed)</SelectItem>
+                          )}
+                        </>
+                      )}
                     </SelectContent>
                   </Select>
+                  {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
+                    <p className="text-[11px] text-amber-500 font-medium">
+                      هذا الحجز في حالة نهائية ({booking.status}) ولا يمكن تعديل حالته مباشرة.
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -203,7 +218,7 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
 
                 <Button 
                   onClick={handleSaveStatus} 
-                  disabled={updateStatus.isPending}
+                  disabled={updateStatus.isPending || booking.status === "CANCELLED" || booking.status === "COMPLETED"}
                   className="w-full mt-4 font-bold rounded-xl"
                 >
                   {updateStatus.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
