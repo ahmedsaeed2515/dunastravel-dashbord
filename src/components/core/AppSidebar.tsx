@@ -178,7 +178,7 @@ export const AppSidebar = memo(function AppSidebar() {
         title: isAr ? "المحتوى والتسويق" : "CMS & Media Library",
         icon: Layers,
         items: [
-          { href: adminRoutes.content, icon: FileText, label: tNav("content"), badge: "CMS", badgeColor: "purple" },
+          // { href: adminRoutes.content, icon: FileText, label: tNav("content"), badge: "CMS", badgeColor: "purple" },
           { href: adminRoutes.media, icon: Film, label: tNav("media") },
           // { href: adminRoutes.blogs, icon: BookOpen, label: tNav("blogs") },
           { href: adminRoutes.reviews, icon: MessageCircle, label: tNav("reviews") },
