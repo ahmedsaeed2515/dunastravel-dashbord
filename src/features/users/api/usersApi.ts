@@ -46,11 +46,20 @@ export const usersApi = {
   },
 
   createUser: async (data: UserFormValues): Promise<User> => {
-    return apiClient.post<User, User>("/admin/users", data);
+    const payload = { ...data };
+    if (typeof payload.phone === "string" && payload.phone.trim() === "") {
+      delete payload.phone;
+    }
+    return apiClient.post<User, User>("/admin/users", payload);
   },
 
   updateUser: async (id: string, data: Partial<UserFormValues>): Promise<User> => {
-    return apiClient.patch<User, User>(`/admin/users/${id}`, data);
+    const payload = { ...data };
+    delete (payload as any).confirmPassword;
+    if (typeof payload.password === "string" && payload.password.trim() === "") {
+      delete payload.password;
+    }
+    return apiClient.patch<User, User>(`/admin/users/${id}`, payload);
   },
 
   deleteUser: async (id: string): Promise<void> => {

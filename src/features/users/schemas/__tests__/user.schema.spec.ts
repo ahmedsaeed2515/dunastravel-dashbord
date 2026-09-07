@@ -8,28 +8,28 @@ describe("user.schema", () => {
       email: "john@example.com",
       phone: "+12345678900",
       role: "ADMIN",
-      password: "SecurePassword123!",
-      confirmPassword: "SecurePassword123!",
+      password: "Secret#2026!Ok",
+      confirmPassword: "Secret#2026!Ok",
     };
 
     const result = userFormSchema.safeParse(validData);
     expect(result.success).toBe(true);
   });
 
-  it("fails validation when password is less than 6 characters", () => {
+  it("fails validation when password is less than 12 characters", () => {
     const invalidData = {
       name: "John Doe",
       email: "john@example.com",
       phone: "+12345678900",
       role: "USER",
-      password: "123",
-      confirmPassword: "123",
+      password: "Short123!",
+      confirmPassword: "Short123!",
     };
 
     const result = userFormSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toContain("Password must be at least 6 characters");
+      expect(result.error.issues[0].message).toContain("12");
     }
   });
 
@@ -39,14 +39,14 @@ describe("user.schema", () => {
       email: "john@example.com",
       phone: "+12345678900",
       role: "USER",
-      password: "SecurePassword123!",
-      confirmPassword: "DifferentPassword123!",
+      password: "Secret#2026!Ok",
+      confirmPassword: "Secret#2026!Mismatch",
     };
 
     const result = userFormSchema.safeParse(invalidData);
     expect(result.success).toBe(false);
     if (!result.success) {
-      expect(result.error.issues[0].message).toBe("Passwords do not match");
+      expect(result.error.issues[0].message).toBe("كلمتا المرور غير متطابقتين");
     }
   });
 

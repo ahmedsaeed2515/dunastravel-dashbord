@@ -21,12 +21,25 @@ export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
 
   const handleSubmit = (values: UserFormValues) => {
     if (isEdit && user) {
-      updateUser({ id: user.id, data: values }, {
-        onSuccess: () => onOpenChange(false)
-      });
+      const updatePayload: Partial<UserFormValues> = {
+        name: values.name,
+        email: values.email,
+        phone: values.phone || undefined,
+        role: values.role,
+      };
+      if (values.password && values.password.trim().length > 0) {
+        updatePayload.password = values.password.trim();
+      }
+      updateUser(
+        { id: user.id, data: updatePayload },
+        {
+          onSuccess: () => onOpenChange(false),
+        }
+      );
     } else {
-      createUser(values, {
-        onSuccess: () => onOpenChange(false)
+      const { confirmPassword: _, ...createPayload } = values;
+      createUser(createPayload as any, {
+        onSuccess: () => onOpenChange(false),
       });
     }
   };

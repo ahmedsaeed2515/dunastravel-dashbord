@@ -7,7 +7,7 @@ export type PermissionAction = 'read' | 'create' | 'update' | 'delete' | 'manage
 export type PermissionResource = 'dashboard' | 'bookings' | 'tours' | 'destinations' | 'hotels' | 'reviews' | 'promotions' | 'media' | 'finance' | 'commissions' | 'wallet' | 'customers' | 'companies' | 'agents' | 'inquiries' | 'communications' | 'content' | 'ai' | 'notifications' | 'audit' | 'settings' | 'roles' | 'profile';
 
 const B2B_READ_RESOURCES: readonly PermissionResource[] = ['bookings', 'commissions', 'wallet', 'profile'];
-const ADMIN_RESTRICTED: readonly PermissionResource[] = ['roles', 'audit'];
+const ADMIN_RESTRICTED: readonly PermissionResource[] = ['audit'];
 
 export function hasServerAlignedPermission(role: Role | undefined, action: PermissionAction, resource: PermissionResource): boolean {
   if (!role) return false;
@@ -33,5 +33,5 @@ export function usePermissions() {
   const isAdmin = currentRole === 'ADMIN' || isSuperAdmin;
   const isAgent = currentRole === 'AGENT';
   const isB2B = currentRole === 'COMPANY' || isAgent;
-  return { user, role: currentRole, isLoading, isSuperAdmin, isAdmin, isAgent, isB2B, canManageRoles: isSuperAdmin, canAccessAuditLogs: isSuperAdmin, canManageAdmins: isSuperAdmin, canAccessFullOperations: isAdmin, canManageTours: isAdmin, canManageUsers: isAdmin, canManagePromotions: isAdmin, canManageMedia: isAdmin, canAccessFinance: isAdmin || isB2B, hasPermission, canAccessRoute };
+  return { user, role: currentRole, isLoading, isSuperAdmin, isAdmin, isAgent, isB2B, canManageRoles: isAdmin, canAccessAuditLogs: isSuperAdmin, canManageAdmins: isSuperAdmin, canAccessFullOperations: isAdmin, canManageTours: isAdmin, canManageUsers: isAdmin, canManagePromotions: isAdmin, canManageMedia: isAdmin, canAccessFinance: isAdmin || isB2B, hasPermission, canAccessRoute };
 }

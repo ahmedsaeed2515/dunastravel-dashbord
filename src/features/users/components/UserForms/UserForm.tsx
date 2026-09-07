@@ -3,14 +3,16 @@
 import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { userFormSchema, updateUserFormSchema, UserFormValues } from "../../schemas/user.schema";
+import { userFormSchema, updateUserFormSchema, UserFormValues, generateStrongPassword } from "../../schemas/user.schema";
 import { BaseForm } from "@/components/shared/form/BaseForm";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { User } from "../../types";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Wand2, KeyRound } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { toast } from "sonner";
 
 interface UserFormProps {
   initialData?: User;
@@ -19,6 +21,7 @@ interface UserFormProps {
 }
 
 export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps) {
+  const { isSuperAdmin } = usePermissions();
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
@@ -36,6 +39,18 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
       confirmPassword: "",
     },
   });
+
+  const handleGeneratePassword = () => {
+    const generated = generateStrongPassword();
+    form.setValue("password", generated, { shouldValidate: true });
+    form.setValue("confirmPassword", generated, { shouldValidate: true });
+    setShowPassword(true);
+    setShowConfirmPassword(true);
+    if (typeof navigator !== "undefined" && navigator.clipboard) {
+      navigator.clipboard.writeText(generated);
+    }
+    toast.success("تم توليد كلمة مرور قوية ونسخها إلى الحافظة!");
+  };
 
   return (
     <BaseForm
@@ -97,6 +112,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent className="font-bold">
+                  {isSuperAdmin && (
+                    <SelectItem value="SUPER_ADMIN">مدير نظام رئيسي (Super Admin)</SelectItem>
+                  )}
                   <SelectItem value="ADMIN">مدير نظام (Administrator)</SelectItem>
                   <SelectItem value="USER">مستخدم عادي (Standard User)</SelectItem>
                   <SelectItem value="COMPANY">شركة سياحية (Company Partner)</SelectItem>
@@ -114,7 +132,11 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold">{isEdit ? "كلمة المرور (اتركها فارغة للإبقاء عليها)" : "كلمة المرور"}</FormLabel>
+              <FormLabel className="font-bold">
+                {isEdit
+                  ? "كلمة المرور (اتركها فارغة للإبقاء عليها — 12 حرفاً على الأقل في حال التغيير)"
+                  : "كلمة المرور (12 حرفاً على الأقل)"}
+              </FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -180,6 +202,31 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
             </FormItem>
           )}
         />
+
+        {/* Password Helper & Generator Strip */}
+        <div className="rounded-xl border border-border/70 bg-muted/40 p-3 space-y-2">
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
+              <KeyRound className="h-3.5 w-3.5 text-amber-500" />
+              <span>معايير أمان كلمة المرور:</span>
+            </span>
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={handleGeneratePassword}
+              className="h-7 px-2.5 text-xs font-bold gap-1.5 rounded-lg border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-500"
+            >
+              <Wand2 className="h-3.5 w-3.5" />
+              <span>توليد كلمة مرور قوية</span>
+            </Button>
+          </div>
+          <p className="text-[11px] text-muted-foreground leading-relaxed">
+            {isEdit
+              ? "• اترك الحقل فارغاً إذا كنت لا ترغب في تغيير كلمة المرور. إذا قمت بالتعديل، يلزم 12 حرفاً على الأقل وتنوع الحروف (كبيرة، صغيرة، أرقام)."
+              : "• 12 حرفاً على الأقل، تتضمن حروفاً كبيرة وصغيرة وأرقاماً أو رموزاً، وتجنب الكلمات الشائعة مثل admin أو dunas."}
+          </p>
+        </div>
       </div>
     </BaseForm>
   );
