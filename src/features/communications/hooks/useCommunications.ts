@@ -68,7 +68,7 @@ export function useAssignInquiry() {
       communicationsApi.updateInquiry(referenceCode, { assigneeId: assigneeId ?? undefined }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
-      queryClient.invalidateQueries({ queryKey: ["communications", "inquiryMetrics"] });
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.inquiryMetrics() });
       toast.success("Inquiry assigned successfully.");
     },
     onError: (error: unknown) => {
@@ -84,7 +84,7 @@ export function useUpdateInquiry() {
       communicationsApi.updateInquiry(referenceCode, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
-      queryClient.invalidateQueries({ queryKey: ["communications", "inquiryMetrics"] });
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.inquiryMetrics() });
       toast.success("تم تحديث بيانات الاستفسار بنجاح.");
     },
     onError: (error: unknown) => {
@@ -105,7 +105,7 @@ export function useConvertInquiryToBooking() {
     }) => communicationsApi.convertInquiryToBooking(referenceCode, payload),
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ["communications", "inquiries"] });
-      queryClient.invalidateQueries({ queryKey: ["communications", "inquiryMetrics"] });
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.inquiryMetrics() });
       queryClient.invalidateQueries({ queryKey: ["bookings"] });
       toast.success(data?.message || "تم تحويل الاستفسار إلى حجز رسمي بنجاح! 🎟️");
     },

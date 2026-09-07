@@ -76,6 +76,8 @@ export function useUpdateBookingStatus() {
       toast.success("Booking status updated");
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "Failed to update booking status");
@@ -212,6 +214,8 @@ export function useRecordManualPayment() {
       toast.success("تم تسجيل الدفعة وتحديث حالة الحجز بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
       queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
     },
     onError: (error: ApiError) => {
       toast.error(error?.message || "فشل تسجيل الدفعة");

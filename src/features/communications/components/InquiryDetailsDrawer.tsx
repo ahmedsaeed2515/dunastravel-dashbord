@@ -42,7 +42,7 @@ import {
 import { format } from "date-fns";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useLocale } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 
 interface InquiryDetailsDrawerProps {
   inquiry: Inquiry | null;
@@ -58,6 +58,7 @@ export function InquiryDetailsDrawer({
   const router = useRouter();
   const locale = useLocale();
   const isAr = locale === "ar";
+  const tCommunications = useTranslations("communications");
 
   const updateInquiry = useUpdateInquiry();
   const assignInquiry = useAssignInquiry();
@@ -88,9 +89,22 @@ export function InquiryDetailsDrawer({
 
   if (!inquiry) return null;
 
+  const normalizePhoneForWhatsApp = (phone: string): string => {
+    const digits = phone.replace(/[^0-9+]/g, '');
+    if (digits.startsWith('0') && !digits.startsWith('00')) {
+      return `20${digits.slice(1)}`;
+    }
+    if (digits.startsWith('+')) {
+      return digits.slice(1);
+    }
+    return digits;
+  };
+
+  const isValidAmount = !quoteInput || (!isNaN(parseFloat(quoteInput)) && parseFloat(quoteInput) > 0);
+
   const handleStatusChange = async (newStatus: string) => {
     setStatus(newStatus);
-    const amountNum = quoteInput ? parseFloat(quoteInput) : undefined;
+    const amountNum = quoteInput ? Math.round(parseFloat(quoteInput) * 100) / 100 : undefined;
     await updateInquiry.mutateAsync({
       referenceCode: inquiry.referenceCode,
       data: {
@@ -103,7 +117,7 @@ export function InquiryDetailsDrawer({
   };
 
   const handleApproveQuote = async () => {
-    const amountNum = quoteInput ? parseFloat(quoteInput) : undefined;
+    const amountNum = quoteInput ? Math.round(parseFloat(quoteInput) * 100) / 100 : undefined;
     setStatus("APPROVED");
     await updateInquiry.mutateAsync({
       referenceCode: inquiry.referenceCode,
@@ -123,7 +137,7 @@ export function InquiryDetailsDrawer({
   };
 
   const handleSaveQuote = async () => {
-    const amountNum = parseFloat(quoteInput);
+    const amountNum = quoteInput ? Math.round(parseFloat(quoteInput) * 100) / 100 : NaN;
     if (isNaN(amountNum) || amountNum <= 0) {
       toast.error(isAr ? "يرجى إدخال مبلغ صحيح لعرض السعر" : "Please enter a valid quote amount");
       return;
@@ -148,7 +162,7 @@ export function InquiryDetailsDrawer({
   };
 
   const handleConvertToBooking = async () => {
-    const amountNum = quoteInput ? parseFloat(quoteInput) : undefined;
+    const amountNum = quoteInput ? Math.round(parseFloat(quoteInput) * 100) / 100 : undefined;
     await convertInquiry.mutateAsync({
       referenceCode: inquiry.referenceCode,
       payload: {
@@ -157,18 +171,18 @@ export function InquiryDetailsDrawer({
     });
   };
 
-  const name = inquiry.fullName || `${inquiry.firstName || ''} ${inquiry.lastName || ''}`.trim() || 'عميل دوناس';
-  const cleanPhone = (inquiry.phone || '').replace(/[^0-9+]/g, '');
+  const name = inquiry.fullName || `${inquiry.firstName || ''} ${inquiry.lastName || ''}`.trim() || (isAr ? 'عميل دوناس' : 'Dunas Client');
+  const cleanPhone = normalizePhoneForWhatsApp(inquiry.phone || '');
 
   const statusBadgeConfig: Record<string, { label: string; class: string }> = {
-    NEW: { label: isAr ? "جديد (New)" : "New", class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
-    NEWLY_RECEIVED: { label: isAr ? "جديد بانتظار المراجعة" : "Newly Received", class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
-    IN_PROGRESS: { label: isAr ? "قيد المتابعة والتحضير" : "In Progress", class: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30" },
-    QUOTED: { label: isAr ? "تم تقديم العرض 💰" : "Quote Sent 💰", class: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30" },
-    PROPOSAL_SENT: { label: isAr ? "تم تقديم العرض 💰" : "Quote Sent 💰", class: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30" },
-    APPROVED: { label: isAr ? "موافقة العميل ✨" : "Client Approved ✨", class: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
-    CONVERTED_TO_BOOKING: { label: isAr ? "حجز رسمي مؤكد 🎟️" : "Converted to Booking 🎟️", class: "bg-emerald-600 text-white border-emerald-700" },
-    CLOSED: { label: isAr ? "مغلق 🔒" : "Closed 🔒", class: "bg-muted text-muted-foreground border-border" },
+    NEW: { label: tCommunications("inquiries.statuses.NEW"), class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+    NEWLY_RECEIVED: { label: tCommunications("inquiries.statuses.NEWLY_RECEIVED"), class: "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30" },
+    IN_PROGRESS: { label: tCommunications("inquiries.statuses.IN_PROGRESS"), class: "bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/30" },
+    QUOTED: { label: tCommunications("inquiries.statuses.QUOTED"), class: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30" },
+    PROPOSAL_SENT: { label: tCommunications("inquiries.statuses.PROPOSAL_SENT"), class: "bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/30" },
+    APPROVED: { label: tCommunications("inquiries.statuses.APPROVED"), class: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" },
+    CONVERTED_TO_BOOKING: { label: tCommunications("inquiries.statuses.CONVERTED_TO_BOOKING"), class: "bg-emerald-600 text-white border-emerald-700" },
+    CLOSED: { label: tCommunications("inquiries.statuses.CLOSED"), class: "bg-muted text-muted-foreground border-border" },
   };
 
   const currentBadge = statusBadgeConfig[inquiry.status || status] || { label: inquiry.status, class: "bg-muted text-muted-foreground border-border" };
@@ -197,7 +211,7 @@ export function InquiryDetailsDrawer({
 
             {cleanPhone && (
               <a
-                href={`https://wa.me/${cleanPhone.startsWith('+') ? cleanPhone.slice(1) : cleanPhone}`}
+                href={`https://wa.me/${cleanPhone}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
@@ -214,8 +228,8 @@ export function InquiryDetailsDrawer({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-card/60 border border-border/80 rounded-2xl p-4 shadow-xs">
             <div className="space-y-1.5">
               <Label className="text-xs font-bold">{isAr ? "حالة مسار المبيعات (Pipeline Status)" : "Pipeline Status"}</Label>
-              <Select value={inquiry.status || status} onValueChange={handleStatusChange}>
-                <SelectTrigger className="rounded-xl text-xs font-bold">
+              <Select value={inquiry.status || status} onValueChange={handleStatusChange} disabled={updateInquiry.isPending}>
+                <SelectTrigger className={`rounded-xl text-xs font-bold ${updateInquiry.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <SelectValue placeholder="اختر الحالة" />
                 </SelectTrigger>
                 <SelectContent className="text-xs font-bold">
@@ -231,8 +245,8 @@ export function InquiryDetailsDrawer({
 
             <div className="space-y-1.5">
               <Label className="text-xs font-bold">{isAr ? "المشرف المسؤول المكلّف" : "Assigned Agent"}</Label>
-              <Select value={inquiry.assigneeId || assigneeId || "UNASSIGNED"} onValueChange={handleAssigneeChange}>
-                <SelectTrigger className="rounded-xl text-xs font-medium">
+              <Select value={inquiry.assigneeId || assigneeId || "UNASSIGNED"} onValueChange={handleAssigneeChange} disabled={assignInquiry.isPending}>
+                <SelectTrigger className={`rounded-xl text-xs font-medium ${assignInquiry.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}>
                   <SelectValue placeholder="اختر المشرف" />
                 </SelectTrigger>
                 <SelectContent className="text-xs font-medium">
@@ -277,7 +291,7 @@ export function InquiryDetailsDrawer({
                     placeholder="e.g. 2500"
                     value={quoteInput}
                     onChange={(e) => setQuoteInput(e.target.value)}
-                    className="pl-7 rtl:pl-3 rtl:pr-7 rounded-xl font-mono font-bold text-sm"
+                    className={`pl-7 rtl:pl-3 rtl:pr-7 rounded-xl font-mono font-bold text-sm ${!isValidAmount ? 'border-red-500 ring-1 ring-red-500' : ''}`}
                   />
                 </div>
               </div>
@@ -286,9 +300,9 @@ export function InquiryDetailsDrawer({
                 <Button
                   type="button"
                   onClick={handleSaveQuote}
-                  disabled={updateInquiry.isPending}
+                  disabled={updateInquiry.isPending || !isValidAmount}
                   variant="outline"
-                  className="flex-1 h-10 border-purple-500/40 hover:bg-purple-500/10 text-purple-700 dark:text-purple-300 font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs"
+                  className={`flex-1 h-10 border-purple-500/40 hover:bg-purple-500/10 text-purple-700 dark:text-purple-300 font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs ${(updateInquiry.isPending || !isValidAmount) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {updateInquiry.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                   <span>{isAr ? "حفظ وتثبيت العرض 💰" : "Save Quote & Update"}</span>
@@ -298,7 +312,7 @@ export function InquiryDetailsDrawer({
                   type="button"
                   onClick={handleApproveQuote}
                   disabled={updateInquiry.isPending || (inquiry.status === "APPROVED" && status === "APPROVED")}
-                  className="flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs"
+                  className={`flex-1 h-10 bg-emerald-600 hover:bg-emerald-700 text-white font-bold rounded-xl gap-2 cursor-pointer shadow-xs text-xs ${(updateInquiry.isPending || (inquiry.status === "APPROVED" && status === "APPROVED")) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
                   {updateInquiry.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
                   <span>
@@ -449,7 +463,7 @@ export function InquiryDetailsDrawer({
               size="sm"
               onClick={handleSaveNotesAndFollowup}
               disabled={updateInquiry.isPending}
-              className="h-9 text-xs font-bold rounded-xl gap-1.5 cursor-pointer shadow-xs"
+              className={`h-9 text-xs font-bold rounded-xl gap-1.5 cursor-pointer shadow-xs ${updateInquiry.isPending ? 'opacity-50 cursor-not-allowed' : ''}`}
             >
               {updateInquiry.isPending ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Save className="w-3.5 h-3.5" />}
               <span>{isAr ? "حفظ الملاحظات وموعد المتابعة" : "Save Notes"}</span>
@@ -495,10 +509,10 @@ export function InquiryDetailsDrawer({
                 <Button
                   type="button"
                   onClick={handleConvertToBooking}
-                  disabled={convertInquiry.isPending}
-                  className="w-full h-11 bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl gap-2 shadow-md cursor-pointer"
+                  disabled={convertInquiry.isPending || updateInquiry.isPending}
+                  className={`w-full h-11 bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black rounded-xl gap-2 shadow-md cursor-pointer ${(convertInquiry.isPending || updateInquiry.isPending) ? 'opacity-50 cursor-not-allowed' : ''}`}
                 >
-                  {convertInquiry.isPending ? (
+                  {convertInquiry.isPending || updateInquiry.isPending ? (
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
                   ) : (
                     <Sparkles className="w-4 h-4" />

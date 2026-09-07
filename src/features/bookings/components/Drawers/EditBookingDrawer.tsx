@@ -26,6 +26,27 @@ interface EditBookingDrawerProps {
   onOpenChange: (open: boolean) => void;
 }
 
+const BOOKING_STATUS_TRANSITIONS: Record<string, string[]> = {
+  PENDING: ['CONFIRMED', 'CANCELLED'],
+  CONFIRMED: ['COMPLETED', 'CANCELLED'],
+  PAYMENT_FAILED: ['PENDING', 'CANCELLED'],
+  COMPLETED: [],
+  CANCELLED: ['CONFIRMED', 'PENDING'],
+  REFUNDED: [],
+  PARTIALLY_PAID: ['CONFIRMED', 'CANCELLED'],
+  PAID: ['COMPLETED', 'CANCELLED'],
+};
+
+const ALL_BOOKING_STATUSES: BookingStatus[] = [
+  'PENDING',
+  'CONFIRMED',
+  'PARTIALLY_PAID',
+  'PAID',
+  'COMPLETED',
+  'CANCELLED',
+  'REFUNDED',
+];
+
 export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDrawerProps) {
   const updateBooking = useUpdateBooking();
   const updateStatus = useUpdateBookingStatus();
@@ -40,6 +61,13 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
   const [assigneeId, setAssigneeId] = useState<string>("");
   const [passengers, setPassengers] = useState<Passenger[]>([]);
   const [paymentOpen, setPaymentOpen] = useState(false);
+
+  const currentStatus = (booking?.status || 'PENDING') as string;
+  const validNextStatuses = BOOKING_STATUS_TRANSITIONS[currentStatus] ?? [];
+  const selectableStatuses = ALL_BOOKING_STATUSES.filter(
+    (s) => s === currentStatus || validNextStatuses.includes(s)
+  );
+  const isTerminal = validNextStatuses.length === 0;
 
   useEffect(() => {
      
@@ -178,30 +206,28 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
               <div className="space-y-4">
                 <div className="space-y-2">
                   <Label className="text-xs font-bold">حالة الحجز</Label>
-                  <Select value={status} onValueChange={(val) => val && setStatus(val as BookingStatus)}>
+                  <Select value={status} onValueChange={(val) => val && setStatus(val as BookingStatus)} disabled={isTerminal}>
                     <SelectTrigger className="w-full font-bold text-xs rounded-xl">
                       <SelectValue placeholder="اختر حالة الحجز" />
                     </SelectTrigger>
                     <SelectContent className="font-bold text-xs">
-                      {booking.status === "CANCELLED" || booking.status === "COMPLETED" ? (
-                        <SelectItem value={booking.status}>
-                          {booking.status === "CANCELLED" ? "ملغي (حالة نهائية)" : "مكتمل (حالة نهائية)"}
+                      {selectableStatuses.map((s) => (
+                        <SelectItem key={s} value={s} disabled={s === currentStatus}>
+                          {s === "PENDING" && "قيد الانتظار (Pending)"}
+                          {s === "CONFIRMED" && "مؤكد ومقبول (Confirmed)"}
+                          {s === "PARTIALLY_PAID" && "مدفوع جزئياً (Partially Paid)"}
+                          {s === "PAID" && "مدفوع بالكامل (Paid)"}
+                          {s === "COMPLETED" && "مكتمل ومنتهي (Completed)"}
+                          {s === "CANCELLED" && "ملغي (Cancelled)"}
+                          {s === "REFUNDED" && "مسترجع (Refunded)"}
+                          {!["PENDING", "CONFIRMED", "PARTIALLY_PAID", "PAID", "COMPLETED", "CANCELLED", "REFUNDED"].includes(s) && s}
                         </SelectItem>
-                      ) : (
-                        <>
-                          <SelectItem value="PENDING">قيد الانتظار (Pending)</SelectItem>
-                          <SelectItem value="CONFIRMED">مؤكد ومقبول (Confirmed)</SelectItem>
-                          <SelectItem value="CANCELLED">ملغي (Cancelled)</SelectItem>
-                          {booking.status === "CONFIRMED" && (
-                            <SelectItem value="COMPLETED">مكتمل ومنتهي (Completed)</SelectItem>
-                          )}
-                        </>
-                      )}
+                      ))}
                     </SelectContent>
                   </Select>
-                  {(booking.status === "CANCELLED" || booking.status === "COMPLETED") && (
+                  {isTerminal && (
                     <p className="text-[11px] text-amber-500 font-medium">
-                      هذا الحجز في حالة نهائية ({booking.status}) ولا يمكن تعديل حالته مباشرة.
+                      هذا الحجز في حالة نهائية ({booking.status}) ولا توجد حالات انتقال متاحة له.
                     </p>
                   )}
                 </div>
@@ -218,7 +244,7 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
 
                 <Button 
                   onClick={handleSaveStatus} 
-                  disabled={updateStatus.isPending || booking.status === "CANCELLED" || booking.status === "COMPLETED"}
+                  disabled={updateStatus.isPending || isTerminal || status === currentStatus}
                   className="w-full mt-4 font-bold rounded-xl"
                 >
                   {updateStatus.isPending ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}

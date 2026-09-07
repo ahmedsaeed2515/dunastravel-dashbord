@@ -429,6 +429,18 @@
       "INTERNAL_SALES_ALERT": "Internal Sales Notification",
       "USER_VERIFICATION": "User Account Verification",
       "PASSWORD_RESET": "Password Reset Link"
+    },
+    "inquiries": {
+      "statuses": {
+        "NEW": "New",
+        "NEWLY_RECEIVED": "Newly Received",
+        "IN_PROGRESS": "In Progress",
+        "QUOTED": "Quoted",
+        "PROPOSAL_SENT": "Quote Sent",
+        "APPROVED": "Approved",
+        "CONVERTED_TO_BOOKING": "Converted to Booking",
+        "CLOSED": "Closed"
+      }
     }
   },
   "content": {

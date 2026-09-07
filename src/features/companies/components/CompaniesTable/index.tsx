@@ -16,6 +16,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { useBulkUpdateCompanies } from "../../hooks/useCompanies";
 import { companiesApi } from "../../api/companiesApi";
 import { useTranslations } from "next-intl";
+import { toast } from "sonner";
 
 interface CompaniesTableProps {
   data: Company[];
@@ -56,8 +57,20 @@ export function CompaniesTable({ data, total, isLoading, filters, onFilterChange
     setRowSelection({});
   };
 
-  const handleExport = () => {
-    window.location.href = companiesApi.exportCsvUrl(filters);
+  const handleExport = async () => {
+    try {
+      const blob = await companiesApi.exportCsv(filters);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `companies-export-${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(url);
+    } catch {
+      toast.error('Failed to export companies data');
+    }
   };
 
   return (

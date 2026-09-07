@@ -429,6 +429,18 @@
       "INTERNAL_SALES_ALERT": "تنبيه مبيعات داخلي",
       "USER_VERIFICATION": "رمز التحقق من الحساب",
       "PASSWORD_RESET": "إعادة تعيين كلمة المرور"
+    },
+    "inquiries": {
+      "statuses": {
+        "NEW": "جديد",
+        "NEWLY_RECEIVED": "استفسار جديد",
+        "IN_PROGRESS": "قيد المعالجة",
+        "QUOTED": "تم تقديم عرض",
+        "PROPOSAL_SENT": "تم تقديم العرض",
+        "APPROVED": "موافق عليه",
+        "CONVERTED_TO_BOOKING": "تحول لحجز",
+        "CLOSED": "مغلق"
+      }
     }
   },
   "content": {

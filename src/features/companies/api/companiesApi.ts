@@ -35,13 +35,27 @@ export const companiesApi = {
     return apiClient.patch<{ count: number }, { count: number }>("/admin/companies/bulk/update", payload);
   },
 
-  exportCompaniesCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
-    const csv = await apiClient.get<string, string>("/admin/companies/export/csv", { params: filters });
-    return new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  exportCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
+    const params: Record<string, string> = {};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params[k] = String(v);
+    });
+    const res = await apiClient.get('/admin/companies/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data as Blob;
   },
 
-  exportCsvUrl: (filters: CompanyQueryFilters): string => {
-    const params = new URLSearchParams(filters as Record<string, string>).toString();
-    return `${env.NEXT_PUBLIC_API_URL}/admin/companies/export/csv?${params}`;
+  exportCompaniesCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
+    const params: Record<string, string> = {};
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v !== undefined && v !== null && v !== '') params[k] = String(v);
+    });
+    const res = await apiClient.get('/admin/companies/export/csv', {
+      params,
+      responseType: 'blob',
+    });
+    return res.data as Blob;
   }
 };

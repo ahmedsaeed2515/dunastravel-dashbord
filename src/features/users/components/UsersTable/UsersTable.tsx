@@ -10,7 +10,7 @@ import { UserDialog } from "../Drawers/UserDialog";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Plus, Search, Filter } from "lucide-react";
+import { Plus, Search, Filter, ShieldAlert } from "lucide-react";
 import { useTranslations } from "next-intl";
 
 interface UsersTableProps {
@@ -35,8 +35,29 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
     ...(statusFilter !== "ALL" ? { status: statusFilter } : {}),
   };
 
-  const { data, isLoading } = useUsers(queryFilters);
+  const { data, isLoading, error } = useUsers(queryFilters);
   const { mutate: deleteUser } = useDeleteUser();
+
+  if (
+    error &&
+    ((error as any)?.response?.status === 403 ||
+      (error as any)?.statusCode === 403 ||
+      (error as any)?.status === 403)
+  ) {
+    return (
+      <div className="flex flex-col items-center justify-center py-24 text-center">
+        <div className="w-16 h-16 rounded-full bg-red-100 dark:bg-red-900/20 flex items-center justify-center mb-4">
+          <ShieldAlert className="w-8 h-8 text-red-500" />
+        </div>
+        <h3 className="text-lg font-semibold text-foreground mb-2">
+          {tCommon("permissionDenied")}
+        </h3>
+        <p className="text-sm text-muted-foreground max-w-sm">
+          {tCommon("permissionDeniedDescription")}
+        </p>
+      </div>
+    );
+  }
 
   // Drawer & Dialog states
   const [selectedUser, setSelectedUser] = useState<User | null>(null);

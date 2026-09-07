@@ -220,3 +220,26 @@ apiClient.interceptors.response.use(
     return Promise.reject(customError);
   }
 );
+
+// NOTE: This client is browser-only. For server-side calls in Route Handlers,
+// use getServerApiClient() (available in this file) to forward cookies.
+
+// ── Server-Side API Client (Next.js Server Components / Route Handlers) ──
+// Import this ONLY in server-side code. Never import in client components.
+export async function getServerApiClient() {
+  // Dynamic import to prevent bundling next/headers in client bundle
+  const { cookies } = await import('next/headers');
+  const cookieStore = await cookies();
+  const cookieHeader = cookieStore.getAll()
+    .map(({ name, value }) => `${name}=${value}`)
+    .join('; ');
+
+  return axios.create({
+    baseURL: process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL,
+    headers: {
+      'Content-Type': 'application/json',
+      Cookie: cookieHeader,
+    },
+    timeout: 15000,
+  });
+}

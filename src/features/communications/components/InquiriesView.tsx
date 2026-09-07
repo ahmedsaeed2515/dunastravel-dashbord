@@ -36,10 +36,14 @@ export function InquiriesView() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearch(search);
-      if (search !== debouncedSearch) setPage(1);
     }, 350);
     return () => clearTimeout(timer);
   }, [search]);
+
+  // Reset pagination whenever search query or status filter changes
+  useEffect(() => {
+    setPage(1);
+  }, [debouncedSearch, selectedStatus]);
 
   const filters: InquiryQueryFilters = useMemo(
     () => ({

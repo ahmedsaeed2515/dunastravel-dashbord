@@ -429,6 +429,18 @@
       "INTERNAL_SALES_ALERT": "Alerta Interno de Vendas",
       "USER_VERIFICATION": "Verificação de Conta de Usuário",
       "PASSWORD_RESET": "Redefinição de Senha"
+    },
+    "inquiries": {
+      "statuses": {
+        "NEW": "Novo",
+        "NEWLY_RECEIVED": "Nova Consulta",
+        "IN_PROGRESS": "Em Andamento",
+        "QUOTED": "Cotado",
+        "PROPOSAL_SENT": "Proposta Enviada",
+        "APPROVED": "Aprovado",
+        "CONVERTED_TO_BOOKING": "Convertido em Reserva",
+        "CLOSED": "Fechado"
+      }
     }
   },
   "content": {
