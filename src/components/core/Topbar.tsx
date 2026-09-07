@@ -1,8 +1,8 @@
 "use client";
 
-import React, { memo } from "react";
-import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, Languages, Moon, Sun, Crown } from "lucide-react";
+import React, { memo, useState, useEffect } from "react";
+import { SidebarTrigger, useSidebar } from "@/components/ui/sidebar";
+import { Search, Languages, Moon, Sun, ChevronUp } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useParams, useSearchParams } from "next/navigation";
@@ -32,10 +32,14 @@ import { Link } from "@/i18n/routing";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { User, Settings, LogOut } from "lucide-react";
 import { adminRoutes } from "@/config/admin-routes";
+import { AnimatePresence, motion } from "framer-motion";
 
 export const Topbar = memo(function Topbar() {
   const { setTheme, theme } = useTheme();
   const [mounted, setMounted] = React.useState(false);
+  // Default hidden as requested ("خلي الهيدر بطبعه مخفي")
+  const [isHeaderOpen, setIsHeaderOpen] = useState(false);
+
   const { user, logout } = useAuth();
   const { data: activeLocalesSetting } = useSetting('ACTIVE_LOCALES', {
     en: true,
@@ -66,9 +70,21 @@ export const Topbar = memo(function Topbar() {
   const tAccess = useTranslations("accessibility");
   const tNav = useTranslations("navigation");
 
-  React.useEffect(() => {
+  useEffect(() => {
     setMounted(true);
+    const savedState = sessionStorage.getItem("dashboard_header_open");
+    if (savedState !== null) {
+      setIsHeaderOpen(savedState === "true");
+    }
   }, []);
+
+  const toggleHeader = () => {
+    setIsHeaderOpen((prev) => {
+      const next = !prev;
+      sessionStorage.setItem("dashboard_header_open", String(next));
+      return next;
+    });
+  };
 
   const currentLocale = (params?.locale as string) || "ar";
 
@@ -95,141 +111,227 @@ export const Topbar = memo(function Topbar() {
     : "AD";
 
   return (
-    <header
-      className="h-16 border-b border-border px-3 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card transition-colors duration-200"
-    >
-      {/* Left: Sidebar Trigger */}
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
-        <SidebarTrigger />
-      </div>
-
-      {/* Right: Controls */}
-      <div className="flex items-center gap-1.5 sm:gap-3">
-
-        {/* Desktop Search */}
-        <button
-          type="button"
-          onClick={() => {
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
-          }}
-          aria-label={tAccess("searchDashboard")}
-          className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 px-3 py-1.5 rounded-xl w-44 transition-all duration-200"
-        >
-          <Search className="w-4 h-4 shrink-0 text-slate-400" />
-          <span className="truncate">{tCommon("searchPlaceholder")}</span>
-          <kbd className="ms-auto pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-slate-300 dark:border-slate-700 bg-slate-200/60 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-600 dark:text-slate-400">
-            <span className="text-xs">⌘</span>K
-          </kbd>
-        </button>
-
-        {/* Mobile Quick Search */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="sm:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700"
-          onClick={() => {
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
-          }}
-          title="Search"
-          aria-label="Search"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-
-        {/* Theme Toggle Button — light background in light mode */}
-        <button
-          onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="p-2 rounded-xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 dark:border-slate-800 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer shrink-0"
-          title={isDark ? "التحويل للوضع الفاتح (Light Mode)" : "التحويل للوضع الداكن (Dark Mode)"}
-        >
-          {isDark ? (
-            <>
-              <Sun size={17} className="text-amber-400 animate-pulse" />
-              <span className="hidden md:inline text-slate-200 text-[11px]">الوضع الفاتح</span>
-            </>
-          ) : (
-            <>
-              <Moon size={17} className="text-indigo-600" />
-              <span className="hidden md:inline text-slate-700 text-[11px]">الوضع الداكن</span>
-            </>
-          )}
-        </button>
-
-        {/* 5-Language Switcher — light background in light mode */}
-        <div className="relative flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-1.5 sm:px-2 py-1 shrink-0 hover:border-amber-500/40 transition-colors">
-          <Languages size={15} className="text-amber-600 dark:text-amber-400 mx-0.5 sm:mx-1 shrink-0" />
-          <select
-            value={currentLocale}
-            onChange={(e) => handleLanguageChange(e.target.value)}
-            className="bg-transparent text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-1 max-w-22.5 sm:max-w-none"
+    <div className="relative w-full z-40 select-none">
+      {/* Floating 3-Lines Trigger Button (Visible when header is hidden) */}
+      {!isHeaderOpen && (
+        <div className="fixed top-3 inset-s-4 sm:inset-s-6 z-50 flex items-center gap-2">
+          <button
+            type="button"
+            onClick={toggleHeader}
+            aria-label="إظهار الهيدر / Toggle Header"
+            title="إظهار الشريط العلوي (Show Header)"
+            className="group relative flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900/85 hover:bg-slate-900 dark:bg-card/90 dark:hover:bg-card border border-amber-500/40 hover:border-amber-500 text-amber-400 hover:text-amber-300 shadow-[0_4px_20px_rgba(245,158,11,0.25)] hover:shadow-[0_4px_25px_rgba(245,158,11,0.45)] backdrop-blur-xl transition-all duration-300 cursor-pointer active:scale-95"
           >
-            {availableLocales.map((lang) => (
-              <option key={lang.code} value={lang.code} className="bg-card text-foreground">
-                {lang.flag} {lang.label}
-              </option>
-            ))}
-          </select>
-        </div>
+            {/* Ambient subtle glow */}
+            <span className="absolute inset-0 rounded-2xl bg-amber-500/10 opacity-0 group-hover:opacity-100 transition-opacity blur-xs pointer-events-none" />
 
-        {/* Notification Bell */}
-        <div className="relative shrink-0">
-          <NotificationBellDropdown />
-        </div>
-
-        {/* User Profile Dropdown */}
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              type="button"
-              className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 sm:px-3 py-1.5 rounded-xl hover:border-amber-500/40 transition-colors shrink-0 cursor-pointer"
+            {/* 3 Horizontal Lines Icon (Hamburger) */}
+            <svg
+              className="w-5 h-5 relative z-10 transition-transform duration-300 group-hover:scale-110"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+              strokeLinecap="round"
+              strokeLinejoin="round"
             >
-              <Avatar className="w-7 h-7 ring-1 ring-amber-500/50">
-                <AvatarImage src="" alt={user?.name || "Admin"} />
-                <AvatarFallback className="bg-amber-500/20 text-amber-600 dark:text-amber-300 font-semibold text-xs">
-                  {userInitials}
-                </AvatarFallback>
-              </Avatar>
-              <div className="text-right hidden sm:block">
-                <span className="text-xs font-bold text-slate-800 dark:text-white block leading-none">{user?.name || "Attia Yamany"}</span>
-                <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{tCommon("superAdmin")}</span>
-              </div>
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-56 bg-card border-border text-foreground shadow-lg"
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="4" y1="12" x2="20" y2="12" />
+              <line x1="4" y1="18" x2="20" y2="18" />
+            </svg>
+
+            <span className="text-xs font-bold tracking-wide text-slate-100 dark:text-slate-200 hidden sm:inline-block">
+              {params?.locale === 'en' ? 'Header' : 'الشريط العلوي'}
+            </span>
+
+            <span className="relative flex h-2 w-2 ms-0.5">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
+            </span>
+          </button>
+        </div>
+      )}
+
+      {/* Slide-Down Animated Full Header */}
+      <AnimatePresence>
+        {isHeaderOpen && (
+          <motion.header
+            initial={{ opacity: 0, y: -20, height: 0 }}
+            animate={{ opacity: 1, y: 0, height: "auto" }}
+            exit={{ opacity: 0, y: -20, height: 0 }}
+            transition={{ duration: 0.25, ease: "easeInOut" }}
+            className="w-full border-b border-border px-3 sm:px-4 lg:px-8 py-2.5 flex items-center justify-between sticky top-0 bg-card/95 backdrop-blur-xl shadow-lg transition-colors duration-200"
           >
-            <DropdownMenuLabel className="font-normal">
-              <div className="flex flex-col space-y-1">
-                <p className="text-sm font-semibold leading-none text-foreground">{user?.name || "Attia Yamany"}</p>
-                <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@dunastravel.com"}</p>
-                <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{tCommon("superAdmin")}</p>
+            {/* Left: 3-Lines Header Toggle & Sidebar Trigger */}
+            <div className="flex items-center gap-2 sm:gap-3 shrink-0">
+              {/* 3-Lines Button (Close / Toggle Header) */}
+              <button
+                type="button"
+                onClick={toggleHeader}
+                aria-label="إخفاء الهيدر / Toggle Header"
+                title="إخفاء الشريط العلوي (Hide Header)"
+                className="relative group flex items-center justify-center size-10 rounded-full transition-all duration-300 select-none cursor-pointer outline-none overflow-hidden shrink-0 bg-amber-500/15 border border-amber-500/50 text-amber-500 hover:bg-amber-500/25 hover:scale-105 active:scale-95 shadow-[0_0_15px_rgba(245,158,11,0.3)]"
+              >
+                {/* 3 Horizontal Lines morphing active state */}
+                <svg
+                  className="w-5 h-5 relative z-10 transition-all duration-300 group-hover:scale-110"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2.5"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                >
+                  <line x1="4" y1="6" x2="20" y2="6" className="translate-y-1.5 rotate-45 origin-center transition-all duration-300" />
+                  <line x1="4" y1="12" x2="20" y2="12" className="opacity-0 transition-all duration-300" />
+                  <line x1="4" y1="18" x2="20" y2="18" className="-translate-y-1.5 -rotate-45 origin-center transition-all duration-300" />
+                </svg>
+              </button>
+
+              {/* Sidebar Trigger */}
+              <SidebarTrigger />
+            </div>
+
+            {/* Right: Controls (Search, Theme, Language, Notifications, User Profile, Close) */}
+            <div className="flex items-center gap-1.5 sm:gap-3">
+              {/* Desktop Search */}
+              <button
+                type="button"
+                onClick={() => {
+                  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+                }}
+                aria-label={tAccess("searchDashboard")}
+                className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 px-3 py-1.5 rounded-xl w-44 transition-all duration-200"
+              >
+                <Search className="w-4 h-4 shrink-0 text-slate-400" />
+                <span className="truncate">{tCommon("searchPlaceholder")}</span>
+                <kbd className="ms-auto pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-slate-300 dark:border-slate-700 bg-slate-200/60 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-600 dark:text-slate-400">
+                  <span className="text-xs">⌘</span>K
+                </kbd>
+              </button>
+
+              {/* Mobile Quick Search */}
+              <Button
+                variant="ghost"
+                size="icon-sm"
+                className="sm:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700"
+                onClick={() => {
+                  window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
+                }}
+                title="Search"
+                aria-label="Search"
+              >
+                <Search className="h-4 w-4" />
+              </Button>
+
+              {/* Theme Toggle Button */}
+              <button
+                onClick={() => setTheme(isDark ? "light" : "dark")}
+                className="p-2 rounded-xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 dark:border-slate-800 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer shrink-0"
+                title={isDark ? "التحويل للوضع الفاتح (Light Mode)" : "التحويل للوضع الداكن (Dark Mode)"}
+              >
+                {isDark ? (
+                  <>
+                    <Sun size={17} className="text-amber-400 animate-pulse" />
+                    <span className="hidden md:inline text-slate-200 text-[11px]">الوضع الفاتح</span>
+                  </>
+                ) : (
+                  <>
+                    <Moon size={17} className="text-indigo-600" />
+                    <span className="hidden md:inline text-slate-700 text-[11px]">الوضع الداكن</span>
+                  </>
+                )}
+              </button>
+
+              {/* 5-Language Switcher */}
+              <div className="relative flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-1.5 sm:px-2 py-1 shrink-0 hover:border-amber-500/40 transition-colors">
+                <Languages size={15} className="text-amber-600 dark:text-amber-400 mx-0.5 sm:mx-1 shrink-0" />
+                <select
+                  value={currentLocale}
+                  onChange={(e) => handleLanguageChange(e.target.value)}
+                  className="bg-transparent text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-1 max-w-22.5 sm:max-w-none"
+                >
+                  {availableLocales.map((lang) => (
+                    <option key={lang.code} value={lang.code} className="bg-card text-foreground">
+                      {lang.flag} {lang.label}
+                    </option>
+                  ))}
+                </select>
               </div>
-            </DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={adminRoutes.profile} className="flex items-center gap-2">
-                <User className="w-4 h-4 text-muted-foreground" />
-                <span>{tNav("profile")}</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuItem asChild className="cursor-pointer">
-              <Link href={adminRoutes.settings} className="flex items-center gap-2">
-                <Settings className="w-4 h-4 text-muted-foreground" />
-                <span>{tNav("settings")}</span>
-              </Link>
-            </DropdownMenuItem>
-            <DropdownMenuSeparator />
-            <DropdownMenuItem
-              onClick={handleLogout}
-              className="cursor-pointer text-red-500 focus:text-red-600 focus:bg-red-500/10"
-            >
-              <LogOut className="w-4 h-4 mr-2" />
-              <span>{tNav("logOut")}</span>
-            </DropdownMenuItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-      </div>
-    </header>
+
+              {/* Notification Bell */}
+              <div className="relative shrink-0">
+                <NotificationBellDropdown />
+              </div>
+
+              {/* User Profile Dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button
+                    type="button"
+                    className="flex items-center gap-2 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 px-2 sm:px-3 py-1.5 rounded-xl hover:border-amber-500/40 transition-colors shrink-0 cursor-pointer"
+                  >
+                    <Avatar className="w-7 h-7 ring-1 ring-amber-500/50">
+                      <AvatarImage src="" alt={user?.name || "Admin"} />
+                      <AvatarFallback className="bg-amber-500/20 text-amber-600 dark:text-amber-300 font-semibold text-xs">
+                        {userInitials}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="text-right hidden sm:block">
+                      <span className="text-xs font-bold text-slate-800 dark:text-white block leading-none">{user?.name || "Attia Yamany"}</span>
+                      <span className="text-[10px] text-amber-600 dark:text-amber-400 font-semibold">{tCommon("superAdmin")}</span>
+                    </div>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="end"
+                  className="w-56 bg-card border-border text-foreground shadow-lg"
+                >
+                  <DropdownMenuLabel className="font-normal">
+                    <div className="flex flex-col space-y-1">
+                      <p className="text-sm font-semibold leading-none text-foreground">{user?.name || "Attia Yamany"}</p>
+                      <p className="text-xs leading-none text-muted-foreground">{user?.email || "admin@dunastravel.com"}</p>
+                      <p className="text-[10px] text-amber-500 font-semibold mt-0.5">{tCommon("superAdmin")}</p>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={adminRoutes.profile} className="flex items-center gap-2">
+                      <User className="w-4 h-4 text-muted-foreground" />
+                      <span>{tNav("profile")}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem asChild className="cursor-pointer">
+                    <Link href={adminRoutes.settings} className="flex items-center gap-2">
+                      <Settings className="w-4 h-4 text-muted-foreground" />
+                      <span>{tNav("settings")}</span>
+                    </Link>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={handleLogout}
+                    className="cursor-pointer text-red-500 focus:text-red-600 focus:bg-red-500/10"
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    <span>{tNav("logOut")}</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Close Button */}
+              <button
+                type="button"
+                onClick={toggleHeader}
+                title="إغلاق الشريط العلوي"
+                className="p-2 rounded-xl text-slate-400 hover:text-white hover:bg-slate-800 transition-colors shrink-0"
+              >
+                <ChevronUp className="w-4 h-4" />
+              </button>
+            </div>
+          </motion.header>
+        )}
+      </AnimatePresence>
+    </div>
   );
 });
+
