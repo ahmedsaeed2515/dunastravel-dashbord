@@ -277,7 +277,7 @@ export const AppSidebar = memo(function AppSidebar() {
     <TooltipProvider delay={200}>
       <Sidebar
         variant="inset"
-        collapsible="icon"
+        collapsible="offcanvas"
         className="border-e border-border/70 bg-card/95 backdrop-blur-2xl transition-all duration-300 select-none shadow-xs"
       >
         {/* ======================================================== */}

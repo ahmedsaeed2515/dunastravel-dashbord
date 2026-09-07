@@ -54,7 +54,7 @@ function useSidebar() {
 }
 
 function SidebarProvider({
-  defaultOpen = true,
+  defaultOpen = false,
   open: openProp,
   onOpenChange: setOpenProp,
   className,
@@ -301,27 +301,9 @@ function SidebarTrigger({
         strokeLinecap="round"
         strokeLinejoin="round"
       >
-        <line
-          x1="4" y1="6" x2="20" y2="6"
-          className={cn(
-            "transition-all duration-300 origin-center",
-            isOpen && "translate-y-1.5 rotate-45 stroke-amber-500"
-          )}
-        />
-        <line
-          x1="4" y1="12" x2="20" y2="12"
-          className={cn(
-            "transition-all duration-300",
-            isOpen && "opacity-0 scale-x-0"
-          )}
-        />
-        <line
-          x1="4" y1="18" x2="20" y2="18"
-          className={cn(
-            "transition-all duration-300 origin-center",
-            isOpen && "-translate-y-1.5 -rotate-45 stroke-amber-500"
-          )}
-        />
+        <line x1="4" y1="6" x2="20" y2="6" />
+        <line x1="4" y1="12" x2="20" y2="12" />
+        <line x1="4" y1="18" x2="20" y2="18" />
       </svg>
       <span className="sr-only">Toggle Sidebar</span>
     </button>
