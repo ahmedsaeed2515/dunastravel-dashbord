@@ -311,7 +311,7 @@ export const AppSidebar = memo(function AppSidebar() {
 
           {/* Quick Search Input */}
           <div className="relative mt-2.5">
-            <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" />
+            <Search className="absolute inset-s-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground/70 pointer-events-none" />
             <Input
               type="text"
               value={searchQuery}
@@ -322,7 +322,7 @@ export const AppSidebar = memo(function AppSidebar() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery("")}
-                className="absolute end-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md transition-colors"
+                className="absolute inset-e-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground p-0.5 rounded-md transition-colors"
               >
                 <X className="h-3 w-3" />
               </button>
@@ -348,7 +348,7 @@ export const AppSidebar = memo(function AppSidebar() {
                       tooltip={tNav("dashboard")}
                       className={`relative flex items-center justify-between px-3 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 ${
                         active
-                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs before:absolute before:inset-y-1.5 before:start-1 before:w-1 before:rounded-full before:bg-amber-500"
+                          ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-xs before:absolute before:inset-y-1.5 before:inset-s-1 before:w-1 before:rounded-full before:bg-amber-500"
                           : "text-foreground/80 hover:text-foreground hover:bg-muted/60"
                       }`}
                     >
@@ -418,7 +418,7 @@ export const AppSidebar = memo(function AppSidebar() {
                               tooltip={item.label}
                               className={`relative flex items-center justify-between px-3 py-2 rounded-xl text-xs transition-all duration-200 ${
                                 active
-                                  ? "font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-2xs before:absolute before:inset-y-1.5 before:start-1 before:w-1 before:rounded-full before:bg-amber-500"
+                                  ? "font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 shadow-2xs before:absolute before:inset-y-1.5 before:inset-s-1 before:w-1 before:rounded-full before:bg-amber-500"
                                   : "font-medium text-muted-foreground hover:text-foreground hover:bg-muted/50"
                               }`}
                             >
@@ -470,7 +470,7 @@ export const AppSidebar = memo(function AppSidebar() {
           {/* User Profile Card */}
           <div className="flex items-center justify-between p-2 rounded-2xl bg-muted/40 border border-border/60 hover:border-amber-500/30 transition-all">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="h-8 w-8 rounded-xl bg-gradient-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-black text-xs shadow-xs shrink-0 font-mono">
+              <div className="h-8 w-8 rounded-xl bg-linear-to-br from-amber-500 to-amber-700 flex items-center justify-center text-white font-black text-xs shadow-xs shrink-0 font-mono">
                 {userInitials || "AS"}
               </div>
               <div className="min-w-0 space-y-0.5">
