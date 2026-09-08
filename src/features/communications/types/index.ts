@@ -143,6 +143,7 @@ export interface EmailTemplate {
   subject: string;
   bodyHtml: string;
   variables: string[];
+  designConfig?: import('./template-builder.types').EmailDesignConfig | null;
   createdAt: string;
   updatedAt: string;
 }
@@ -155,3 +156,5 @@ export interface CreateEmailTemplatePayload {
 }
 
 export type UpdateEmailTemplatePayload = Partial<CreateEmailTemplatePayload>;
+
+export * from './template-builder.types';

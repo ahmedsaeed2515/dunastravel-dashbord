@@ -176,12 +176,20 @@ export function getColumns(
           style: "currency",
           currency: b.currency || "USD",
         }).format(isNaN(amount) ? 0 : amount);
+        const paidNum = b.paidAmount ? parseFloat(String(b.paidAmount)) : 0;
+        const totalNum = isNaN(amount) ? 0 : amount;
+        const balanceDue = Math.max(0, totalNum - paidNum);
         return (
           <div className="flex flex-col gap-0.5">
             <span className="font-semibold text-foreground dir-ltr inline-block">{formatted}</span>
-            {b.paidAmount && parseFloat(b.paidAmount) > 0 && (
+            {paidNum > 0 && (
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium dir-ltr">
-                Paid: ${parseFloat(b.paidAmount).toFixed(2)}
+                Paid: ${paidNum.toFixed(2)}
+              </span>
+            )}
+            {balanceDue > 0 && paidNum > 0 && (
+              <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium dir-ltr">
+                Due: ${balanceDue.toFixed(2)}
               </span>
             )}
           </div>

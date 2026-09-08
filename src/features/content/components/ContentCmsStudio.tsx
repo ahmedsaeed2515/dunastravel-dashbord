@@ -1104,7 +1104,7 @@ export function ContentCmsStudio() {
                     copyright: { ...footerForm.copyright, [activeLang]: e.target.value },
                   })
                 }
-                placeholder="© 2026 Dunas Travel. All rights reserved. Registered Tourism License #1892."
+                placeholder="© 2026 Dunas Travel. All rights reserved. Registered Tourism License #1882."
                 className="rounded-xl text-xs bg-background border-border"
               />
             </div>

@@ -27,15 +27,19 @@ import {
   MessageSquareQuote,
   Loader2,
   ExternalLink,
-  Download
+  Download,
+  Receipt,
 } from "lucide-react";
+import { BookingInvoiceDialog } from "../Dialogs/BookingInvoiceDialog";
 import { useState } from "react";
 import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
 import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
 import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
 import { RecordPaymentDialog } from "../Dialogs/RecordPaymentDialog";
+import { RefundPaymentDialog } from "../Dialogs/RefundPaymentDialog";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface BookingDetailsDrawerProps {
   booking: Booking | null;
@@ -87,10 +91,13 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
 
   const booking = detailedBooking || initialBooking;
 
+  const { isSuperAdmin } = usePermissions();
   const [noteOpen, setNoteOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
   const [passengerOpen, setPassengerOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [invoiceOpen, setInvoiceOpen] = useState(false);
+  const [refundPaymentData, setRefundPaymentData] = useState<{ id: string; amount: number; currency: string } | null>(null);
 
   if (!booking) return null;
 
@@ -137,18 +144,29 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
               <div className="text-xs text-muted-foreground">
                 {tCommon("createdAt")}: {formatDateSafe(booking.createdAt, "MMM do, yyyy h:mm a")}
               </div>
-              {booking.status === "CANCELLED" && (
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  className="gap-1 mt-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-7 text-xs"
-                  onClick={() => restoreBooking(booking.referenceCode)}
-                  disabled={isRestoring}
+              <div className="flex items-center gap-1.5 mt-1">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="gap-1.5 h-7 text-xs border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold"
+                  onClick={() => setInvoiceOpen(true)}
                 >
-                  <RefreshCcw className="h-3 w-3" />
-                  {tCommon("retry")}
+                  <Receipt className="w-3.5 h-3.5" />
+                  <span>الفاتورة الرسمية</span>
                 </Button>
-              )}
+                {booking.status === "CANCELLED" && (
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="gap-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-7 text-xs"
+                    onClick={() => restoreBooking(booking.referenceCode)}
+                    disabled={isRestoring}
+                  >
+                    <RefreshCcw className="h-3 w-3" />
+                    {tCommon("retry")}
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
 
@@ -618,8 +636,24 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                           {formatDateSafe(p.createdAt, "MMM do, yyyy h:mm a")}
                         </div>
                       </div>
-                      <div className={`font-mono text-base font-bold dir-ltr ${p.isRefund ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
+                      <div className="flex items-center gap-3">
+                        <div className={`font-mono text-base font-bold dir-ltr ${p.isRefund ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
+                        </div>
+                        {isSuperAdmin && !p.isRefund && (p.status === 'CAPTURED' || p.status === 'COMPLETED' || p.status === 'PAID') && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => setRefundPaymentData({
+                              id: p.id,
+                              amount: typeof p.amount === 'number' ? p.amount : parseFloat(p.amount || '0'),
+                              currency: p.currency || 'USD',
+                            })}
+                            className="text-xs h-7 px-2.5 rounded-lg border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400 font-bold"
+                          >
+                            استرداد
+                          </Button>
+                        )}
                       </div>
                     </div>
                   ))
@@ -732,6 +766,21 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
         paidAmount={booking.paidAmount}
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
+      />
+      {refundPaymentData && (
+        <RefundPaymentDialog
+          paymentId={refundPaymentData.id}
+          referenceCode={booking.referenceCode}
+          originalAmount={refundPaymentData.amount}
+          currency={refundPaymentData.currency}
+          isOpen={Boolean(refundPaymentData)}
+          onClose={() => setRefundPaymentData(null)}
+        />
+      )}
+      <BookingInvoiceDialog
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        bookingReferenceCode={booking.referenceCode}
       />
     </Sheet>
   );

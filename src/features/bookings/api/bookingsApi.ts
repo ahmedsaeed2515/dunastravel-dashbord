@@ -60,5 +60,19 @@ export const bookingsApi = {
 
   recordManualPayment: async (referenceCode: string, data: { amount: number; method?: string; transactionId?: string; notes?: string }): Promise<any> => {
     return apiClient.post(`/admin/bookings/${referenceCode}/payments`, data);
+  },
+
+  refundPayment: async (
+    paymentId: string,
+    data: { amount: number; reason: string; idempotencyKey?: string }
+  ): Promise<any> => {
+    return apiClient.post(`/admin/payments/${paymentId}/refund`, {
+      ...data,
+      idempotencyKey: data.idempotencyKey || `refund:${paymentId}:${Date.now()}`,
+    });
+  },
+
+  getBookingInvoice: async (bookingReferenceOrId: string): Promise<any> => {
+    return apiClient.get<any, any>(`/admin/invoices/${encodeURIComponent(bookingReferenceOrId)}`);
   }
 };

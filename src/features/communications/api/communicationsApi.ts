@@ -12,6 +12,10 @@ import {
   EmailTemplate,
   CreateEmailTemplatePayload,
   UpdateEmailTemplatePayload,
+  TemplatePresetItem,
+  SendTestEmailPayload,
+  BroadcastCampaignPayload,
+  BroadcastCampaignResult,
 } from "../types";
 
 export const communicationsApi = {
@@ -93,5 +97,17 @@ export const communicationsApi = {
 
   deleteTemplate: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/communications/templates/${id}`);
+  },
+
+  getPresets: async (): Promise<TemplatePresetItem[]> => {
+    return apiClient.get<unknown, TemplatePresetItem[]>("/admin/communications/templates/presets");
+  },
+
+  sendTestEmail: async (payload: SendTestEmailPayload): Promise<{ success: boolean; message: string }> => {
+    return apiClient.post<unknown, { success: boolean; message: string }>("/admin/communications/templates/test-send", payload);
+  },
+
+  broadcastCampaign: async (payload: BroadcastCampaignPayload): Promise<BroadcastCampaignResult> => {
+    return apiClient.post<unknown, BroadcastCampaignResult>("/admin/communications/templates/broadcast", payload);
   }
 };

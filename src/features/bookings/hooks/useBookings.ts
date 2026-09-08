@@ -222,3 +222,28 @@ export function useRecordManualPayment() {
     },
   });
 }
+
+export function useRefundPayment() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      paymentId,
+      referenceCode,
+      data,
+    }: {
+      paymentId: string;
+      referenceCode: string;
+      data: { amount: number; reason: string; idempotencyKey?: string };
+    }) => bookingsApi.refundPayment(paymentId, data),
+    onSuccess: (_, variables) => {
+      toast.success("تم استرداد المبلغ وتحديث سجل الحجز بنجاح");
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "فشل تنفيذ عملية الاسترداد");
+    },
+  });
+}

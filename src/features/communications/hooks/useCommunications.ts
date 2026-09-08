@@ -1,6 +1,14 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { communicationsApi } from "../api/communicationsApi";
-import { ContactSubmissionQueryFilters, CreateEmailTemplatePayload, InquiryQueryFilters, NotificationDeliveryLogQueryFilters, UpdateEmailTemplatePayload } from "../types";
+import { 
+  ContactSubmissionQueryFilters, 
+  CreateEmailTemplatePayload, 
+  InquiryQueryFilters, 
+  NotificationDeliveryLogQueryFilters, 
+  UpdateEmailTemplatePayload,
+  SendTestEmailPayload,
+  BroadcastCampaignPayload,
+} from "../types";
 import { normalizeApiError } from "@/lib/api-types";
 import { toast } from "sonner";
 
@@ -178,3 +186,38 @@ export function useUpdateContactSubmissionStatus() {
     onError: () => toast.error("Failed to update status."),
   });
 }
+
+export function useTemplatePresets() {
+  return useQuery({
+    queryKey: [...communicationsKeys.templates(), "presets"] as const,
+    queryFn: () => communicationsApi.getPresets(),
+  });
+}
+
+export function useSendTestEmail() {
+  return useMutation({
+    mutationFn: (payload: SendTestEmailPayload) => communicationsApi.sendTestEmail(payload),
+    onSuccess: (data) => {
+      toast.success(data.message || "تم إرسال البريد التجريبي بنجاح! 📨");
+    },
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message || "فشل إرسال البريد التجريبي");
+    },
+  });
+}
+
+export function useBroadcastCampaign() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: BroadcastCampaignPayload) => communicationsApi.broadcastCampaign(payload),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.logs({}) });
+      queryClient.invalidateQueries({ queryKey: communicationsKeys.metrics() });
+      toast.success(`تمت الحملة بنجاح! أرسل إلى ${data.sentCount} من إجمالي ${data.totalRecipients}`);
+    },
+    onError: (error: unknown) => {
+      toast.error(normalizeApiError(error).message || "فشل إرسال الحملة البريدية");
+    },
+  });
+}
+
