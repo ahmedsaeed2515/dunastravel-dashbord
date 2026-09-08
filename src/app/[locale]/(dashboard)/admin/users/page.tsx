@@ -17,6 +17,7 @@ export default function UserMonitoringPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="إدارة المستخدمين والموظفين — إنشاء الحسابات، تعديل الأدوار والصلاحيات، تعليق الحسابات."
         title={tUsers("monitoringTitle")}
         description={tUsers("monitoringDescription")}
       />

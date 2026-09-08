@@ -95,6 +95,7 @@ export default function WalletPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="المحافظ الرقمية — رصيد المحفظة لكل وكالة شريكة وسجل المعاملات."
         title={tFinance("walletTitle") || "B2B Corporate Wallets & Ledgers"}
         description={tFinance("walletDesc") || "Manage enterprise partner deposits, credit limits, and automated commission payouts."}
         actions={

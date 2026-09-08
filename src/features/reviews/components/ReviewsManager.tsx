@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import React, { useState, useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -385,8 +386,9 @@ export function ReviewsManager() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
-                  {tReviews("title")}
+                <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading flex items-center gap-2">
+                  <span>{tReviews("title")}</span>
+                  <PageHelpTooltip description="تقييمات العملاء — مراجعة وإدارة تقييمات الجولات المرسلة من العملاء." />
                 </h1>
                 <Badge
                   variant="outline"

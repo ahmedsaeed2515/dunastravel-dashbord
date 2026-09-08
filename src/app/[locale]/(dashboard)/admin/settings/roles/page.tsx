@@ -202,6 +202,7 @@ export default function RolesPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="إدارة الأدوار والصلاحيات — تحديد ما يستطيع كل دور (وكيل، مدير، مشرف) فعله في النظام."
         title={tRoles("title")}
         description={tRoles("description")}
       />

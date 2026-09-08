@@ -1,5 +1,6 @@
 "use client";
 
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 import { useState, useEffect, useCallback } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import {
@@ -130,9 +131,12 @@ export default function AdminNotificationsPage() {
             <Bell className="w-6 h-6" />
           </div>
           <div>
-            <h1 className="text-2xl font-bold font-display text-foreground">
-              {isAr ? "مركز الإشعارات" : "Notifications Center"}
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-bold font-display text-foreground">
+                {isAr ? "مركز الإشعارات" : "Notifications Center"}
+              </h1>
+              <PageHelpTooltip description="سجل الإشعارات — تتبع جميع الرسائل المرسلة للعملاء وإعادة إرسال الفاشلة منها." />
+            </div>
             <p className="text-xs text-muted-foreground mt-0.5">
               {isAr
                 ? "متابعة كافة التنبيهات والأحداث الخاصة بالحجوزات، الاستفسارات والعمليات."

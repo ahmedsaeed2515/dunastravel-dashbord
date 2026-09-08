@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import { useState } from "react";
 import { useAuth } from "@/features/auth/hooks/useAuth";
@@ -150,7 +151,8 @@ export function AdminProfileView() {
             </Avatar>
             <div className="space-y-1 pb-1">
               <h1 className="text-2xl font-bold text-foreground flex items-center gap-2">
-                {user?.name || "Super Admin"}
+                <span>{user?.name || "Super Admin"}</span>
+                <PageHelpTooltip description="ملفك الشخصي — تعديل بياناتك الشخصية وكلمة المرور وإعدادات حسابك." />
                 {user?.isVip && (
                   <Sparkles className="w-5 h-5 text-amber-500 fill-amber-500/20" />
                 )}

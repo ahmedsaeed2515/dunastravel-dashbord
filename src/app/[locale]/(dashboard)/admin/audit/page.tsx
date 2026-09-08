@@ -31,6 +31,7 @@ export default function AuditLogsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="سجل المراجعة — تتبع جميع العمليات الحساسة التي أجراها المسؤولون على النظام."
         title={tAudit("title")}
         description={tAudit("description")}
       />

@@ -78,6 +78,7 @@ export default function AgentsPage() {
       <PageHeader
         title={tAgents("title")}
         description={tAgents("description")}
+        helpTooltip="فريق المبيعات والوكلاء — إدارة حسابات الوكلاء وتعيين الاستفسارات وتتبع الأداء."
         actions={
           <Button onClick={handleCreateClick} size="sm" variant="gold" className="gap-1.5">
             <PlusCircle className="h-4 w-4" />

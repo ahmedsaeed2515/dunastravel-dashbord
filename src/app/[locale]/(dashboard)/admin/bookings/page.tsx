@@ -16,6 +16,7 @@ export default function BookingsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="إدارة جميع حجوزات الجولات — يمكنك عرض تفاصيل الحجز، تعديل الحالة، تسجيل المدفوعات، وإصدار الفواتير."
         title={tBookings("title")}
         description={tBookings("description")}
         actions={

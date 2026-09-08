@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useMemo, useRef } from "react";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useParams } from "next/navigation";
 import {
@@ -736,6 +737,7 @@ export function TransportationServicesManager() {
               <h1 className="text-2xl font-black text-foreground flex items-center gap-2">
                 <span>{isAr ? "إدارة أسطول النقل السياحي الفاخر" : "Luxury Transportation & Fleet"}</span>
                 <Sparkles className="w-5 h-5 text-amber-500" />
+                <PageHelpTooltip description="إدارة خدمات وأسطول النقل — التحكم في الحافلات، السيارات الخاصة، الأسعار، وتعيين السائقين للجولات." />
               </h1>
               <p className="text-xs text-muted-foreground font-semibold">
                 {isAr

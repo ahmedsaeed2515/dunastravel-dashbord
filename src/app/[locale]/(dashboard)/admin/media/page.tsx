@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
@@ -284,6 +285,7 @@ export default function MediaPage() {
         <div>
           <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
             <span>{isAr ? "مكتبة الوسائط والصور" : "Media Library & Digital Assets"}</span>
+            <PageHelpTooltip description="مكتبة الوسائط — رفع وإدارة الصور والفيديوهات المستخدمة في الجولات والصفحات." />
             <Badge variant="outline" className="text-amber-500 font-mono border-amber-500/30 text-xs px-2.5 py-0.5">
               Cloudinary Pro
             </Badge>

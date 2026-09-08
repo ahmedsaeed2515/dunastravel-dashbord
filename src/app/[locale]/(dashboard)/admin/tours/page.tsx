@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import { useMemo, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
@@ -390,6 +391,7 @@ export default function ToursPage() {
               <h1 className="text-xl sm:text-2xl font-black text-foreground tracking-tight flex items-center gap-2">
                 <span>{isAr ? "إدارة الرحلات والترجمات (Trips & Translations Suite)" : "Trips & Translations Suite"}</span>
                 <Sparkles className="w-5 h-5 text-amber-500" />
+                <PageHelpTooltip description="إدارة كتالوج الجولات — إضافة جولات جديدة، تعديل الأسعار والمواعيد، والتحكم في مستوى التوفر." />
               </h1>
               <p className="mt-0.5 text-xs sm:text-sm text-muted-foreground font-semibold">
                 {isAr

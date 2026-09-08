@@ -14,6 +14,7 @@ export default function CommissionsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="إدارة العمولات — مراجعة العمولات المستحقة لوكالات السفر وتتبع حالة الدفع."
         title={tFinance("commissionsTitle")}
         description={tFinance("commissionsDesc")}
       />

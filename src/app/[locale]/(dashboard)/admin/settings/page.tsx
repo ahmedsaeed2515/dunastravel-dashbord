@@ -66,7 +66,8 @@ export default function SettingsPage() {
     <RequirePermission action="manage" resource="settings">
       <div className="space-y-6 pb-12 animate-in fade-in duration-300">
         <PageHeader
-          title={tSettings("title")}
+          helpTooltip="إعدادات النظام — تخصيص الإعدادات العامة للمنصة، العملات، والسياسات."
+        title={tSettings("title")}
           description={tSettings("description")}
         />
 

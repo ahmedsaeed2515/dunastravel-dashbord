@@ -31,6 +31,7 @@ export default function CompaniesPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="شركاء B2B ووكالات السفر — إدارة الشركات الشريكة وعمولاتهم وحجوزاتهم المرتبطة."
         title={tCompanies("title")}
         description={tCompanies("description")}
         actions={

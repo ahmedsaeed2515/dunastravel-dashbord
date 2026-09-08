@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import React, { useState, useEffect } from "react";
 import { useLocale, useTranslations } from "next-intl";
@@ -219,8 +220,9 @@ export default function AdminAiControlCenterPage() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground">
-                  {isAr ? "مركز إدارة الذكاء الاصطناعي" : "AI Management Center"}
+                <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                  <span>{isAr ? "مركز إدارة الذكاء الاصطناعي" : "AI Management Center"}</span>
+                  <PageHelpTooltip description="مركز قيادة الذكاء الاصطناعي — إدارة ومراقبة نماذج الذكاء الاصطناعي والمحادثات والوكلاء التفاعليين." />
                 </h1>
                 <Badge variant="outline" className="border-emerald-500/40 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-[10px] font-bold">
                   ● {isAr ? "جاهز للخدمة" : "Online"}

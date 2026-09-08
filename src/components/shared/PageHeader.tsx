@@ -3,6 +3,7 @@
 import React from "react";
 import { cn } from "@/lib/utils";
 import { Badge } from "@/components/ui/badge";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 export interface PageHeaderProps {
   title: string;
@@ -12,6 +13,7 @@ export interface PageHeaderProps {
   actions?: React.ReactNode;
   children?: React.ReactNode;
   className?: string;
+  helpTooltip?: string;
 }
 
 export function PageHeader({
@@ -22,6 +24,7 @@ export function PageHeader({
   actions,
   children,
   className,
+  helpTooltip,
 }: PageHeaderProps) {
   return (
     <div className={cn("flex flex-col gap-4 pb-6 border-b border-border/60 mb-6", className)}>
@@ -31,6 +34,7 @@ export function PageHeader({
             <h1 className="text-2xl font-bold tracking-tight text-foreground sm:text-3xl font-heading">
               {title}
             </h1>
+            {helpTooltip && <PageHelpTooltip description={helpTooltip} />}
             {badge !== undefined && badge !== null && (
               <Badge variant={badgeVariant} className="font-semibold text-xs px-2.5 py-0.5">
                 {badge}

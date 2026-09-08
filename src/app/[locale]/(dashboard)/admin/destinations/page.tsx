@@ -7,6 +7,7 @@ export default function DestinationsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="إدارة الوجهات السياحية — إضافة وتعديل المناطق والمدن المعروضة للعملاء."
         title="8 Destinations & Egypt Packages Suite"
         description="إدارة الواجهات السياحية الـ 8 الرئيسية، البانرات الديناميكية، باكدجات مصر المخصصة، ونقل الرحلات بنقرة واحدة."
       />

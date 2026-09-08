@@ -12,6 +12,7 @@ export default function FinanceDashboardPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="التقارير المالية — مراجعة الإيرادات، المدفوعات، المبالغ المستردة، والأداء المالي الإجمالي."
         title={tFinance("title")}
         description={tFinance("commissionsDesc")}
       />

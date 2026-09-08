@@ -3,6 +3,7 @@
 import { Clock, ShieldCheck, Activity, Database, Sparkles } from "lucide-react";
 import { useParams } from "next/navigation";
 import { DashboardFilters } from "../types";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 interface DashboardHeaderProps {
   filters?: DashboardFilters;
@@ -28,6 +29,7 @@ export function DashboardHeader({ filters, onFilterChange, onRefresh, isRefreshi
           <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl sm:text-3xl font-black tracking-tight text-foreground flex items-center gap-3">
               <span>{isAr ? "مركز الإدارة والعمليات التشغيلية" : "Executive & Operations Command Center"}</span>
+              <PageHelpTooltip description="لوحة التحكم الرئيسية — تعرض ملخصاً شاملاً للحجوزات والإيرادات والمؤشرات الحيوية للأعمال في الوقت الفعلي." />
             </h1>
             <div className="p-1.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-500 flex items-center justify-center">
               <Activity className="w-6 h-6 text-emerald-500 animate-pulse stroke-[2.2]" />

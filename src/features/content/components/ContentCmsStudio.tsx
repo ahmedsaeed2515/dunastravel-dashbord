@@ -1,4 +1,5 @@
 "use client";
+import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import React, { useState, useEffect, useMemo } from "react";
 import { useParams } from "next/navigation";
@@ -373,8 +374,9 @@ export function ContentCmsStudio() {
             </div>
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading">
-                  {isAr ? "استوديو إدارة المحتوى والصفحات" : "Content & CMS Studio"}
+                <h1 className="text-2xl font-bold tracking-tight text-foreground font-heading flex items-center gap-2">
+                  <span>{isAr ? "استوديو إدارة المحتوى والصفحات" : "Content & CMS Studio"}</span>
+                  <PageHelpTooltip description="إدارة وتعديل محتوى الموقع والصفحات الثابتة، الأسئلة الشائعة، وقسم من نحن." />
                 </h1>
                 <Badge
                   variant="outline"

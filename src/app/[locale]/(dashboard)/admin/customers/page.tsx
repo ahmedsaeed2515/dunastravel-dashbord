@@ -19,6 +19,7 @@ export default function CustomersCrmPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="قاعدة بيانات العملاء — عرض وإدارة بيانات جميع العملاء المسجلين وسجلات حجوزاتهم."
         title={tCustomers("title")}
         description={tCustomers("description")}
         actions={

@@ -76,6 +76,7 @@ export default function PromotionsPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="الكوبونات والعروض الترويجية — إنشاء وإدارة أكواد الخصم وتتبع استخدامها."
         title={tPromotions("title")}
         description={tPromotions("description")}
         actions={

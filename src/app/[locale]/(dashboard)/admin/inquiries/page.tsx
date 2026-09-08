@@ -10,6 +10,7 @@ export default function InquiriesPage() {
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       <PageHeader
+        helpTooltip="صندوق رسائل الفريق — استفسارات العملاء حول جولات مخصصة، ورسائل التواصل والتسعير."
         title={tInquiries("title")}
         description={tInquiries("description")}
       />
