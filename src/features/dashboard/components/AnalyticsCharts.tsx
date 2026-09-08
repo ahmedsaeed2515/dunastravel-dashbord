@@ -485,7 +485,7 @@ export function AnalyticsCharts({
       {/* 3. Main Split Section: Chart & Destination Breakdown */}
       <div className="grid gap-6 lg:grid-cols-12 pt-2">
         {/* Main Column: Bar Chart (8 cols) */}
-        <div className="lg:col-span-7 xl:col-span-8 p-5 rounded-2xl bg-muted/30 border border-border space-y-4">
+        <div className="lg:col-span-7 xl:col-span-8 p-4 sm:p-5 rounded-2xl bg-muted/30 border border-border space-y-4 min-w-0">
           <div className="flex items-center justify-between flex-wrap gap-2">
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
               <TrendingUp className="w-4 h-4 text-emerald-500" />
@@ -500,7 +500,7 @@ export function AnalyticsCharts({
           </div>
 
           {/* Bar Chart Container */}
-          <div className="relative h-64 sm:h-72 w-full pt-4">
+          <div className="relative h-64 sm:h-72 w-full pt-4 min-w-0 overflow-hidden">
             {isMounted ? (
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={chartData} margin={{ top: 25, right: 10, left: 10, bottom: 5 }}>

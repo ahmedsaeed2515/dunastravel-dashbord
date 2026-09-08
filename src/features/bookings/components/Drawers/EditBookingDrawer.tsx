@@ -143,7 +143,7 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-md md:w-[700px] md:max-w-2xl overflow-y-auto">
+      <SheetContent className="w-full max-w-[100vw] sm:w-135 sm:max-w-md md:w-175 md:max-w-2xl overflow-y-auto">
         <SheetHeader className="mb-6">
           <SheetTitle className="text-2xl font-bold flex items-center gap-2">
             Edit Booking {booking.referenceCode}

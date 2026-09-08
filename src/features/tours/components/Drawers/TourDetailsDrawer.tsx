@@ -56,7 +56,7 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="w-[400px] sm:w-[540px] sm:max-w-md md:w-[750px] md:max-w-3xl overflow-y-auto">
+      <SheetContent className="w-full max-w-[100vw] sm:w-135 sm:max-w-md md:w-187.5 md:max-w-3xl overflow-y-auto">
         <SheetHeader className="mb-6 space-y-4">
           <div className="flex justify-between items-start">
             <div>
@@ -217,7 +217,7 @@ export function TourDetailsDrawer({ tour, open, onOpenChange }: TourDetailsDrawe
                 <div className="relative border-l border-muted ml-3 space-y-6">
                   {tour.activityLogs.map((log: any, i: number) => (
                     <div key={log.id || i} className="relative pl-6">
-                      <div className="absolute w-3 h-3 bg-primary rounded-full -left-[6.5px] top-1.5" />
+                      <div className="absolute w-3 h-3 bg-primary rounded-full left-[-6.5px] top-1.5" />
                       <div className="font-medium text-sm">{log.action.replace(/_/g, ' ')}</div>
                       <div className="text-xs text-muted-foreground mt-0.5">{formatDateSafe(log.createdAt, "MMM do, yyyy h:mm a")}</div>
                     </div>

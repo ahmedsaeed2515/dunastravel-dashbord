@@ -34,7 +34,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
 
   return (
     <Card className="shadow-sm">
-      <CardHeader className="flex flex-row items-center justify-between">
+      <CardHeader className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div>
           <CardTitle className="text-base flex items-center gap-2">
             <CalendarCheck className="w-4 h-4 text-primary" /> {isAr ? "أحدث الحجوزات والعمليات" : "Operations Bookings Feed"}
@@ -43,7 +43,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
         </div>
 
         <Link href={`/${locale}/admin/bookings`}>
-          <Button variant="outline" size="xs" className="text-xs font-bold">{isAr ? "عرض كافة الحجوزات 📋" : "View All Bookings"}</Button>
+          <Button variant="outline" size="xs" className="text-xs font-bold shrink-0">{isAr ? "عرض كافة الحجوزات 📋" : "View All Bookings"}</Button>
         </Link>
       </CardHeader>
 
@@ -51,7 +51,8 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
         {bookingList.length === 0 ? (
           <div className="p-8 text-center text-xs text-muted-foreground">{isAr ? "لا توجد حجوزات مسجلة حديثاً." : "No recent bookings recorded."}</div>
         ) : (
-          <Table>
+          <div className="w-full overflow-x-auto custom-scrollbar">
+            <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>{isAr ? "المرجع" : "Reference"}</TableHead>
@@ -100,6 +101,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
               ))}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
     </Card>

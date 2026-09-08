@@ -83,7 +83,7 @@ export function ActionCenter({ alerts, isLoading }: ActionCenterProps) {
       </CardHeader>
       <CardContent className="p-4 divide-y">
         {alerts.map((alert) => (
-          <div key={alert.id} className="py-3 first:pt-0 last:pb-0 flex items-start justify-between gap-4">
+          <div key={alert.id} className="py-3 first:pt-0 last:pb-0 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <span className="font-bold text-sm text-foreground">{getLocalizedTitle(alert.title)}</span>

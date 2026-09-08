@@ -156,7 +156,7 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
         const Icon = card.icon;
         return (
           <Link key={idx} href={card.href} className="block group">
-            <Card className="p-5.5 bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl h-full flex flex-col justify-between">
+            <Card className="p-4 sm:p-5.5 bg-card border border-border/80 shadow-xs hover:shadow-xl hover:border-amber-500/40 hover:-translate-y-1 transition-all duration-300 rounded-2xl h-full flex flex-col justify-between">
               <div>
                 {/* Title */}
                 <div className="mb-2">
@@ -166,13 +166,13 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
                 </div>
 
                 {/* Middle Row: Value on Right + Icon on Left at exact same level */}
-                <div className="flex items-center justify-between gap-3 my-1">
-                  <div className="text-3xl sm:text-4xl font-black font-mono text-foreground tracking-tight">
+                <div className="flex items-center justify-between gap-2 my-1">
+                  <div className="text-2xl sm:text-3xl lg:text-4xl font-black font-mono text-foreground tracking-tight truncate">
                     {card.value}
                   </div>
 
-                  <div className={`p-3 rounded-2xl border ${card.iconBg} shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-xs flex items-center justify-center`}>
-                    <Icon className={`w-6 h-6 sm:w-7 sm:h-7 ${card.iconColor} stroke-[2.2]`} />
+                  <div className={`p-2.5 sm:p-3 rounded-2xl border ${card.iconBg} shrink-0 group-hover:scale-110 transition-transform duration-300 shadow-xs flex items-center justify-center`}>
+                    <Icon className={`w-5 h-5 sm:w-7 sm:h-7 ${card.iconColor} stroke-[2.2]`} />
                   </div>
                 </div>
               </div>

@@ -58,7 +58,7 @@ export function DashboardHeader({ filters, onFilterChange, onRefresh, isRefreshi
             <span>{isAr ? "نظام الإدارة المركزية" : "Centralized Enterprise Operations"}</span>
           </span>
         </div>
-        <div className="flex items-center gap-2 pt-2">
+        <div className="flex items-center gap-2 pt-2 flex-wrap sm:flex-nowrap">
           <select
             aria-label={isAr ? "فترة لوحة التحكم" : "Dashboard period"}
             value={filters?.preset ?? 'all'}

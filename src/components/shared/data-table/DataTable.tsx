@@ -89,7 +89,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className="space-y-4">
       <DataTableToolbar table={table} searchKey={searchKey} renderToolbarActions={renderToolbarActions} />
-      <div className="rounded-md border bg-card">
+      <div className="rounded-md border bg-card w-full overflow-x-auto custom-scrollbar">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

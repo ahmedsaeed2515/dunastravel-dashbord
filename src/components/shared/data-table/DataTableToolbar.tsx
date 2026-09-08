@@ -22,8 +22,8 @@ export function DataTableToolbar<TData>({
   const isFiltered = table.getState().columnFilters.length > 0;
 
   return (
-    <div className="flex items-center justify-between">
-      <div className="flex flex-1 items-center space-x-2 rtl:space-x-reverse">
+    <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 flex-wrap">
+      <div className="flex flex-1 flex-wrap items-center gap-2">
         {searchKey && (
           <Input
             aria-label={tCommon("searchTable")}
@@ -32,7 +32,7 @@ export function DataTableToolbar<TData>({
             onChange={(event) =>
               table.getColumn(searchKey)?.setFilterValue(event.target.value)
             }
-            className="h-8 w-[150px] lg:w-[250px]"
+            className="h-8 w-37.5 lg:w-62.5"
           />
         )}
         {renderToolbarActions && renderToolbarActions(table)}

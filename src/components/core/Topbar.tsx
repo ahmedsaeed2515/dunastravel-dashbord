@@ -94,14 +94,14 @@ export const Topbar = memo(function Topbar() {
     : "AD";
 
   return (
-    <header className="h-16 border-b border-border px-3 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card transition-colors duration-200">
+    <header className="h-16 border-b border-border px-2.5 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card transition-colors duration-200">
       {/* Left: 3-Lines Sidebar Toggle Button */}
-      <div className="flex items-center gap-2 sm:gap-4 shrink-0">
+      <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
         <SidebarTrigger />
       </div>
 
       {/* Right: Controls (Search, Theme, Language, Notifications, User Profile) */}
-      <div className="flex items-center gap-1.5 sm:gap-3">
+      <div className="flex items-center gap-1 sm:gap-2.5">
         {/* Desktop Search */}
         <button
           type="button"
@@ -122,7 +122,7 @@ export const Topbar = memo(function Topbar() {
         <Button
           variant="ghost"
           size="icon-sm"
-          className="sm:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700"
+          className="sm:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 p-1.5"
           onClick={() => {
             window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
           }}
@@ -135,29 +135,29 @@ export const Topbar = memo(function Topbar() {
         {/* Theme Toggle Button */}
         <button
           onClick={() => setTheme(isDark ? "light" : "dark")}
-          className="p-2 rounded-xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 dark:border-slate-800 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer shrink-0"
+          className="p-1.5 sm:p-2 rounded-xl bg-amber-500/10 dark:bg-slate-900 border border-amber-500/30 dark:border-slate-800 hover:border-amber-500/50 text-amber-600 dark:text-amber-400 transition-all flex items-center gap-1.5 text-xs font-bold cursor-pointer shrink-0"
           title={isDark ? "التحويل للوضع الفاتح (Light Mode)" : "التحويل للوضع الداكن (Dark Mode)"}
         >
           {isDark ? (
             <>
-              <Sun size={17} className="text-amber-400 animate-pulse" />
+              <Sun size={16} className="text-amber-400 animate-pulse" />
               <span className="hidden md:inline text-slate-200 text-[11px]">الوضع الفاتح</span>
             </>
           ) : (
             <>
-              <Moon size={17} className="text-indigo-600" />
+              <Moon size={16} className="text-indigo-600" />
               <span className="hidden md:inline text-slate-700 text-[11px]">الوضع الداكن</span>
             </>
           )}
         </button>
 
         {/* 5-Language Switcher */}
-        <div className="relative flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-1.5 sm:px-2 py-1 shrink-0 hover:border-amber-500/40 transition-colors">
-          <Languages size={15} className="text-amber-600 dark:text-amber-400 mx-0.5 sm:mx-1 shrink-0" />
+        <div className="relative flex items-center bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-1 sm:px-2 py-1 shrink-0 hover:border-amber-500/40 transition-colors">
+          <Languages size={14} className="text-amber-600 dark:text-amber-400 mx-0.5 sm:mx-1 shrink-0" />
           <select
             value={currentLocale}
             onChange={(e) => handleLanguageChange(e.target.value)}
-            className="bg-transparent text-[11px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-1 max-w-22.5 sm:max-w-none"
+            className="bg-transparent text-[10px] sm:text-xs font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer pr-0.5 max-w-20 sm:max-w-none"
           >
             {availableLocales.map((lang) => (
               <option key={lang.code} value={lang.code} className="bg-card text-foreground">
