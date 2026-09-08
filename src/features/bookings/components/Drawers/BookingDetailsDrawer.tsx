@@ -127,26 +127,44 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                 {isDetailLoading && <Loader2 className="w-3.5 h-3.5 animate-spin text-muted-foreground" />}
               </div>
               <SheetDescription className="mt-1 text-sm font-medium text-foreground">
-                {booking.tour?.titleJsonb
-                  ? (typeof booking.tour.titleJsonb === 'object' && 'en' in (booking.tour.titleJsonb as any)
-                      ? (booking.tour.titleJsonb as any).en
-                      : String(booking.tour.titleJsonb))
+                {booking.tour?.titleJsonb && typeof booking.tour.titleJsonb === "object"
+                  ? (booking.tour.titleJsonb as Record<string, string>)[locale] ||
+                    (booking.tour.titleJsonb as Record<string, string>)["en"] ||
+                    (booking.tour.titleJsonb as Record<string, string>)["ar"] ||
+                    booking.tourSlug
                   : (booking.tourNameEn || booking.tourSlug || "Tour")}
               </SheetDescription>
             </div>
 
             <div className="text-end flex flex-col items-end gap-1">
               <div className="text-2xl font-bold font-mono dir-ltr text-foreground">
-                {formatAmountSafe(booking.totalAmount, booking.currency)}
+                {parseFloat(String(booking.totalAmount || "0")) > 0 ? (
+                  formatAmountSafe(booking.totalAmount, booking.currency)
+                ) : (
+                  <span className="text-amber-500 text-lg font-sans font-bold">
+                    {locale === "ar" ? "حسب الطلب (On Request)" : "On Request"}
+                  </span>
+                )}
               </div>
               <div className="text-xs text-muted-foreground">
                 {tCommon("createdAt")}: {formatDateSafe(booking.createdAt, "MMM do, yyyy h:mm a")}
               </div>
-              <div className="flex items-center gap-1.5 mt-1">
+              <div className="flex items-center gap-1.5 mt-1 flex-wrap justify-end">
+                <Link href={`/${locale}/admin/bookings/${booking.referenceCode}`}>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1 h-7 text-xs border-border/80 hover:bg-accent cursor-pointer"
+                    title={locale === "ar" ? "فتح في صفحة مستقلة" : "Open in dedicated page"}
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    <span>{locale === "ar" ? "صفحة مستقلة" : "Full Page"}</span>
+                  </Button>
+                </Link>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="gap-1.5 h-7 text-xs border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold"
+                  className="gap-1.5 h-7 text-xs border-amber-500/40 text-amber-500 hover:bg-amber-500/10 font-bold cursor-pointer"
                   onClick={() => setInvoiceOpen(true)}
                 >
                   <Receipt className="w-3.5 h-3.5" />
@@ -156,7 +174,7 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                   <Button 
                     variant="outline" 
                     size="sm" 
-                    className="gap-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-7 text-xs"
+                    className="gap-1 border-emerald-500 text-emerald-600 hover:bg-emerald-50 h-7 text-xs cursor-pointer"
                     onClick={() => restoreBooking(booking.referenceCode)}
                     disabled={isRestoring}
                   >

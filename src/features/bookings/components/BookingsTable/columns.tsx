@@ -67,7 +67,14 @@ export function getColumns(
           <div className="flex flex-col gap-1">
             <div className="flex items-center gap-1.5 font-medium dir-ltr">
               <span title={`Language: ${b.language || 'en'}`} className="text-sm">{flag}</span>
-              <span className="font-semibold text-primary">{b.referenceCode}</span>
+              <button
+                type="button"
+                onClick={() => onView(b)}
+                className="font-semibold text-primary hover:underline cursor-pointer text-start"
+                title="View booking details"
+              >
+                {b.referenceCode}
+              </button>
             </div>
             {b.bookingType && b.bookingType !== "BOOKING" && (
               <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 w-fit">
@@ -181,7 +188,13 @@ export function getColumns(
         const balanceDue = Math.max(0, totalNum - paidNum);
         return (
           <div className="flex flex-col gap-0.5">
-            <span className="font-semibold text-foreground dir-ltr inline-block">{formatted}</span>
+            {totalNum > 0 ? (
+              <span className="font-semibold text-foreground dir-ltr inline-block">{formatted}</span>
+            ) : (
+              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20 w-fit">
+                On Request
+              </span>
+            )}
             {paidNum > 0 && (
               <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium dir-ltr">
                 Paid: ${paidNum.toFixed(2)}
