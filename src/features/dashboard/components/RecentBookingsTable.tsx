@@ -47,61 +47,104 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
         </Link>
       </CardHeader>
 
-      <CardContent>
+      <CardContent className="p-3 sm:p-6">
         {bookingList.length === 0 ? (
           <div className="p-8 text-center text-xs text-muted-foreground">{isAr ? "لا توجد حجوزات مسجلة حديثاً." : "No recent bookings recorded."}</div>
         ) : (
-          <div className="w-full overflow-x-auto custom-scrollbar">
-            <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{isAr ? "المرجع" : "Reference"}</TableHead>
-                <TableHead>{isAr ? "العميل" : "Customer"}</TableHead>
-                <TableHead>{isAr ? "الرحلة" : "Tour"}</TableHead>
-                <TableHead>{isAr ? "تاريخ السفر" : "Travel Date"}</TableHead>
-                <TableHead>{isAr ? "المسافرون" : "Travelers"}</TableHead>
-                <TableHead>{isAr ? "الإجمالي" : "Total (USD)"}</TableHead>
-                <TableHead>{isAr ? "الحالة" : "Status"}</TableHead>
-                <TableHead className="text-right">{isAr ? "الإجراء" : "Action"}</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
+          <>
+            {/* Mobile View: Cards Layout for Small Screens */}
+            <div className="space-y-3 block sm:hidden">
               {bookingList.map((b) => (
-                <TableRow key={b.id}>
-                  <TableCell className="font-mono text-xs font-bold text-primary">
-                    <Link href={`/${locale}/admin/bookings/${b.referenceCode}`} className="hover:underline">
+                <div key={b.id} className="p-3.5 rounded-xl border border-border/80 bg-muted/30 space-y-2.5 shadow-xs">
+                  <div className="flex items-center justify-between gap-2 border-b border-border/60 pb-2">
+                    <Link href={`/${locale}/admin/bookings/${b.referenceCode}`} className="font-mono text-xs font-bold text-primary hover:underline">
                       {b.referenceCode}
                     </Link>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-xs font-semibold">{b.customerName}</div>
-                    <div className="text-[10px] text-muted-foreground">{b.customerEmail}</div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="text-xs font-medium truncate max-w-50">
-                      {b.tourTitleJsonb?.[locale] || b.tourTitleJsonb?.en || b.tourSlug}
-                    </div>
-                  </TableCell>
-                  <TableCell className="text-xs font-mono">
-                    {b.arrivalDate ? new Date(b.arrivalDate).toLocaleDateString() : "—"}
-                  </TableCell>
-                  <TableCell className="text-xs font-semibold text-center">{b.travelersCount}</TableCell>
-                  <TableCell className="text-xs font-mono font-bold">${b.totalAmountUsd}</TableCell>
-                  <TableCell>
                     <StatusBadge status={b.status} />
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <Link href={`/${locale}/admin/bookings/${b.referenceCode}`}>
-                      <Button size="icon" variant="ghost" className="h-7 w-7" title={isAr ? "عرض تفاصيل الحجز" : "View Booking Details"}>
-                        <Eye className="w-3.5 h-3.5" />
-                      </Button>
-                    </Link>
-                  </TableCell>
-                </TableRow>
+                  </div>
+
+                  <div className="space-y-1">
+                    <div className="text-xs font-bold text-foreground">{b.customerName}</div>
+                    <div className="text-[10px] text-muted-foreground">{b.customerEmail}</div>
+                  </div>
+
+                  <div className="text-xs font-medium text-muted-foreground truncate">
+                    <span>{isAr ? "الرحلة: " : "Tour: "}</span>
+                    <span className="text-foreground font-semibold">
+                      {b.tourTitleJsonb?.[locale] || b.tourTitleJsonb?.en || b.tourSlug}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between pt-1 text-xs border-t border-border/40">
+                    <div className="font-mono text-muted-foreground">
+                      {b.arrivalDate ? new Date(b.arrivalDate).toLocaleDateString() : "—"} ({b.travelersCount} {isAr ? "مسافر" : "pax"})
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono font-bold text-foreground text-sm">${b.totalAmountUsd}</span>
+                      <Link href={`/${locale}/admin/bookings/${b.referenceCode}`}>
+                        <Button size="icon-xs" variant="outline" className="h-7 w-7 rounded-lg" title={isAr ? "عرض التفاصيل" : "View Details"}>
+                          <Eye className="w-3.5 h-3.5" />
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                </div>
               ))}
-            </TableBody>
-          </Table>
-          </div>
+            </div>
+
+            {/* Desktop & Tablet View: Table with Horizontal Scroll Support */}
+            <div className="hidden sm:block w-full overflow-x-auto custom-scrollbar">
+              <Table className="min-w-[680px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>{isAr ? "المرجع" : "Reference"}</TableHead>
+                    <TableHead>{isAr ? "العميل" : "Customer"}</TableHead>
+                    <TableHead>{isAr ? "الرحلة" : "Tour"}</TableHead>
+                    <TableHead>{isAr ? "تاريخ السفر" : "Travel Date"}</TableHead>
+                    <TableHead>{isAr ? "المسافرون" : "Travelers"}</TableHead>
+                    <TableHead>{isAr ? "الإجمالي" : "Total (USD)"}</TableHead>
+                    <TableHead>{isAr ? "الحالة" : "Status"}</TableHead>
+                    <TableHead className="text-right">{isAr ? "الإجراء" : "Action"}</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bookingList.map((b) => (
+                    <TableRow key={b.id}>
+                      <TableCell className="font-mono text-xs font-bold text-primary">
+                        <Link href={`/${locale}/admin/bookings/${b.referenceCode}`} className="hover:underline">
+                          {b.referenceCode}
+                        </Link>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-semibold">{b.customerName}</div>
+                        <div className="text-[10px] text-muted-foreground">{b.customerEmail}</div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="text-xs font-medium truncate max-w-50">
+                          {b.tourTitleJsonb?.[locale] || b.tourTitleJsonb?.en || b.tourSlug}
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-xs font-mono">
+                        {b.arrivalDate ? new Date(b.arrivalDate).toLocaleDateString() : "—"}
+                      </TableCell>
+                      <TableCell className="text-xs font-semibold text-center">{b.travelersCount}</TableCell>
+                      <TableCell className="text-xs font-mono font-bold">${b.totalAmountUsd}</TableCell>
+                      <TableCell>
+                        <StatusBadge status={b.status} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Link href={`/${locale}/admin/bookings/${b.referenceCode}`}>
+                          <Button size="icon" variant="ghost" className="h-7 w-7" title={isAr ? "عرض تفاصيل الحجز" : "View Booking Details"}>
+                            <Eye className="w-3.5 h-3.5" />
+                          </Button>
+                        </Link>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          </>
         )}
       </CardContent>
     </Card>
