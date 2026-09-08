@@ -78,7 +78,7 @@ export const AppSidebar = memo(function AppSidebar() {
   const pathname = usePathname();
   const tNav = useTranslations("navigation");
   const { user, logout } = useAuth();
-  const { isB2B, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
+  const { isB2B, isAgent, isCompany, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
   const { isMobile, setOpenMobile } = useSidebar();
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -116,7 +116,23 @@ export const AppSidebar = memo(function AppSidebar() {
 
   // Define navigation sections
   const sections: NavSectionConfig[] = useMemo(() => {
-    if (isB2B && !isAdmin) {
+    if (isAgent && !isAdmin) {
+      return [
+        {
+          id: "agent-operations",
+          title: tNav("myOperations") || (isAr ? "عمليات الوكيل" : "Agent Operations"),
+          icon: Briefcase,
+          items: [
+            { href: adminRoutes.dashboard, icon: LayoutDashboard, label: tNav("dashboard"), exact: true },
+            { href: adminRoutes.inquiries, icon: HelpCircle, label: tNav("inquiries") || (isAr ? "استفسارات الرحلات" : "Inquiries"), badge: isAr ? "جديد" : "New", badgeColor: "amber" },
+            { href: adminRoutes.communications, icon: MessageSquare, label: tNav("communications") || (isAr ? "المحادثات والرسائل" : "Communications") },
+            { href: adminRoutes.bookings, icon: CalendarCheck, label: tNav("bookings") || (isAr ? "الحجوزات" : "Bookings") },
+          ],
+        },
+      ];
+    }
+
+    if (isCompany && !isAdmin) {
       return [
         {
           id: "b2b-operations",
@@ -124,9 +140,9 @@ export const AppSidebar = memo(function AppSidebar() {
           icon: Briefcase,
           items: [
             { href: adminRoutes.dashboard, icon: LayoutDashboard, label: tNav("dashboard"), exact: true },
-            { href: adminRoutes.bookings, icon: CalendarCheck, label: tNav("myBookings") },
-            { href: adminRoutes.finance.commissions, icon: Briefcase, label: tNav("myCommissions") },
-            { href: adminRoutes.finance.wallet, icon: Wallet, label: tNav("myWallet") },
+            { href: adminRoutes.bookings, icon: CalendarCheck, label: tNav("myBookings") || (isAr ? "حجوزاتي" : "My Bookings") },
+            { href: adminRoutes.finance.commissions, icon: Briefcase, label: tNav("myCommissions") || (isAr ? "عمولاتي" : "My Commissions") },
+            { href: adminRoutes.finance.wallet, icon: Wallet, label: tNav("myWallet") || (isAr ? "محفظتي" : "My Wallet") },
           ],
         },
       ];

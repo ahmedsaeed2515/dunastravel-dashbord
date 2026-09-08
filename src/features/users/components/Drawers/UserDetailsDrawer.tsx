@@ -47,6 +47,7 @@ import {
   Edit,
 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { usePermissions } from "@/hooks/usePermissions";
 
 interface UserDetailsDrawerProps {
   user: User | null;
@@ -85,6 +86,7 @@ export function UserDetailsDrawer({
 }: UserDetailsDrawerProps) {
   const tUsers = useTranslations("users");
   const tCommon = useTranslations("common");
+  const { isSuperAdmin, isAdmin } = usePermissions();
 
   const userId = user?.id;
   const { data: detailData, isLoading } = useUserMonitoringDetail(open && userId ? userId : null);
@@ -219,7 +221,7 @@ export function UserDetailsDrawer({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 self-end sm:self-center">
-                {onEdit && (
+                {onEdit && (isSuperAdmin || (isAdmin && fullUser.role !== "SUPER_ADMIN")) && (
                   <Button
                     size="sm"
                     variant="outline"
@@ -231,27 +233,29 @@ export function UserDetailsDrawer({
                   </Button>
                 )}
 
-                {fullUser.status === "SUSPENDED" ? (
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => activateUser(fullUser.id)}
-                    disabled={isActivating}
-                    className="rounded-xl font-bold text-xs gap-1.5 h-9 text-emerald-600 border-emerald-500/40"
-                  >
-                    <ShieldCheck className="h-4 w-4" />
-                    <span>تفعيل الحساب</span>
-                  </Button>
-                ) : (
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    onClick={() => setShowSuspendDialog(true)}
-                    className="rounded-xl font-bold text-xs gap-1.5 h-9"
-                  >
-                    <ShieldAlert className="h-4 w-4" />
-                    <span>إيقاف الحساب</span>
-                  </Button>
+                {(isSuperAdmin || (isAdmin && fullUser.role !== "SUPER_ADMIN")) && (
+                  fullUser.status === "SUSPENDED" ? (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => activateUser(fullUser.id)}
+                      disabled={isActivating}
+                      className="rounded-xl font-bold text-xs gap-1.5 h-9 text-emerald-600 border-emerald-500/40"
+                    >
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>تفعيل الحساب</span>
+                    </Button>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      onClick={() => setShowSuspendDialog(true)}
+                      className="rounded-xl font-bold text-xs gap-1.5 h-9"
+                    >
+                      <ShieldAlert className="h-4 w-4" />
+                      <span>إيقاف الحساب</span>
+                    </Button>
+                  )
                 )}
               </div>
             </div>

@@ -16,5 +16,10 @@ describe('permission registry', () => {
     expect(hasServerAlignedPermission('AGENT', 'create', 'bookings')).toBe(true);
     expect(hasServerAlignedPermission('AGENT', 'delete', 'bookings')).toBe(false);
     expect(hasServerAlignedPermission('COMPANY', 'read', 'wallet')).toBe(true);
+    expect(hasServerAlignedPermission('AGENT', 'read', 'inquiries')).toBe(true);
+    expect(hasServerAlignedPermission('AGENT', 'update', 'inquiries')).toBe(true);
+    expect(hasServerAlignedPermission('AGENT', 'read', 'communications')).toBe(true);
+    expect(hasServerAlignedPermission('AGENT', 'read', 'wallet')).toBe(false);
+    expect(hasServerAlignedPermission('COMPANY', 'read', 'inquiries')).toBe(false);
   });
 });
