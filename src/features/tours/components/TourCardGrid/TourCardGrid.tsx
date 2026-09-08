@@ -135,10 +135,12 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
               </div>
 
               {/* Price Tag */}
-              <div className="absolute bottom-3 right-3 text-right bg-background/90 backdrop-blur-md px-3 py-1 rounded-xl border shadow-sm">
-                <span className="text-xs text-muted-foreground block text-[10px]">{tTours("priceFrom")}</span>
-                <span className="font-mono font-extrabold text-foreground text-sm">{formattedPrice}</span>
-              </div>
+              {amount > 0 && (
+                <div className="absolute bottom-3 right-3 text-right bg-background/90 backdrop-blur-md px-3 py-1 rounded-xl border shadow-sm">
+                  <span className="text-xs text-muted-foreground block text-[10px]">{tTours("priceFrom")}</span>
+                  <span className="font-mono font-extrabold text-foreground text-sm">{formattedPrice}</span>
+                </div>
+              )}
             </div>
 
             {/* Content Body */}

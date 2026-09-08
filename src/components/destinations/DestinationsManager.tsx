@@ -954,18 +954,22 @@ export const DestinationsManager: React.FC = React.memo(() => {
                                     </span>
                                   )}
 
-                                  <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-950/80 text-amber-400 backdrop-blur-md border border-amber-400/20 font-mono">
-                                    ${trip.price}
-                                  </span>
+                                  {Boolean(trip.price && trip.price > 0) && (
+                                    <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-950/80 text-amber-400 backdrop-blur-md border border-amber-400/20 font-mono">
+                                      ${trip.price}
+                                    </span>
+                                  )}
                                 </div>
 
                                 <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-slate-200">
                                   <span className="flex items-center gap-1 font-bold">
                                     <Calendar className="w-3.5 h-3.5 text-amber-400" /> {trip.duration}
                                   </span>
-                                  <span className="flex items-center gap-1 font-bold text-amber-400">
-                                    <Star className="w-3.5 h-3.5 fill-amber-400" /> {trip.rating} ({trip.reviewCount})
-                                  </span>
+                                  {Boolean(trip.reviewCount && trip.reviewCount > 0) && (
+                                    <span className="flex items-center gap-1 font-bold text-amber-400">
+                                      <Star className="w-3.5 h-3.5 fill-amber-400" /> {trip.rating} ({trip.reviewCount})
+                                    </span>
+                                  )}
                                 </div>
                               </div>
 
@@ -1319,18 +1323,22 @@ export const DestinationsManager: React.FC = React.memo(() => {
                             </span>
                           )}
 
-                          <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-950/80 text-amber-400 backdrop-blur-md border border-amber-400/20 font-mono">
-                            ${trip.price}
-                          </span>
+                          {Boolean(trip.price && trip.price > 0) && (
+                            <span className="px-2.5 py-1 rounded-full text-[10px] font-black bg-slate-950/80 text-amber-400 backdrop-blur-md border border-amber-400/20 font-mono">
+                              ${trip.price}
+                            </span>
+                          )}
                         </div>
 
                         <div className="absolute bottom-3 right-3 left-3 flex items-center justify-between text-xs text-slate-200">
                           <span className="flex items-center gap-1 font-bold">
                             <Calendar className="w-3.5 h-3.5 text-amber-400" /> {trip.duration}
                           </span>
-                          <span className="flex items-center gap-1 font-bold text-amber-400">
-                            <Star className="w-3.5 h-3.5 fill-amber-400" /> {trip.rating} ({trip.reviewCount})
-                          </span>
+                          {Boolean(trip.reviewCount && trip.reviewCount > 0) && (
+                            <span className="flex items-center gap-1 font-bold text-amber-400">
+                              <Star className="w-3.5 h-3.5 fill-amber-400" /> {trip.rating} ({trip.reviewCount})
+                            </span>
+                          )}
                         </div>
                       </div>
 

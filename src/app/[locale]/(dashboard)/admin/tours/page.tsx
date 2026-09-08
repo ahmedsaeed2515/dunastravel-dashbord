@@ -713,9 +713,11 @@ export default function ToursPage() {
                               <Flame className="w-3 h-3 fill-white" /> {isAr ? "الأكثر إقبالاً 🔥" : "Popular 🔥"}
                             </span>
                           )}
-                          <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-950/85 text-amber-400 backdrop-blur-md border border-amber-400/30 shadow-md">
-                            ${price.toLocaleString()} USD
-                          </span>
+                          {price > 0 && (
+                            <span className="px-3 py-1 rounded-full text-xs font-black bg-slate-950/85 text-amber-400 backdrop-blur-md border border-amber-400/30 shadow-md">
+                              ${price.toLocaleString()} USD
+                            </span>
+                          )}
                         </div>
                       </div>
 
@@ -731,9 +733,11 @@ export default function ToursPage() {
                         <span className="flex items-center gap-1 font-bold">
                           <Calendar className="w-3.5 h-3.5 text-amber-400" /> {duration}
                         </span>
-                        <span className="flex items-center gap-1 font-bold text-amber-400">
-                          <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount ?? 0} {isAr ? "تقييم" : "reviews"}
-                        </span>
+                        {Boolean(tour.reviewCount && tour.reviewCount > 0) && (
+                          <span className="flex items-center gap-1 font-bold text-amber-400">
+                            <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount} {isAr ? "تقييم" : "reviews"}
+                          </span>
+                        )}
                       </div>
                     </div>
 
