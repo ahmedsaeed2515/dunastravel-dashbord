@@ -28,7 +28,7 @@ export const communicationsApi = {
   },
 
   getLogs: async (filters: NotificationDeliveryLogQueryFilters): Promise<PaginatedResponse<NotificationDeliveryLog>> => {
-    return apiClient.get<PaginatedResponse<NotificationDeliveryLog>, PaginatedResponse<NotificationDeliveryLog>>("/admin/notification-logs", { params: filters });
+    return apiClient.get<PaginatedResponse<NotificationDeliveryLog>, PaginatedResponse<NotificationDeliveryLog>>("/admin/communications/logs", { params: filters });
   },
 
   retryNotification: async (id: string): Promise<{ success: boolean; message: string }> => {

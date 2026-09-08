@@ -21,26 +21,31 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
   {
     accessorKey: "recipientEmail",
     header: "البريد الإلكتروني",
-    cell: ({ row }) => (
-      <div className="font-medium dir-ltr text-start">{row.original.recipientEmail}</div>
-    ),
+    cell: ({ row }) => {
+      const email = row.original.recipientEmail || (row.original as any).recipient || "—";
+      return <div className="font-medium dir-ltr text-start">{email}</div>;
+    },
   },
   {
     accessorKey: "notificationType",
     header: "نوع الإشعار والهدف",
     cell: ({ row }) => {
-      const type = row.original.notificationType;
+      const rawType = row.original.notificationType || (row.original as any).subject || "";
+      const type = typeof rawType === "string" ? rawType : "";
       const typeLabels: Record<string, string> = {
         CUSTOMER_ACKNOWLEDGMENT: "تأكيد طلب العميل",
         INTERNAL_SALES_ALERT: "تنبيه مبيعات داخلي",
         USER_VERIFICATION: "رمز التحقق من الحساب",
         PASSWORD_RESET: "استعادة كلمة المرور",
+        INQUIRY_RECEIVED: "استلام استفسار جديد",
+        BOOKING_CONFIRMED: "تأكيد حجز",
+        PAYMENT_SUCCESS: "نجاح عملية الدفع",
       };
-      const label = typeLabels[type] || type.replace(/_/g, " ");
+      const label = (type && typeLabels[type]) || (type ? type.replace(/_/g, " ") : "إشعار نظام");
       return (
         <div className="flex flex-col">
           <span className="text-xs font-bold text-foreground">{label}</span>
-          <span className="text-[10px] text-muted-foreground font-mono">{type}</span>
+          {type && <span className="text-[10px] text-muted-foreground font-mono">{type}</span>}
         </div>
       );
     },
@@ -50,7 +55,7 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     header: "المرجع",
     cell: ({ row }) => (
       <Badge variant="outline" className="font-mono text-xs dir-ltr inline-block">
-        {row.original.originReferenceCode}
+        {row.original.originReferenceCode || "—"}
       </Badge>
     ),
   },
@@ -58,7 +63,7 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     accessorKey: "status",
     header: "الحالة التشغيلية",
     cell: ({ row }) => {
-      const status = row.original.status;
+      const status = row.original.status || "UNKNOWN";
       const reason = row.original.failureReason;
       return (
         <div className="flex flex-col gap-1">
@@ -78,12 +83,15 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
   {
     accessorKey: "attempts",
     header: "المحاولات",
-    cell: ({ row }) => (
-      <div className="text-xs dir-ltr inline-flex items-center gap-1 font-mono font-bold">
-        <span>{row.original.attempts} / 3</span>
-        {row.original.attempts >= 3 && <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />}
-      </div>
-    ),
+    cell: ({ row }) => {
+      const attempts = typeof row.original.attempts === "number" ? row.original.attempts : 0;
+      return (
+        <div className="text-xs dir-ltr inline-flex items-center gap-1 font-mono font-bold">
+          <span>{attempts} / 3</span>
+          {attempts >= 3 && <AlertTriangle className="h-3.5 w-3.5 text-rose-500" />}
+        </div>
+      );
+    },
   },
   {
     accessorKey: "createdAt",
@@ -91,10 +99,12 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
     cell: ({ row }) => {
       let formatted = "—";
       if (row.original.createdAt) {
-        const d = new Date(row.original.createdAt);
-        if (!isNaN(d.getTime())) {
-          try { formatted = format(d, "dd/MM/yyyy HH:mm"); } catch {}
-        }
+        try {
+          const d = new Date(row.original.createdAt);
+          if (!isNaN(d.getTime())) {
+            formatted = format(d, "dd/MM/yyyy HH:mm");
+          }
+        } catch {}
       }
       return <div className="text-muted-foreground text-xs font-mono dir-ltr text-start">{formatted}</div>;
     },
@@ -111,6 +121,8 @@ export const columns: ColumnDef<NotificationDeliveryLog>[] = [
 function ActionCell({ log }: { log: NotificationDeliveryLog }) {
   const retryMutation = useRetryNotification();
   const tCommon = useTranslations("common");
+
+  if (!log?.id) return null;
 
   return (
     <DropdownMenu>

@@ -32,14 +32,15 @@ export function DeliveryLogsTable({
   currentPage = 1,
   onPageChange,
 }: DeliveryLogsTableProps) {
+  const safeData = Array.isArray(data) ? data : [];
   const table = useReactTable({
-    data,
+    data: safeData,
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
 
-  const totalPages = Math.max(1, pageCount);
-  const page = Math.min(Math.max(1, currentPage), totalPages);
+  const totalPages = Math.max(1, pageCount || 1);
+  const page = Math.min(Math.max(1, currentPage || 1), totalPages);
 
   return (
     <div className="w-full">
