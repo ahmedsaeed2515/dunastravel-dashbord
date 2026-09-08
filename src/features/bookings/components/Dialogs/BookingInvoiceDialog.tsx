@@ -55,10 +55,10 @@ export function BookingInvoiceDialog({
         const total = invoice?.total ? parseFloat(String(invoice.total)) : 0;
         const subtotal = invoice?.subtotal
           ? parseFloat(String(invoice.subtotal))
-          : total / 1.14;
+          : total;
         const tax = invoice?.tax
           ? parseFloat(String(invoice.tax))
-          : total - subtotal;
+          : 0;
         const bInfo = invoice?.booking?.billingInfo || invoice?.snapshotJsonb?.billingRecipient || {};
         const url = await generateEtaQrDataUrl({
           sellerName: "Dunas Travel (DMC Lic. #1882)",
@@ -118,9 +118,9 @@ export function BookingInvoiceDialog({
   const tour = b?.tour || {};
   const payment = invoice?.payment || b?.payments?.[0];
 
-  const subtotal = invoice?.subtotal ? parseFloat(String(invoice.subtotal)) : 0;
-  const tax = invoice?.tax ? parseFloat(String(invoice.tax)) : 0;
   const total = invoice?.total ? parseFloat(String(invoice.total)) : 0;
+  const subtotal = invoice?.subtotal ? parseFloat(String(invoice.subtotal)) : total;
+  const tax = invoice?.tax ? parseFloat(String(invoice.tax)) : 0;
   const paid = b?.paidAmountUsd ? parseFloat(String(b.paidAmountUsd)) : (payment?.status === "SUCCEEDED" ? total : 0);
   const balance = Math.max(0, total - paid);
 
@@ -345,10 +345,17 @@ export function BookingInvoiceDialog({
                       <span>المجموع الفرعي (Subtotal):</span>
                       <span className="font-mono">${subtotal.toFixed(2)}</span>
                     </div>
-                    <div className="flex justify-between text-muted-foreground print:text-neutral-600">
-                      <span>الضريبة المعتمدة (Tax):</span>
-                      <span className="font-mono">${tax.toFixed(2)}</span>
-                    </div>
+                    {tax > 0 ? (
+                      <div className="flex justify-between text-muted-foreground print:text-neutral-600">
+                        <span>الضريبة المعتمدة (Tax):</span>
+                        <span className="font-mono">${tax.toFixed(2)}</span>
+                      </div>
+                    ) : (
+                      <div className="flex justify-between text-muted-foreground print:text-neutral-600">
+                        <span>الضريبة (VAT):</span>
+                        <span className="font-mono text-emerald-600 font-medium">شاملة (Included)</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold text-sm text-foreground print:text-black pt-1 border-t border-border/60 print:border-neutral-300">
                       <span className="text-amber-500 print:text-black">الإجمالي الكلي (Total):</span>
                       <span className="font-mono text-base text-amber-500 print:text-black">${total.toFixed(2)}</span>

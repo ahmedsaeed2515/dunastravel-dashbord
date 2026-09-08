@@ -36,7 +36,6 @@ import { AddNoteDialog } from "../Dialogs/AddNoteDialog";
 import { AddAttachmentDialog } from "../Dialogs/AddAttachmentDialog";
 import { EditPassengersDialog } from "../Dialogs/EditPassengersDialog";
 import { RecordPaymentDialog } from "../Dialogs/RecordPaymentDialog";
-import { RefundPaymentDialog } from "../Dialogs/RefundPaymentDialog";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -97,7 +96,6 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
   const [passengerOpen, setPassengerOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
-  const [refundPaymentData, setRefundPaymentData] = useState<{ id: string; amount: number; currency: string } | null>(null);
 
   if (!booking) return null;
 
@@ -640,20 +638,6 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
                         <div className={`font-mono text-base font-bold dir-ltr ${p.isRefund ? 'text-red-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
                           {p.isRefund ? '-' : '+'}{p.currency || 'USD'} {p.amount}
                         </div>
-                        {isSuperAdmin && !p.isRefund && (p.status === 'CAPTURED' || p.status === 'COMPLETED' || p.status === 'PAID') && (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => setRefundPaymentData({
-                              id: p.id,
-                              amount: typeof p.amount === 'number' ? p.amount : parseFloat(p.amount || '0'),
-                              currency: p.currency || 'USD',
-                            })}
-                            className="text-xs h-7 px-2.5 rounded-lg border-red-500/30 text-red-600 hover:bg-red-500/10 dark:text-red-400 font-bold"
-                          >
-                            استرداد
-                          </Button>
-                        )}
                       </div>
                     </div>
                   ))
@@ -767,16 +751,6 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
       />
-      {refundPaymentData && (
-        <RefundPaymentDialog
-          paymentId={refundPaymentData.id}
-          referenceCode={booking.referenceCode}
-          originalAmount={refundPaymentData.amount}
-          currency={refundPaymentData.currency}
-          isOpen={Boolean(refundPaymentData)}
-          onClose={() => setRefundPaymentData(null)}
-        />
-      )}
       <BookingInvoiceDialog
         open={invoiceOpen}
         onOpenChange={setInvoiceOpen}

@@ -1,20 +1,10 @@
 "use client";
 
 import { useState } from "react";
-import { AlertTriangle, CreditCard, Download, RefreshCw, RotateCcw, Search } from "lucide-react";
+import { AlertTriangle, CreditCard, Download, RefreshCw, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { usePayments, useReconciliationSummary, useRefundPayment } from "../hooks/useFinance";
+import { usePayments, useReconciliationSummary } from "../hooks/useFinance";
 import type { PaymentRecord } from "../types";
 import { toast } from "sonner";
 
@@ -33,9 +23,6 @@ export function PaymentsView() {
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
-  const [refundTarget, setRefundTarget] = useState<PaymentRecord | null>(null);
-  const [refundAmount, setRefundAmount] = useState("");
-  const [refundReason, setRefundReason] = useState("");
   const limit = 25;
 
   const { data: response, isLoading, refetch, isFetching } = usePayments({
@@ -45,44 +32,9 @@ export function PaymentsView() {
     status: status || undefined,
   });
   const { data: reconciliation } = useReconciliationSummary();
-  const refundMutation = useRefundPayment();
   const payments = response?.data ?? [];
   const meta = response?.meta;
   const totalPages = Math.max(1, meta?.totalPages || 1);
-
-  const openRefund = (payment: PaymentRecord) => {
-    const remaining = Math.max(
-      0,
-      Number(payment.amount) - Number(payment.refundedAmount || 0),
-    );
-    setRefundTarget(payment);
-    setRefundAmount(remaining.toFixed(2));
-    setRefundReason("");
-  };
-
-  const submitRefund = async () => {
-    if (!refundTarget) return;
-    const amount = Number(refundAmount);
-    const remaining =
-      Number(refundTarget.amount) - Number(refundTarget.refundedAmount || 0);
-    if (!Number.isFinite(amount) || amount <= 0 || amount > remaining) {
-      toast.error(
-        `يجب أن يكون مبلغ الاسترجاع بين 0.01 و ${remaining.toFixed(2)} ${refundTarget.currency}`,
-      );
-      return;
-    }
-    if (refundReason.trim().length < 3) {
-      toast.error("يرجى إدخال سبب الاسترجاع (3 أحرف على الأقل)");
-      return;
-    }
-    await refundMutation.mutateAsync({
-      paymentId: refundTarget.id,
-      amount,
-      reason: refundReason.trim(),
-      idempotencyKey: `refund:${crypto.randomUUID()}`,
-    });
-    setRefundTarget(null);
-  };
 
   const handleExportCsv = () => {
     if (!payments.length) {
@@ -130,7 +82,7 @@ export function PaymentsView() {
       document.body.removeChild(link);
       URL.revokeObjectURL(url);
       toast.success("تم تصدير تقرير المدفوعات بنجاح بصيغة CSV");
-    } catch (err: any) {
+    } catch {
       toast.error("حدث خطأ أثناء تصدير التقرير");
     }
   };
@@ -289,16 +241,6 @@ export function PaymentsView() {
                   ) : (
                     "—"
                   )}
-                  {payment.status === "CAPTURED" ? (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => openRefund(payment)}
-                      className="mt-2 rounded-xl gap-1.5 border-red-500/30 text-red-600 hover:bg-red-500/10"
-                    >
-                      <RotateCcw className="h-3.5 w-3.5" /> Refund
-                    </Button>
-                  ) : null}
                 </td>
               </tr>
             ))}
@@ -335,48 +277,6 @@ export function PaymentsView() {
           </Button>
         </div>
       </div>
-
-      <Dialog open={Boolean(refundTarget)} onOpenChange={(open) => !open && setRefundTarget(null)}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Refund through PayLink</DialogTitle>
-            <DialogDescription>
-              This sends a real provider refund. A smaller amount creates a partial refund; the full remaining amount closes the payment.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="refund-amount">Amount ({refundTarget?.currency})</Label>
-              <Input
-                id="refund-amount"
-                type="number"
-                min="0.01"
-                step="0.01"
-                value={refundAmount}
-                onChange={(event) => setRefundAmount(event.target.value)}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="refund-reason">Reason</Label>
-              <Textarea
-                id="refund-reason"
-                maxLength={500}
-                value={refundReason}
-                onChange={(event) => setRefundReason(event.target.value)}
-                placeholder="Customer-approved cancellation or adjustment"
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setRefundTarget(null)} disabled={refundMutation.isPending}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={submitRefund} disabled={refundMutation.isPending}>
-              {refundMutation.isPending ? "Processing…" : "Confirm provider refund"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </section>
   );
 }
