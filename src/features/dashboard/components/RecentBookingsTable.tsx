@@ -94,7 +94,7 @@ export function RecentBookingsTable({ bookings, isLoading }: RecentBookingsTable
 
             {/* Desktop & Tablet View: Table with Horizontal Scroll Support */}
             <div className="hidden sm:block w-full overflow-x-auto custom-scrollbar">
-              <Table className="min-w-[680px]">
+              <Table className="min-w-170">
                 <TableHeader>
                   <TableRow>
                     <TableHead>{isAr ? "المرجع" : "Reference"}</TableHead>
