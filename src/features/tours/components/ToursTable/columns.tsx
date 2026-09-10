@@ -144,7 +144,8 @@ export function getColumns(
       cell: ({ row }) => {
         const tour = row.original;
         const title = getTourTitle(tour, currentLocale);
-        const heroImg = tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
+        const heroImgObj = tour.images?.find((img) => img.isHero);
+        const heroImg = heroImgObj?.imageUrl || tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
 
         return (
           <div className="flex items-center gap-3 min-w-70 max-w-95">

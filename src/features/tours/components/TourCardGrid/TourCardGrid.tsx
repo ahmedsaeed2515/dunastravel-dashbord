@@ -59,7 +59,8 @@ export function TourCardGrid({ tours, onView, onEdit, onMove, onDelete }: TourCa
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {tours.map((tour) => {
         const title = getTourTitle(tour, currentLocale);
-        const heroImg = tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
+        const heroImgObj = tour.images?.find((img) => img.isHero);
+        const heroImg = heroImgObj?.imageUrl || tour.heroImage || (tour.images && tour.images.length > 0 ? tour.images[0].imageUrl : null);
         const amount = parseFloat(tour.basePriceUsd || "0");
         const formattedPrice = new Intl.NumberFormat("en-US", {
           style: "currency",
