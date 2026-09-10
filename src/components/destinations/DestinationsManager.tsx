@@ -249,10 +249,16 @@ function convertTourToTripModel(tour: Tour, currentLocale: string = 'ar'): TripM
 
   const images =
     tour.images && tour.images.length > 0
-      ? tour.images.map((img) => img.imageUrl)
+      ? tour.images
+          .map((img: any) => (typeof img === 'string' ? img : img?.imageUrl || img?.url || ''))
+          .filter(Boolean)
       : tour.heroImage
       ? [tour.heroImage]
       : [];
+
+  if (images.length === 0 && tour.heroImage) {
+    images.push(tour.heroImage);
+  }
 
   const tags = Array.isArray(tour.tags) ? tour.tags : [];
   const packageId = destId === 'egypt'

@@ -661,8 +661,15 @@ export default function ToursPage() {
                 const duration = textFor(tour.durationJsonb, locale);
                 const price = tour.basePriceUsd ? Number(tour.basePriceUsd) : 0;
                 const isFeatured = Boolean(tour.isFeatured);
-                const heroImg = tour.heroImage || null;
                 const destGroup = resolveTourDestination(tour);
+                const heroImg =
+                  tour.heroImage ||
+                  (Array.isArray(tour.images) && tour.images.length > 0
+                    ? typeof tour.images[0] === 'string'
+                      ? tour.images[0]
+                      : (tour.images[0] as any)?.imageUrl || (tour.images[0] as any)?.url || null
+                    : null) ||
+                  null;
                 const visibleOnWebsite = isTourVisibleOnWebsite(tour);
                 const attachedToInterface = hasDestinationInterface(tour);
 
