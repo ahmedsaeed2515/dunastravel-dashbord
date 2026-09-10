@@ -733,11 +733,6 @@ export default function ToursPage() {
                         <span className="flex items-center gap-1 font-bold">
                           <Calendar className="w-3.5 h-3.5 text-amber-400" /> {duration}
                         </span>
-                        {Boolean(tour.reviewCount && tour.reviewCount > 0) && (
-                          <span className="flex items-center gap-1 font-bold text-amber-400">
-                            <Star className="w-3.5 h-3.5 fill-amber-400" /> {tour.reviewCount} {isAr ? "تقييم" : "reviews"}
-                          </span>
-                        )}
                       </div>
                     </div>
 
