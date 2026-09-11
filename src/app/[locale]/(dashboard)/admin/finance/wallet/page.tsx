@@ -26,6 +26,7 @@ export default function WalletPage() {
   const [search, setSearch] = useState("");
   const [ownerTypeFilter, setOwnerTypeFilter] = useState<string>("ALL");
   const [wallets, setWallets] = useState<WalletDirectoryItem[]>([]);
+  const [totalWallets, setTotalWallets] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
   const [isReconciling, setIsReconciling] = useState(false);
   const [reconcileFeedback, setReconcileFeedback] = useState<string | null>(null);
@@ -49,6 +50,7 @@ export default function WalletPage() {
       }
       const res = await financeApi.getWallets(params);
       setWallets(res.data || []);
+      setTotalWallets(res.meta?.total ?? res.data?.length ?? 0);
     } catch (err: any) {
       toast.error(err?.response?.data?.message || "Failed to load wallets directory.");
     } finally {
@@ -100,10 +102,10 @@ export default function WalletPage() {
         description={tFinance("walletDesc") || "Manage enterprise partner deposits, credit limits, and automated commission payouts."}
         actions={
           <RequirePermission action="manage" resource="finance">
-            <Button 
-              variant="outline" 
+            <Button
+              variant="outline"
               size="sm"
-              onClick={handleReconcile} 
+              onClick={handleReconcile}
               disabled={isReconciling}
               className="gap-2 font-bold shadow-xs hover:bg-muted/80"
             >
@@ -126,8 +128,8 @@ export default function WalletPage() {
                 {/* Search Input */}
                 <div className="relative w-full sm:max-w-md">
                   <Search className="absolute start-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
-                  <Input 
-                    placeholder="Search by Partner Name, Ref Code (#AGY-...), or Email..." 
+                  <Input
+                    placeholder="Search by Partner Name, Ref Code (#AGY-...), or Email..."
                     className="ps-8 text-xs dir-ltr text-start h-9"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
@@ -150,7 +152,7 @@ export default function WalletPage() {
               </div>
 
               <div className="text-xs font-mono text-muted-foreground shrink-0">
-                Found <strong>{wallets.length}</strong> wallets
+                Found <strong>{totalWallets}</strong> wallets
               </div>
             </div>
 

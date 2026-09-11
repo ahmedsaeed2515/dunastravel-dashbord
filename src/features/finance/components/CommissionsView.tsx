@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useCommissions } from "../hooks/useFinance";
 import { CommissionQueryFilters, CommissionStatus } from "../types";
 import { CommissionsTable } from "./CommissionsTable";
@@ -15,6 +15,23 @@ export function CommissionsView() {
     limit: 10,
     status: undefined,
   });
+  const [searchInput, setSearchInput] = useState("");
+  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Debounce the booking-reference search so we don't fire a request per keystroke
+  const handleSearchChange = (value: string) => {
+    setSearchInput(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
+    debounceRef.current = setTimeout(() => {
+      setFilters((f) => ({ ...f, bookingReference: value.trim() || undefined, page: 1 }));
+    }, 400);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+    };
+  }, []);
 
   const { data, isLoading } = useCommissions(filters);
 
@@ -29,10 +46,11 @@ export function CommissionsView() {
         <div className="flex flex-wrap gap-3 w-full md:w-auto">
           <div className="relative w-full md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-            <Input 
-              placeholder="بحث برقم الحجز..." 
+            <Input
+              placeholder="بحث برقم الحجز..."
               className="pl-9 bg-background/50 rounded-xl"
-              onChange={(e) => setFilters(f => ({ ...f, bookingReference: e.target.value || undefined, page: 1 }))}
+              value={searchInput}
+              onChange={(e) => handleSearchChange(e.target.value)}
             />
           </div>
 
@@ -55,10 +73,11 @@ export function CommissionsView() {
       </div>
 
       <div className="rounded-md border bg-card/50 overflow-hidden">
-        <CommissionsTable 
-          data={data?.data ?? []} 
-          isLoading={isLoading} 
+        <CommissionsTable
+          data={data?.data ?? []}
+          isLoading={isLoading}
           pageCount={data?.meta?.totalPages ?? 0}
+          currentPage={filters.page ?? 1}
           onPageChange={(p) => setFilters(f => ({ ...f, page: p }))}
         />
       </div>

@@ -133,7 +133,10 @@ function tourToTripModel(tour: Tour): TripModel {
     type: tour.category || canon?.type || 'Classic',
     duration: localeText(tour.durationJsonb, 'ar') || (typeof canon?.duration === 'object' ? (canon?.duration?.ar || canon?.duration?.en) : canon?.duration) || '',
     departures: localeText(tour.departureInfoJsonb, 'ar') || 'Daily / Diário',
-    price: Number(tour.basePriceUsd || canon?.price || 0),
+    price:
+      tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+        ? Number(tour.basePriceUsd)
+        : Number(canon?.price ?? 0),
     hotelCategory: '5-Star Luxury',
     rating: Number(tour.sourceRating || 5),
     reviewCount: tour.sourceReviewCount || 0,
@@ -659,7 +662,10 @@ export default function ToursPage() {
                 const title = textFor(tour.titleJsonb, locale) || tour.slug;
                 const overview = textFor(tour.overviewJsonb, locale);
                 const duration = textFor(tour.durationJsonb, locale);
-                const price = tour.basePriceUsd ? Number(tour.basePriceUsd) : 0;
+                const price =
+                  tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+                    ? Number(tour.basePriceUsd)
+                    : 0;
                 const isFeatured = Boolean(tour.isFeatured);
                 const destGroup = resolveTourDestination(tour);
                 const heroImg =

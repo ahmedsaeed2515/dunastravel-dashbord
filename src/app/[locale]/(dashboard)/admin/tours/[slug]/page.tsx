@@ -45,7 +45,10 @@ function tourToTripModel(tour: any): TripModel {
     type: tour.category || '',
     duration: localeText(tour.durationJsonb, 'ar'),
     departures: localeText(tour.departureInfoJsonb, 'ar'),
-    price: Number(tour.basePriceUsd || 0),
+    price:
+      tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+        ? Number(tour.basePriceUsd)
+        : 0,
     hotelCategory: '',
     rating: Number(tour.sourceRating || 0),
     reviewCount: tour.sourceReviewCount || 0,

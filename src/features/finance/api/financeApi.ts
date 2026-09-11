@@ -1,11 +1,11 @@
 import { apiClient } from "@/lib/axios";
-import { 
-  Wallet, 
-  WalletTransaction, 
-  Commission, 
-  WalletMetrics, 
-  CommissionMetrics, 
-  CommissionQueryFilters, 
+import {
+  Wallet,
+  WalletTransaction,
+  Commission,
+  WalletMetrics,
+  CommissionMetrics,
+  CommissionQueryFilters,
   PaginatedResponse,
   PaymentRecord,
   PaymentQueryFilters,
@@ -55,7 +55,9 @@ export const financeApi = {
 
   getWalletTransactions: async (walletId: string, referenceType?: string): Promise<WalletTransaction[]> => {
     const params = referenceType ? { referenceType } : {};
-    return apiClient.get<WalletTransaction[], WalletTransaction[]>(`/admin/finance/wallets/${walletId}/transactions`, { params });
+    // Backend returns a paginated envelope { data, meta }; unwrap for the ledger UI
+    const res = await apiClient.get<{ data: WalletTransaction[] }, { data: WalletTransaction[] }>(`/admin/finance/wallets/${walletId}/transactions`, { params });
+    return res?.data ?? [];
   },
 
   addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string }): Promise<WalletTransaction> => {
@@ -75,8 +77,7 @@ export const financeApi = {
     return apiClient.patch<Commission, Commission>(`/admin/finance/commissions/${id}/status`, { status });
   },
 
-  // Refunds
-  refundPayment: async (payload: { idempotencyKey: string; paymentId: string; amount?: number; reason: string }): Promise<{ success: boolean; refundId: string; status: string }> => {
-    return apiClient.post<{ success: boolean; refundId: string; status: string }, { success: boolean; refundId: string; status: string }>("/admin/finance/refunds", payload);
-  }
+  // NOTE: Online refunds are intentionally disabled by business policy.
+  // All refunds are processed offline directly by company finance, so there is
+  // deliberately no refund API call from the dashboard.
 };

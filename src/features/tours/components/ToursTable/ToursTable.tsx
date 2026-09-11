@@ -110,7 +110,10 @@ function tourToTripModel(tour: Tour): TripModel {
   const itOverview = tour.overviewJsonb?.it || (typeof canon?.overview === 'object' ? canon?.overview?.it : canon?.overview) || enOverview;
 
   const duration = tour.durationJsonb?.ar || (typeof canon?.duration === 'object' ? canon?.duration?.ar : canon?.duration) || tour.durationJsonb?.en || '';
-  const price = Number(tour.basePriceUsd || canon?.price || 0);
+  const price =
+    tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+      ? Number(tour.basePriceUsd)
+      : Number(canon?.price ?? 0);
 
   const images = (tour.images && tour.images.length > 0)
     ? tour.images.map(img => img.imageUrl)

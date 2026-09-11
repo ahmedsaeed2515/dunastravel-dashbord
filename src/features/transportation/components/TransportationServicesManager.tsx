@@ -348,7 +348,10 @@ export function TransportationServicesManager() {
         capacity: item.capacity ?? (resolvedCategory === "private" ? 4 : resolvedCategory === "coaster" ? 24 : 50),
         doors: item.doors ?? (resolvedCategory === "private" ? 4 : 2),
         transmission: item.transmission || "AUTO",
-        basePriceUsd: Number(item.basePriceUsd) || defaultPrice,
+        basePriceUsd:
+          item.basePriceUsd !== undefined && item.basePriceUsd !== null && !isNaN(Number(item.basePriceUsd))
+            ? Number(item.basePriceUsd)
+            : defaultPrice,
         vehicleCategory: resolvedCategory,
         vehicleType:
           item.vehicleType ||
@@ -496,7 +499,10 @@ export function TransportationServicesManager() {
         pickupInstructions: payload.pickupInstructions?.trim() || undefined,
         dropoffInstructions: payload.dropoffInstructions?.trim() || undefined,
         features: Array.isArray(payload.features) ? payload.features : [],
-        basePriceUsd: Number(payload.basePriceUsd) >= 0 ? Number(payload.basePriceUsd) : 150,
+        basePriceUsd:
+          payload.basePriceUsd !== undefined && payload.basePriceUsd !== "" && Number.isFinite(Number(payload.basePriceUsd))
+            ? Number(payload.basePriceUsd)
+            : 150,
       };
 
       if (editingItem?.id && !editingItem.id.startsWith("tr-custom-")) {
@@ -658,7 +664,10 @@ export function TransportationServicesManager() {
       capacity: item.capacity ?? 50,
       doors: item.doors ?? 2,
       transmission: item.transmission || "AUTO",
-      basePriceUsd: Number(item.basePriceUsd) || 150,
+      basePriceUsd:
+        item.basePriceUsd !== undefined && item.basePriceUsd !== null && !isNaN(Number(item.basePriceUsd))
+          ? Number(item.basePriceUsd)
+          : 150,
       heroImageUrl: item.heroImageUrl || getFallbackImage(inferCategory(item)),
       heroMediaId: item.heroMediaId || null,
       heroImageAlt: item.heroImageAlt || null,
@@ -2009,7 +2018,7 @@ export function TransportationServicesManager() {
                       type="number"
                       min={0}
                       value={draft.basePriceUsd}
-                      onChange={(e) => setDraft((p) => ({ ...p, basePriceUsd: Number(e.target.value) }))}
+                      onChange={(e) => setDraft((p) => ({ ...p, basePriceUsd: e.target.value === "" ? 0 : Number(e.target.value) }))}
                       className="h-10 text-xs font-mono font-bold text-amber-500"
                     />
                   </div>

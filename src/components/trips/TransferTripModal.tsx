@@ -149,7 +149,10 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   // Determine active item (tour or trip)
   const activeSlug = tour?.slug || trip?.slug || '';
   const activeTitle = tour ? getTourTitle(tour, currentLocale) : (trip?.title || '');
-  const activePrice = tour?.basePriceUsd ? `$${tour.basePriceUsd}` : (trip?.price ? `$${trip.price}` : 'Free');
+  const activePrice =
+    tour?.basePriceUsd !== undefined && tour?.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+      ? `$${tour.basePriceUsd}`
+      : (trip?.price !== undefined && trip?.price !== null && !isNaN(Number(trip.price)) ? `$${trip.price}` : 'Free');
   const activeDuration = tour?.durationJsonb
     ? ((tour.durationJsonb as any)?.[currentLocale] || (tour.durationJsonb as any)?.ar || (tour.durationJsonb as any)?.en || '')
     : (trip?.duration || '');

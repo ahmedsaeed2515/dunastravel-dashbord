@@ -2096,7 +2096,10 @@ function RoomEditorModal({
           descEs: room.descEs || "",
           descPt: room.descPt || "",
           descIt: room.descIt || "",
-          ratePerNight: Number(room.ratePerNight) || 120,
+          ratePerNight:
+            room.ratePerNight !== undefined && room.ratePerNight !== null && !isNaN(Number(room.ratePerNight))
+              ? Number(room.ratePerNight)
+              : 120,
           maxOccupancy: Number(room.maxOccupancy) || 2,
           inventory: Number(room.inventory) >= 0 ? Number(room.inventory) : 10,
           mealPlan: room.mealPlan || "bb",
@@ -2270,7 +2273,10 @@ function RoomEditorModal({
       nameEs: roomData.nameEs.trim() || roomData.nameEn.trim(),
       namePt: roomData.namePt.trim() || roomData.nameEn.trim(),
       nameIt: roomData.nameIt.trim() || roomData.nameEn.trim(),
-      ratePerNight: Number(roomData.ratePerNight) || 100,
+      ratePerNight:
+        roomData.ratePerNight !== undefined && roomData.ratePerNight !== null && !isNaN(Number(roomData.ratePerNight))
+          ? Number(roomData.ratePerNight)
+          : 100,
       inventory: Number(roomData.inventory) >= 0 ? Number(roomData.inventory) : 10,
       maxOccupancy: Number(roomData.maxOccupancy) || 2,
     };
@@ -3060,7 +3066,10 @@ function HotelEditorDialog({
                 nameEs: (r.name as any)?.es || (r.name as any)?.en || r.slug,
                 namePt: (r.name as any)?.pt || (r.name as any)?.en || r.slug,
                 nameIt: (r.name as any)?.it || (r.name as any)?.en || r.slug,
-                ratePerNight: Number(r.ratePerNight) || 100,
+                ratePerNight:
+                  r.ratePerNight !== undefined && r.ratePerNight !== null && !isNaN(Number(r.ratePerNight))
+                    ? Number(r.ratePerNight)
+                    : 100,
                 maxOccupancy: Number(r.maxOccupancy) || 2,
                 inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,
                 mealPlan: typeof (r.mealPlan) === 'string' ? r.mealPlan : (r.mealPlan?.en || "bb"),
@@ -3351,7 +3360,10 @@ function HotelEditorDialog({
         ],
         amenities: r.amenities && r.amenities.length > 0 ? r.amenities : ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe", "iron", "phone"],
       },
-      ratePerNight: Number(r.ratePerNight) || 100,
+      ratePerNight:
+        r.ratePerNight !== undefined && r.ratePerNight !== null && !isNaN(Number(r.ratePerNight))
+          ? Number(r.ratePerNight)
+          : 100,
       currency: form.currency.toUpperCase() || "USD",
       maxOccupancy: Number(r.maxOccupancy) || 2,
       inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,

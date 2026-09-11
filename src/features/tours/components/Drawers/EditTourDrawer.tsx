@@ -4,7 +4,7 @@ import { useMemo } from "react";
 import { Tour } from "../../types";
 import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
-import { destinationForCountry } from "@/lib/tour-destinations";
+import { destinationForCountry, resolveTourDestination } from "@/lib/tour-destinations";
 
 const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
 
@@ -25,18 +25,24 @@ function tourToTripModel(tour: Tour): TripModel {
     meals: localeText(item.mealsJsonb, 'ar'),
   }));
 
+  const resolvedDest = resolveTourDestination(tour);
+  const destSlug = (resolvedDest ? resolvedDest.toLowerCase() : destinationForCountry(tour.country)) || 'egypt';
+
   return {
     id: tour.id,
     slug: tour.slug,
     title: localeText(tour.titleJsonb, 'ar') || localeText(tour.titleJsonb, 'en') || tour.slug,
     subtitle: localeText(tour.subtitleJsonb, 'ar'),
-    destination: destinationForCountry(tour.country),
+    destination: destSlug,
     market: tour.market || '',
     language: 'ar',
     type: tour.category || '',
     duration: localeText(tour.durationJsonb, 'ar'),
     departures: localeText(tour.departureInfoJsonb, 'ar'),
-    price: Number(tour.basePriceUsd || 0),
+    price:
+      tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+        ? Number(tour.basePriceUsd)
+        : 0,
     hotelCategory: '',
     rating: Number(tour.sourceRating || 0),
     reviewCount: tour.sourceReviewCount || 0,
