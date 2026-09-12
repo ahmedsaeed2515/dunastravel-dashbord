@@ -63,6 +63,7 @@ export interface TripModel {
   highlights: string[];
   included: string[];
   excluded: string[];
+  heroImage?: string;
   images: string[];
   hotels?: string;
 

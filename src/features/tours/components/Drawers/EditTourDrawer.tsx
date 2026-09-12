@@ -56,7 +56,26 @@ function tourToTripModel(tour: Tour): TripModel {
     highlights: localeList(highlights, 'ar'),
     included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
     excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
-    images: tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []),
+    heroImage: (() => {
+      const heroFromImages = Array.isArray(tour.images)
+        ? tour.images.find((img: any) => img?.isHero)?.imageUrl
+        : undefined;
+      return heroFromImages || (typeof tour.heroImage === 'string' ? tour.heroImage : '') || (typeof (tour as any).heroImageUrl === 'string' ? (tour as any).heroImageUrl : '') || (tour.images?.[0]?.imageUrl || '');
+    })(),
+    images: (() => {
+      const rawImages = tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []);
+      const heroFromImages = Array.isArray(tour.images)
+        ? tour.images.find((img: any) => img?.isHero)?.imageUrl
+        : undefined;
+      const resolvedHero = heroFromImages || (typeof tour.heroImage === 'string' ? tour.heroImage : '') || (typeof (tour as any).heroImageUrl === 'string' ? (tour as any).heroImageUrl : '') || rawImages[0] || '';
+      let imgs = [...rawImages];
+      if (resolvedHero && imgs.includes(resolvedHero)) {
+        imgs = [resolvedHero, ...imgs.filter((img) => img !== resolvedHero)];
+      } else if (resolvedHero && !imgs.includes(resolvedHero)) {
+        imgs = [resolvedHero, ...imgs];
+      }
+      return imgs;
+    })(),
     hotels: '',
     accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
     itinerary,

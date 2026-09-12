@@ -60,10 +60,21 @@ export function buildTripEditorPayload(
   isNew: boolean,
 ): CreateTourPayload {
   const translations = formData.translations;
-  const images = (formData.images ?? [])
+  const validImages = (formData.images ?? [])
     .filter((image): image is string => typeof image === 'string' && /^https?:\/\//i.test(image.trim()))
-    .filter((image, index, values) => values.indexOf(image) === index)
-    .map((imageUrl, index) => ({ imageUrl, isHero: index === 0, sortOrder: index }));
+    .filter((image, index, values) => values.indexOf(image) === index);
+
+  const selectedHero = typeof formData.heroImage === 'string' ? formData.heroImage.trim() : '';
+  let orderedImages = [...validImages];
+  if (selectedHero && orderedImages.includes(selectedHero)) {
+    orderedImages = [selectedHero, ...orderedImages.filter((img) => img !== selectedHero)];
+  }
+
+  const images = orderedImages.map((imageUrl, index) => ({
+    imageUrl,
+    isHero: index === 0,
+    sortOrder: index,
+  }));
 
   const itinerary = (formData.itinerary ?? [])
     .filter((day) => Boolean(text(day.title).trim() || text(day.description).trim() || text(day.meals).trim()))

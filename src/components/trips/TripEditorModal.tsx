@@ -50,6 +50,9 @@ import {
   Languages,
   RotateCcw,
   RefreshCw,
+  Crown,
+  ArrowUp,
+  ArrowDown,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
@@ -83,6 +86,7 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   highlights: [],
   included: [],
   excluded: [],
+  heroImage: '',
   images: [],
   hotels: '5-Star Luxury Hotels',
   accommodation: [],
@@ -140,12 +144,20 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       if (!cloned.translations) {
         cloned.translations = { ar: {}, en: {}, es: {}, pt: {}, it: {} };
       }
+      if (!cloned.heroImage && Array.isArray(cloned.images) && cloned.images.length > 0) {
+        cloned.heroImage = cloned.images[0];
+      }
       setFormData(cloned);
 
       const hasContent = (cloned.included && cloned.included.length > 0) || (cloned.highlights && cloned.highlights.length > 0);
-      if (!hasContent && trip.slug) {
+      if (trip.slug) {
         toursApi.getTourBySlug(trip.slug).then((fullTour) => {
           if (!fullTour) return;
+
+          const heroFromApi = (Array.isArray(fullTour.images)
+            ? fullTour.images.find((img: any) => img?.isHero)?.imageUrl
+            : null) || (fullTour as any).heroImage || (fullTour as any).heroImageUrl;
+
           const incJson = fullTour.includedServicesJsonb || fullTour.inclusionJsonb || (fullTour as any).includedServices || (fullTour as any).included;
           const excJson = fullTour.excludedServicesJsonb || fullTour.exclusionJsonb || (fullTour as any).excludedServices || (fullTour as any).excluded;
           const highJson = fullTour.highlightsJsonb || fullTour.highlightJsonb || (fullTour as any).highlights;
@@ -182,8 +194,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               if (!trans[loc].highlights || trans[loc].highlights.length === 0) trans[loc].highlights = extractList(highJson, loc);
             });
 
+            const currentImages = prev.images || [];
+            let updatedImages = [...currentImages];
+            const resolvedHero = heroFromApi || prev.heroImage || currentImages[0] || '';
+            if (resolvedHero && updatedImages.includes(resolvedHero)) {
+              updatedImages = [resolvedHero, ...updatedImages.filter(img => img !== resolvedHero)];
+            }
+
             return {
               ...prev,
+              heroImage: resolvedHero,
+              images: updatedImages,
               included: (prev.included && prev.included.length > 0) ? prev.included : arInc,
               excluded: (prev.excluded && prev.excluded.length > 0) ? prev.excluded : arExc,
               highlights: (prev.highlights && prev.highlights.length > 0) ? prev.highlights : arHigh,
@@ -579,12 +600,19 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       return;
     }
 
-    const rawSlug = formData.slug || formData.title || '';
-    const cleanSlug = formatSlug(rawSlug) || `tour-${Date.now()}`;
+    const cleanSlug = formData.slug?.trim()
+      ? formatSlug(formData.slug)
+      : (trip?.slug || formatSlug(formData.title || '') || `tour-${Date.now()}`);
+
+    const activeHero = formData.heroImage || formData.images?.[0] || '';
 
     setIsSaving(true);
     try {
-      const backendData = buildTripEditorPayload({ ...formData, slug: cleanSlug }, !trip);
+      const backendData = buildTripEditorPayload({
+        ...formData,
+        slug: cleanSlug,
+        heroImage: activeHero,
+      }, !trip);
 
       if (trip && trip.slug) {
         await toursApi.updateTour(trip.slug, backendData as any);
@@ -1313,14 +1341,19 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               </div>
             </TabsContent>
 
-            {/* TAB 5: PHOTO GALLERY */}
+            {/* TAB 5: PHOTO GALLERY & HERO IMAGE */}
             <TabsContent value="gallery" className="space-y-5 m-0">
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
-                <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                    <ImageIcon className="w-4 h-4 text-amber-500" />
-                    روابط صور المعرض (Photo Gallery & Hero Image):
-                  </span>
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-border/40 pb-3">
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <ImageIcon className="w-4 h-4 text-amber-500" />
+                      معرض الصور وتحديد صورة الهيرو والكرت (Photo Gallery & Hero Image):
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                      الصورة المحددة كـ (Hero) تكون هي الصورة الرئيسية للرحلة وتظهر تلقائياً ككرت الرحلة في جميع القوائم والموقع العام.
+                    </p>
+                  </div>
                   <div className="flex items-center gap-2">
                     <Button
                       type="button"
@@ -1346,45 +1379,172 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   </div>
                 </div>
 
-                <div className="space-y-3">
-                  {(formData.images || []).map((imgUrl, idx) => (
-                    <div key={idx} className="flex items-center gap-3 p-3 rounded-2xl bg-muted/30 border border-border/60">
-                      <div className="w-16 h-12 rounded-xl bg-slate-950 overflow-hidden shrink-0 border">
-                        {imgUrl ? (
-                          <img src={imgUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No URL</div>
-                        )}
+                {/* Hero / Card Preview Banner */}
+                {(() => {
+                  const currentHero = formData.heroImage || formData.images?.[0] || '';
+                  if (!currentHero) return null;
+                  return (
+                    <div className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/15 via-amber-500/5 to-transparent border border-amber-500/30 flex items-center gap-4 shadow-xs">
+                      <div className="w-20 h-14 rounded-xl bg-slate-950 overflow-hidden shrink-0 border-2 border-amber-500/60 shadow-md">
+                        <img src={currentHero} alt="Hero & Card Preview" className="w-full h-full object-cover" />
                       </div>
-                      <Input
-                        value={imgUrl}
-                        onChange={e => {
-                          const imgs = [...(formData.images || [])];
-                          imgs[idx] = e.target.value;
-                          handleChange('images', imgs);
-                        }}
-                        placeholder="https://images.unsplash.com/..."
-                        className="rounded-xl text-xs font-mono flex-1"
-                      />
-                      <span className={`text-[10px] font-black px-2 py-1 rounded-lg border ${
-                        idx === 0 ? 'bg-amber-500 text-slate-950 border-amber-500' : 'bg-muted text-muted-foreground'
-                      }`}>
-                        {idx === 0 ? 'الصورة الرئيسية (Hero)' : `صورة #${idx + 1}`}
-                      </span>
-                      <Button
-                        size="icon-sm"
-                        variant="ghost"
-                        onClick={() => {
-                          const imgs = [...(formData.images || [])];
-                          imgs.splice(idx, 1);
-                          handleChange('images', imgs);
-                        }}
-                        className="text-destructive hover:bg-destructive/10"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <Badge className="bg-amber-500 text-slate-950 border-amber-500 font-black text-[11px] gap-1 shadow-xs">
+                            <Crown className="w-3 h-3 fill-current" />
+                            صورة الهيرو وكرت الرحلة المعتمدة حالياً
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground font-semibold">Hero & Tour Card Image</span>
+                        </div>
+                        <p className="text-xs font-mono text-foreground/80 truncate mt-1">{currentHero}</p>
+                      </div>
                     </div>
-                  ))}
+                  );
+                })()}
+
+                <div className="space-y-3">
+                  {(formData.images || []).map((imgUrl, idx) => {
+                    const isCurrentHero = formData.heroImage ? formData.heroImage === imgUrl : idx === 0;
+                    return (
+                      <div
+                        key={idx}
+                        className={`flex items-center gap-3 p-3 rounded-2xl border transition-all ${
+                          isCurrentHero
+                            ? 'bg-amber-500/10 border-amber-500/50 shadow-xs ring-1 ring-amber-500/30'
+                            : 'bg-muted/30 border-border/60 hover:border-border'
+                        }`}
+                      >
+                        <div className="w-16 h-12 rounded-xl bg-slate-950 overflow-hidden shrink-0 border relative">
+                          {imgUrl ? (
+                            <img src={imgUrl} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <div className="flex h-full items-center justify-center text-[10px] text-muted-foreground">No URL</div>
+                          )}
+                          {isCurrentHero && (
+                            <div className="absolute top-1 start-1 bg-amber-500 text-slate-950 p-0.5 rounded-md shadow-xs">
+                              <Crown className="w-2.5 h-2.5 fill-current" />
+                            </div>
+                          )}
+                        </div>
+
+                        <Input
+                          value={imgUrl}
+                          onChange={e => {
+                            const newUrl = e.target.value;
+                            const imgs = [...(formData.images || [])];
+                            const wasHero = isCurrentHero;
+                            imgs[idx] = newUrl;
+                            setFormData(prev => ({
+                              ...prev,
+                              images: imgs,
+                              ...(wasHero ? { heroImage: newUrl } : {}),
+                            }));
+                          }}
+                          placeholder="https://images.unsplash.com/..."
+                          className="rounded-xl text-xs font-mono flex-1"
+                        />
+
+                        {/* Reorder Buttons */}
+                        <div className="flex items-center gap-0.5">
+                          <Button
+                            type="button"
+                            size="icon-xs"
+                            variant="ghost"
+                            disabled={idx === 0}
+                            onClick={() => {
+                              if (idx === 0) return;
+                              const imgs = [...(formData.images || [])];
+                              const [moved] = imgs.splice(idx, 1);
+                              imgs.splice(idx - 1, 0, moved);
+                              setFormData(prev => ({
+                                ...prev,
+                                images: imgs,
+                                heroImage: imgs[0],
+                              }));
+                            }}
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            title="تحريك لأعلى"
+                          >
+                            <ArrowUp className="w-3.5 h-3.5" />
+                          </Button>
+                          <Button
+                            type="button"
+                            size="icon-xs"
+                            variant="ghost"
+                            disabled={idx === (formData.images?.length || 1) - 1}
+                            onClick={() => {
+                              const imgs = [...(formData.images || [])];
+                              if (idx >= imgs.length - 1) return;
+                              const [moved] = imgs.splice(idx, 1);
+                              imgs.splice(idx + 1, 0, moved);
+                              setFormData(prev => ({
+                                ...prev,
+                                images: imgs,
+                                heroImage: imgs[0],
+                              }));
+                            }}
+                            className="h-7 w-7 text-muted-foreground hover:text-foreground disabled:opacity-30"
+                            title="تحريك لأسفل"
+                          >
+                            <ArrowDown className="w-3.5 h-3.5" />
+                          </Button>
+                        </div>
+
+                        {/* Hero Badge or Set as Hero Button */}
+                        {isCurrentHero ? (
+                          <span className="text-[11px] font-black px-2.5 py-1.5 rounded-xl border bg-amber-500 text-slate-950 border-amber-500 flex items-center gap-1.5 shrink-0 shadow-xs">
+                            <Crown className="w-3.5 h-3.5 fill-current" />
+                            <span>الهيرو والكرت (Hero & Card)</span>
+                          </span>
+                        ) : (
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              if (!imgUrl) {
+                                toast.error('يرجى كتابة رابط للصورة أولاً.');
+                                return;
+                              }
+                              const imgs = [...(formData.images || [])];
+                              const [selected] = imgs.splice(idx, 1);
+                              imgs.unshift(selected);
+                              setFormData(prev => ({
+                                ...prev,
+                                heroImage: selected,
+                                images: imgs,
+                              }));
+                              toast.success('👑 تم تعيين الصورة كصورة رئيسية (Hero) وكرت للرحلة!');
+                            }}
+                            className="text-xs text-amber-500 hover:bg-amber-500/10 border-amber-500/30 gap-1 rounded-xl font-bold shrink-0 cursor-pointer h-8"
+                          >
+                            <Star className="w-3.5 h-3.5 text-amber-500" />
+                            تعيين كهيرو وكرت
+                          </Button>
+                        )}
+
+                        {/* Delete Button */}
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => {
+                            const imgs = [...(formData.images || [])];
+                            const removed = imgs.splice(idx, 1)[0];
+                            const nextHero = isCurrentHero ? (imgs[0] || '') : (formData.heroImage || imgs[0] || '');
+                            setFormData(prev => ({
+                              ...prev,
+                              heroImage: nextHero,
+                              images: imgs,
+                            }));
+                          }}
+                          className="text-destructive hover:bg-destructive/10 shrink-0"
+                          title="حذف الصورة"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    );
+                  })}
 
                   {(formData.images || []).length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-6">لا توجد صور مضافة حتى الآن.</p>
@@ -1662,13 +1822,22 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         onSelectMultiple={(urls) => {
           const existing = formData.images || [];
           const newImgs = [...existing, ...urls.filter(u => !existing.includes(u))];
-          handleChange('images', newImgs);
+          setFormData(prev => ({
+            ...prev,
+            images: newImgs,
+            heroImage: prev.heroImage || newImgs[0] || '',
+          }));
           toast.success(`تمت إضافة ${urls.length} صور من المكتبة بنجاح!`);
         }}
         onSelect={(url) => {
           const existing = formData.images || [];
           if (!existing.includes(url)) {
-            handleChange('images', [...existing, url]);
+            const newImgs = [...existing, url];
+            setFormData(prev => ({
+              ...prev,
+              images: newImgs,
+              heroImage: prev.heroImage || newImgs[0] || '',
+            }));
             toast.success('تمت إضافة الصورة بنجاح!');
           }
         }}

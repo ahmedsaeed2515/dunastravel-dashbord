@@ -115,11 +115,23 @@ function tourToTripModel(tour: Tour): TripModel {
       ? Number(tour.basePriceUsd)
       : Number(canon?.price ?? 0);
 
-  const images = (tour.images && tour.images.length > 0)
-    ? tour.images.map(img => img.imageUrl)
+  const rawImages = (tour.images && tour.images.length > 0)
+    ? tour.images.map((img: any) => img.imageUrl || "").filter(Boolean)
     : (Array.isArray(canon?.images) && canon.images.length > 0)
       ? canon.images
       : (tour.heroImage ? [tour.heroImage] : (canon?.heroImage ? [canon.heroImage] : []));
+
+  const heroFromImages = Array.isArray(tour.images)
+    ? tour.images.find((img: any) => img?.isHero)?.imageUrl
+    : undefined;
+  const resolvedHero = heroFromImages || (typeof tour.heroImage === 'string' ? tour.heroImage : '') || (typeof (tour as any).heroImageUrl === 'string' ? (tour as any).heroImageUrl : '') || rawImages[0] || '';
+
+  let images = [...rawImages];
+  if (resolvedHero && images.includes(resolvedHero)) {
+    images = [resolvedHero, ...images.filter((img: string) => img !== resolvedHero)];
+  } else if (resolvedHero && !images.includes(resolvedHero)) {
+    images = [resolvedHero, ...images];
+  }
 
   const rawItinerary = (Array.isArray(tour.itineraries) && tour.itineraries.length > 0)
     ? tour.itineraries
@@ -167,6 +179,7 @@ function tourToTripModel(tour: Tour): TripModel {
     highlights: extractLocalizedList(rawHighlights, 'ar'),
     included: extractLocalizedList(rawIncluded, 'ar'),
     excluded: extractLocalizedList(rawExcluded, 'ar'),
+    heroImage: resolvedHero,
     images,
     hotels: '5-Star Luxury Hotels',
     accommodation: [{ destination: tour.city || 'Cairo', nights: 3, regime: 'Bed & Breakfast' }],

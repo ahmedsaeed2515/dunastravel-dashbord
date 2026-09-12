@@ -84,4 +84,30 @@ describe('buildTripEditorPayload', () => {
 
     expect(payload.tags).toEqual([]);
   });
+
+  it('correctly sets selected heroImage as isHero: true and positions it first', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'pyramids-tour',
+      title: 'Pyramids Tour',
+      destination: 'egypt',
+      price: 100,
+      images: [
+        'https://example.com/img1.jpg',
+        'https://example.com/img2-hero.jpg',
+        'https://example.com/img3.jpg',
+      ],
+      heroImage: 'https://example.com/img2-hero.jpg',
+    }, false);
+
+    expect(payload.images).toHaveLength(3);
+    expect(payload.images![0]).toEqual({
+      imageUrl: 'https://example.com/img2-hero.jpg',
+      isHero: true,
+      sortOrder: 0,
+    });
+    expect(payload.images![1].imageUrl).toBe('https://example.com/img1.jpg');
+    expect(payload.images![1].isHero).toBe(false);
+    expect(payload.images![2].imageUrl).toBe('https://example.com/img3.jpg');
+    expect(payload.images![2].isHero).toBe(false);
+  });
 });
