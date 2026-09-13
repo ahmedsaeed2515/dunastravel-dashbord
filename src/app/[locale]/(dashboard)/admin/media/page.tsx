@@ -11,8 +11,10 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
 } from "@/components/ui/dialog";
 import {
   Select,
@@ -30,6 +32,7 @@ import {
   useMediaAssets,
   useMediaSummary,
   useMediaCategories,
+  useMediaUsage,
 } from "@/features/media/hooks/useMedia";
 import { MediaAsset, MediaCategoryItem, MediaQueryFilters } from "@/features/media/types";
 import {
@@ -43,6 +46,7 @@ import {
   Tags,
   Search,
   Eye,
+  AlertTriangle,
   CheckCircle2,
   Maximize2,
   HardDrive,
@@ -155,8 +159,12 @@ export default function MediaPage() {
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [webpStudioOpen, setWebpStudioOpen] = useState(false);
+  const [webpSelectedAsset, setWebpSelectedAsset] = useState<MediaAsset | null>(null);
   const [activeAssetForMove, setActiveAssetForMove] = useState<MediaAsset | null>(null);
   const [previewAsset, setPreviewAsset] = useState<MediaAsset | null>(null);
+  const [inspectUsageAsset, setInspectUsageAsset] = useState<MediaAsset | null>(null);
+  const [usageDialogOpen, setUsageDialogOpen] = useState(false);
+  const { data: usageData, isLoading: isUsageLoading } = useMediaUsage(inspectUsageAsset?.id || null);
 
   // Multi-select state
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
@@ -238,17 +246,10 @@ export default function MediaPage() {
     setMoveDialogOpen(true);
   };
 
-  // Delete single asset
+  // Delete single asset with usage guard
   const handleRemoveSingle = (asset: MediaAsset) => {
-    if (
-      !window.confirm(
-        isAr
-          ? "هل أنت متأكد من حذف هذه الصورة نهائياً من المكتبة؟"
-          : `Delete this ${asset.entityType.toLowerCase()} media asset? This cannot be undone.`,
-      )
-    )
-      return;
-    deleteMedia(asset.id);
+    setInspectUsageAsset(asset);
+    setUsageDialogOpen(true);
   };
 
   // Delete bulk selected assets
@@ -863,6 +864,32 @@ export default function MediaPage() {
                   <Button
                     size="icon"
                     variant="outline"
+                    className="h-8 w-8 text-emerald-500 hover:bg-emerald-500/10 cursor-pointer"
+                    onClick={() => {
+                      setWebpSelectedAsset(asset);
+                      setWebpStudioOpen(true);
+                    }}
+                    title={isAr ? "تحسين بصيغة WebP" : "Optimize with WebP"}
+                  >
+                    <Zap className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    size="icon"
+                    variant="outline"
+                    className="h-8 w-8 text-blue-500 hover:bg-blue-500/10 cursor-pointer"
+                    onClick={() => {
+                      setInspectUsageAsset(asset);
+                      setUsageDialogOpen(true);
+                    }}
+                    title={isAr ? "فحص أماكن استخدام الصورة" : "Inspect Media Usage"}
+                  >
+                    <Layers className="w-3.5 h-3.5" />
+                  </Button>
+
+                  <Button
+                    size="icon"
+                    variant="outline"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground cursor-pointer"
                     onClick={() => setPreviewAsset(asset)}
                     title={isAr ? "معاينة التفاصيل" : "Inspect Asset"}
@@ -1041,10 +1068,116 @@ export default function MediaPage() {
       {/* 11. WebP Optimizer Studio */}
       <WebPOptimizerStudio
         open={webpStudioOpen}
-        onOpenChange={setWebpStudioOpen}
+        onOpenChange={(open) => {
+          setWebpStudioOpen(open);
+          if (!open) setWebpSelectedAsset(null);
+        }}
         categories={categories}
         isAr={isAr}
+        initialAsset={webpSelectedAsset}
       />
+
+      {/* 12. Media Usage Inspector Dialog */}
+      <Dialog open={usageDialogOpen} onOpenChange={setUsageDialogOpen}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-500" />
+              <span>{isAr ? "فحص أماكن استخدام الصورة" : "Inspect Media Usage"}</span>
+            </DialogTitle>
+            <DialogDescription>
+              {isAr
+                ? "التحقق من ارتباط هذه الصورة برحلات أو فنادق أو سلايدر الصفحة الرئيسية."
+                : "Check if this asset is referenced across tours, hotels, or homepage showcase."}
+            </DialogDescription>
+          </DialogHeader>
+
+          {inspectUsageAsset && (
+            <div className="space-y-4 py-2">
+              <div className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 border">
+                <img
+                  src={inspectUsageAsset.optimizedUrl || inspectUsageAsset.secureUrl || inspectUsageAsset.url}
+                  alt=""
+                  className="w-12 h-12 rounded-lg object-cover border"
+                />
+                <div className="min-w-0 flex-1 text-xs">
+                  <p className="font-bold truncate">{inspectUsageAsset.altText || inspectUsageAsset.publicId}</p>
+                  <p className="text-muted-foreground">{inspectUsageAsset.entityType} • {inspectUsageAsset.format?.toUpperCase()}</p>
+                </div>
+              </div>
+
+              {isUsageLoading ? (
+                <div className="flex items-center justify-center p-6 gap-2 text-muted-foreground text-xs">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>{isAr ? "جارٍ التحقق من الاستخدام..." : "Checking usage references..."}</span>
+                </div>
+              ) : usageData?.isUsed ? (
+                <div className="space-y-3">
+                  <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs">
+                    <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <div>
+                      <p className="font-bold">
+                        {isAr
+                          ? `تحذير: هذه الصورة مستخدمة في ${usageData.count} مكان في النظام!`
+                          : `Warning: This asset is currently used in ${usageData.count} place(s)!`}
+                      </p>
+                      <p className="text-[11px] opacity-90 mt-0.5">
+                        {isAr
+                          ? "حذف الصورة قد يؤدي إلى ظهور روابط مكسورة في الموقع العام."
+                          : "Deleting this asset may break live display on public tour pages."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="max-h-40 overflow-y-auto space-y-1.5 border rounded-xl p-2 bg-muted/10 text-xs">
+                    {usageData.usages.map((u, i) => (
+                      <div key={i} className="flex items-center justify-between p-1.5 rounded-lg bg-muted/30 border">
+                        <span className="font-semibold truncate">{u.title || u.entityId}</span>
+                        <Badge variant="outline" className="text-[10px] shrink-0 font-mono">
+                          {u.entityType} ({u.field})
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-semibold">
+                  <CheckCircle2 className="w-4 h-4 shrink-0" />
+                  <span>
+                    {isAr
+                      ? "الصورة غير مرتبطة بأي رحلات أو أقسام نشطة. يمكن حذفها بأمان."
+                      : "Safe to delete: This asset is not referenced by any tours or showcase items."}
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <Button variant="outline" onClick={() => setUsageDialogOpen(false)}>
+              {isAr ? "إلغاء" : "Cancel"}
+            </Button>
+            {inspectUsageAsset && (
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  deleteMedia(inspectUsageAsset.id);
+                  setUsageDialogOpen(false);
+                }}
+                disabled={isDeleting}
+                className="gap-1.5"
+              >
+                <Trash2 className="w-4 h-4" />
+                <span>
+                  {usageData?.isUsed
+                    ? (isAr ? "حذف رغم ذلك (إجباري)" : "Delete Anyway")
+                    : (isAr ? "تأكيد الحذف" : "Confirm Delete")}
+                </span>
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

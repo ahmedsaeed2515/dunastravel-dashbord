@@ -9,6 +9,7 @@ export const adminRoutes = {
   reviews: "/admin/reviews",
   promotions: "/admin/promotions",
   media: "/admin/media",
+  mediaShowcase: "/admin/media/showcase",
   finance: {
     root: "/admin/finance",
     commissions: "/admin/finance/commissions",

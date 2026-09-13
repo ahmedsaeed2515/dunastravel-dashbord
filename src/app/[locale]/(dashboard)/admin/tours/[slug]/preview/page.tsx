@@ -31,7 +31,7 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
 
   const activeLanguage = TOUR_PREVIEW_LOCALES.find((language) => language.code === previewLang) ?? TOUR_PREVIEW_LOCALES[0];
   const heroImage = tour.images.find((image) => image.isHero) ?? null;
-  const openDepartures = departures?.filter((departure) => departure.remainingSeats > 0 && departure.status !== "CLOSED") ?? [];
+  const openDepartures = departures?.filter((departure) => departure.status !== "CLOSED" && departure.status !== "SOLD_OUT") ?? [];
   const soldOutDepartures = departures?.filter((departure) => departure.status === "SOLD_OUT").length ?? 0;
   const numericPrice = Number(tour.basePriceUsd);
   const price = Number.isFinite(numericPrice) ? new Intl.NumberFormat(activeLanguage.code, { style: "currency", currency: tour.currency, minimumFractionDigits: 2 }).format(numericPrice) : "Price not recorded";

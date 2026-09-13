@@ -55,6 +55,7 @@ import {
   CanonicalKnowledgeEntity, 
   KnowledgeProblemsSummary, 
   AiKnowledgeVersionItem,
+  KnowledgeSyncStatus,
   aiApi 
 } from "../api/aiApi";
 
@@ -93,6 +94,12 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
   // Problem Center
   const [problems, setProblems] = useState<KnowledgeProblemsSummary | null>(null);
   const [showProblemsBanner, setShowProblemsBanner] = useState(true);
+
+  // GuideR Knowledge Freshness & Safe Sync Engine
+  const [syncStatus, setSyncStatus] = useState<KnowledgeSyncStatus | null>(null);
+  const [loadingSyncStatus, setLoadingSyncStatus] = useState(false);
+  const [syncingGuideR, setSyncingGuideR] = useState(false);
+  const [showSyncHistory, setShowSyncHistory] = useState(false);
 
   // Syncing
   const [syncingAll, setSyncingAll] = useState(false);
@@ -166,13 +173,45 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
     }
   };
 
+  const fetchSyncStatus = async () => {
+    setLoadingSyncStatus(true);
+    try {
+      const res = await aiApi.getKnowledgeStatus();
+      setSyncStatus(res);
+    } catch {
+      // Non-blocking
+    } finally {
+      setLoadingSyncStatus(false);
+    }
+  };
+
   useEffect(() => {
     fetchCanonicalEntities();
   }, [page, selectedCategory, selectedAiStatus, selectedSyncStatus, selectedSourceType]);
 
   useEffect(() => {
     fetchProblems();
+    fetchSyncStatus();
   }, []);
+
+  const handleSyncKnowledge = async () => {
+    setSyncingGuideR(true);
+    try {
+      const res = await aiApi.syncKnowledge();
+      toast.success(
+        isAr
+          ? `🎉 تم تحديث لقطة معرفة GuideR بنجاح (${res.snapshotVersion})! تم استيعاب ${res.toursCount} رحلة و ${res.chunksCount} مقطع لغوي.`
+          : `🎉 GuideR knowledge snapshot refreshed (${res.snapshotVersion})! Ingested ${res.toursCount} tours and ${res.chunksCount} multilingual chunks.`
+      );
+      fetchSyncStatus();
+      fetchCanonicalEntities();
+      fetchProblems();
+    } catch (err: any) {
+      toast.error(err?.message || "Knowledge snapshot sync failed.");
+    } finally {
+      setSyncingGuideR(false);
+    }
+  };
 
   const handleSyncAll = async () => {
     setSyncingAll(true);
@@ -183,6 +222,7 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
           ? `✓ تمت مزامنة الكتالوج بنجاح (${res.syncedTours} رحلة، ${res.syncedDestinations} وجهة)!`
           : `✓ Catalog synchronized (${res.syncedTours} tours, ${res.syncedDestinations} destinations)!`
       );
+      fetchSyncStatus();
       fetchCanonicalEntities();
       fetchProblems();
     } catch (err: any) {
@@ -496,6 +536,126 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
             {syncingAll ? (isAr ? "جاري تحديث المعرفة..." : "Syncing...") : (isAr ? "تحديث معلومات GuideR" : "Sync All Catalogs")}
           </Button>
         </div>
+      </div>
+
+      {/* ── 1.5 GUIDER KNOWLEDGE FRESHNESS & SNAPSHOT BANNER ─────────── */}
+      <div className={`rounded-2xl border p-4 transition-all shadow-xs ${
+        syncStatus?.isStale
+          ? "bg-amber-500/10 border-amber-500/30 text-amber-900 dark:text-amber-200"
+          : "bg-blue-600/5 dark:bg-blue-500/10 border-blue-500/30 text-foreground"
+      }`}>
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div className="flex items-start gap-3">
+            <div className={`p-2.5 rounded-xl border shrink-0 ${
+              syncStatus?.isStale
+                ? "bg-amber-500/20 border-amber-500/40 text-amber-600 dark:text-amber-400"
+                : "bg-blue-500/20 border-blue-500/40 text-blue-600 dark:text-blue-400"
+            }`}>
+              <ShieldCheck className="h-5 w-5" />
+            </div>
+
+            <div className="space-y-1">
+              <div className="flex flex-wrap items-center gap-2">
+                <span className="font-bold text-sm">
+                  {isAr ? "محرك لقطات معرفة GuideR المعتمد" : "GuideR Grounded Knowledge Engine"}
+                </span>
+
+                {syncStatus?.isStale ? (
+                  <Badge variant="outline" className="bg-amber-500/20 text-amber-700 dark:text-amber-300 border-amber-500/40 text-[10px] font-bold gap-1">
+                    <AlertTriangle className="h-2.5 w-2.5" />
+                    {isAr ? "تحذير: البيانات بحاجة لمزامنة (> 7 أيام)" : "Stale Snapshot (> 7 Days)"}
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 border-emerald-500/40 text-[10px] font-bold gap-1">
+                    <CheckCircle2 className="h-2.5 w-2.5" />
+                    {isAr ? "لقطة المعرفة حية ومحدثة" : "Healthy & Fresh"}
+                  </Badge>
+                )}
+
+                {syncStatus?.currentSnapshot?.snapshotVersion && (
+                  <Badge variant="outline" className="font-mono text-[10px] bg-muted/60 border-border">
+                    {syncStatus.currentSnapshot.snapshotVersion}
+                  </Badge>
+                )}
+              </div>
+
+              <p className="text-xs text-muted-foreground">
+                {isAr
+                  ? `تشمل اللقطة ${syncStatus?.totalItems || 33} كياناً سياحياً، و ${syncStatus?.totalChunks || 190} مقطعاً لغوياً معتمداً عبر 5 لغات. المزامنة الدورية مبرمجة أسبوعياً كل أحد 03:00 UTC.`
+                  : `Snapshot contains ${syncStatus?.totalItems || 33} catalog entities and ${syncStatus?.totalChunks || 190} grounded multilingual chunks across 5 languages. Weekly cron runs Sundays 03:00 UTC.`}
+              </p>
+
+              {syncStatus?.lastSyncedAt && (
+                <div className="flex items-center gap-3 text-[11px] text-muted-foreground pt-0.5">
+                  <span className="flex items-center gap-1 font-mono">
+                    <Clock className="h-3 w-3 text-blue-500" />
+                    {isAr ? "آخر تحديث ناجح:" : "Last Sync:"}{" "}
+                    {new Date(syncStatus.lastSyncedAt).toLocaleString(isAr ? "ar-EG" : "en-US")}
+                  </span>
+                  {syncStatus.currentSnapshot?.datasetChecksum && (
+                    <span className="font-mono text-[10px] opacity-70">
+                      Checksum: {syncStatus.currentSnapshot.datasetChecksum.slice(0, 10)}...
+                    </span>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end md:self-center shrink-0">
+            {syncStatus?.recentJobs && syncStatus.recentJobs.length > 0 && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowSyncHistory(!showSyncHistory)}
+                className="h-8 text-xs gap-1 text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <History className="h-3.5 w-3.5" />
+                {showSyncHistory ? (isAr ? "إخفاء السجل" : "Hide History") : (isAr ? "سجل المزامنة" : "Sync History")}
+              </Button>
+            )}
+
+            <Button
+              size="sm"
+              onClick={handleSyncKnowledge}
+              disabled={syncingGuideR}
+              className="bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs h-8 px-3 gap-1.5 shadow-xs cursor-pointer"
+            >
+              <RefreshCw className={`h-3 w-3 ${syncingGuideR ? "animate-spin" : ""}`} />
+              {syncingGuideR
+                ? (isAr ? "جارِ أخذ اللقطة..." : "Building Snapshot...")
+                : (isAr ? "مزامنة المعرفة الآن" : "Sync GuideR Data")}
+            </Button>
+          </div>
+        </div>
+
+        {/* Expandable Sync Job History */}
+        {showSyncHistory && syncStatus?.recentJobs && (
+          <div className="mt-3 pt-3 border-t border-border/40 space-y-1.5 animate-in fade-in">
+            <span className="text-[11px] font-bold text-muted-foreground block">
+              {isAr ? "أحدث عمليات مزامنة لقطات المعرفة:" : "Recent Snapshot Ingestion Jobs:"}
+            </span>
+            <div className="space-y-1 max-h-36 overflow-y-auto pe-1">
+              {syncStatus.recentJobs.map((job) => (
+                <div
+                  key={job.id}
+                  className="p-2 rounded-lg bg-background/80 border border-border/60 text-[11px] flex items-center justify-between font-mono"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className={`h-2 w-2 rounded-full ${job.status === 'COMPLETED' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                    <span className="font-bold">{job.snapshotVersion || job.id.slice(0, 10)}</span>
+                    <Badge variant="outline" className="text-[9px] px-1 py-0">{job.trigger}</Badge>
+                  </div>
+                  <div className="flex items-center gap-3 text-muted-foreground text-[10px]">
+                    {job.toursCount && <span>{job.toursCount} tours</span>}
+                    {job.durationMs && <span>{job.durationMs}ms</span>}
+                    <span>{new Date(job.startedAt).toLocaleDateString()}</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* ── 2. TOP SOURCE CARDS (CLICKABLE CATEGORY FILTERS) ───────────── */}

@@ -221,6 +221,10 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const [editingKey, setEditingKey] = useState<ApiKeyPoolEntry | null>(null);
   const [showEditModal, setShowEditModal] = useState(false);
 
+  // Active Runtime GuideR Model
+  const [activeAiConfig, setActiveAiConfig] = useState<{ provider: string; model: string } | null>(null);
+  const [activatingId, setActivatingId] = useState<string | null>(null);
+
 
   // ──────────────────────────────────────────────────────────────────
   // DATA FETCHING & LIFECYCLE
@@ -228,10 +232,11 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   const fetchRegistryAndRouting = useCallback(async () => {
     try {
-      const [modelsRes, provRes, routingRes] = await Promise.allSettled([
+      const [modelsRes, provRes, routingRes, configRes] = await Promise.allSettled([
         aiApi.getAllModels(),
         aiApi.getProviders(),
         aiApi.getRoutingPolicy(),
+        aiApi.getConfig(),
       ]);
 
       if (modelsRes.status === "fulfilled" && modelsRes.value) {
@@ -240,6 +245,12 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       }
       if (routingRes.status === "fulfilled" && routingRes.value) {
         setRoutingData(routingRes.value);
+      }
+      if (configRes.status === "fulfilled" && configRes.value) {
+        setActiveAiConfig({
+          provider: configRes.value.provider,
+          model: configRes.value.model,
+        });
       }
     } catch {
       // Non-critical background fetch failure
@@ -492,7 +503,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
     setSaving(true);
     try {
-      await aiApi.addPoolKey({
+      const createdKey = await aiApi.addPoolKey({
         provider: selectedProvider,
         model: selectedModel,
         apiKey: trimmedKey,
@@ -502,6 +513,16 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
         isActive,
       });
 
+      if (isActive) {
+        await aiApi.activateModel({
+          provider: selectedProvider,
+          model: selectedModel,
+          credentialId: (createdKey as any)?.id,
+          testBeforeActivate: false,
+        }).catch(() => {});
+        setActiveAiConfig({ provider: selectedProvider, model: selectedModel });
+      }
+
       toast.success(
         isAr
           ? "🎉 تمت إضافة المزود بنجاح إلى منظومة الذكاء الاصطناعي!"
@@ -509,6 +530,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       );
       setShowAddWizard(false);
       onRefresh();
+      fetchRegistryAndRouting();
     } catch (err: any) {
       toast.error(err?.message || "Failed to save credential.");
     } finally {
@@ -551,9 +573,20 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
         isActive,
       });
 
+      if (isActive) {
+        await aiApi.activateModel({
+          provider: selectedProvider,
+          model: selectedModel,
+          credentialId: editingKey.id,
+          testBeforeActivate: false,
+        }).catch(() => {});
+        setActiveAiConfig({ provider: selectedProvider, model: selectedModel });
+      }
+
       toast.success(isAr ? "تم تحديث البيانات بنجاح!" : "Credential updated successfully!");
       setShowEditModal(false);
       onRefresh();
+      fetchRegistryAndRouting();
     } catch (err: any) {
       toast.error(err?.message || "Failed to update credential.");
     } finally {
@@ -561,6 +594,36 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     }
   };
 
+  // Set model as active runtime GuideR model
+  const handleActivateModel = async (k: ApiKeyPoolEntry) => {
+    setActivatingId(k.id);
+    try {
+      const targetModel = k.model || k.defaultModel || "gemini-2.5-flash";
+      const res = await aiApi.activateModel({
+        provider: k.provider,
+        model: targetModel,
+        credentialId: k.id,
+        testBeforeActivate: true,
+      });
+
+      if (res.success) {
+        toast.success(
+          isAr
+            ? `🚀 تم تفعيل ${res.model} بنجاح كالموديل التشغيلي لجايدر!`
+            : `🚀 Successfully activated ${res.model} as GuideR's runtime model!`
+        );
+        setActiveAiConfig({ provider: res.provider, model: res.model });
+        onRefresh();
+        fetchRegistryAndRouting();
+      } else {
+        toast.error(isAr ? "فشل تفعيل الموديل." : "Failed to activate model.");
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to activate model.");
+    } finally {
+      setActivatingId(null);
+    }
+  };
 
   // Test single credential in the table
   const handleTestKeyInTable = async (id: string) => {
@@ -1135,6 +1198,28 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Actions */}
                         <td className="px-4 py-3 text-right">
                           <div className="flex items-center justify-end gap-1.5">
+                            {/* Active GuideR Model Indicator or Set Active Button */}
+                            {entry.provider.toLowerCase() === (activeAiConfig?.provider || "").toLowerCase() &&
+                            (entry.model === activeAiConfig?.model || entry.defaultModel === activeAiConfig?.model) &&
+                            entry.isActive ? (
+                              <Badge className="bg-blue-600/15 text-blue-600 dark:text-blue-400 border-blue-500/40 text-[10px] font-bold gap-1 px-2 py-0.5 shadow-2xs">
+                                <Zap className="h-2.5 w-2.5 fill-current" />
+                                {isAr ? "نشط في جايدر" : "Active GuideR"}
+                              </Badge>
+                            ) : (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleActivateModel(entry)}
+                                disabled={activatingId === entry.id}
+                                className="h-7 px-2 text-[10px] font-bold border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 cursor-pointer"
+                                title={isAr ? "تعيين هذا الموديل كالموديل التشغيلي لجايدر" : "Set this model as GuideR's active runtime model"}
+                              >
+                                <Zap className={`h-2.5 w-2.5 ${activatingId === entry.id ? "animate-spin" : ""}`} />
+                                {activatingId === entry.id ? (isAr ? "تفعيل..." : "Activating...") : (isAr ? "تفعيل لجايدر" : "Set Active")}
+                              </Button>
+                            )}
+
                             <Button
                               variant="outline"
                               size="sm"

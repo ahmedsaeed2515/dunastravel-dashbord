@@ -9,6 +9,11 @@ import {
   BulkMoveMediaPayload,
   CreateMediaCategoryPayload,
   UpdateMediaCategoryPayload,
+  AssignShowcasePayload,
+  UpdateShowcaseItemPayload,
+  ReorderShowcasePayload,
+  UploadVideoPayload,
+  OptimizeAssetPayload,
 } from "../types";
 import { toast } from "sonner";
 
@@ -18,6 +23,8 @@ export const mediaKeys = {
   list: (filters: MediaQueryFilters) => [...mediaKeys.lists(), filters] as const,
   categories: () => [...mediaKeys.all, "categories"] as const,
   summary: () => [...mediaKeys.all, "summary"] as const,
+  showcase: () => [...mediaKeys.all, "showcase"] as const,
+  usage: (id: string) => [...mediaKeys.all, "usage", id] as const,
 };
 
 export function useMediaAssets(filters: MediaQueryFilters) {
@@ -173,6 +180,131 @@ export function useDeleteMedia() {
     },
     onError: (err: any) => {
       const msg = err?.response?.data?.message || "Failed to delete media.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useShowcaseMedia() {
+  return useQuery({
+    queryKey: mediaKeys.showcase(),
+    queryFn: () => mediaApi.getShowcase(),
+  });
+}
+
+export function useAssignShowcase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: AssignShowcasePayload) => mediaApi.assignShowcase(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+      toast.success("Item added to homepage showcase.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to assign to showcase.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useUpdateShowcaseItem() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: UpdateShowcaseItemPayload }) =>
+      mediaApi.updateShowcaseItem(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      toast.success("Showcase item updated.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to update showcase item.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useReorderShowcase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: ReorderShowcasePayload) => mediaApi.reorderShowcase(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      toast.success("Showcase reordered successfully.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to reorder showcase.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useRemoveFromShowcase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => mediaApi.removeFromShowcase(id),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+      toast.success("Removed from showcase.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to remove from showcase.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useUploadVideo() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: UploadVideoPayload) => mediaApi.uploadVideo(payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+      toast.success("Video uploaded successfully.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to upload video.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useOptimizeAsset() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: OptimizeAssetPayload }) =>
+      mediaApi.optimizeAsset(id, payload),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.all });
+      toast.success("Asset optimized with WebP URL successfully.");
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to optimize asset.";
+      toast.error(msg);
+    },
+  });
+}
+
+export function useMediaUsage(id: string | null) {
+  return useQuery({
+    queryKey: id ? mediaKeys.usage(id) : ["media", "usage", "none"],
+    queryFn: () => (id ? mediaApi.getMediaUsage(id) : null),
+    enabled: !!id,
+  });
+}
+
+export function useSyncEntities() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: () => mediaApi.syncEntities(),
+    onSuccess: (res) => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.all });
+      toast.success(`Entities synced. ${res.syncedTourImages} tour images registered.`);
+    },
+    onError: (err: any) => {
+      const msg = err?.response?.data?.message || "Failed to sync entities.";
       toast.error(msg);
     },
   });

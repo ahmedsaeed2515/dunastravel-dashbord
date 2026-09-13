@@ -12,6 +12,19 @@ export interface MediaAsset {
   width?: number | null;
   height?: number | null;
   altText: string | null;
+  title?: string | null;
+  description?: string | null;
+  mediaType?: 'IMAGE' | 'VIDEO';
+  cloudinaryResourceType?: string | null;
+  thumbnailUrl?: string | null;
+  optimizedUrl?: string | null;
+  duration?: number | null;
+  isShowcase?: boolean;
+  showcaseSection?: 'PHOTO' | 'VIDEO' | null;
+  showcasePosition?: number;
+  isActive?: boolean;
+  isPublished?: boolean;
+  metadata?: Record<string, unknown> | null;
   entityType: MediaEntityType;
   entityId: string | null;
   provenance: string;
@@ -111,3 +124,60 @@ export interface MediaSummary {
   bytes: number;
   byEntityType: Record<'TOUR' | 'HOTEL' | 'GENERAL', number>;
 }
+
+export interface ShowcaseResponse {
+  photos: MediaAsset[];
+  videos: MediaAsset[];
+}
+
+export interface AssignShowcasePayload {
+  mediaId: string;
+  section: 'PHOTO' | 'VIDEO';
+  position?: number;
+  title?: string;
+  description?: string;
+  altText?: string;
+}
+
+export interface UpdateShowcaseItemPayload {
+  title?: string;
+  description?: string;
+  altText?: string;
+  position?: number;
+  isActive?: boolean;
+  isPublished?: boolean;
+}
+
+export interface ReorderShowcasePayload {
+  section: 'PHOTO' | 'VIDEO';
+  items: Array<{ id: string; position: number }>;
+}
+
+export interface UploadVideoPayload {
+  file: File;
+  title?: string;
+  description?: string;
+  altText?: string;
+  addToShowcase?: boolean;
+}
+
+export interface OptimizeAssetPayload {
+  format?: 'webp' | 'avif' | 'auto';
+  quality?: string;
+  width?: number;
+  height?: number;
+}
+
+export interface MediaUsageItem {
+  entityType: string;
+  entityId: string;
+  title?: string;
+  field: string;
+}
+
+export interface MediaUsageResponse {
+  isUsed: boolean;
+  count: number;
+  usages: MediaUsageItem[];
+}
+

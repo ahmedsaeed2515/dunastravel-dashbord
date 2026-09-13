@@ -11,6 +11,13 @@ import {
   MediaCategoryItem,
   CreateMediaCategoryPayload,
   UpdateMediaCategoryPayload,
+  ShowcaseResponse,
+  AssignShowcasePayload,
+  UpdateShowcaseItemPayload,
+  ReorderShowcasePayload,
+  UploadVideoPayload,
+  OptimizeAssetPayload,
+  MediaUsageResponse,
 } from "../types";
 
 export interface PaginatedResponse<T> {
@@ -101,5 +108,50 @@ export const mediaApi = {
 
   deleteMedia: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/media/${id}`);
-  }
+  },
+
+  getShowcase: async (): Promise<ShowcaseResponse> => {
+    return apiClient.get<ShowcaseResponse, ShowcaseResponse>("/admin/media/showcase");
+  },
+
+  assignShowcase: async (payload: AssignShowcasePayload): Promise<MediaAsset> => {
+    return apiClient.post<MediaAsset, MediaAsset>("/admin/media/showcase", payload);
+  },
+
+  updateShowcaseItem: async (id: string, payload: UpdateShowcaseItemPayload): Promise<MediaAsset> => {
+    return apiClient.patch<MediaAsset, MediaAsset>(`/admin/media/showcase/${id}`, payload);
+  },
+
+  reorderShowcase: async (payload: ReorderShowcasePayload): Promise<{ success: boolean }> => {
+    return apiClient.post<{ success: boolean }, { success: boolean }>("/admin/media/showcase/reorder", payload);
+  },
+
+  removeFromShowcase: async (id: string): Promise<{ success: boolean }> => {
+    return apiClient.delete<{ success: boolean }, { success: boolean }>(`/admin/media/showcase/${id}`);
+  },
+
+  uploadVideo: async (payload: UploadVideoPayload): Promise<MediaAsset> => {
+    const formData = new FormData();
+    formData.append("file", payload.file);
+    if (payload.title) formData.append("title", payload.title);
+    if (payload.description) formData.append("description", payload.description);
+    if (payload.altText) formData.append("altText", payload.altText);
+    if (payload.addToShowcase !== undefined) formData.append("addToShowcase", String(payload.addToShowcase));
+
+    return apiClient.post<MediaAsset, MediaAsset>("/admin/media/upload-video", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+
+  optimizeAsset: async (id: string, payload: OptimizeAssetPayload): Promise<MediaAsset> => {
+    return apiClient.post<MediaAsset, MediaAsset>(`/admin/media/optimize/${id}`, payload);
+  },
+
+  getMediaUsage: async (id: string): Promise<MediaUsageResponse> => {
+    return apiClient.get<MediaUsageResponse, MediaUsageResponse>(`/admin/media/${id}/usage`);
+  },
+
+  syncEntities: async (): Promise<{ success: boolean; syncedTourImages: number }> => {
+    return apiClient.post<{ success: boolean; syncedTourImages: number }, { success: boolean; syncedTourImages: number }>("/admin/media/sync-entities");
+  },
 };

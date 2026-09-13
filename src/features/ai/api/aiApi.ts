@@ -29,6 +29,21 @@ export interface AiSimulatorResponse {
   telemetry?: JsonValue;
 }
 
+export interface GuiderAvailabilityInfo {
+  enabled: boolean;
+  status: 'ACTIVE' | 'DISABLED' | 'MAINTENANCE';
+  message: string;
+  changedAt?: string;
+  changedBy?: string;
+  reason?: string;
+}
+
+export interface UpdateGuiderStatusPayload {
+  status: 'ACTIVE' | 'DISABLED' | 'MAINTENANCE';
+  disabledMessage?: string;
+  reason?: string;
+}
+
 export interface AiOverviewMetrics {
   totalConversations: number;
   activeConversations: number;
@@ -37,6 +52,9 @@ export interface AiOverviewMetrics {
   publishedKnowledgeArticles: number;
   configuredApiKeysCount?: number;
   healthyApiKeysCount?: number;
+  verifiedHealthyApiKeysCount?: number;
+  guiderStatus?: 'ACTIVE' | 'DISABLED' | 'MAINTENANCE';
+  guiderAvailability?: GuiderAvailabilityInfo;
   avgLatencyMs: number;
   totalTokens: number;
   estimatedCostUsd: number;
@@ -99,6 +117,55 @@ export interface DiscoveredModelItem {
   outputPricePer1M?: number;
   status: 'AVAILABLE' | 'UNAVAILABLE' | 'DEPRECATED';
   source: 'LIVE_PROVIDER';
+  curatedBadge?: 'BEST_OVERALL' | 'BEST_VALUE' | 'FASTEST' | 'QUALITY' | 'ADVANCED' | null;
+  isCurated?: boolean;
+}
+
+export interface ActivateModelPayload {
+  provider: string;
+  model: string;
+  credentialId?: string;
+  testBeforeActivate?: boolean;
+}
+
+export interface KnowledgeSyncStatus {
+  isStale: boolean;
+  status: 'HEALTHY' | 'STALE' | 'INITIALIZING' | 'FAILED';
+  lastSyncedAt?: string | null;
+  currentSnapshot?: {
+    snapshotVersion: string;
+    datasetChecksum: string;
+    totalToursIngested: number;
+    totalChunksCreated: number;
+    activatedAt: string;
+  } | null;
+  lastSyncJob?: {
+    id: string;
+    trigger: string;
+    status: string;
+    snapshotVersion?: string;
+    toursCount?: number;
+    chunksCount?: number;
+    startedAt: string;
+    completedAt?: string;
+    durationMs?: number;
+    errorMessage?: string;
+  } | null;
+  recentJobs?: Array<{
+    id: string;
+    trigger: string;
+    status: string;
+    snapshotVersion?: string;
+    toursCount?: number;
+    chunksCount?: number;
+    startedAt: string;
+    completedAt?: string;
+    durationMs?: number;
+    errorMessage?: string;
+  }>;
+  totalItems: number;
+  totalChunks: number;
+  staleThresholdDays: number;
 }
 
 export interface RoutingPolicyData {
@@ -497,6 +564,15 @@ export const aiApi = {
     return apiClient.get<unknown, AiAnalyticsData>("/admin/ai/analytics");
   },
 
+  // Global GuideR Availability Control
+  getGuiderStatus: async (): Promise<GuiderAvailabilityInfo> => {
+    return apiClient.get<unknown, GuiderAvailabilityInfo>("/ai/chat/status");
+  },
+
+  updateGuiderStatus: async (payload: UpdateGuiderStatusPayload): Promise<GuiderAvailabilityInfo> => {
+    return apiClient.post<unknown, GuiderAvailabilityInfo>("/admin/ai/status", payload);
+  },
+
   // Configuration & Testing
   getConfig: async (): Promise<AiConfigData> => {
     return apiClient.get<unknown, AiConfigData>("/admin/ai/config");
@@ -646,15 +722,46 @@ export const aiApi = {
   ): Promise<{
     providerId: string;
     models: DiscoveredModelItem[];
+    curatedModels?: DiscoveredModelItem[];
+    rawModels?: DiscoveredModelItem[];
     cached: boolean;
     timestamp: string;
   }> => {
     return apiClient.post<unknown, {
       providerId: string;
       models: DiscoveredModelItem[];
+      curatedModels?: DiscoveredModelItem[];
+      rawModels?: DiscoveredModelItem[];
       cached: boolean;
       timestamp: string;
     }>(`/admin/ai/providers/${providerId}/models/refresh`, payload || {});
+  },
+
+  activateModel: async (payload: ActivateModelPayload): Promise<{
+    success: boolean;
+    provider: string;
+    model: string;
+    testResult?: ProviderTestResult;
+    updatedCredentialId?: string;
+  }> => {
+    return apiClient.post<unknown, any>("/admin/ai/models/activate", payload);
+  },
+
+  getKnowledgeStatus: async (): Promise<KnowledgeSyncStatus> => {
+    return apiClient.get<unknown, KnowledgeSyncStatus>("/admin/ai/knowledge/status");
+  },
+
+  syncKnowledge: async (): Promise<{
+    success: boolean;
+    jobId: string;
+    snapshotVersion: string;
+    toursCount: number;
+    chunksCount: number;
+    durationMs: number;
+    datasetChecksum: string;
+    trigger: string;
+  }> => {
+    return apiClient.post<unknown, any>("/admin/ai/knowledge/sync");
   },
 
   getRoutingPolicy: async (): Promise<RoutingPolicyData> => {
