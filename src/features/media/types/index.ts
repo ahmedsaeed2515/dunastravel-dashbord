@@ -166,6 +166,8 @@ export interface OptimizeAssetPayload {
   quality?: string;
   width?: number;
   height?: number;
+  maxWidth?: number;
+  maxHeight?: number;
 }
 
 export interface MediaUsageItem {

@@ -3,6 +3,7 @@ import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
 import { useMemo, useState, useRef, useCallback, useEffect } from "react";
 import { useParams } from "next/navigation";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -309,6 +310,17 @@ export default function MediaPage() {
             <RefreshCw className={`mr-1.5 h-3.5 w-3.5 ${isRefetching ? "animate-spin" : ""}`} />
             {isAr ? "تحديث" : "Refresh"}
           </Button>
+
+          <Link href={`/${locale}/admin/media/showcase`}>
+            <Button
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs font-bold gap-1.5 cursor-pointer border-amber-500/40 hover:bg-amber-500/10 text-amber-500 rounded-xl"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+              <span>{isAr ? "معرض الرئيسية 🌟" : "Homepage Showcase 🌟"}</span>
+            </Button>
+          </Link>
 
           <Button
             variant="outline"

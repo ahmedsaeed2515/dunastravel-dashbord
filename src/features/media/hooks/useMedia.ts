@@ -281,7 +281,12 @@ export function useOptimizeAsset() {
       toast.success("Asset optimized with WebP URL successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to optimize asset.";
+      const apiMsg = err?.response?.data?.message;
+      const msg = Array.isArray(apiMsg)
+        ? apiMsg.join(", ")
+        : typeof apiMsg === "string"
+        ? apiMsg
+        : "Failed to optimize asset.";
       toast.error(msg);
     },
   });

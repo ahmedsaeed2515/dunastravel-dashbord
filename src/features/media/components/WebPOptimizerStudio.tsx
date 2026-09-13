@@ -221,23 +221,28 @@ export function WebPOptimizerStudio({
   const livePreviewUrl = selectedLibraryAsset
     ? (() => {
         const rawUrl = selectedLibraryAsset.secureUrl || selectedLibraryAsset.url;
-        if (!rawUrl.includes("res.cloudinary.com")) return rawUrl;
+        if (!rawUrl || !rawUrl.includes("res.cloudinary.com")) return rawUrl;
         const widthPart = targetWidth !== "original" ? `w_${targetWidth},` : "";
         const transform = `f_${targetFormat},q_${targetQuality},${widthPart}c_limit`;
-        return rawUrl.replace(/\/upload\/(?:v\d+\/)?/, `/upload/${transform}/`);
+        if (/\/image\/upload\/(?:[^\/]+\/)?(v\d+\/.+)/.test(rawUrl)) {
+          return rawUrl.replace(/\/image\/upload\/(?:[^\/]+\/)?(v\d+\/.+)/, `/image/upload/${transform}/$1`);
+        }
+        return rawUrl.replace(/\/image\/upload\//, `/image/upload/${transform}/`);
       })()
     : null;
 
   const handleApplyLibraryOptimization = () => {
     if (!selectedLibraryAsset) return;
 
+    const widthNum = targetWidth !== "original" ? parseInt(targetWidth, 10) : undefined;
     optimizeAsset(
       {
         id: selectedLibraryAsset.id,
         payload: {
           format: targetFormat,
           quality: targetQuality,
-          width: targetWidth !== "original" ? parseInt(targetWidth, 10) : undefined,
+          width: widthNum,
+          maxWidth: widthNum,
         },
       },
       {

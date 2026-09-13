@@ -48,8 +48,359 @@ import {
   Layers,
   UploadCloud,
   Film,
+  GripVertical,
 } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from "@dnd-kit/core";
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  rectSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+
+function getCloudNameFromUrl(url?: string | null) {
+  if (!url) return "u7xf91gp";
+  const match = url.match(/cloudinary\.com\/([^/]+)\//);
+  return match ? match[1] : "u7xf91gp";
+}
+
+interface SortablePhotoCardProps {
+  item: MediaAsset;
+  idx: number;
+  total: number;
+  isAr: boolean;
+  isReordering: boolean;
+  isRemoving: boolean;
+  onToggleActive: (item: MediaAsset) => void;
+  onMove: (section: "PHOTO" | "VIDEO", index: number, direction: "up" | "down") => void;
+  onEdit: (item: MediaAsset) => void;
+  onRemove: (id: string) => void;
+}
+
+function SortableShowcasePhotoCard({
+  item,
+  idx,
+  total,
+  isAr,
+  isReordering,
+  isRemoving,
+  onToggleActive,
+  onMove,
+  onEdit,
+  onRemove,
+}: SortablePhotoCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.6 : undefined,
+  };
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`overflow-hidden transition-all duration-200 border ${
+        isDragging ? "ring-2 ring-amber-500 shadow-xl" : ""
+      } ${item.isActive ? "border-border/80 shadow-sm" : "opacity-60 border-dashed"}`}
+    >
+      <div className="relative aspect-[16/10] w-full bg-muted overflow-hidden group">
+        <img
+          src={item.optimizedUrl || item.secureUrl || item.url}
+          alt={item.altText || item.title || "Showcase Photo"}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
+          <Badge className="bg-slate-900/80 text-white font-mono text-xs backdrop-blur-sm border border-white/10">
+            #{idx + 1}
+          </Badge>
+          {item.optimizedUrl && (
+            <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
+              WebP
+            </Badge>
+          )}
+        </div>
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+          <button
+            {...attributes}
+            {...listeners}
+            className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center cursor-grab active:cursor-grabbing focus:outline-hidden"
+            title={isAr ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+            aria-label={isAr ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
+          <Button
+            size="icon"
+            variant="secondary"
+            className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/90 text-white"
+            onClick={() => window.open(item.secureUrl || item.url, "_blank")}
+            title={isAr ? "عرض الصورة الأصلية" : "View original"}
+          >
+            <ExternalLink className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0 flex-1">
+            <p className="font-semibold text-sm text-foreground truncate">
+              {item.title || (isAr ? "بدون عنوان" : "Untitled")}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {item.altText || item.entityType || "Dunas Travel"}
+            </p>
+          </div>
+          <Badge
+            variant={item.isActive ? "default" : "secondary"}
+            className="cursor-pointer text-xs shrink-0"
+            onClick={() => onToggleActive(item)}
+          >
+            {item.isActive ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Inactive")}
+          </Badge>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              disabled={idx === 0 || isReordering}
+              onClick={() => onMove("PHOTO", idx, "up")}
+              title={isAr ? "تحريك لأعلى" : "Move up"}
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              disabled={idx === total - 1 || isReordering}
+              onClick={() => onMove("PHOTO", idx, "down")}
+              title={isAr ? "تحريك لأسفل" : "Move down"}
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => onEdit(item)}
+              title={isAr ? "تعديل التفاصيل" : "Edit details"}
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+              disabled={isRemoving}
+              onClick={() => onRemove(item.id)}
+              title={isAr ? "إزالة من المعرض" : "Remove from showcase"}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+interface SortableVideoCardProps {
+  item: MediaAsset;
+  idx: number;
+  total: number;
+  isAr: boolean;
+  isReordering: boolean;
+  isRemoving: boolean;
+  onToggleActive: (item: MediaAsset) => void;
+  onMove: (section: "PHOTO" | "VIDEO", index: number, direction: "up" | "down") => void;
+  onEdit: (item: MediaAsset) => void;
+  onRemove: (id: string) => void;
+  onPreview: (url: string) => void;
+}
+
+function SortableShowcaseVideoCard({
+  item,
+  idx,
+  total,
+  isAr,
+  isReordering,
+  isRemoving,
+  onToggleActive,
+  onMove,
+  onEdit,
+  onRemove,
+  onPreview,
+}: SortableVideoCardProps) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: item.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    zIndex: isDragging ? 50 : undefined,
+    opacity: isDragging ? 0.6 : undefined,
+  };
+
+  const cloudName = getCloudNameFromUrl(item.secureUrl || item.url);
+  const thumbnail =
+    item.thumbnailUrl ||
+    (item.publicId
+      ? `https://res.cloudinary.com/${cloudName}/video/upload/w_600,h_400,c_fill,so_0,f_jpg/${item.publicId}.jpg`
+      : "/images/placeholder.jpg");
+
+  return (
+    <Card
+      ref={setNodeRef}
+      style={style}
+      className={`overflow-hidden transition-all duration-200 border ${
+        isDragging ? "ring-2 ring-blue-500 shadow-xl" : ""
+      } ${item.isActive ? "border-border/80 shadow-sm" : "opacity-60 border-dashed"}`}
+    >
+      <div className="relative aspect-[16/10] w-full bg-muted overflow-hidden group">
+        <img
+          src={thumbnail}
+          alt={item.title || "Showcase Video"}
+          className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div
+          className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-colors cursor-pointer"
+          onClick={() => onPreview(item.secureUrl || item.url)}
+        >
+          <div className="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
+            <Play className="w-5 h-5 fill-current ml-0.5" />
+          </div>
+        </div>
+
+        <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
+          <Badge className="bg-slate-900/80 text-white font-mono text-xs backdrop-blur-sm border border-white/10">
+            #{idx + 1}
+          </Badge>
+          {item.duration && (
+            <Badge variant="outline" className="bg-black/60 text-white border-white/20 text-[10px] gap-1">
+              <Clock className="w-3 h-3" />
+              {Math.round(item.duration)}s
+            </Badge>
+          )}
+        </div>
+
+        <div className="absolute top-2 right-2 z-10 flex items-center gap-1.5">
+          <button
+            {...attributes}
+            {...listeners}
+            className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/90 text-white flex items-center justify-center cursor-grab active:cursor-grabbing focus:outline-hidden"
+            title={isAr ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+            aria-label={isAr ? "اسحب لإعادة الترتيب" : "Drag to reorder"}
+          >
+            <GripVertical className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      <CardContent className="p-4 space-y-3">
+        <div className="flex items-start justify-between gap-2">
+          <div className="space-y-1 min-w-0 flex-1">
+            <p className="font-semibold text-sm text-foreground truncate">
+              {item.title || (isAr ? "مقطع فيديو بدون عنوان" : "Untitled Video")}
+            </p>
+            <p className="text-xs text-muted-foreground truncate">
+              {item.description || item.altText || "Dunas Travel Experience"}
+            </p>
+          </div>
+          <Badge
+            variant={item.isActive ? "default" : "secondary"}
+            className="cursor-pointer text-xs shrink-0"
+            onClick={() => onToggleActive(item)}
+          >
+            {item.isActive ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Inactive")}
+          </Badge>
+        </div>
+
+        <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              disabled={idx === 0 || isReordering}
+              onClick={() => onMove("VIDEO", idx, "up")}
+              title={isAr ? "تحريك لأعلى" : "Move up"}
+            >
+              <ArrowUp className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7"
+              disabled={idx === total - 1 || isReordering}
+              onClick={() => onMove("VIDEO", idx, "down")}
+              title={isAr ? "تحريك لأسفل" : "Move down"}
+            >
+              <ArrowDown className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-muted-foreground hover:text-foreground"
+              onClick={() => onEdit(item)}
+              title={isAr ? "تعديل التفاصيل" : "Edit details"}
+            >
+              <Edit2 className="w-3.5 h-3.5" />
+            </Button>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="h-7 w-7 text-destructive hover:bg-destructive/10"
+              disabled={isRemoving}
+              onClick={() => onRemove(item.id)}
+              title={isAr ? "إزالة من المعرض" : "Remove from showcase"}
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function MediaShowcasePage() {
   const params = useParams();
@@ -98,6 +449,43 @@ export default function MediaShowcasePage() {
 
     const items = list.map((item, idx) => ({ id: item.id, position: idx + 1 }));
     reorderShowcase({ section, items });
+  };
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
+  const handlePhotoDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = photos.findIndex((item) => item.id === active.id);
+    const newIndex = photos.findIndex((item) => item.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reordered = arrayMove(photos, oldIndex, newIndex);
+      const items = reordered.map((item, idx) => ({ id: item.id, position: idx + 1 }));
+      reorderShowcase({ section: "PHOTO", items });
+    }
+  };
+
+  const handleVideoDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = videos.findIndex((item) => item.id === active.id);
+    const newIndex = videos.findIndex((item) => item.id === over.id);
+    if (oldIndex !== -1 && newIndex !== -1) {
+      const reordered = arrayMove(videos, oldIndex, newIndex);
+      const items = reordered.map((item, idx) => ({ id: item.id, position: idx + 1 }));
+      reorderShowcase({ section: "VIDEO", items });
+    }
   };
 
   // Toggle Active
@@ -254,115 +642,27 @@ export default function MediaShowcasePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {photos.map((item, idx) => (
-                <Card
-                  key={item.id}
-                  className={`overflow-hidden transition-all duration-200 border ${
-                    item.isActive ? "border-border/80 shadow-sm" : "opacity-60 border-dashed"
-                  }`}
-                >
-                  <div className="relative aspect-[16/10] w-full bg-muted overflow-hidden group">
-                    <img
-                      src={item.optimizedUrl || item.secureUrl || item.url}
-                      alt={item.altText || item.title || "Showcase Photo"}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handlePhotoDragEnd}>
+              <SortableContext items={photos.map((p) => p.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {photos.map((item, idx) => (
+                    <SortableShowcasePhotoCard
+                      key={item.id}
+                      item={item}
+                      idx={idx}
+                      total={photos.length}
+                      isAr={isAr}
+                      isReordering={isReordering}
+                      isRemoving={isRemoving}
+                      onToggleActive={handleToggleActive}
+                      onMove={handleMove}
+                      onEdit={setEditingItem}
+                      onRemove={removeFromShowcase}
                     />
-                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-                      <Badge className="bg-slate-900/80 text-white font-mono text-xs backdrop-blur-sm border border-white/10">
-                        #{idx + 1}
-                      </Badge>
-                      {item.optimizedUrl && (
-                        <Badge variant="outline" className="bg-emerald-500/20 text-emerald-400 border-emerald-500/30 text-[10px]">
-                          WebP
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="absolute top-2 right-2 z-10">
-                      <Button
-                        size="icon"
-                        variant="secondary"
-                        className="h-7 w-7 rounded-full bg-black/60 hover:bg-black/90 text-white"
-                        onClick={() => window.open(item.secureUrl || item.url, "_blank")}
-                        title={isAr ? "عرض الصورة الأصلية" : "View original"}
-                      >
-                        <ExternalLink className="w-3.5 h-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <p className="font-semibold text-sm text-foreground truncate">
-                          {item.title || (isAr ? "بدون عنوان" : "Untitled")}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.altText || item.entityType || "Dunas Travel"}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={item.isActive ? "default" : "secondary"}
-                        className="cursor-pointer text-xs shrink-0"
-                        onClick={() => handleToggleActive(item)}
-                      >
-                        {item.isActive ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Inactive")}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
-                      {/* Reorder Buttons */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          disabled={idx === 0 || isReordering}
-                          onClick={() => handleMove("PHOTO", idx, "up")}
-                          title={isAr ? "تحريك لأعلى" : "Move up"}
-                        >
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          disabled={idx === photos.length - 1 || isReordering}
-                          onClick={() => handleMove("PHOTO", idx, "down")}
-                          title={isAr ? "تحريك لأسفل" : "Move down"}
-                        >
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-
-                      {/* Edit & Remove Buttons */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          onClick={() => setEditingItem(item)}
-                          title={isAr ? "تعديل التفاصيل" : "Edit details"}
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                          disabled={isRemoving}
-                          onClick={() => removeFromShowcase(item.id)}
-                          title={isAr ? "إزالة من المعرض" : "Remove from showcase"}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </TabsContent>
 
@@ -423,118 +723,28 @@ export default function MediaShowcasePage() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {videos.map((item, idx) => (
-                <Card
-                  key={item.id}
-                  className={`overflow-hidden transition-all duration-200 border ${
-                    item.isActive ? "border-border/80 shadow-sm" : "opacity-60 border-dashed"
-                  }`}
-                >
-                  <div className="relative aspect-[16/10] w-full bg-muted overflow-hidden group">
-                    <img
-                      src={
-                        item.thumbnailUrl ||
-                        (item.publicId ? `https://res.cloudinary.com/degbrq3ck/video/upload/w_600,h_400,c_fill,so_0/${item.publicId}.jpg` : "/images/placeholder.jpg")
-                      }
-                      alt={item.title || "Showcase Video"}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleVideoDragEnd}>
+              <SortableContext items={videos.map((v) => v.id)} strategy={rectSortingStrategy}>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {videos.map((item, idx) => (
+                    <SortableShowcaseVideoCard
+                      key={item.id}
+                      item={item}
+                      idx={idx}
+                      total={videos.length}
+                      isAr={isAr}
+                      isReordering={isReordering}
+                      isRemoving={isRemoving}
+                      onToggleActive={handleToggleActive}
+                      onMove={handleMove}
+                      onEdit={setEditingItem}
+                      onRemove={removeFromShowcase}
+                      onPreview={setPreviewVideoUrl}
                     />
-                    {/* Play Overlay Button */}
-                    <div
-                      className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-colors cursor-pointer"
-                      onClick={() => setPreviewVideoUrl(item.secureUrl || item.url)}
-                    >
-                      <div className="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
-                        <Play className="w-5 h-5 fill-current ml-0.5" />
-                      </div>
-                    </div>
-
-                    <div className="absolute top-2 left-2 z-10 flex items-center gap-1.5">
-                      <Badge className="bg-slate-900/80 text-white font-mono text-xs backdrop-blur-sm border border-white/10">
-                        #{idx + 1}
-                      </Badge>
-                      {item.duration && (
-                        <Badge variant="outline" className="bg-black/60 text-white border-white/20 text-[10px] gap-1">
-                          <Clock className="w-3 h-3" />
-                          {Math.round(item.duration)}s
-                        </Badge>
-                      )}
-                    </div>
-                  </div>
-
-                  <CardContent className="p-4 space-y-3">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="space-y-1 min-w-0 flex-1">
-                        <p className="font-semibold text-sm text-foreground truncate">
-                          {item.title || (isAr ? "مقطع فيديو بدون عنوان" : "Untitled Video")}
-                        </p>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {item.description || item.altText || "Dunas Travel Experience"}
-                        </p>
-                      </div>
-                      <Badge
-                        variant={item.isActive ? "default" : "secondary"}
-                        className="cursor-pointer text-xs shrink-0"
-                        onClick={() => handleToggleActive(item)}
-                      >
-                        {item.isActive ? (isAr ? "نشط" : "Active") : (isAr ? "معطل" : "Inactive")}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border/50 text-xs">
-                      {/* Reorder Buttons */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          disabled={idx === 0 || isReordering}
-                          onClick={() => handleMove("VIDEO", idx, "up")}
-                          title={isAr ? "تحريك لأعلى" : "Move up"}
-                        >
-                          <ArrowUp className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7"
-                          disabled={idx === videos.length - 1 || isReordering}
-                          onClick={() => handleMove("VIDEO", idx, "down")}
-                          title={isAr ? "تحريك لأسفل" : "Move down"}
-                        >
-                          <ArrowDown className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-
-                      {/* Edit & Remove Buttons */}
-                      <div className="flex items-center gap-1">
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-muted-foreground hover:text-foreground"
-                          onClick={() => setEditingItem(item)}
-                          title={isAr ? "تعديل التفاصيل" : "Edit details"}
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </Button>
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-7 w-7 text-destructive hover:bg-destructive/10"
-                          disabled={isRemoving}
-                          onClick={() => removeFromShowcase(item.id)}
-                          title={isAr ? "إزالة من المعرض" : "Remove from showcase"}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+                  ))}
+                </div>
+              </SortableContext>
+            </DndContext>
           )}
         </TabsContent>
       </Tabs>
