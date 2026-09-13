@@ -13,6 +13,7 @@ import {
   useSyncEntities,
 } from "@/features/media/hooks/useMedia";
 import { MediaAsset } from "@/features/media/types";
+import { VideoUploadDialog } from "@/features/media/components/VideoUploadDialog";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -412,7 +413,6 @@ export default function MediaShowcasePage() {
   const { mutate: updateShowcaseItem, isPending: isUpdating } = useUpdateShowcaseItem();
   const { mutate: reorderShowcase, isPending: isReordering } = useReorderShowcase();
   const { mutate: removeFromShowcase, isPending: isRemoving } = useRemoveFromShowcase();
-  const { mutate: uploadVideo, isPending: isUploadingVideo } = useUploadVideo();
   const { mutate: syncEntities, isPending: isSyncing } = useSyncEntities();
 
   // Modals
@@ -429,11 +429,6 @@ export default function MediaShowcasePage() {
     limit: 48,
     search: searchQuery || undefined,
   });
-
-  // Upload video form state
-  const [videoFile, setVideoFile] = useState<File | null>(null);
-  const [videoTitle, setVideoTitle] = useState("");
-  const [videoDescription, setVideoDescription] = useState("");
 
   const photos = showcaseData?.photos || [];
   const videos = showcaseData?.videos || [];
@@ -508,27 +503,6 @@ export default function MediaShowcasePage() {
       },
     });
     setEditingItem(null);
-  };
-
-  // Handle Video Upload Submit
-  const handleUploadVideoSubmit = () => {
-    if (!videoFile) {
-      toast.error(isAr ? "يرجى اختيار ملف فيديو" : "Please select a video file");
-      return;
-    }
-    uploadVideo({
-      file: videoFile,
-      title: videoTitle || undefined,
-      description: videoDescription || undefined,
-      addToShowcase: true,
-    }, {
-      onSuccess: () => {
-        setIsUploadVideoOpen(false);
-        setVideoFile(null);
-        setVideoTitle("");
-        setVideoDescription("");
-      }
-    });
   };
 
   return (
@@ -848,88 +822,13 @@ export default function MediaShowcasePage() {
       </Dialog>
 
       {/* ================= MODAL: UPLOAD NEW VIDEO ================= */}
-      <Dialog open={isUploadVideoOpen} onOpenChange={setIsUploadVideoOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>{isAr ? "رفع فيديو جديد للمعرض" : "Upload Showcase Video"}</DialogTitle>
-            <DialogDescription>
-              {isAr
-                ? "ارفع ملف فيديو (MP4/WebM/MOV). سيتم نقله تلقائياً إلى Cloudinary وتحسينه وتعيينه في معرض الفيديو."
-                : "Upload an MP4/WebM video. It will be uploaded to Cloudinary and assigned to the video carousel."}
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-2">
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
-                {isAr ? "ملف الفيديو" : "Video File"}
-              </label>
-              <Input
-                type="file"
-                accept="video/mp4,video/webm,video/quicktime"
-                onChange={(e) => {
-                  const f = e.target.files?.[0];
-                  if (f) setVideoFile(f);
-                }}
-              />
-              {videoFile && (
-                <p className="text-[11px] text-muted-foreground mt-1">
-                  {videoFile.name} ({(videoFile.size / (1024 * 1024)).toFixed(1)} MB)
-                </p>
-              )}
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
-                {isAr ? "عنوان المقطع" : "Video Title"}
-              </label>
-              <Input
-                placeholder={isAr ? "مثال: رحلة نيلية في أسوان" : "e.g., Nile Cruise in Aswan"}
-                value={videoTitle}
-                onChange={(e) => setVideoTitle(e.target.value)}
-              />
-            </div>
-
-            <div>
-              <label className="text-xs font-semibold text-foreground block mb-1">
-                {isAr ? "الوصف المختصر" : "Short Description"}
-              </label>
-              <Input
-                placeholder={isAr ? "وصف مختصر للمقطع..." : "Brief description..."}
-                value={videoDescription}
-                onChange={(e) => setVideoDescription(e.target.value)}
-              />
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => setIsUploadVideoOpen(false)}
-              disabled={isUploadingVideo}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-            <Button
-              onClick={handleUploadVideoSubmit}
-              disabled={!videoFile || isUploadingVideo}
-              className="gap-2 bg-blue-600 hover:bg-blue-700 text-white"
-            >
-              {isUploadingVideo ? (
-                <>
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  {isAr ? "جارٍ الرفع..." : "Uploading..."}
-                </>
-              ) : (
-                <>
-                  <UploadCloud className="w-4 h-4" />
-                  {isAr ? "بدء الرفع" : "Start Upload"}
-                </>
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <VideoUploadDialog
+        open={isUploadVideoOpen}
+        onOpenChange={setIsUploadVideoOpen}
+        isAr={isAr}
+        defaultAddToShowcase={true}
+        categorySlug="showcase"
+      />
 
       {/* ================= MODAL: EDIT SHOWCASE ITEM ================= */}
       <Dialog open={!!editingItem} onOpenChange={(open) => !open && setEditingItem(null)}>

@@ -25,6 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { UploadMediaDialog } from "@/features/media/components/UploadMediaDialog";
+import { VideoUploadDialog } from "@/features/media/components/VideoUploadDialog";
 import { MoveMediaDialog } from "@/features/media/components/MoveMediaDialog";
 import { ManageCategoriesDialog } from "@/features/media/components/ManageCategoriesDialog";
 import { WebPOptimizerStudio } from "@/features/media/components/WebPOptimizerStudio";
@@ -64,6 +65,7 @@ import {
   ChevronLeft,
   ChevronRight,
   Zap,
+  Film,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -157,6 +159,7 @@ export default function MediaPage() {
 
   // Modals state
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [videoUploadOpen, setVideoUploadOpen] = useState(false);
   const [manageCategoriesOpen, setManageCategoriesOpen] = useState(false);
   const [moveDialogOpen, setMoveDialogOpen] = useState(false);
   const [webpStudioOpen, setWebpStudioOpen] = useState(false);
@@ -349,6 +352,15 @@ export default function MediaPage() {
           >
             <UploadCloud className="w-4 h-4 stroke-[2.5]" />
             <span>{isAr ? "إضافة صور / روابط 📸" : "Add Images / URLs 📸"}</span>
+          </Button>
+
+          <Button
+            size="sm"
+            onClick={() => setVideoUploadOpen(true)}
+            className="h-9 text-xs font-bold gap-1.5 bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white shadow-md cursor-pointer rounded-xl"
+          >
+            <Film className="w-4 h-4" />
+            <span>{isAr ? "إضافة فيديو 🎬" : "Add Video 🎬"}</span>
           </Button>
         </div>
       </div>
@@ -1075,6 +1087,15 @@ export default function MediaPage() {
         categories={categories}
         defaultCategorySlug={selectedCategory !== "all" ? selectedCategory : "general"}
         isAr={isAr}
+      />
+
+      {/* 10B. Video Upload Dialog */}
+      <VideoUploadDialog
+        open={videoUploadOpen}
+        onOpenChange={setVideoUploadOpen}
+        isAr={isAr}
+        defaultAddToShowcase={false}
+        categorySlug={selectedCategory !== "all" ? selectedCategory : "general"}
       />
 
       {/* 11. WebP Optimizer Studio */}

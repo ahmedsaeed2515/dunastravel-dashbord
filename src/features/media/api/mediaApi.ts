@@ -131,11 +131,28 @@ export const mediaApi = {
   },
 
   uploadVideo: async (payload: UploadVideoPayload): Promise<MediaAsset> => {
+    // If no local files are being uploaded (only URL and optional posterUrl), use direct JSON endpoint
+    if (!payload.file && payload.videoUrl && !payload.posterFile) {
+      return apiClient.post<MediaAsset, MediaAsset>("/admin/media/add-video-url", {
+        videoUrl: payload.videoUrl,
+        posterUrl: payload.posterUrl,
+        title: payload.title,
+        description: payload.description,
+        altText: payload.altText,
+        categorySlug: payload.categorySlug,
+        addToShowcase: payload.addToShowcase ?? true,
+      });
+    }
+
     const formData = new FormData();
-    formData.append("file", payload.file);
+    if (payload.file) formData.append("file", payload.file);
+    if (payload.posterFile) formData.append("poster", payload.posterFile);
+    if (payload.videoUrl) formData.append("videoUrl", payload.videoUrl);
+    if (payload.posterUrl) formData.append("posterUrl", payload.posterUrl);
     if (payload.title) formData.append("title", payload.title);
     if (payload.description) formData.append("description", payload.description);
     if (payload.altText) formData.append("altText", payload.altText);
+    if (payload.categorySlug) formData.append("categorySlug", payload.categorySlug);
     if (payload.addToShowcase !== undefined) formData.append("addToShowcase", String(payload.addToShowcase));
 
     return apiClient.post<MediaAsset, MediaAsset>("/admin/media/upload-video", formData, {

@@ -154,10 +154,14 @@ export interface ReorderShowcasePayload {
 }
 
 export interface UploadVideoPayload {
-  file: File;
+  file?: File;
+  videoUrl?: string;
+  posterFile?: File;
+  posterUrl?: string;
   title?: string;
   description?: string;
   altText?: string;
+  categorySlug?: string;
   addToShowcase?: boolean;
 }
 
