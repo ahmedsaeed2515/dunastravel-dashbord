@@ -65,9 +65,7 @@ export const mediaApi = {
     if (payload.categorySlug) formData.append("categorySlug", payload.categorySlug);
 
     return apiClient.post<MediaAsset, MediaAsset>("/admin/media/upload", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      timeout: 120000,
     });
   },
 
@@ -88,9 +86,7 @@ export const mediaApi = {
     }
 
     return apiClient.post<MediaAsset[], MediaAsset[]>("/admin/media/upload-bulk", formData, {
-      headers: {
-        "Content-Type": "multipart/form-data",
-      },
+      timeout: 300000,
     });
   },
 
@@ -141,6 +137,8 @@ export const mediaApi = {
         altText: payload.altText,
         categorySlug: payload.categorySlug,
         addToShowcase: payload.addToShowcase ?? true,
+      }, {
+        timeout: 60000,
       });
     }
 
@@ -156,7 +154,7 @@ export const mediaApi = {
     if (payload.addToShowcase !== undefined) formData.append("addToShowcase", String(payload.addToShowcase));
 
     return apiClient.post<MediaAsset, MediaAsset>("/admin/media/upload-video", formData, {
-      headers: { "Content-Type": "multipart/form-data" },
+      timeout: 300000,
     });
   },
 

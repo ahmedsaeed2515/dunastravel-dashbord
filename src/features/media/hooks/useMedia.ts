@@ -17,6 +17,17 @@ import {
 } from "../types";
 import { toast } from "sonner";
 
+function getErrorMessage(err: any, fallback: string): string {
+  const raw = err?.message || err?.response?.data?.message || err?.data?.message;
+  if (Array.isArray(raw)) {
+    return raw.filter(Boolean).join(", ");
+  }
+  if (typeof raw === "string" && raw.trim().length > 0) {
+    return raw;
+  }
+  return fallback;
+}
+
 export const mediaKeys = {
   all: ["media"] as const,
   lists: () => [...mediaKeys.all, "list"] as const,
@@ -58,8 +69,7 @@ export function useUploadMedia() {
       toast.success("Media uploaded successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to upload media.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to upload media."));
     },
   });
 }
@@ -73,8 +83,7 @@ export function useUploadBulkMedia() {
       toast.success(`Successfully uploaded ${assets.length} image(s).`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to upload multiple images.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to upload multiple images."));
     },
   });
 }
@@ -88,8 +97,7 @@ export function useImportMediaUrls() {
       toast.success(`Successfully imported ${assets.length} image(s) from URLs.`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to import images from URLs.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to import images from URLs."));
     },
   });
 }
@@ -103,8 +111,7 @@ export function useUpdateMedia() {
       toast.success("Media details updated successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to update media.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to update media."));
     },
   });
 }
@@ -118,8 +125,7 @@ export function useBulkMoveMedia() {
       toast.success(`Successfully moved ${res.updatedCount} media assets.`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to move media assets.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to move media assets."));
     },
   });
 }
@@ -133,8 +139,7 @@ export function useCreateMediaCategory() {
       toast.success(`Category "${cat.nameEn}" created successfully.`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to create category.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to create category."));
     },
   });
 }
@@ -149,8 +154,7 @@ export function useUpdateMediaCategory() {
       toast.success(`Category "${cat.nameEn}" updated successfully.`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to update category.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to update category."));
     },
   });
 }
@@ -164,8 +168,7 @@ export function useDeleteMediaCategory() {
       toast.success(res.message || "Category deleted successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to delete category.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to delete category."));
     },
   });
 }
@@ -179,8 +182,7 @@ export function useDeleteMedia() {
       toast.success("Media deleted successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to delete media.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to delete media."));
     },
   });
 }
@@ -202,8 +204,7 @@ export function useAssignShowcase() {
       toast.success("Item added to homepage showcase.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to assign to showcase.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to assign to showcase."));
     },
   });
 }
@@ -218,8 +219,7 @@ export function useUpdateShowcaseItem() {
       toast.success("Showcase item updated.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to update showcase item.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to update showcase item."));
     },
   });
 }
@@ -233,8 +233,7 @@ export function useReorderShowcase() {
       toast.success("Showcase reordered successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to reorder showcase.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to reorder showcase."));
     },
   });
 }
@@ -249,8 +248,7 @@ export function useRemoveFromShowcase() {
       toast.success("Removed from showcase.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to remove from showcase.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to remove from showcase."));
     },
   });
 }
@@ -265,8 +263,7 @@ export function useUploadVideo() {
       toast.success("Video uploaded successfully.");
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to upload video.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to upload video."));
     },
   });
 }
@@ -281,13 +278,7 @@ export function useOptimizeAsset() {
       toast.success("Asset optimized with WebP URL successfully.");
     },
     onError: (err: any) => {
-      const apiMsg = err?.response?.data?.message;
-      const msg = Array.isArray(apiMsg)
-        ? apiMsg.join(", ")
-        : typeof apiMsg === "string"
-        ? apiMsg
-        : "Failed to optimize asset.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to optimize asset."));
     },
   });
 }
@@ -309,8 +300,7 @@ export function useSyncEntities() {
       toast.success(`Entities synced. ${res.syncedTourImages} tour images registered.`);
     },
     onError: (err: any) => {
-      const msg = err?.response?.data?.message || "Failed to sync entities.";
-      toast.error(msg);
+      toast.error(getErrorMessage(err, "Failed to sync entities."));
     },
   });
 }

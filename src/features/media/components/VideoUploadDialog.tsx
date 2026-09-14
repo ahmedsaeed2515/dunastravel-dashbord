@@ -293,8 +293,8 @@ export function VideoUploadDialog({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isAr
-                        ? "الصيغ المدعومة: MP4, WebM, MOV, MKV (الحد الأقصى: 100 ميجابايت)"
-                        : "Supported formats: MP4, WebM, MOV, MKV (Max: 100MB)"}
+                        ? "الصيغ المدعومة: MP4, WebM, MOV (الرفع المباشر حتى 4.5 ميجابايت، أو استخدم تبويب الرابط للفيديوهات الكبيرة)"
+                        : "Supported formats: MP4, WebM, MOV (Direct upload up to 4.5MB, or use Video URL tab for larger videos)"}
                     </p>
                   </div>
                 </div>
@@ -323,6 +323,35 @@ export function VideoUploadDialog({
                       {isAr ? "تغيير الملف" : "Change File"}
                     </Button>
                   </div>
+
+                  {/* Size Notice if file is larger than serverless body limit */}
+                  {videoFile.size > 4.5 * 1024 * 1024 && (
+                    <div className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                      <div className="space-y-1">
+                        <p className="font-semibold">
+                          {isAr
+                            ? `حجم الملف (${formatBytes(videoFile.size)}) أكبر من سعة الرفع المباشر السريعة (4.5 ميجابايت)`
+                            : `File size (${formatBytes(videoFile.size)}) exceeds serverless direct upload limit (4.5MB)`}
+                        </p>
+                        <p className="text-[11px] opacity-90 leading-relaxed">
+                          {isAr
+                            ? "لمقاطع الفيديو الكبيرة أو عالية الدقة، نوصي باستخدام تبويب 'إضافة عبر رابط (URL)' (مثل يوتيوب أو فيميو أو رابط سحابي مباشر) لتضمينها فوراً دون قيود على الحجم."
+                            : "For larger or high-res videos, we recommend using the 'Add by Video URL' tab (YouTube, Vimeo, or direct cloud URL) for instant playback without size limits."}
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setSourceType("url")}
+                          className="h-7 text-[11px] mt-1 gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300"
+                        >
+                          <LinkIcon className="w-3 h-3" />
+                          <span>{isAr ? "الانتقال إلى إضافة عبر رابط" : "Switch to Video URL"}</span>
+                        </Button>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Video Preview Player */}
                   {filePreviewUrl && (
