@@ -327,7 +327,11 @@ function convertTourToTripModel(tour: Tour, currentLocale: string = 'ar'): TripM
   };
 }
 
-export const DestinationsManager: React.FC = React.memo(() => {
+interface DestinationsManagerProps {
+  initialDestinationId?: string;
+}
+
+export const DestinationsManager: React.FC<DestinationsManagerProps> = React.memo(({ initialDestinationId }) => {
   const params = useParams<{ locale?: string }>();
   const locale = params?.locale || 'en';
   const isAr = locale === 'ar';
@@ -372,7 +376,13 @@ export const DestinationsManager: React.FC = React.memo(() => {
     return rawTours.map((t) => convertTourToTripModel(t, locale));
   }, [toursData, locale]);
 
-  const [activeDestId, setActiveDestId] = useState<string>('');
+  const [activeDestId, setActiveDestId] = useState<string>(initialDestinationId || '');
+
+  useEffect(() => {
+    if (initialDestinationId) {
+      setActiveDestId(initialDestinationId);
+    }
+  }, [initialDestinationId]);
   const [activePackageId, setActivePackageId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [selectedTag, setSelectedTag] = useState<string>('ALL');

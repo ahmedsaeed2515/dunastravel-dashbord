@@ -170,7 +170,7 @@ export const AppSidebar = memo(function AppSidebar() {
           { href: adminRoutes.bookings, icon: CalendarCheck, label: tNav("bookings") },
           { href: adminRoutes.inquiries, icon: HelpCircle, label: tNav("inquiries") || (isAr ? "استفسارات الرحلات" : "Inquiries"), badge: isAr ? "جديد" : "New", badgeColor: "amber" },
           { href: adminRoutes.tours, icon: Map, label: tNav("tours") },
-          { href: adminRoutes.destinations, icon: Compass, label: tNav("destinations"), badge: "8", badgeColor: "blue" },
+          { href: adminRoutes.destinations, icon: Compass, label: tNav("destinations") },
           { href: adminRoutes.hotels, icon: Hotel, label: tNav("hotels") },
           { href: adminRoutes.transportation, icon: CarFront, label: tNav("transportation") },
           { href: adminRoutes.promotions, icon: Package, label: tNav("promotions") },
