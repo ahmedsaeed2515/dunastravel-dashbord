@@ -2,19 +2,11 @@ import { NextIntlClientProvider } from 'next-intl';
 import { getMessages } from 'next-intl/server';
 import { notFound } from 'next/navigation';
 import { routing } from '@/i18n/routing';
-import { Playfair_Display, Montserrat } from 'next/font/google';
 import { ThemeProvider } from '@/components/providers/theme-provider';
 import '../globals.css';
 
-const playfair = Playfair_Display({
-  subsets: ['latin'],
-  variable: '--font-playfair',
-});
-
-const montserrat = Montserrat({
-  subsets: ['latin'],
-  variable: '--font-montserrat',
-});
+const playfair = { variable: 'font-playfair' };
+const montserrat = { variable: 'font-montserrat' };
 
 import { DirectionProvider } from "@radix-ui/react-direction";
 import { TooltipProvider } from "@/components/ui/tooltip";

@@ -30,6 +30,7 @@ export interface ModelPreset {
 
 // Truly retired Google models that Google shut down
 const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([
+  "gemini-2.5-flash-lite",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
   "gemini-1.5-flash-8b",
@@ -43,10 +44,10 @@ const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([
 export const PROVIDER_MODEL_PRESETS: Record<string, ModelPreset[]> = {
   google: [
     { id: "gemini-2.5-flash", name: "Gemini 2.5 Flash", nameAr: "جيمناي 2.5 فلاش (الموصى به للإنتاجية — استجابة فائقة)", badge: "Best Overall", isPopular: true },
-    { id: "gemini-2.5-flash-lite", name: "Gemini 2.5 Flash-Lite", nameAr: "جيمناي 2.5 فلاش لايت (اقتصادي خفيف وسريع)", badge: "Best Value", isPopular: true },
+    { id: "gemini-3.5-flash-lite", name: "Gemini 3.5 Flash-Lite", nameAr: "جيمناي 3.5 فلاش لايت (اقتصادي خفيف وسريع — الأحدث)", badge: "Best Value", isPopular: true },
+    { id: "gemini-3.5-flash", name: "Gemini 3.5 Flash", nameAr: "جيمناي 3.5 فلاش (الجيل الأحدث السريع)", badge: "Fast & Smart", isPopular: true },
     { id: "gemini-2.5-pro", name: "Gemini 2.5 Pro", nameAr: "جيمناي 2.5 برو (تحليل عميق وتفكير فائق — سياق 2M)", badge: "Highest Quality", isPopular: true },
     { id: "gemini-2.0-flash", name: "Gemini 2.0 Flash", nameAr: "جيمناي 2.0 فلاش (مستقر وعالي السرعة)", badge: "Fast & Stable", isPopular: true },
-    { id: "gemini-2.0-flash-lite", name: "Gemini 2.0 Flash-Lite", nameAr: "جيمناي 2.0 فلاش لايت (استجابة فورية خفيفة)", badge: "Fastest", isPopular: true },
   ],
 
   openai: [

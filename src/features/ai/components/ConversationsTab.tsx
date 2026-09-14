@@ -27,7 +27,10 @@ import {
   X,
   Compass,
   ArrowRight,
-  Headphones
+  Headphones,
+  Tag,
+  Sparkles,
+  ExternalLink
 } from "lucide-react";
 import { toast } from "sonner";
 import { ConversationDetailData, ConversationListItem, aiApi } from "../api/aiApi";
@@ -273,28 +276,165 @@ export function ConversationsTab({ onRefreshOverview, t, isAr }: ConversationsTa
               <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted/10">
                 {(selectedConvo.messages || []).map((msg: any, idx: number) => {
                   const isUser = msg.role === "user";
+                  const isStaff = msg.role === "staff";
+                  const structured = msg.structuredContent || {};
+                  const structuredTours = Array.isArray(structured.tours) ? structured.tours : (Array.isArray(msg.tours) ? msg.tours : []);
+                  const structuredProposal = structured.proposal || msg.proposal || null;
+                  const structuredComparison = structured.comparison || msg.comparison || null;
+                  const responseType = structured.responseType || (structuredTours.length > 0 ? "recommendation" : "text");
+
                   return (
                     <div
                       key={idx}
-                      className={`flex gap-2 max-w-[85%] ${
+                      className={`flex gap-2 max-w-[88%] ${
                         isUser ? "ms-auto flex-row-reverse" : "me-auto"
                       }`}
                     >
                       <div
                         className={`h-6 w-6 rounded-lg flex items-center justify-center text-[10px] shrink-0 ${
-                          isUser ? "bg-emerald-600 text-white" : "bg-purple-500/20 text-purple-600"
+                          isUser ? "bg-emerald-600 text-white" : isStaff ? "bg-amber-500/20 text-amber-600" : "bg-purple-500/20 text-purple-600"
                         }`}
                       >
-                        {isUser ? "👤" : "👑"}
+                        {isUser ? "👤" : isStaff ? "👔" : "👑"}
                       </div>
                       <div
-                        className={`p-3 rounded-xl text-xs leading-relaxed ${
+                        className={`p-3 rounded-xl text-xs leading-relaxed space-y-2.5 ${
                           isUser
                             ? "bg-emerald-600 text-white font-medium rounded-se-none"
+                            : isStaff
+                            ? "bg-amber-500/10 border border-amber-500/30 text-foreground rounded-ss-none shadow-xs"
                             : "bg-card border border-border/80 text-foreground rounded-ss-none shadow-xs"
                         }`}
                       >
+                        {/* Meta badge for assistant response type & model */}
+                        {!isUser && (
+                          <div className="flex flex-wrap items-center gap-1.5 pb-1 border-b border-border/40 text-[10px]">
+                            {isStaff ? (
+                              <Badge variant="outline" className="bg-amber-500/20 text-amber-600 border-amber-500/30 font-bold px-1.5 py-0">
+                                {isAr ? "رد موظف" : "Staff Reply"}
+                              </Badge>
+                            ) : (
+                              <>
+                                <Badge variant="outline" className="bg-purple-500/10 text-purple-600 border-purple-500/20 font-bold px-1.5 py-0 capitalize">
+                                  {responseType}
+                                </Badge>
+                                {msg.model && (
+                                  <span className="text-[9px] text-muted-foreground font-mono">
+                                    {msg.model}
+                                  </span>
+                                )}
+                                {msg.latencyMs && (
+                                  <span className="text-[9px] text-muted-foreground font-mono">
+                                    {msg.latencyMs}ms
+                                  </span>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        )}
+
                         <p className="whitespace-pre-line">{msg.textContent || msg.text || ""}</p>
+
+                        {/* Grounded Tour Recommendation Cards */}
+                        {structuredTours.length > 0 && (
+                          <div className="pt-2 border-t border-border/50 space-y-2">
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 uppercase tracking-wider">
+                              <Tag className="h-3 w-3" />
+                              {isAr ? "الرحلات المقترحة من الكتالوج:" : "Recommended Catalog Tours:"}
+                            </span>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                              {structuredTours.map((tItem: any, tIdx: number) => (
+                                <div
+                                  key={tIdx}
+                                  className="p-2 rounded-lg bg-background/80 border border-border flex flex-col justify-between gap-1.5 text-[11px]"
+                                >
+                                  <div>
+                                    <h5 className="font-bold text-foreground line-clamp-1">{tItem.title}</h5>
+                                    <div className="flex items-center gap-2 text-[10px] text-muted-foreground mt-0.5">
+                                      <span className="flex items-center gap-0.5">
+                                        <MapPin className="h-2.5 w-2.5 text-amber-500" />
+                                        {tItem.destination || "Egypt"}
+                                      </span>
+                                      {tItem.durationDays && <span>{tItem.durationDays}d</span>}
+                                      <span className="font-bold text-emerald-600">
+                                        {tItem.price > 0 ? `$${tItem.price} ${tItem.currency || 'USD'}` : (isAr ? 'عند الطلب' : 'Quote')}
+                                      </span>
+                                    </div>
+                                  </div>
+                                  {tItem.publicUrl && (
+                                    <a
+                                      href={tItem.publicUrl}
+                                      target="_blank"
+                                      rel="noreferrer"
+                                      className="inline-flex items-center gap-1 text-[10px] font-semibold text-purple-600 hover:text-purple-700 hover:underline pt-0.5"
+                                    >
+                                      <span>{isAr ? "استعراض الرحلة" : "View Tour"}</span>
+                                      <ExternalLink className="h-2.5 w-2.5" />
+                                    </a>
+                                  )}
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Itinerary Proposal Card */}
+                        {structuredProposal && (
+                          <div className="pt-2 border-t border-border/50 space-y-1.5">
+                            <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30 space-y-1.5">
+                              <div className="flex items-center justify-between">
+                                <span className="font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 text-[11px]">
+                                  <Sparkles className="h-3 w-3" />
+                                  {structuredProposal.title || (isAr ? "برنامج سياحي مخصص" : "Custom Itinerary Proposal")}
+                                </span>
+                                {structuredProposal.durationDays && (
+                                  <Badge variant="outline" className="text-[9px] bg-background">
+                                    {structuredProposal.durationDays} {isAr ? "أيام" : "Days"}
+                                  </Badge>
+                                )}
+                              </div>
+                              {structuredProposal.destinations && (
+                                <p className="text-[10px] text-muted-foreground">
+                                  {isAr ? "الوجهات:" : "Destinations:"} {Array.isArray(structuredProposal.destinations) ? structuredProposal.destinations.join(" • ") : structuredProposal.destinations}
+                                </p>
+                              )}
+                              {structuredProposal.days && Array.isArray(structuredProposal.days) && (
+                                <div className="mt-1.5 space-y-1 max-h-40 overflow-y-auto pr-1">
+                                  {structuredProposal.days.map((day: any, dIdx: number) => (
+                                    <div key={dIdx} className="text-[10px] p-1.5 rounded bg-background/90 border border-border/60">
+                                      <span className="font-bold text-foreground">
+                                        {isAr ? `اليوم ${day.dayNumber}: ` : `Day ${day.dayNumber}: `}
+                                        {day.title}
+                                      </span>
+                                      <p className="text-muted-foreground line-clamp-2 mt-0.5">{day.description}</p>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Tour Comparison Card */}
+                        {structuredComparison && structuredComparison.tours && (
+                          <div className="pt-2 border-t border-border/50 space-y-1.5">
+                            <span className="text-[10px] font-bold text-amber-600 dark:text-amber-400 flex items-center gap-1 uppercase tracking-wider">
+                              <Compass className="h-3 w-3" />
+                              {isAr ? "مقارنة البرامج السياحية:" : "Tour Comparison:"}
+                            </span>
+                            <div className="grid grid-cols-2 gap-2 text-[10px]">
+                              {structuredComparison.tours.map((cTour: any, cIdx: number) => (
+                                <div key={cIdx} className="p-2 rounded bg-background/80 border border-border">
+                                  <h6 className="font-bold text-foreground line-clamp-1">{cTour.title}</h6>
+                                  <p className="text-muted-foreground mt-0.5">
+                                    {cTour.durationDays ? `${cTour.durationDays}d • ` : ""}
+                                    {cTour.price > 0 ? `$${cTour.price}` : "On Request"}
+                                  </p>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+                        )}
                       </div>
                     </div>
                   );
