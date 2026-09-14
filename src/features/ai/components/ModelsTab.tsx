@@ -462,44 +462,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       return;
     }
 
-    if (selectedProvider === "google") {
-      if (trimmedKey.startsWith("sk-or-")) {
-        toast.error(isAr ? "هذا المفتاح يتبع مزود OpenRouter وليس Google Gemini!" : "This key belongs to OpenRouter, not Google Gemini!");
-        return;
-      }
-      if (trimmedKey.startsWith("sk-")) {
-        toast.error(isAr ? "هذا المفتاح يتبع مزود OpenAI (يبدأ بـ sk-)، يرجى اختيار OpenAI أو إدخال مفتاح Gemini يبدأ بـ AIza!" : "This key belongs to OpenAI (starts with sk-). Please switch provider to OpenAI or enter a Gemini key starting with AIza!");
-        return;
-      }
-      if (trimmedKey.length < 15) {
-        toast.error(
-          isAr
-            ? "مفتاح Google Gemini قصير جداً. مفاتيح Google AI Studio تبدأ بـ 'AIza' (مثال: AIzaSy...) وتتكون من حوالي 39 حرفاً. يمكنك الحصول على مفتاح مجاني من https://aistudio.google.com/apikey"
-            : "Invalid Google Gemini API key format. Key must start with 'AIza' (e.g. AIzaSy...) and contain ~39 characters. Get your key from https://aistudio.google.com/apikey"
-        );
-        return;
-      }
-    } else if (selectedProvider === "openai") {
-      if (trimmedKey.startsWith("AIza")) {
-        toast.error(isAr ? "هذا المفتاح يتبع مزود Google Gemini! يرجى اختيار Google Gemini كمزود." : "This key belongs to Google Gemini! Please select Google Gemini as provider.");
-        return;
-      }
-      if (trimmedKey.length < 15) {
-        toast.error(
-          isAr
-            ? "مفتاح OpenAI غير صالح. يجب أن يبدأ بـ 'sk-' أو 'sk-proj-' ويتكون من 20 حرفاً على الأقل."
-            : "Invalid OpenAI API key format. Key must start with 'sk-' and be at least 20 characters."
-        );
-        return;
-      }
-    } else if (selectedProvider === "openrouter" && (!trimmedKey.startsWith("sk-or-") || trimmedKey.length < 15)) {
-      toast.error(
-        isAr
-          ? "مفتاح OpenRouter غير صالح. يجب أن يبدأ بـ 'sk-or-'."
-          : "Invalid OpenRouter API key format. Key must start with 'sk-or-'."
-      );
-      return;
-    }
+    // Accept any valid key format without artificial prefix restrictions
 
     setSaving(true);
     try {
@@ -545,19 +508,9 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
     const trimmedKey = cleanClientApiKey(apiKey);
     if (trimmedKey && !trimmedKey.includes("••")) {
-      if (selectedProvider === "google") {
-        if (trimmedKey.startsWith("sk-")) {
-          toast.error(isAr ? "هذا المفتاح يتبع OpenAI وليس Google Gemini!" : "This key belongs to OpenAI, not Google Gemini!");
-          return;
-        }
-        if (trimmedKey.length < 15) {
-          toast.error(
-            isAr
-              ? "مفتاح Google Gemini غير صالح. يجب أن يبدأ بـ 'AIza' (مثال: AIzaSy...)."
-              : "Invalid Google Gemini API key. Key must start with 'AIza'."
-          );
-          return;
-        }
+      if (trimmedKey.length < 5) {
+        toast.error(isAr ? "مفتاح الـ API قصير جداً." : "API key is too short.");
+        return;
       }
     }
 
@@ -1589,14 +1542,14 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         }}
                         placeholder={
                           selectedProvider === "google"
-                            ? "AIzaSy..."
+                            ? "AIzaSy... / AQ... / API Key"
                             : selectedProvider === "openai"
-                            ? "sk-proj-..."
+                            ? "sk-proj-... / sk-..."
                             : selectedProvider === "openrouter"
                             ? "sk-or-..."
                             : selectedProvider === "deepseek"
                             ? "sk-..."
-                            : "Paste API Key..."
+                            : "Paste API Key / Token..."
                         }
                         className="font-mono text-xs h-9 bg-background pe-9"
                         required
