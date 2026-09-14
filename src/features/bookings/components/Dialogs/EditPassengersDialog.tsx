@@ -46,7 +46,7 @@ export function EditPassengersDialog({ referenceCode, initialPassengers, open, o
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (passengers.some(p => !p.fullName.trim())) {
+    if (passengers.some(p => !(p.fullName || "").trim())) {
       toast.error("All passengers must have a full name");
       return;
     }

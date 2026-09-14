@@ -49,9 +49,8 @@ const COLOR_OPTIONS = [
   { name: "orange", bg: "bg-orange-500", text: "text-orange-500" },
 ];
 
-function slugify(text: string): string {
-  return text
-    .toString()
+function slugify(text?: string | null): string {
+  return String(text || "")
     .toLowerCase()
     .trim()
     .replace(/\s+/g, "-")
@@ -102,22 +101,26 @@ export function ManageCategoriesDialog({
   };
 
   const handleCreate = async () => {
-    if (!newCat.nameEn.trim()) {
+    const nameEn = (newCat.nameEn || "").trim();
+    if (!nameEn) {
       toast.error(isAr ? "يرجى كتابة اسم الفئة بالإنجليزية." : "English name is required.");
       return;
     }
-    const cleanSlug = slugify(newCat.slug || newCat.nameEn);
+    const cleanSlug = slugify(newCat.slug || nameEn);
     if (!cleanSlug) {
       toast.error(isAr ? "يرجى إدخال رمز الرابط (Slug)." : "Slug is required.");
       return;
     }
 
+    const nameAr = (newCat.nameAr || "").trim();
+    const description = (newCat.description || "").trim();
+
     await createMutation.mutateAsync({
-      nameEn: newCat.nameEn.trim(),
-      nameAr: newCat.nameAr.trim() || newCat.nameEn.trim(),
+      nameEn,
+      nameAr: nameAr || nameEn,
       slug: cleanSlug,
       color: newCat.color,
-      description: newCat.description.trim() || undefined,
+      description: description || undefined,
     });
     setIsAdding(false);
   };
@@ -125,8 +128,8 @@ export function ManageCategoriesDialog({
   const handleStartEdit = (cat: MediaCategoryItem) => {
     setEditingSlug(cat.slug);
     setEditCat({
-      nameEn: cat.nameEn,
-      nameAr: cat.nameAr,
+      nameEn: cat.nameEn || "",
+      nameAr: cat.nameAr || "",
       color: cat.color || "amber",
       description: cat.description || "",
     });
@@ -134,17 +137,22 @@ export function ManageCategoriesDialog({
   };
 
   const handleUpdate = async (slug: string) => {
-    if (!editCat.nameEn.trim()) {
+    const nameEn = (editCat.nameEn || "").trim();
+    if (!nameEn) {
       toast.error(isAr ? "يرجى كتابة اسم الفئة بالإنجليزية." : "English name is required.");
       return;
     }
+
+    const nameAr = (editCat.nameAr || "").trim();
+    const description = (editCat.description || "").trim();
+
     await updateMutation.mutateAsync({
       slug,
       payload: {
-        nameEn: editCat.nameEn.trim(),
-        nameAr: editCat.nameAr.trim() || editCat.nameEn.trim(),
+        nameEn,
+        nameAr: nameAr || nameEn,
         color: editCat.color,
-        description: editCat.description.trim() || undefined,
+        description: description || undefined,
       },
     });
     setEditingSlug(null);

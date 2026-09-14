@@ -528,7 +528,7 @@ export function HotelsManager() {
     page: 1,
     limit: 100,
     status: bookingStatusFilter !== "ALL" ? bookingStatusFilter : undefined,
-    search: bookingSearch.trim() || undefined,
+    search: (bookingSearch || "").trim() || undefined,
   });
 
   const updateBookingStatusMutation = useUpdateHotelBookingStatus();
@@ -566,8 +566,9 @@ export function HotelsManager() {
       } else if (selectedStatus === "ARCHIVED") {
         if (h.status !== "ARCHIVED" && h.isActive) return false;
       }
-      if (search.trim()) {
-        const q = search.toLowerCase();
+      const cleanSearch = (search || "").trim();
+      if (cleanSearch) {
+        const q = cleanSearch.toLowerCase();
         const en = (h.nameJsonb?.en || "").toLowerCase();
         const ar = (h.nameJsonb?.ar || "").toLowerCase();
         const city = (h.city || "").toLowerCase();
@@ -1717,15 +1718,16 @@ function MediaLibraryPickerModal({
     page: 1,
     limit: 60,
     category: categoryFilter,
-    search: searchQuery.trim() || undefined,
+    search: (searchQuery || "").trim() || undefined,
   });
 
   const uploadMutation = useUploadMedia();
   const assets: MediaAsset[] = mediaData?.data || [];
 
   const filteredAssets = useMemo(() => {
-    if (!searchQuery.trim()) return assets;
-    const q = searchQuery.toLowerCase();
+    const cleanQuery = (searchQuery || "").trim().toLowerCase();
+    if (!cleanQuery) return assets;
+    const q = cleanQuery;
     return assets.filter(
       (a) =>
         a.publicId?.toLowerCase().includes(q) ||
@@ -2260,19 +2262,21 @@ function RoomEditorModal({
   };
 
   const handleSaveModal = () => {
-    if (!roomData.nameEn.trim()) {
+    const cleanNameEn = (roomData.nameEn || "").trim();
+    if (!cleanNameEn) {
       toast.error(isAr ? "يرجى كتابة اسم الغرفة بالإنجليزية على الأقل." : "Room English name is required.");
       setLangTab("en");
       return;
     }
-    const cleanSlug = roomData.slug.trim() ? slugify(roomData.slug) : slugify(roomData.nameEn);
+    const cleanSlug = (roomData.slug || "").trim() ? slugify(roomData.slug) : slugify(cleanNameEn);
     const finalRoom: FormRoomItem = {
       ...roomData,
       slug: cleanSlug,
-      nameAr: roomData.nameAr.trim() || roomData.nameEn.trim(),
-      nameEs: roomData.nameEs.trim() || roomData.nameEn.trim(),
-      namePt: roomData.namePt.trim() || roomData.nameEn.trim(),
-      nameIt: roomData.nameIt.trim() || roomData.nameEn.trim(),
+      nameEn: cleanNameEn,
+      nameAr: (roomData.nameAr || "").trim() || cleanNameEn,
+      nameEs: (roomData.nameEs || "").trim() || cleanNameEn,
+      namePt: (roomData.namePt || "").trim() || cleanNameEn,
+      nameIt: (roomData.nameIt || "").trim() || cleanNameEn,
       ratePerNight:
         roomData.ratePerNight !== undefined && roomData.ratePerNight !== null && !isNaN(Number(roomData.ratePerNight))
           ? Number(roomData.ratePerNight)
@@ -3303,33 +3307,37 @@ function HotelEditorDialog({
 
   const handleSave = async () => {
     // Form Validations
-    if (!form.nameEn.trim()) {
+    const cleanNameEn = (form.nameEn || "").trim();
+    if (!cleanNameEn) {
       toast.error(isAr ? "يرجى كتابة اسم الفندق بالإنجليزية." : "English Hotel Name is required.");
       setActiveTab("basic");
       return;
     }
 
-    const cleanSlug = slugify(form.slug || form.nameEn);
+    const cleanSlug = slugify(form.slug || cleanNameEn);
     if (!cleanSlug) {
       toast.error(isAr ? "يرجى إدخال رمز الرابط (Slug)." : "A valid URL slug is required.");
       setActiveTab("basic");
       return;
     }
 
-    const cleanDestination = form.destinationSlug.trim().toLowerCase() || "egypt";
+    const cleanDestination = (form.destinationSlug || "").trim().toLowerCase() || "egypt";
     const stars = Number(form.stars) || 5;
-    const rating = form.rating.trim() ? Number(form.rating) : 4.9;
+    const cleanRating = (form.rating || "").trim();
+    const rating = cleanRating ? Number(cleanRating) : 4.9;
 
     // Build Rooms payload with full 5-language support
-    const roomsPayload: HotelRoomPayload[] = form.rooms.map((r, idx) => ({
-      slug: slugify(r.slug || r.nameEn || `room-${idx + 1}`),
-      nameJsonb: {
-        en: r.nameEn.trim(),
-        ar: r.nameAr.trim() || r.nameEn.trim(),
-        es: r.nameEs.trim() || r.nameEn.trim(),
-        pt: r.namePt.trim() || r.nameEn.trim(),
-        it: r.nameIt.trim() || r.nameEn.trim(),
-      },
+    const roomsPayload: HotelRoomPayload[] = form.rooms.map((r, idx) => {
+      const roomNameEn = (r.nameEn || "").trim();
+      return {
+        slug: slugify(r.slug || roomNameEn || `room-${idx + 1}`),
+        nameJsonb: {
+          en: roomNameEn,
+          ar: (r.nameAr || "").trim() || roomNameEn,
+          es: (r.nameEs || "").trim() || roomNameEn,
+          pt: (r.namePt || "").trim() || roomNameEn,
+          it: (r.nameIt || "").trim() || roomNameEn,
+        },
       descriptionJsonb: {
         overview: {
           en: r.descEn || "",
@@ -3376,7 +3384,8 @@ function HotelEditorDialog({
       },
       isActive: r.isActive ?? true,
       sortOrder: idx,
-    }));
+    };
+  });
 
     if (roomsPayload.length === 0) {
       toast.error(isAr ? "يجب إضافة غرفة واحدة على الأقل في الفندق." : "At least one room tier must be configured.");
@@ -3387,32 +3396,32 @@ function HotelEditorDialog({
     const payload: HotelPayload = {
       slug: cleanSlug,
       nameJsonb: {
-        en: form.nameEn.trim(),
-        ar: form.nameAr.trim() || form.nameEn.trim(),
-        es: form.nameEs.trim() || form.nameEn.trim(),
-        pt: form.namePt.trim() || form.nameEn.trim(),
-        it: form.nameIt.trim() || form.nameEn.trim(),
+        en: cleanNameEn,
+        ar: (form.nameAr || "").trim() || cleanNameEn,
+        es: (form.nameEs || "").trim() || cleanNameEn,
+        pt: (form.namePt || "").trim() || cleanNameEn,
+        it: (form.nameIt || "").trim() || cleanNameEn,
       },
       descriptionJsonb: {
-        en: form.descEn.trim() || "Luxury accommodation with world-class hospitality.",
-        ar: form.descAr.trim() || "إقامة فاخرة متكاملة الخدمات مع ضيافة عالمية المستوى.",
-        es: form.descEs.trim() || form.descEn.trim() || "Alojamiento de lujo con hospitalidad de primer nivel.",
-        pt: form.descPt.trim() || form.descEn.trim() || "Acomodação de luxo com hospitalidade de classe mundial.",
-        it: form.descIt.trim() || form.descEn.trim() || "Sistemazione di lusso con ospitalità di livello mondiale.",
+        en: (form.descEn || "").trim() || "Luxury accommodation with world-class hospitality.",
+        ar: (form.descAr || "").trim() || "إقامة فاخرة متكاملة الخدمات مع ضيافة عالمية المستوى.",
+        es: (form.descEs || "").trim() || (form.descEn || "").trim() || "Alojamiento de lujo con hospitalidad de primer nivel.",
+        pt: (form.descPt || "").trim() || (form.descEn || "").trim() || "Acomodação de luxo com hospitalidade de classe mundial.",
+        it: (form.descIt || "").trim() || (form.descEn || "").trim() || "Sistemazione di lusso con ospitalità di livello mondiale.",
       },
       destinationSlug: cleanDestination,
-      city: form.city.trim() || "Cairo",
+      city: (form.city || "").trim() || "Cairo",
       stars,
       rating,
-      currency: form.currency.toUpperCase() || "USD",
-      ...(form.phone.trim() ? { phone: form.phone.trim() } : {}),
-      ...(form.email.trim() ? { email: form.email.trim() } : {}),
-      ...(form.website.trim() ? { website: form.website.trim() } : {}),
-      ...(form.heroMediaId.trim() ? { heroMediaId: form.heroMediaId.trim() } : {}),
-      ...(form.heroImageUrl.trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+      currency: (form.currency || "USD").toUpperCase(),
+      ...((form.phone || "").trim() ? { phone: form.phone.trim() } : {}),
+      ...((form.email || "").trim() ? { email: form.email.trim() } : {}),
+      ...((form.website || "").trim() ? { website: form.website.trim() } : {}),
+      ...((form.heroMediaId || "").trim() ? { heroMediaId: form.heroMediaId.trim() } : {}),
+      ...((form.heroImageUrl || "").trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
       amenitiesJsonb: {
         ...form.amenities,
-        ...(form.heroImageUrl.trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+        ...((form.heroImageUrl || "").trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
       },
       policiesJsonb: {
         checkIn: form.checkIn,

@@ -187,7 +187,8 @@ export function VideoUploadDialog({
     if (sourceType === "file") {
       return !!videoFile;
     } else {
-      return !!videoUrl.trim() && /^https?:\/\//i.test(videoUrl.trim());
+      const cleanUrl = (videoUrl || "").trim();
+      return !!cleanUrl && /^https?:\/\//i.test(cleanUrl);
     }
   }, [sourceType, videoFile, videoUrl]);
 
@@ -202,15 +203,21 @@ export function VideoUploadDialog({
       return;
     }
 
+    const cleanVideoUrl = (videoUrl || "").trim();
+    const cleanPosterUrl = (posterUrl || "").trim();
+    const cleanTitle = (title || "").trim();
+    const cleanDescription = (description || "").trim();
+    const cleanAltText = (altText || "").trim();
+
     uploadVideo(
       {
         file: sourceType === "file" ? videoFile || undefined : undefined,
-        videoUrl: sourceType === "url" ? videoUrl.trim() : undefined,
+        videoUrl: sourceType === "url" ? cleanVideoUrl || undefined : undefined,
         posterFile: posterSource === "file" ? posterFile || undefined : undefined,
-        posterUrl: posterSource === "url" ? posterUrl.trim() || undefined : undefined,
-        title: title.trim() || undefined,
-        description: description.trim() || undefined,
-        altText: altText.trim() || undefined,
+        posterUrl: posterSource === "url" ? cleanPosterUrl || undefined : undefined,
+        title: cleanTitle || undefined,
+        description: cleanDescription || undefined,
+        altText: cleanAltText || undefined,
         categorySlug,
         addToShowcase,
       },

@@ -111,20 +111,31 @@ export const mediaApi = {
   },
 
   assignShowcase: async (payload: AssignShowcasePayload): Promise<MediaAsset> => {
-    const targetId = payload.assetId || payload.mediaId;
+    const targetId = (payload.assetId || payload.mediaId || "").trim();
+    const cleanTitle = payload.title !== undefined && payload.title !== null ? String(payload.title).trim() : undefined;
+    const cleanDesc = payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : undefined;
+    const cleanAlt = payload.altText !== undefined && payload.altText !== null ? String(payload.altText).trim() : undefined;
     return apiClient.post<MediaAsset, MediaAsset>("/admin/media/showcase", {
       assetId: targetId,
       mediaId: targetId,
       section: payload.section,
       position: payload.position,
-      title: payload.title,
-      description: payload.description,
-      altText: payload.altText,
+      title: cleanTitle || undefined,
+      description: cleanDesc || undefined,
+      altText: cleanAlt || undefined,
     });
   },
 
   updateShowcaseItem: async (id: string, payload: UpdateShowcaseItemPayload): Promise<MediaAsset> => {
-    return apiClient.patch<MediaAsset, MediaAsset>(`/admin/media/showcase/${id}`, payload);
+    const cleanTitle = payload.title !== undefined && payload.title !== null ? String(payload.title).trim() : undefined;
+    const cleanDesc = payload.description !== undefined && payload.description !== null ? String(payload.description).trim() : undefined;
+    const cleanAlt = payload.altText !== undefined && payload.altText !== null ? String(payload.altText).trim() : undefined;
+    return apiClient.patch<MediaAsset, MediaAsset>(`/admin/media/showcase/${id}`, {
+      ...payload,
+      title: cleanTitle,
+      description: cleanDesc,
+      altText: cleanAlt,
+    });
   },
 
   reorderShowcase: async (payload: ReorderShowcasePayload): Promise<{ success: boolean }> => {

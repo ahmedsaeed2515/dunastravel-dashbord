@@ -355,8 +355,11 @@ export function UploadMediaDialog({
       const files = queuedFiles.map((q) => q.file);
       const altTextsMap: Record<string, string> = {};
       queuedFiles.forEach((q) => {
-        if (q.altText.trim()) altTextsMap[q.file.name] = q.altText.trim();
+        const alt = (q.altText || "").trim();
+        if (alt) altTextsMap[q.file.name] = alt;
       });
+
+      const cleanGlobalAlt = (globalAltText || "").trim();
 
       uploadBulkMedia(
         {
@@ -364,7 +367,7 @@ export function UploadMediaDialog({
           entityType,
           entityId,
           categorySlug,
-          altText: globalAltText.trim() || undefined,
+          altText: cleanGlobalAlt || undefined,
           altTextsMap,
         },
         {
@@ -382,9 +385,10 @@ export function UploadMediaDialog({
         return;
       }
 
+      const cleanGlobalAlt = (globalAltText || "").trim();
       const items: MediaUrlItem[] = validUrls.map((u) => ({
         url: u.url,
-        altText: u.altText.trim() || globalAltText.trim() || undefined,
+        altText: (u.altText || "").trim() || cleanGlobalAlt || undefined,
       }));
 
       importMediaUrls(
@@ -393,7 +397,7 @@ export function UploadMediaDialog({
           entityType,
           entityId,
           categorySlug,
-          defaultAltText: globalAltText.trim() || undefined,
+          defaultAltText: cleanGlobalAlt || undefined,
         },
         {
           onSuccess: () => onOpenChange(false),
@@ -638,7 +642,7 @@ export function UploadMediaDialog({
                   variant="outline"
                   size="sm"
                   onClick={handleParseUrls}
-                  disabled={isValidatingUrls || !urlRawInput.trim()}
+                  disabled={isValidatingUrls || !(urlRawInput || "").trim()}
                   className="h-8 text-xs font-bold gap-1.5 border-amber-500/40 text-amber-500 hover:bg-amber-500/10 rounded-xl"
                 >
                   {isValidatingUrls ? (

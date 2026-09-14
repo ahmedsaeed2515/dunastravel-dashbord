@@ -486,8 +486,9 @@ export const DestinationsManager: React.FC = React.memo(() => {
       }
 
       // Search query filter
-      if (searchQuery.trim()) {
-        const q = searchQuery.trim().toLowerCase();
+      const cleanSearch = (searchQuery || "").trim().toLowerCase();
+      if (cleanSearch) {
+        const q = cleanSearch;
         const matchesTitle = (t.title || '').toLowerCase().includes(q);
         const matchesSlug = (t.slug || '').toLowerCase().includes(q);
         const matchesOverview = (t.overview || '').toLowerCase().includes(q);
@@ -824,7 +825,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
                       }`}
                     >
                       <span>{pkg.icon}</span>
-                      <span>{isAr ? pkg.titleAr.split('(')[0].trim() : pkg.titleEn}</span>
+                      <span>{isAr ? (pkg.titleAr || '').split('(')[0].trim() || pkg.titleEn : pkg.titleEn}</span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
                           isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'
@@ -1165,7 +1166,7 @@ export const DestinationsManager: React.FC = React.memo(() => {
                       }`}
                     >
                       <span>{pkg.icon}</span>
-                      <span>{isAr ? pkg.titleAr.split('(')[0].trim() : pkg.titleEn}</span>
+                      <span>{isAr ? (pkg.titleAr || '').split('(')[0].trim() || pkg.titleEn : pkg.titleEn}</span>
                       <span
                         className={`px-2 py-0.5 rounded-full text-[10px] font-mono font-black ${
                           isActive ? 'bg-slate-950/20 text-slate-950' : 'bg-muted text-muted-foreground'

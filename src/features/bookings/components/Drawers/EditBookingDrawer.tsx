@@ -101,13 +101,13 @@ export function EditBookingDrawer({ booking, open, onOpenChange }: EditBookingDr
   const handleSaveAssignee = async () => {
     await assignBooking.mutateAsync({
       referenceCode: booking.referenceCode,
-      data: { assigneeId: assigneeId.trim() || null }
+      data: { assigneeId: (assigneeId || "").trim() || null }
     });
   };
 
   const handleSavePassengers = async () => {
     // Basic validation
-    if (passengers.some(p => !p.fullName.trim())) {
+    if (passengers.some(p => !(p.fullName || "").trim())) {
       toast.error("All passengers must have a full name");
       return;
     }

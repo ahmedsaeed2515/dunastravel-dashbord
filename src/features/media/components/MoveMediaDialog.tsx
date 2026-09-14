@@ -75,12 +75,15 @@ export function MoveMediaDialog({
     let entityType: MediaEntityType = "GENERAL";
     let entityId: string | null = null;
 
+    const cleanEntityId = (customEntityId || "").trim() || null;
+    const cleanAltText = (altText || "").trim();
+
     if (targetCategory === "tours") {
       entityType = "TOUR";
-      entityId = customEntityId.trim() || null;
+      entityId = cleanEntityId;
     } else if (targetCategory === "hotels") {
       entityType = "HOTEL";
-      entityId = customEntityId.trim() || null;
+      entityId = cleanEntityId;
     } else {
       entityType = "GENERAL";
       entityId = targetCategory === "general" ? null : targetCategory;
@@ -99,7 +102,7 @@ export function MoveMediaDialog({
         payload: {
           entityType,
           entityId,
-          altText: altText.trim() || undefined,
+          altText: cleanAltText || undefined,
         },
       });
     }

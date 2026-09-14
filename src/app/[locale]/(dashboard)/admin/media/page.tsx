@@ -184,10 +184,11 @@ export default function MediaPage() {
 
   // Media query filters
   const filters = useMemo<MediaQueryFilters>(() => {
+    const cleanSearch = (search || "").trim();
     const q: MediaQueryFilters = {
       page,
       limit: PAGE_SIZE,
-      search: search.trim() || undefined,
+      search: cleanSearch || undefined,
       sortBy,
       sortOrder,
     };
@@ -210,7 +211,7 @@ export default function MediaPage() {
   const totalAssetsCount = summary?.total ?? 0;
   const totalStorageBytes = summary?.bytes ?? 0;
 
-  const hasActiveFilters = selectedCategory !== "all" || selectedFormat !== "all" || search.trim() !== "";
+  const hasActiveFilters = selectedCategory !== "all" || selectedFormat !== "all" || (search || "").trim() !== "";
 
   const handleResetFilters = () => {
     setSelectedCategory("all");
@@ -668,7 +669,7 @@ export default function MediaPage() {
               </Badge>
             )}
 
-            {search.trim() !== "" && (
+            {(search || "").trim() !== "" && (
               <Badge
                 variant="secondary"
                 className="text-[11px] font-bold gap-1.5 py-1 px-2.5 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 border-violet-500/30"

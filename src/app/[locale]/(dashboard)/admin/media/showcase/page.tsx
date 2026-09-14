@@ -427,7 +427,7 @@ export default function MediaShowcasePage() {
   const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
     page: 1,
     limit: 48,
-    search: searchQuery || undefined,
+    search: (searchQuery || "").trim() || undefined,
   });
 
   const photos = showcaseData?.photos || [];
@@ -494,12 +494,15 @@ export default function MediaShowcasePage() {
   // Handle Edit Save
   const handleSaveEdit = () => {
     if (!editingItem) return;
+    const cleanTitle = (editingItem.title || "").trim();
+    const cleanAlt = (editingItem.altText || "").trim();
+    const cleanDesc = (editingItem.description || "").trim();
     updateShowcaseItem({
       id: editingItem.id,
       payload: {
-        title: editingItem.title || undefined,
-        altText: editingItem.altText || undefined,
-        description: editingItem.description || undefined,
+        title: cleanTitle || undefined,
+        altText: cleanAlt || undefined,
+        description: cleanDesc || undefined,
       },
     });
     setEditingItem(null);
@@ -782,7 +785,7 @@ export default function MediaShowcasePage() {
                           assetId: asset.id,
                           mediaId: asset.id,
                           section: isAddPhotoOpen ? "PHOTO" : "VIDEO",
-                          title: asset.altText || asset.title || "Showcase Item",
+                          title: String(asset.altText || asset.title || "Showcase Item").trim(),
                         }, {
                           onSuccess: () => {
                             setIsAddPhotoOpen(false);

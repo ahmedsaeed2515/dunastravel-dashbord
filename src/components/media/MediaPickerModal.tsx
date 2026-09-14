@@ -53,7 +53,7 @@ export function MediaPickerModal({
 
   const { data: mediaData, isLoading } = useMediaAssets({
     limit: 60,
-    search: search.trim() || undefined,
+    search: (search || "").trim() || undefined,
     category: selectedCategory !== "all" ? selectedCategory : undefined,
   });
 
