@@ -111,7 +111,16 @@ export const mediaApi = {
   },
 
   assignShowcase: async (payload: AssignShowcasePayload): Promise<MediaAsset> => {
-    return apiClient.post<MediaAsset, MediaAsset>("/admin/media/showcase", payload);
+    const targetId = payload.assetId || payload.mediaId;
+    return apiClient.post<MediaAsset, MediaAsset>("/admin/media/showcase", {
+      assetId: targetId,
+      mediaId: targetId,
+      section: payload.section,
+      position: payload.position,
+      title: payload.title,
+      description: payload.description,
+      altText: payload.altText,
+    });
   },
 
   updateShowcaseItem: async (id: string, payload: UpdateShowcaseItemPayload): Promise<MediaAsset> => {

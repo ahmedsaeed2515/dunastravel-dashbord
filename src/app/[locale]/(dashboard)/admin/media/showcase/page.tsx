@@ -779,9 +779,10 @@ export default function MediaShowcasePage() {
                       className="group relative aspect-square rounded-md overflow-hidden border border-border/70 hover:border-amber-500 cursor-pointer bg-muted transition-all"
                       onClick={() => {
                         assignShowcase({
+                          assetId: asset.id,
                           mediaId: asset.id,
                           section: isAddPhotoOpen ? "PHOTO" : "VIDEO",
-                          title: asset.altText || "Showcase Item",
+                          title: asset.altText || asset.title || "Showcase Item",
                         }, {
                           onSuccess: () => {
                             setIsAddPhotoOpen(false);

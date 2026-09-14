@@ -131,7 +131,8 @@ export interface ShowcaseResponse {
 }
 
 export interface AssignShowcasePayload {
-  mediaId: string;
+  assetId?: string;
+  mediaId?: string;
   section: 'PHOTO' | 'VIDEO';
   position?: number;
   title?: string;
