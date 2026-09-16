@@ -824,7 +824,7 @@ export default function MediaPage() {
                   {/* Thumbnail & Badges */}
                   <div className="aspect-video relative overflow-hidden bg-slate-950 cursor-pointer" onClick={() => setPreviewAsset(asset)}>
                     <img
-                      src={asset.secureUrl}
+                      src={asset.optimizedUrl || asset.secureUrl || asset.url}
                       alt={asset.altText || "Media asset"}
                       className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                     />
@@ -847,7 +847,7 @@ export default function MediaPage() {
 
                     {/* Bottom floating size overlay */}
                     <div className="absolute bottom-2 right-2 px-2 py-0.5 rounded-md bg-slate-950/80 text-[10px] font-mono text-slate-300 backdrop-blur-xs">
-                      {asset.format.toUpperCase()} · {bytesLabel(asset.bytes)}
+                      {(asset.optimizedUrl ? "WEBP" : asset.format).toUpperCase()} · {bytesLabel(asset.bytes)}
                     </div>
                   </div>
 
@@ -869,7 +869,7 @@ export default function MediaPage() {
                     size="sm"
                     variant="outline"
                     className="flex-1 h-8 text-[11px] font-bold gap-1 cursor-pointer"
-                    onClick={() => copyUrl(asset.secureUrl)}
+                    onClick={() => copyUrl(asset.optimizedUrl || asset.secureUrl || asset.url)}
                     title={isAr ? "نسخ الرابط المباشر" : "Copy Direct CDN Link"}
                   >
                     <Copy className="w-3 h-3" />
@@ -1109,6 +1109,11 @@ export default function MediaPage() {
         categories={categories}
         isAr={isAr}
         initialAsset={webpSelectedAsset}
+        onAssetOptimized={() => {
+          refetch();
+          setWebpStudioOpen(false);
+          setWebpSelectedAsset(null);
+        }}
       />
 
       {/* 12. Media Usage Inspector Dialog */}

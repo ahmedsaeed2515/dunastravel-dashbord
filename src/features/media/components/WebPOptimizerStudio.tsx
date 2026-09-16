@@ -249,6 +249,7 @@ export function WebPOptimizerStudio({
         onSuccess: (updated) => {
           setSelectedLibraryAsset(updated);
           if (onAssetOptimized) onAssetOptimized(updated);
+          onOpenChange(false);
         },
       }
     );

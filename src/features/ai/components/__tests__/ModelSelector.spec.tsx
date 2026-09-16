@@ -6,8 +6,8 @@ import { describe, it, expect, vi } from 'vitest';
 describe('ModelSelector (Live Discovery and Model Management V3)', () => {
   const mockDiscoveredModels: DiscoveredModelItem[] = [
     {
-      id: 'gemini-2.5-flash',
-      displayName: 'Gemini 2.5 Flash',
+      id: 'gemini-3.6-flash',
+      displayName: 'Gemini 3.6 Flash',
       provider: 'google',
       supportsChat: true,
       supportsStreaming: true,
@@ -40,7 +40,7 @@ describe('ModelSelector (Live Discovery and Model Management V3)', () => {
     render(
       <ModelSelector
         provider="google"
-        value="gemini-2.5-flash"
+        value="gemini-3.6-flash"
         onChange={handleChange}
         discoveredModels={mockDiscoveredModels}
       />
@@ -69,7 +69,7 @@ describe('ModelSelector (Live Discovery and Model Management V3)', () => {
     render(
       <ModelSelector
         provider="google"
-        value="gemini-2.5-flash"
+        value="gemini-3.6-flash"
         onChange={vi.fn()}
         onRefreshModels={handleRefresh}
       />

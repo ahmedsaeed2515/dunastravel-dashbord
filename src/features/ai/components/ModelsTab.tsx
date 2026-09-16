@@ -188,7 +188,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
 
   // Wizard Form State
   const [selectedProvider, setSelectedProvider] = useState<string>("google");
-  const [selectedModel, setSelectedModel] = useState("gemini-2.5-flash");
+  const [selectedModel, setSelectedModel] = useState("gemini-3.6-flash");
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
   const [showEditApiKey, setShowEditApiKey] = useState(false);
@@ -294,7 +294,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
         );
         const available = models.filter((m) => m.status === "AVAILABLE");
         if (available.length > 0 && (!selectedModel || !available.some((m) => m.id === selectedModel))) {
-          const primary = available.find((m) => m.id === "gemini-2.5-flash")?.id || available[0].id;
+          const primary = available.find((m) => m.id === "gemini-3.6-flash")?.id || available[0].id;
           setSelectedModel(primary);
         }
       } else {
@@ -334,7 +334,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     const defaultModel =
       providerModels.find((m) => m.isDefault)?.id ||
       providerModels[0]?.id ||
-      (providerId === "google" ? "gemini-2.5-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
+      (providerId === "google" ? "gemini-3.6-flash" : providerId === "openai" ? "gpt-4o-mini" : "");
 
     setSelectedModel(defaultModel);
     setLabel(
@@ -353,7 +353,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   // Open the wizard
   const handleOpenAddWizard = () => {
     setSelectedProvider("google");
-    setSelectedModel("gemini-2.5-flash");
+    setSelectedModel("gemini-3.6-flash");
     setApiKey("");
     setCustomBaseUrl("");
     setLabel("Google Gemini Production Key");
@@ -370,8 +370,8 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
     setEditingKey(k);
     setSelectedProvider(k.provider);
     const currentModel = k.model || k.defaultModel;
-    const validModel = currentModel === "gemini-2.0-flash" || currentModel === "gemini-1.5-flash" || !currentModel
-      ? (k.provider === "google" ? "gemini-2.5-flash" : "gpt-4o-mini")
+    const validModel = currentModel === "gemini-2.5-flash" || currentModel === "gemini-2.0-flash" || currentModel === "gemini-1.5-flash" || !currentModel
+      ? (k.provider === "google" ? "gemini-3.6-flash" : "gpt-4o-mini")
       : currentModel;
     setSelectedModel(validModel);
 
@@ -404,7 +404,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
       const modelToTest =
         selectedModel ||
         (selectedProvider === "google"
-          ? "gemini-2.5-flash"
+          ? "gemini-3.6-flash"
           : selectedProvider === "openai"
           ? "gpt-4o-mini"
           : undefined);
@@ -551,7 +551,8 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
   const handleActivateModel = async (k: ApiKeyPoolEntry) => {
     setActivatingId(k.id);
     try {
-      const targetModel = k.model || k.defaultModel || "gemini-2.5-flash";
+      const rawTarget = k.model || k.defaultModel || "gemini-3.6-flash";
+      const targetModel = rawTarget === "gemini-2.5-flash" ? "gemini-3.6-flash" : rawTarget;
       const res = await aiApi.activateModel({
         provider: k.provider,
         model: targetModel,
@@ -750,7 +751,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.economy?.model || "gemini-2.5-flash"}
+                {routingData?.table?.economy?.model || "gemini-3.5-flash-lite"}
               </h4>
               <p className="text-[10px] text-muted-foreground mt-0.5">
                 {isAr ? "للأسئلة الشائعة والتحية واستفسارات السياسات البسيطة" : "FAQ, policies, basic catalog queries & greetings"}
@@ -774,7 +775,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
             </div>
             <div>
               <h4 className="text-xs font-bold text-foreground">
-                {routingData?.table?.normal?.model || "gemini-2.5-flash"}
+                {routingData?.table?.normal?.model || "gemini-3.6-flash"}
               </h4>
 
               <p className="text-[10px] text-muted-foreground mt-0.5">
@@ -1082,7 +1083,7 @@ export function ModelsTab({ keyPool, onRefresh, t, isAr }: ModelsTabProps) {
                         {/* Model */}
                         <td className="px-4 py-3 font-mono text-foreground font-semibold">
                           <span className="px-2 py-0.5 rounded bg-muted/60 border border-border/60 text-[11px]">
-                            {entry.model || entry.defaultModel || (entry.provider === "google" ? "gemini-2.5-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
+                            {entry.model || entry.defaultModel || (entry.provider === "google" ? "gemini-3.6-flash" : entry.provider === "openai" ? "gpt-4o-mini" : "Default")}
                           </span>
                         </td>
 

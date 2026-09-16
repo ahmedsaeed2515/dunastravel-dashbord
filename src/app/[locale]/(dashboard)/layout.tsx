@@ -14,7 +14,7 @@ export default function DashboardLayout({
       <CommandPalette />
       <AppSidebar />
       <main
-        className="flex-1 flex flex-col min-h-screen overflow-hidden bg-[#0d1117]"
+        className="flex-1 flex flex-col h-screen max-h-screen overflow-hidden bg-[#0d1117]"
       >
         <Topbar />
         <div

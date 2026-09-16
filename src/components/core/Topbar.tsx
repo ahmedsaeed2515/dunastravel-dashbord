@@ -94,7 +94,7 @@ export const Topbar = memo(function Topbar() {
     : "AD";
 
   return (
-    <header className="h-16 border-b border-border px-2.5 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card transition-colors duration-200">
+    <header className="h-16 shrink-0 border-b border-border px-2.5 sm:px-4 lg:px-8 flex items-center justify-between sticky top-0 z-40 bg-card/95 backdrop-blur-md transition-colors duration-200">
       {/* Left: 3-Lines Sidebar Toggle Button */}
       <div className="flex items-center gap-1.5 sm:gap-4 shrink-0">
         <SidebarTrigger />

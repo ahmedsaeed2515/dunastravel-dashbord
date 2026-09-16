@@ -139,7 +139,7 @@ export const mediaApi = {
   },
 
   reorderShowcase: async (payload: ReorderShowcasePayload): Promise<{ success: boolean }> => {
-    return apiClient.post<{ success: boolean }, { success: boolean }>("/admin/media/showcase/reorder", payload);
+    return apiClient.patch<{ success: boolean }, { success: boolean }>("/admin/media/showcase/reorder", payload);
   },
 
   removeFromShowcase: async (id: string): Promise<{ success: boolean }> => {
