@@ -25,6 +25,11 @@ import {
   notificationsApi,
   InAppNotificationItem,
 } from "@/features/notifications/api/notificationsApi";
+import {
+  resolveNotificationTarget,
+  emitNotificationHighlight,
+  extractNotificationReference,
+} from "@/features/notifications/utils/notificationRouting";
 import { formatDistanceToNow } from "date-fns";
 import { playNotificationSound } from "@/lib/sound";
 
@@ -42,9 +47,11 @@ export function NotificationBellDropdown() {
   const fetchNotifications = useCallback(async () => {
     try {
       setLoading(true);
-      const res = await notificationsApi.getNotifications({ limit: 10 });
+      const res = await notificationsApi.getNotifications({ limit: 15, isRead: "false" });
       const newUnread = res?.unreadCount ?? 0;
-      setNotifications(res?.items ?? []);
+      // Filter strictly unread notifications so the dropdown displays only active alerts
+      const unreadList = (res?.items ?? []).filter((n) => !n.isRead);
+      setNotifications(unreadList);
       
       if (isInitializedRef.current && newUnread > prevUnreadCountRef.current) {
         playNotificationSound();
@@ -69,52 +76,66 @@ export function NotificationBellDropdown() {
 
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
+    // Optimistically remove from popover immediately
+    setNotifications((prev) => prev.filter((n) => n.id !== id));
+    setUnreadCount((prev) => {
+      const updated = Math.max(0, prev - 1);
+      prevUnreadCountRef.current = updated;
+      return updated;
+    });
+
     try {
       await notificationsApi.markAsRead(id);
-      setNotifications((prev) =>
-        prev.map((n) => (n.id === id ? { ...n, isRead: true } : n))
-      );
-      setUnreadCount((prev) => {
-        const updated = Math.max(0, prev - 1);
-        prevUnreadCountRef.current = updated;
-        return updated;
-      });
     } catch (error) {
       console.error("Failed to mark notification as read:", error);
     }
   };
 
   const handleMarkAllAsRead = async () => {
+    // Optimistically clear the popover list
+    setNotifications([]);
+    setUnreadCount(0);
+    prevUnreadCountRef.current = 0;
     try {
       await notificationsApi.markAllAsRead();
-      setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
-      setUnreadCount(0);
-      prevUnreadCountRef.current = 0;
     } catch (error) {
       console.error("Failed to mark all as read:", error);
     }
   };
 
   const handleItemClick = (item: InAppNotificationItem) => {
+    // 1. Immediately remove from popup list so it disappears from this popover
+    setNotifications((prev) => prev.filter((n) => n.id !== item.id));
+    setUnreadCount((prev) => {
+      const updated = Math.max(0, prev - 1);
+      prevUnreadCountRef.current = updated;
+      return updated;
+    });
+
+    // 2. Mark as read on the backend
     if (!item.isRead) {
-      handleMarkAsRead(item.id);
+      notificationsApi.markAsRead(item.id).catch((err) => {
+        console.error("Failed to mark notification read:", err);
+      });
     }
+
+    // 3. Close the popover
     setIsOpen(false);
 
-    if (item.deepLink) {
-      let link = item.deepLink;
-      if (link.includes("/admin/crm/inquiries")) {
-        link = link.replace("/admin/crm/inquiries", "/admin/inquiries");
-      }
-      const currentLocale = pathname.split("/").filter(Boolean)[0] || "ar";
-      const validLocale = ["en", "ar", "es", "pt", "it"].includes(currentLocale)
-        ? currentLocale
-        : "ar";
-      const targetUrl = link.startsWith("/")
-        ? `/${validLocale}${link}`
-        : link;
-      router.push(targetUrl);
-    }
+    // 4. Resolve destination URL and highlight target
+    const currentLocale = pathname.split("/").filter(Boolean)[0] || "ar";
+    const targetUrl = resolveNotificationTarget(item, currentLocale);
+    const refCode = extractNotificationReference(item);
+
+    // 5. Broadcast immediate client event for same-page instant glow
+    emitNotificationHighlight({
+      referenceCode: refCode || undefined,
+      highlightId: refCode || item.entityId || item.id,
+      category: item.category,
+    });
+
+    // 6. Navigate to destination
+    router.push(targetUrl);
   };
 
   const getCategoryIcon = (category: string) => {

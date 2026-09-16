@@ -2,7 +2,7 @@
 
 import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 import { useState, useEffect, useCallback } from "react";
-import { useRouter, usePathname } from "next/navigation";
+import { useRouter, usePathname, useSearchParams } from "next/navigation";
 import {
   Bell,
   CheckCheck,
@@ -23,11 +23,18 @@ import {
   notificationsApi,
   InAppNotificationItem,
 } from "@/features/notifications/api/notificationsApi";
+import {
+  resolveNotificationTarget,
+  emitNotificationHighlight,
+} from "@/features/notifications/utils/notificationRouting";
 import { formatDistanceToNow } from "date-fns";
 
 export default function AdminNotificationsPage() {
   const router = useRouter();
   const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const highlightId = searchParams?.get("highlight") || searchParams?.get("ref") || null;
+
   const [notifications, setNotifications] = useState<InAppNotificationItem[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(true);
@@ -62,6 +69,18 @@ export default function AdminNotificationsPage() {
     fetchNotifications();
   }, [fetchNotifications]);
 
+  useEffect(() => {
+    if (highlightId && notifications.length > 0) {
+      const timer = setTimeout(() => {
+        const el = document.getElementById(`notif-item-${highlightId}`);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth", block: "center" });
+        }
+      }, 150);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightId, notifications]);
+
   const handleMarkAsRead = async (id: string, e?: React.MouseEvent) => {
     if (e) e.stopPropagation();
     try {
@@ -89,19 +108,9 @@ export default function AdminNotificationsPage() {
     if (!item.isRead) {
       handleMarkAsRead(item.id);
     }
-    if (item.deepLink) {
-      let link = item.deepLink;
-      if (link.includes("/admin/crm/inquiries")) {
-        link = link.replace("/admin/crm/inquiries", "/admin/inquiries");
-      }
-      const validLocale = ["en", "ar", "es", "pt", "it"].includes(currentLocale)
-        ? currentLocale
-        : "ar";
-      const targetUrl = link.startsWith("/")
-        ? `/${validLocale}${link}`
-        : link;
-      router.push(targetUrl);
-    }
+    const targetUrl = resolveNotificationTarget(item, currentLocale);
+    emitNotificationHighlight(item);
+    router.push(targetUrl);
   };
 
   const getCategoryIcon = (category: string) => {
@@ -231,17 +240,28 @@ export default function AdminNotificationsPage() {
               </p>
             </div>
           ) : (
-            notifications.map((item) => (
-              <div
-                key={item.id}
-                onClick={() => handleItemClick(item)}
-                className={`p-4 sm:p-5 flex items-start gap-4 cursor-pointer transition-all hover:bg-muted/40 ${
-                  !item.isRead ? "bg-amber-500/5 dark:bg-amber-500/10 border-l-4 border-l-amber-500" : ""
-                }`}
-              >
-                <div className="p-2.5 rounded-2xl bg-background border border-border/80 shadow-xs shrink-0 mt-0.5">
-                  {getCategoryIcon(item.category)}
-                </div>
+            notifications.map((item) => {
+              const isTarget = Boolean(
+                highlightId &&
+                (item.id === highlightId ||
+                 item.entityId === highlightId ||
+                 (item.metadata && JSON.stringify(item.metadata).includes(highlightId)))
+              );
+
+              return (
+                <div
+                  key={item.id}
+                  id={`notif-item-${item.id}`}
+                  onClick={() => handleItemClick(item)}
+                  className={`p-4 sm:p-5 flex items-start gap-4 cursor-pointer transition-all hover:bg-muted/40 ${
+                    isTarget ? "notification-target-glow ring-2 ring-amber-500 rounded-2xl" : ""
+                  } ${
+                    !item.isRead ? "bg-amber-500/5 dark:bg-amber-500/10 border-l-4 border-l-amber-500" : ""
+                  }`}
+                >
+                  <div className="p-2.5 rounded-2xl bg-background border border-border/80 shadow-xs shrink-0 mt-0.5">
+                    {getCategoryIcon(item.category)}
+                  </div>
 
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 mb-1">
@@ -279,8 +299,9 @@ export default function AdminNotificationsPage() {
                   )}
                 </div>
               </div>
-            ))
-          )}
+            );
+          })
+        )}
         </CardContent>
       </Card>
 

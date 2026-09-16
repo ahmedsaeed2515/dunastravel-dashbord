@@ -1,7 +1,8 @@
 "use client";
 
-import { useState } from "react";
-import { AlertTriangle, CreditCard, Download, RefreshCw, Search } from "lucide-react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
+import { AlertTriangle, CreditCard, Download, RefreshCw, Search, Sparkles } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { usePayments, useReconciliationSummary } from "../hooks/useFinance";
@@ -20,10 +21,42 @@ const formatDate = (value?: string | null) =>
     : "—";
 
 export function PaymentsView() {
-  const [search, setSearch] = useState("");
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || searchParams.get("ref") || "";
+  const urlHighlight = searchParams.get("highlight") || urlSearch;
+
+  const [search, setSearch] = useState(urlSearch);
+  const [activeHighlight, setActiveHighlight] = useState<string | null>(urlHighlight || null);
   const [status, setStatus] = useState("");
   const [page, setPage] = useState(1);
   const limit = 25;
+
+  // React to URL query param changes
+  useEffect(() => {
+    if (urlSearch) {
+      setSearch(urlSearch);
+      setPage(1);
+    }
+    if (urlHighlight) {
+      setActiveHighlight(urlHighlight);
+    }
+  }, [urlSearch, urlHighlight]);
+
+  // React to cross-component custom highlight event
+  useEffect(() => {
+    const handleHighlightEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.referenceCode) {
+        setSearch(detail.referenceCode);
+        setActiveHighlight(detail.referenceCode);
+        setPage(1);
+      } else if (detail?.highlightId) {
+        setActiveHighlight(detail.highlightId);
+      }
+    };
+    window.addEventListener("dunas:notification-highlight", handleHighlightEvent);
+    return () => window.removeEventListener("dunas:notification-highlight", handleHighlightEvent);
+  }, []);
 
   const { data: response, isLoading, refetch, isFetching } = usePayments({
     page,
@@ -35,6 +68,39 @@ export function PaymentsView() {
   const payments = response?.data ?? [];
   const meta = response?.meta;
   const totalPages = Math.max(1, meta?.totalPages || 1);
+
+  // Auto-scroll to highlighted payment row when available
+  useEffect(() => {
+    if (activeHighlight && payments.length > 0) {
+      const timer = setTimeout(() => {
+        const normalized = activeHighlight.trim().toLowerCase();
+        const match = payments.find(
+          (p) =>
+            p.bookingReferenceCode?.toLowerCase() === normalized ||
+            p.id.toLowerCase() === normalized ||
+            p.providerPaymentId?.toLowerCase() === normalized
+        );
+
+        if (match) {
+          const rowDomId = `payment-row-${(match.bookingReferenceCode || match.id).toLowerCase()}`;
+          const targetRow = document.getElementById(rowDomId);
+          if (targetRow) {
+            targetRow.scrollIntoView({ behavior: "smooth", block: "center" });
+            return;
+          }
+        }
+
+        const fallbackRow = document.getElementById(`payment-row-${normalized}`);
+        if (fallbackRow) {
+          fallbackRow.scrollIntoView({ behavior: "smooth", block: "center" });
+        } else {
+          const section = document.getElementById("payments-table-section");
+          if (section) section.scrollIntoView({ behavior: "smooth", block: "start" });
+        }
+      }, 400);
+      return () => clearTimeout(timer);
+    }
+  }, [activeHighlight, payments]);
 
   const handleExportCsv = () => {
     if (!payments.length) {
@@ -88,7 +154,7 @@ export function PaymentsView() {
   };
 
   return (
-    <section className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-5">
+    <section id="payments-table-section" className="rounded-2xl border border-border bg-card p-5 shadow-xs space-y-5 scroll-mt-20">
       <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <h2 className="flex items-center gap-2 text-lg font-bold">
@@ -192,12 +258,40 @@ export function PaymentsView() {
                 </td>
               </tr>
             ) : null}
-            {payments.map((payment) => (
-              <tr key={payment.id} className="border-b border-border/60 align-top hover:bg-muted/10">
-                <td className="p-3 font-bold font-mono">
-                  <div>{payment.bookingReferenceCode}</div>
-                  <div className="mt-1 font-mono text-[10px] text-muted-foreground">{payment.id.slice(0, 8)}</div>
-                </td>
+            {payments.map((payment) => {
+              const isHighlighted = Boolean(
+                activeHighlight &&
+                (
+                  payment.bookingReferenceCode?.toLowerCase() === activeHighlight.toLowerCase() ||
+                  payment.id.toLowerCase() === activeHighlight.toLowerCase() ||
+                  payment.providerPaymentId?.toLowerCase() === activeHighlight.toLowerCase()
+                )
+              );
+
+              const rowDomId = `payment-row-${(payment.bookingReferenceCode || payment.id).toLowerCase()}`;
+
+              return (
+                <tr
+                  key={payment.id}
+                  id={rowDomId}
+                  className={`border-b border-border/60 align-top transition-all duration-700 ${
+                    isHighlighted
+                      ? "notification-target-glow ring-2 ring-amber-500 shadow-[0_0_35px_rgba(245,158,11,0.55)] scale-[1.006] z-10 rounded-lg"
+                      : "hover:bg-muted/10"
+                  }`}
+                >
+                  <td className="p-3 font-bold font-mono">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span>{payment.bookingReferenceCode}</span>
+                      {isHighlighted && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-500 to-amber-600 text-white shadow-xs animate-bounce">
+                          <Sparkles className="w-3 h-3" />
+                          الإشعار المحدد
+                        </span>
+                      )}
+                    </div>
+                    <div className="mt-1 font-mono text-[10px] text-muted-foreground">{payment.id.slice(0, 8)}</div>
+                  </td>
                 <td className="p-3 font-bold font-mono text-emerald-600">
                   {formatMoney(payment.amount, payment.currency)}
                 </td>
@@ -243,7 +337,8 @@ export function PaymentsView() {
                   )}
                 </td>
               </tr>
-            ))}
+            );
+            })}
           </tbody>
         </table>
       </div>

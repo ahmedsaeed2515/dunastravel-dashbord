@@ -22,15 +22,50 @@ import {
   FileSpreadsheet,
 } from "lucide-react";
 import { useLocale } from "next-intl";
+import { useSearchParams } from "next/navigation";
 
 export function InquiriesView() {
   const locale = useLocale();
   const isAr = locale === "ar";
 
-  const [search, setSearch] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams?.get("search") || searchParams?.get("ref") || "";
+  const urlHighlight = searchParams?.get("highlight") || urlSearch;
+
+  const [search, setSearch] = useState(urlSearch);
+  const [debouncedSearch, setDebouncedSearch] = useState(urlSearch);
+  const [activeHighlight, setActiveHighlight] = useState<string | null>(urlHighlight || null);
   const [selectedStatus, setSelectedStatus] = useState<string>("ALL");
   const [page, setPage] = useState(1);
+
+  // Sync URL search params
+  useEffect(() => {
+    if (urlSearch) {
+      setSearch(urlSearch);
+      setDebouncedSearch(urlSearch);
+      setPage(1);
+    }
+    if (urlHighlight) {
+      setActiveHighlight(urlHighlight);
+    }
+  }, [urlSearch, urlHighlight]);
+
+  // Sync from cross-component event for instant highlighting
+  useEffect(() => {
+    const handleHighlightEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.referenceCode) {
+        setSearch(detail.referenceCode);
+        setDebouncedSearch(detail.referenceCode);
+        setActiveHighlight(detail.referenceCode);
+        setPage(1);
+      } else if (detail?.highlightId) {
+        setActiveHighlight(detail.highlightId);
+      }
+    };
+    window.addEventListener("dunas:notification-highlight", handleHighlightEvent);
+    return () => window.removeEventListener("dunas:notification-highlight", handleHighlightEvent);
+  }, []);
 
   // Debounce the search input to avoid API calls on every keystroke
   useEffect(() => {
@@ -238,6 +273,7 @@ export function InquiriesView() {
           pageCount={data?.meta?.totalPages ?? 0}
           currentPage={page}
           onPageChange={(p) => setPage(p)}
+          highlightId={activeHighlight}
         />
       </div>
     </div>

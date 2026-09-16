@@ -512,3 +512,22 @@ html.light-mode .glass-card:hover {
 .animate-glow-pulse {
   animation: icon-glow-pulse 2s infinite ease-in-out;
 }
+
+/* Notification Click Target Glow Animation (VIP Amber Gold) */
+@keyframes notificationTargetPulse {
+  0%, 100% {
+    box-shadow: 0 0 16px rgba(245, 158, 11, 0.45), inset 0 0 10px rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.85);
+  }
+  50% {
+    box-shadow: 0 0 36px rgba(245, 158, 11, 0.75), inset 0 0 20px rgba(245, 158, 11, 0.35);
+    border-color: rgba(245, 158, 11, 1);
+  }
+}
+
+.notification-target-glow {
+  animation: notificationTargetPulse 2s ease-in-out infinite;
+  background-color: rgba(245, 158, 11, 0.12) !important;
+  position: relative;
+  z-index: 20;
+}

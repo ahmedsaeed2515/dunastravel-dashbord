@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import {
   flexRender,
   getCoreRowModel,
@@ -25,9 +26,10 @@ interface InquiriesTableProps {
   pageCount: number;
   currentPage?: number;
   onPageChange: (page: number) => void;
+  highlightId?: string | null;
 }
 
-export function InquiriesTable({ data, isLoading, pageCount, currentPage = 1, onPageChange }: InquiriesTableProps) {
+export function InquiriesTable({ data, isLoading, pageCount, currentPage = 1, onPageChange, highlightId }: InquiriesTableProps) {
   const locale = useLocale();
   const isAr = locale === "ar";
 
@@ -36,6 +38,29 @@ export function InquiriesTable({ data, isLoading, pageCount, currentPage = 1, on
     columns,
     getCoreRowModel: getCoreRowModel(),
   });
+
+  // Auto-scroll to highlighted inquiry if matched
+  useEffect(() => {
+    if (highlightId && data.length > 0) {
+      const normalized = highlightId.trim().toLowerCase();
+      const match = data.find(
+        (i) =>
+          i.id.toLowerCase() === normalized ||
+          i.referenceCode?.toLowerCase() === normalized ||
+          i.referenceCode?.toLowerCase().includes(normalized)
+      );
+      if (match) {
+        const rowId = `inquiry-row-${match.referenceCode || match.id}`;
+        const timer = setTimeout(() => {
+          const el = document.getElementById(rowId);
+          if (el) {
+            el.scrollIntoView({ behavior: "smooth", block: "center" });
+          }
+        }, 150);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [highlightId, data]);
 
   return (
     <div className="w-full">
@@ -66,15 +91,29 @@ export function InquiriesTable({ data, isLoading, pageCount, currentPage = 1, on
               </TableCell>
             </TableRow>
           ) : table.getRowModel().rows?.length ? (
-            table.getRowModel().rows.map((row) => (
-              <TableRow key={row.id}>
-                {row.getVisibleCells().map((cell) => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
-              </TableRow>
-            ))
+            table.getRowModel().rows.map((row) => {
+              const rowKey = row.original.referenceCode || row.original.id;
+              const isHighlighted = Boolean(
+                highlightId &&
+                (row.original.id.toLowerCase() === highlightId.toLowerCase() ||
+                 row.original.referenceCode?.toLowerCase() === highlightId.toLowerCase() ||
+                 row.original.referenceCode?.toLowerCase().includes(highlightId.toLowerCase()))
+              );
+
+              return (
+                <TableRow 
+                  key={row.id}
+                  id={`inquiry-row-${rowKey}`}
+                  className={isHighlighted ? "notification-target-glow bg-amber-500/10 dark:bg-amber-500/20 ring-2 ring-amber-500/80 transition-all duration-300" : undefined}
+                >
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              );
+            })
           ) : (
             <TableRow>
               <TableCell colSpan={columns.length} className="h-24 text-center text-xs text-muted-foreground font-medium">

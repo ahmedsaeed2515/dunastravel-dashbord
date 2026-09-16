@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 import { 
   useBookings, 
   useSoftDeleteBooking
@@ -18,23 +19,57 @@ import { Download, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslations } from "next-intl";
 
+import { BookingsHeaderStats } from "@/features/bookings/components/BookingsHeaderStats";
+
 export function BookingsTable() {
   const tBookings = useTranslations("bookings");
   const tCommon = useTranslations("common");
   const tStatus = useTranslations("status");
 
+  const searchParams = useSearchParams();
+  const urlSearch = searchParams.get("search") || searchParams.get("ref") || "";
+  const urlHighlight = searchParams.get("highlight") || urlSearch;
+
   // Filters & Pagination state
   const [pagination, setPagination] = useState({ pageIndex: 0, pageSize: 10 });
-  const [search, setSearch] = useState("");
+  const [search, setSearch] = useState(urlSearch);
+  const [activeHighlight, setActiveHighlight] = useState<string | null>(urlHighlight || null);
   const [statusFilter, setStatusFilter] = useState<string>("");
-  
+
+  // Sync from URL search params
+  useEffect(() => {
+    if (urlSearch) {
+      setSearch(urlSearch);
+      setPagination((p) => ({ ...p, pageIndex: 0 }));
+    }
+    if (urlHighlight) {
+      setActiveHighlight(urlHighlight);
+    }
+  }, [urlSearch, urlHighlight]);
+
+  // Sync from cross-component event for instant highlighting
+  useEffect(() => {
+    const handleHighlightEvent = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.referenceCode) {
+        setSearch(detail.referenceCode);
+        setActiveHighlight(detail.referenceCode);
+        setPagination((p) => ({ ...p, pageIndex: 0 }));
+      } else if (detail?.highlightId) {
+        setActiveHighlight(detail.highlightId);
+      }
+    };
+    window.addEventListener("dunas:notification-highlight", handleHighlightEvent);
+    return () => window.removeEventListener("dunas:notification-highlight", handleHighlightEvent);
+  }, []);
+
   const queryFilters: BookingQueryFilters = {
     page: pagination.pageIndex + 1,
     limit: pagination.pageSize,
     ...(search ? { search } : {}),
     ...(statusFilter && statusFilter !== "ALL" ? { status: statusFilter } : {})
   };
-  
+
   const { data, isLoading } = useBookings(queryFilters);
   const deleteBooking = useSoftDeleteBooking();
   const [isExporting, setIsExporting] = useState(false);
@@ -109,6 +144,7 @@ export function BookingsTable() {
         </Select>
 
 
+
         <Button 
           variant="outline" 
           size="sm" 
@@ -131,12 +167,10 @@ export function BookingsTable() {
         isLoading={isLoading}
         renderToolbarActions={renderToolbarActions}
         pageCount={data?.meta?.totalPages ?? -1}
-        pagination={pagination}
-        onPaginationChange={setPagination}
-        manualPagination={true}
+        highlightId={activeHighlight}
+        getRowId={(b: any) => b.referenceCode || b.id}
       />
-      
-      {/* Modals & Drawers Layer */}
+
       <BookingDetailsDrawer
         booking={selectedBooking}
         open={isViewDrawerOpen}
