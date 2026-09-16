@@ -628,14 +628,23 @@ export function DestinationEditorDrawer({
                   <span className="text-xs font-bold text-muted-foreground">معاينة الغلاف:</span>
                   <div className="relative h-44 w-full rounded-xl overflow-hidden border bg-muted flex items-center justify-center">
                     {heroImageUrl ? (
-                      <img
-                        src={heroImageUrl}
-                        alt="Hero preview"
-                        className="w-full h-full object-cover"
-                        onError={(e) => {
-                          (e.target as HTMLElement).style.display = "none";
-                        }}
-                      />
+                      <>
+                        <img
+                          src={heroImageUrl}
+                          alt="Hero preview"
+                          className="w-full h-full object-cover"
+                          onError={(e) => {
+                            const target = e.target as HTMLElement;
+                            target.style.display = "none";
+                            const fallback = target.nextElementSibling as HTMLElement;
+                            if (fallback) fallback.style.display = "flex";
+                          }}
+                        />
+                        <div className="hidden flex-col items-center justify-center p-4 text-center">
+                          <AlertCircle className="h-7 w-7 text-amber-500 mb-1" />
+                          <span className="text-xs text-muted-foreground">تعذر تحميل الصورة — يرجى التأكد من صحة الرابط</span>
+                        </div>
+                      </>
                     ) : (
                       <div className="text-center p-4">
                         <ImageIcon className="h-8 w-8 text-muted-foreground mx-auto mb-2 opacity-50" />
@@ -737,8 +746,29 @@ export function DestinationEditorDrawer({
                           item.tour?.titleJsonb?.en ||
                           item.tour?.slug ||
                           "رحلة";
+
+                        // Multi-tier tour image resolution
+                        const fullTour = allTours.find(
+                          (t) =>
+                            (t.id && (t.id === item.tourId || t.id === item.tour?.id)) ||
+                            (t.slug &&
+                              item.tour?.slug &&
+                              t.slug.toLowerCase() === item.tour.slug.toLowerCase())
+                        );
+
                         const tourHero =
-                          item.tour?.images?.[0]?.imageUrl || "/imgs/placeholder.webp";
+                          (item.tour?.images && item.tour.images[0]?.imageUrl) ||
+                          (fullTour?.images &&
+                            (typeof fullTour.images[0] === "string"
+                              ? fullTour.images[0]
+                              : (fullTour.images[0] as any)?.imageUrl ||
+                                (fullTour.images[0] as any)?.url)) ||
+                          fullTour?.heroImage ||
+                          (fullTour as any)?.heroImageUrl ||
+                          (fullTour as any)?.imageUrl ||
+                          (item.tour as any)?.heroImage ||
+                          (item.tour as any)?.heroImageUrl ||
+                          null;
 
                         return (
                           <div
@@ -746,15 +776,27 @@ export function DestinationEditorDrawer({
                             className="p-3 rounded-xl border bg-card flex items-center justify-between gap-3 shadow-xs"
                           >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="h-10 w-12 rounded-lg overflow-hidden border bg-muted shrink-0">
-                                <img
-                                  src={tourHero}
-                                  alt=""
-                                  className="h-full w-full object-cover"
-                                  onError={(e) => {
-                                    (e.target as HTMLElement).style.display = "none";
-                                  }}
-                                />
+                              <div className="h-10 w-12 rounded-lg overflow-hidden border bg-muted/60 shrink-0 relative flex items-center justify-center">
+                                {tourHero ? (
+                                  <img
+                                    src={tourHero}
+                                    alt={tourTitle}
+                                    className="h-full w-full object-cover"
+                                    onError={(e) => {
+                                      const target = e.target as HTMLElement;
+                                      target.style.display = "none";
+                                      const fallback = target.nextElementSibling as HTMLElement;
+                                      if (fallback) fallback.style.display = "flex";
+                                    }}
+                                  />
+                                ) : null}
+                                <div
+                                  className={`h-full w-full items-center justify-center bg-muted text-muted-foreground/50 ${
+                                    tourHero ? "hidden" : "flex"
+                                  }`}
+                                >
+                                  <ImageIcon className="h-4 w-4" />
+                                </div>
                               </div>
                               <div className="min-w-0">
                                 <div className="text-xs font-bold text-foreground truncate">

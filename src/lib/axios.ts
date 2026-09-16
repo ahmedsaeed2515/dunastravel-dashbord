@@ -98,6 +98,11 @@ apiClient.interceptors.request.use(
     const method = config.method?.toLowerCase() || '';
     const isMutative = ['post', 'put', 'patch', 'delete'].includes(method);
 
+    // If request payload is FormData, remove Content-Type so Axios/browser sets multipart/form-data with the correct boundary
+    if (typeof FormData !== 'undefined' && config.data instanceof FormData) {
+      delete config.headers['Content-Type'];
+    }
+
     if (isMutative) {
       const token = await initCsrfToken();
       if (token) {

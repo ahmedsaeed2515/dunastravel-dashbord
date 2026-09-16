@@ -300,8 +300,8 @@ export function VideoUploadDialog({
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {isAr
-                        ? "الصيغ المدعومة: MP4, WebM, MOV (الرفع المباشر حتى 4.5 ميجابايت، أو استخدم تبويب الرابط للفيديوهات الكبيرة)"
-                        : "Supported formats: MP4, WebM, MOV (Direct upload up to 4.5MB, or use Video URL tab for larger videos)"}
+                        ? "الصيغ المدعومة: MP4, WebM, MOV, MKV (الرفع المباشر حتى 100 ميجابايت، أو إضافة عبر رابط خارجي)"
+                        : "Supported formats: MP4, WebM, MOV, MKV (Direct upload up to 100MB, or external URL)"}
                     </p>
                   </div>
                 </div>
@@ -331,31 +331,26 @@ export function VideoUploadDialog({
                     </Button>
                   </div>
 
-                  {/* Size Notice if file is larger than serverless body limit */}
+                  {/* Size Advisory Notice */}
                   {videoFile.size > 4.5 * 1024 * 1024 && (
-                    <div className="flex items-start gap-2.5 p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 text-amber-600 dark:text-amber-400 text-xs">
-                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                      <div className="space-y-1">
-                        <p className="font-semibold">
-                          {isAr
-                            ? `حجم الملف (${formatBytes(videoFile.size)}) أكبر من سعة الرفع المباشر السريعة (4.5 ميجابايت)`
-                            : `File size (${formatBytes(videoFile.size)}) exceeds serverless direct upload limit (4.5MB)`}
-                        </p>
+                    <div className="flex items-start gap-3 p-3.5 rounded-2xl border border-amber-500/30 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-xs shadow-xs">
+                      <AlertCircle className="w-4 h-4 shrink-0 mt-0.5 text-amber-600 dark:text-amber-400" />
+                      <div className="space-y-1.5 flex-1">
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-bold text-amber-900 dark:text-amber-200">
+                            {isAr
+                              ? `تنبيه: حجم الملف (${formatBytes(videoFile.size)}) — سيتم الرفع المباشر والتخزين السحابي بشكل طبيعي`
+                              : `Notice: Video file size (${formatBytes(videoFile.size)}) — Direct upload and cloud storage will proceed normally`}
+                          </p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-800 dark:text-amber-300 font-medium shrink-0">
+                            {isAr ? "ملاحظة توجيهية" : "Advisory"}
+                          </span>
+                        </div>
                         <p className="text-[11px] opacity-90 leading-relaxed">
                           {isAr
-                            ? "لمقاطع الفيديو الكبيرة أو عالية الدقة، نوصي باستخدام تبويب 'إضافة عبر رابط (URL)' (مثل يوتيوب أو فيميو أو رابط سحابي مباشر) لتضمينها فوراً دون قيود على الحجم."
-                            : "For larger or high-res videos, we recommend using the 'Add by Video URL' tab (YouTube, Vimeo, or direct cloud URL) for instant playback without size limits."}
+                            ? "اضغط 'بدء الرفع والحفظ' بالأسفل لبدء الرفع المباشر. (ملاحظة اختيارية: لمقاطع الفيديو الضخمة جداً يمكنك أيضاً استخدام تبويب 'إضافة عبر رابط' لتضمين مقاطع يوتيوب أو فيميو أو روابط سحابية مباشرة)."
+                            : "Click 'Save & Add Video' below to proceed with direct upload. (Optional: for exceptionally large videos you can also use the 'Add by Video URL' tab for YouTube, Vimeo, or direct cloud URLs)."}
                         </p>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSourceType("url")}
-                          className="h-7 text-[11px] mt-1 gap-1 border-amber-500/40 text-amber-700 dark:text-amber-300"
-                        >
-                          <LinkIcon className="w-3 h-3" />
-                          <span>{isAr ? "الانتقال إلى إضافة عبر رابط" : "Switch to Video URL"}</span>
-                        </Button>
                       </div>
                     </div>
                   )}
