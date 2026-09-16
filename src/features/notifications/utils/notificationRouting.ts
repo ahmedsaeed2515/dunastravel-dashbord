@@ -15,9 +15,12 @@ export function extractNotificationReference(item: InAppNotificationItem): strin
     return item.entityId.trim().toUpperCase();
   }
 
-  // 2. Metadata referenceCode
+  // 2. Metadata reviewId or referenceCode
   const meta = item.metadata as Record<string, unknown> | null;
   if (meta) {
+    if (typeof meta.reviewId === "string" && meta.reviewId.trim()) {
+      return meta.reviewId.trim();
+    }
     const fromMeta = meta.referenceCode || meta.bookingReferenceCode || meta.bookingId;
     if (typeof fromMeta === "string" && /^BKG-[A-Z0-9_-]+/i.test(fromMeta.trim())) {
       return fromMeta.trim().toUpperCase();
@@ -48,6 +51,27 @@ export function resolveNotificationTarget(item: InAppNotificationItem, currentLo
 
   const cat = (item.category || "").toUpperCase();
   const titleAndMsg = `${item.title || ""} ${item.message || ""}`.toLowerCase();
+  const meta = item.metadata as Record<string, unknown> | null;
+
+  // Check for Reviews first to avoid collision with general TOUR category
+  const isReview =
+    item.entityType === "TOUR_REVIEW" ||
+    item.entityType === "REVIEW" ||
+    item.deepLink?.includes("/admin/reviews") ||
+    titleAndMsg.includes("review") ||
+    titleAndMsg.includes("تقييم") ||
+    Boolean(meta?.reviewId);
+
+  if (isReview) {
+    const reviewId = (meta?.reviewId as string) || item.entityId || refCode;
+    const params = new URLSearchParams();
+    if (reviewId) {
+      params.set("reviewId", reviewId);
+      params.set("highlight", reviewId);
+    }
+    const queryString = params.toString() ? `?${params.toString()}` : "";
+    return `/${validLocale}/admin/reviews${queryString}`;
+  }
 
   const isPaymentOrRefund =
     cat === "PAYMENT" ||

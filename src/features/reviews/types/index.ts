@@ -43,6 +43,7 @@ export interface ReviewQueryFilters {
   page?: number;
   limit?: number;
   tourId?: string;
+  reviewId?: string;
   status?: ReviewStatus | 'ALL';
   isPublished?: boolean;
   rating?: number;

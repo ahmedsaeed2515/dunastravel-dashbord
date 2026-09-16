@@ -542,7 +542,9 @@
     "status": "Estado",
     "actions": "Acciones",
     "noReviews": "No se encontraron reseñas",
-    "noReviewsDesc": "Ninguna reseña de cliente coincide con sus filtros actuales."
+    "noReviewsDesc": "Ninguna reseña de cliente coincide con sus filtros actuales.",
+    "viewTrip": "Ver Viaje",
+    "selectedReview": "Reseña Seleccionada"
   },
   "audit": {
     "title": "Registros de Auditoría",

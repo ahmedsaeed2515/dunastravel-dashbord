@@ -542,7 +542,9 @@
     "status": "Status",
     "actions": "Actions",
     "noReviews": "No Reviews Found",
-    "noReviewsDesc": "No customer reviews match your current filters."
+    "noReviewsDesc": "No customer reviews match your current filters.",
+    "viewTrip": "View Trip",
+    "selectedReview": "Selected Review"
   },
   "audit": {
     "title": "Audit Logs",

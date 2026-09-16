@@ -896,6 +896,18 @@ export const aiApi = {
     return apiClient.post<unknown, KnowledgeItemData>("/admin/ai/knowledge", payload);
   },
 
+  createMultilingualKnowledge: async (payload: {
+    title: string;
+    content: string;
+    sourceLocale?: string;
+    category?: string;
+    priority?: number;
+    tags?: string[];
+    autoTranslate?: boolean;
+  }): Promise<{ success: boolean; canonicalEntityId: string; createdCount: number; items: any[] }> => {
+    return apiClient.post("/admin/ai/knowledge/multilingual", payload);
+  },
+
   updateKnowledge: async (id: string, payload: Partial<KnowledgeItemData>): Promise<KnowledgeItemData> => {
     return apiClient.put<unknown, KnowledgeItemData>(`/admin/ai/knowledge/${id}`, payload);
   },

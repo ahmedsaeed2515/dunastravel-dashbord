@@ -542,7 +542,9 @@
     "status": "Stato",
     "actions": "Azioni",
     "noReviews": "Nessuna recensione trovata",
-    "noReviewsDesc": "Nessuna recensione corrisponde ai filtri selezionati."
+    "noReviewsDesc": "Nessuna recensione corrisponde ai filtri selezionati.",
+    "viewTrip": "Visualizza Viaggio",
+    "selectedReview": "Recensione Selezionata"
   },
   "audit": {
     "title": "Registri di controllo",

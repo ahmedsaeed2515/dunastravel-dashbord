@@ -131,6 +131,75 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
   const [drawerTestResult, setDrawerTestResult] = useState<any>(null);
   const [drawerTesting, setDrawerTesting] = useState(false);
 
+  // Create Custom Knowledge Modal State
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newCategory, setNewCategory] = useState("COMPANY");
+  const [newSourceLocale, setNewSourceLocale] = useState("ar");
+  const [newContent, setNewContent] = useState("");
+  const [newPriority, setNewPriority] = useState(15);
+  const [newTags, setNewTags] = useState("");
+  const [newAutoTranslate, setNewAutoTranslate] = useState(true);
+  const [creatingKnowledge, setCreatingKnowledge] = useState(false);
+
+  const KNOWLEDGE_CATEGORIES_LIST = [
+    { value: "COMPANY", labelAr: "معلومات عن الشركة (دوناس ترافيل)", labelEn: "Company Profile (Dunas Travel)", icon: "🏢" },
+    { value: "GENERAL", labelAr: "دليل الموقع وطرق الحجز", labelEn: "Website & Booking Guide", icon: "🌐" },
+    { value: "FAQ", labelAr: "أسئلة وأجوبة شائعة", labelEn: "Frequently Asked Questions", icon: "❓" },
+    { value: "BOOKING_POLICY", labelAr: "سياسات وشروط الحجز", labelEn: "Booking Policies", icon: "📋" },
+    { value: "CANCELLATION_POLICY", labelAr: "سياسات الإلغاء والاسترداد", labelEn: "Cancellation & Refund Policy", icon: "❌" },
+    { value: "PAYMENT_INFO", labelAr: "طرق الدفع وبوابة GetPayIn", labelEn: "Payment Methods & GetPayIn", icon: "💳" },
+    { value: "VISA_GUIDANCE", labelAr: "إرشادات التأشيرة وشروط الدخول", labelEn: "Visa & Entry Guidance", icon: "🛂" },
+    { value: "CUSTOM_TOURS", labelAr: "رحلات مخصصة وطيران خاص VIP", labelEn: "VIP & Tailor-Made Services", icon: "✈️" },
+    { value: "HOTELS", labelAr: "الفنادق والدهبيات النيلية", labelEn: "Hotels & Nile Cruises", icon: "🏨" },
+    { value: "TRANSPORTATION", labelAr: "النقل والليموزين والمطارات", labelEn: "Transportation & Transfers", icon: "🚗" },
+    { value: "SAFETY_ADVICE", labelAr: "إرشادات السلامة والسفر", labelEn: "Travel & Safety Advice", icon: "🛡️" },
+  ];
+
+  const handleCreateCustomKnowledge = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTitle.trim() || !newContent.trim()) {
+      toast.error(isAr ? "يرجى كتابة العنوان والمحتوى." : "Title and content are required.");
+      return;
+    }
+
+    setCreatingKnowledge(true);
+    try {
+      const parsedTags = newTags
+        .split(",")
+        .map((t) => t.trim().toLowerCase())
+        .filter(Boolean);
+
+      const res = await aiApi.createMultilingualKnowledge({
+        title: newTitle.trim(),
+        content: newContent.trim(),
+        category: newCategory,
+        sourceLocale: newSourceLocale,
+        priority: Number(newPriority),
+        tags: parsedTags,
+        autoTranslate: newAutoTranslate,
+      });
+
+      toast.success(
+        isAr
+          ? `✓ تم حفظ وتأصيل المعرفة بنجاح لـ GuideR (${res.createdCount} لغات)!`
+          : `✓ Custom knowledge created & indexed across ${res.createdCount} languages!`
+      );
+
+      setNewTitle("");
+      setNewContent("");
+      setNewTags("");
+      setIsCreateModalOpen(false);
+
+      fetchCanonicalEntities();
+      fetchSyncStatus();
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to create custom knowledge.");
+    } finally {
+      setCreatingKnowledge(false);
+    }
+  };
+
   // Top Source Cards
   const SOURCE_CARDS = [
     { id: "ALL", title: isAr ? "الكل" : "All", icon: "📚", count: "375", countEn: "375 Items" },
@@ -526,6 +595,15 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
         </div>
 
         <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 gap-1.5 shadow-sm cursor-pointer"
+          >
+            <Plus className="h-3.5 w-3.5" />
+            {isAr ? "إضافة معرفة جديدة لـ GuideR" : "Add Custom Knowledge"}
+          </Button>
+
           <Button
             size="sm"
             onClick={handleSyncAll}
@@ -1487,6 +1565,201 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
                 </div>
               )}
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── 5. CREATE CUSTOM KNOWLEDGE MODAL ───────────────────────── */}
+      {isCreateModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-card border border-border/80 rounded-2xl max-w-2xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-border/60 flex items-center justify-between bg-muted/20">
+              <div className="flex items-center gap-2.5">
+                <div className="h-8 w-8 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center font-bold">
+                  <Plus className="h-4 w-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-foreground">
+                    {isAr ? "إضافة معرفة جديدة لـ GuideR" : "Add Custom Knowledge for GuideR"}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground">
+                    {isAr
+                      ? "أضف معلومات عن الشركة، سياسات، أسئلة شائعة، أو توجيهات ليتعلم منها GuideR فوراً."
+                      : "Add company info, policies, FAQs, or bot instructions with 1-click multi-lingual indexing."}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsCreateModalOpen(false)}
+                className="h-7 w-7 rounded-lg hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal Form */}
+            <form onSubmit={handleCreateCustomKnowledge} className="p-5 space-y-4 overflow-y-auto flex-1 text-xs">
+              {/* Row 1: Title & Category */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-foreground block">
+                    {isAr ? "العنوان *" : "Title *"}
+                  </label>
+                  <Input
+                    value={newTitle}
+                    onChange={(e) => setNewTitle(e.target.value)}
+                    placeholder={isAr ? "مثال: سياسة استقبال الأطفال في الرحلات النيلية" : "e.g. Children policy on Nile Cruises"}
+                    className="h-9 text-xs bg-background"
+                    required
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-foreground block">
+                    {isAr ? "التصنيف *" : "Category *"}
+                  </label>
+                  <select
+                    value={newCategory}
+                    onChange={(e) => setNewCategory(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-border bg-background text-xs text-foreground font-medium"
+                  >
+                    {KNOWLEDGE_CATEGORIES_LIST.map((cat) => (
+                      <option key={cat.value} value={cat.value}>
+                        {cat.icon} {isAr ? cat.labelAr : cat.labelEn}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Row 2: Source Locale & Priority */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-foreground block">
+                    {isAr ? "لغة الإدخال الأساسية" : "Source Language"}
+                  </label>
+                  <select
+                    value={newSourceLocale}
+                    onChange={(e) => setNewSourceLocale(e.target.value)}
+                    className="w-full h-9 px-3 rounded-xl border border-border bg-background text-xs text-foreground font-medium"
+                  >
+                    {SUPPORTED_LOCALES.map((l) => (
+                      <option key={l.code} value={l.code}>
+                        {l.flag} {l.label}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="font-bold text-foreground block">
+                    {isAr ? "أولوية الظهور في نتائج البحث" : "Retrieval Priority"}
+                  </label>
+                  <select
+                    value={newPriority}
+                    onChange={(e) => setNewPriority(Number(e.target.value))}
+                    className="w-full h-9 px-3 rounded-xl border border-border bg-background text-xs text-foreground font-medium"
+                  >
+                    <option value={5}>{isAr ? "منخفضة (5)" : "Low (5)"}</option>
+                    <option value={15}>{isAr ? "عادية / متوسطة (15 - موصى به)" : "Normal (15 - Recommended)"}</option>
+                    <option value={25}>{isAr ? "مرتفعة (25)" : "High (25)"}</option>
+                    <option value={35}>{isAr ? "فائقة الأهمية (35)" : "Highest Priority (35)"}</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Tags & Auto-Translate Option */}
+              <div className="space-y-2">
+                <div className="space-y-1.5">
+                  <label className="font-bold text-foreground block">
+                    {isAr ? "الوسوم والكلمات المفتاحية (مفصولة بفواصل)" : "Tags (comma separated)"}
+                  </label>
+                  <Input
+                    value={newTags}
+                    onChange={(e) => setNewTags(e.target.value)}
+                    placeholder={isAr ? "مثال: أطفال, عائلة, نايل كروز, مجاناً" : "e.g. kids, family, cruise, discount"}
+                    className="h-9 text-xs bg-background"
+                  />
+                </div>
+
+                <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center justify-between gap-3">
+                  <div className="flex items-center gap-2">
+                    <Globe2 className="h-4 w-4 text-blue-500 shrink-0" />
+                    <div>
+                      <span className="font-bold text-foreground block text-[11px]">
+                        {isAr ? "ترجمة تلقائية للغات الخمس (AR, EN, ES, PT, IT)" : "Auto-translate into 5 languages"}
+                      </span>
+                      <p className="text-[10px] text-muted-foreground">
+                        {isAr
+                          ? "سيقوم الذكاء الاصطناعي بصياغة نسخ معتمدة بالإنجليزية والإسبانية والبرتغالية والإيطالية فوراً."
+                          : "AI will automatically localize and index versions for all 5 supported languages."}
+                      </p>
+                    </div>
+                  </div>
+
+                  <input
+                    type="checkbox"
+                    checked={newAutoTranslate}
+                    onChange={(e) => setNewAutoTranslate(e.target.checked)}
+                    className="h-4 w-4 rounded border-border text-blue-600 focus:ring-blue-500 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Content Textarea */}
+              <div className="space-y-1.5">
+                <label className="font-bold text-foreground block">
+                  {isAr ? "المحتوى والتفاصيل المعتمدة لـ GuideR *" : "Knowledge Content & Facts for GuideR *"}
+                </label>
+                <Textarea
+                  value={newContent}
+                  onChange={(e) => setNewContent(e.target.value)}
+                  placeholder={
+                    isAr
+                      ? "اكتب هنا التفاصيل أو الإجابة المعتمدة أو الشروط والسياسات بالتفصيل ليجيب منها GuideR بدقة..."
+                      : "Write official details, facts, or instructions for GuideR to quote and ground from..."
+                  }
+                  rows={7}
+                  className="text-xs bg-background resize-y"
+                  required
+                />
+              </div>
+
+              {/* Modal Footer */}
+              <div className="pt-3 border-t border-border/60 flex items-center justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsCreateModalOpen(false)}
+                  className="h-9 text-xs cursor-pointer"
+                >
+                  {isAr ? "إلغاء" : "Cancel"}
+                </Button>
+
+                <Button
+                  type="submit"
+                  size="sm"
+                  disabled={creatingKnowledge}
+                  className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs h-9 px-4 gap-1.5 shadow-sm cursor-pointer"
+                >
+                  {creatingKnowledge ? (
+                    <>
+                      <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                      <span>{isAr ? "جارِ الحفظ والترجمة..." : "Saving & Translating..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="h-3.5 w-3.5" />
+                      <span>{isAr ? "حفظ وتأصيل المعرفة" : "Save & Index"}</span>
+                    </>
+                  )}
+                </Button>
+              </div>
+            </form>
           </div>
         </div>
       )}

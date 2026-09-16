@@ -1,8 +1,9 @@
 "use client";
 import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 
-import React, { useState, useMemo } from "react";
-import { useParams } from "next/navigation";
+import React, { useState, useMemo, useEffect, useRef } from "react";
+import { useParams, useSearchParams } from "next/navigation";
+import { reviewsApi } from "../api/reviewsApi";
 import { useTranslations } from "next-intl";
 import {
   Star,
@@ -191,12 +192,95 @@ export function ReviewsManager() {
   const updateMutation = useUpdateReview();
   const deleteMutation = useDeleteReview();
 
+  const searchParams = useSearchParams();
+  const urlReviewId = searchParams?.get("reviewId") || searchParams?.get("highlight") || null;
+  const [highlightedReviewId, setHighlightedReviewId] = useState<string | null>(urlReviewId);
+  const [injectedReview, setInjectedReview] = useState<Review | null>(null);
+  const highlightTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Listen to in-app custom event for immediate glow when clicked inside dashboard
+  useEffect(() => {
+    const handleHighlightEvent = (e: Event) => {
+      const customEvent = e as CustomEvent<{ highlightId?: string; referenceCode?: string }>;
+      const id = customEvent.detail?.highlightId || customEvent.detail?.referenceCode;
+      if (id) {
+        setHighlightedReviewId(id);
+      }
+    };
+
+    window.addEventListener("dunas:notification-highlight", handleHighlightEvent);
+    return () => {
+      window.removeEventListener("dunas:notification-highlight", handleHighlightEvent);
+    };
+  }, []);
+
+  // React to searchParams change
+  useEffect(() => {
+    if (urlReviewId) {
+      setHighlightedReviewId(urlReviewId);
+    }
+  }, [urlReviewId]);
+
   const allReviews: Review[] = useMemo(() => {
     const raw = reviewsResponse?.data;
-    if (Array.isArray(raw)) return raw;
-    if (Array.isArray((reviewsResponse as any)?.items)) return (reviewsResponse as any).items;
-    return [];
-  }, [reviewsResponse]);
+    let list: Review[] = [];
+    if (Array.isArray(raw)) list = [...raw];
+    else if (Array.isArray((reviewsResponse as any)?.items)) list = [...(reviewsResponse as any).items];
+
+    if (injectedReview && !list.some((r) => r.id === injectedReview.id)) {
+      list.unshift(injectedReview);
+    }
+    return list;
+  }, [reviewsResponse, injectedReview]);
+
+  // Handle auto-scroll and pagination recovery when highlightedReviewId is set
+  useEffect(() => {
+    if (!highlightedReviewId) return;
+
+    let active = true;
+
+    // Check if review is in the currently loaded list
+    const found = allReviews.some((r) => r.id === highlightedReviewId);
+
+    if (!found) {
+      // Pagination fallback: fetch the review directly from backend
+      reviewsApi
+        .getReviewById(highlightedReviewId)
+        .then((rev) => {
+          if (active && rev && rev.id) {
+            setInjectedReview(rev);
+            setActiveTab("ALL");
+          }
+        })
+        .catch((err) => {
+          console.warn("Could not fetch target review for highlight:", err);
+        });
+    }
+
+    // Scroll into view
+    const scrollTimer = setTimeout(() => {
+      const tableRow = document.getElementById(`review-row-${highlightedReviewId}`);
+      const gridCard = document.getElementById(`review-card-${highlightedReviewId}`);
+      const targetEl = tableRow || gridCard;
+      if (targetEl) {
+        targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 450);
+
+    // Auto-remove highlight after 7 seconds
+    if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    highlightTimerRef.current = setTimeout(() => {
+      if (active) {
+        setHighlightedReviewId(null);
+      }
+    }, 7000);
+
+    return () => {
+      active = false;
+      clearTimeout(scrollTimer);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+    };
+  }, [highlightedReviewId, allReviews]);
 
   // Executive KPI stats
   const stats = useMemo(() => {
@@ -746,9 +830,18 @@ export function ReviewsManager() {
                   const isLongComment = commentText.length > 90;
                   const isApproved = review.status === "APPROVED" || review.isPublished;
                   const isRejected = review.status === "REJECTED";
+                  const isHighlighted = highlightedReviewId === review.id;
 
                   return (
-                    <tr key={review.id} className="hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={review.id}
+                      id={`review-row-${review.id}`}
+                      className={`transition-all duration-500 ${
+                        isHighlighted
+                          ? "bg-amber-500/20 dark:bg-amber-500/25 border-s-4 border-amber-500 ring-2 ring-amber-500/50 shadow-lg"
+                          : "hover:bg-muted/30"
+                      }`}
+                    >
                       {/* Checkbox */}
                       <td className="p-3.5 text-center">
                         <input
@@ -761,14 +854,33 @@ export function ReviewsManager() {
                       </td>
 
                       {/* Tour */}
-                      <td className="p-3.5 max-w-[200px]">
-                        <div className="font-bold text-foreground line-clamp-2" title={tourTitle}>
-                          {tourTitle}
+                      <td className="p-3.5 max-w-[220px]">
+                        <div className="flex items-center gap-1.5">
+                          <div className="font-bold text-foreground line-clamp-2" title={tourTitle}>
+                            {tourTitle}
+                          </div>
+                          {isHighlighted && (
+                            <Badge className="bg-amber-500 text-slate-950 font-black text-[9px] px-1.5 py-0 shrink-0 animate-pulse">
+                              {isAr ? "محددة ✨" : "Selected ✨"}
+                            </Badge>
+                          )}
                         </div>
                         {review.tour?.slug && (
-                          <span className="text-[10px] text-muted-foreground font-mono truncate block">
-                            /{review.tour.slug}
-                          </span>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] text-muted-foreground font-mono truncate max-w-[110px]">
+                              /{review.tour.slug}
+                            </span>
+                            <a
+                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:5173"}/tours/${review.tour.slug}?reviewId=${review.id}#reviews`}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline shrink-0"
+                              title={isAr ? "فتح الرحلة في الموقع العام" : "Open tour on public website"}
+                            >
+                              <ExternalLink className="w-2.5 h-2.5" />
+                              <span>{isAr ? "عرض الرحلة" : "View Trip"}</span>
+                            </a>
+                          </div>
                         )}
                       </td>
 
@@ -974,11 +1086,17 @@ export function ReviewsManager() {
             const tourTitle = getTourTitle(review);
             const isApproved = review.status === "APPROVED" || review.isPublished;
             const isRejected = review.status === "REJECTED";
+            const isHighlighted = highlightedReviewId === review.id;
 
             return (
               <Card
                 key={review.id}
-                className="p-5 rounded-3xl bg-card border-border/80 shadow-xs flex flex-col justify-between hover:border-amber-500/40 transition-all space-y-4"
+                id={`review-card-${review.id}`}
+                className={`p-5 rounded-3xl bg-card border-border/80 shadow-xs flex flex-col justify-between transition-all space-y-4 ${
+                  isHighlighted
+                    ? "border-amber-500 ring-2 ring-amber-500/70 shadow-xl shadow-amber-500/20 bg-amber-500/5"
+                    : "hover:border-amber-500/40"
+                }`}
               >
                 <div className="space-y-3">
                   {/* Top Header: Avatar + Name + Status */}
@@ -1008,7 +1126,11 @@ export function ReviewsManager() {
                       </div>
                     </div>
 
-                    {isApproved ? (
+                    {isHighlighted ? (
+                      <Badge className="bg-amber-500 text-slate-950 font-black text-[10px] px-2 py-0.5 animate-pulse">
+                        {isAr ? "محددة ✨" : "Selected ✨"}
+                      </Badge>
+                    ) : isApproved ? (
                       <Badge className="bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
                         {tReviews("published")}
                       </Badge>
@@ -1023,7 +1145,7 @@ export function ReviewsManager() {
                     )}
                   </div>
 
-                  {/* Rating + Tour Tag */}
+                  {/* Rating + Tour Tag + View Trip */}
                   <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
                     <div className="flex items-center gap-1.5">
                       <StarRating rating={review.rating} size="sm" />
@@ -1031,9 +1153,23 @@ export function ReviewsManager() {
                         {review.rating}.0
                       </span>
                     </div>
-                    <Badge variant="outline" className="text-[10px] font-semibold max-w-[170px] truncate">
-                      {tourTitle}
-                    </Badge>
+                    <div className="flex items-center gap-1.5">
+                      <Badge variant="outline" className="text-[10px] font-semibold max-w-[130px] truncate">
+                        {tourTitle}
+                      </Badge>
+                      {review.tour?.slug && (
+                        <a
+                          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:5173"}/tours/${review.tour.slug}?reviewId=${review.id}#reviews`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline"
+                          title={isAr ? "فتح الرحلة في الموقع العام" : "Open tour on public website"}
+                        >
+                          <ExternalLink className="w-2.5 h-2.5" />
+                          <span>{isAr ? "عرض" : "Trip"}</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
 
                   {/* Comment Text */}

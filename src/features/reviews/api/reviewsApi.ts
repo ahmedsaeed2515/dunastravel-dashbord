@@ -15,12 +15,17 @@ export const reviewsApi = {
       if (filters.page) params.page = filters.page;
       if (filters.limit) params.limit = filters.limit;
       if (filters.tourId) params.tourId = filters.tourId;
+      if (filters.reviewId) params.reviewId = filters.reviewId;
       if (filters.status && filters.status !== 'ALL') params.status = filters.status;
       if (filters.isPublished !== undefined) params.isPublished = filters.isPublished;
       if (filters.rating) params.rating = filters.rating;
       if (filters.search) params.search = filters.search;
     }
     return apiClient.get<PaginatedResponse<Review>, PaginatedResponse<Review>>("/admin/reviews", { params });
+  },
+
+  getReviewById: async (id: string): Promise<Review> => {
+    return apiClient.get<Review, Review>(`/admin/reviews/${id}`);
   },
 
   updateReviewStatus: async (
