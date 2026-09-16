@@ -76,6 +76,32 @@ function getCloudNameFromUrl(url?: string | null) {
   return match ? match[1] : "u7xf91gp";
 }
 
+function extractYouTubeId(url?: string | null): string | null {
+  if (!url) return null;
+  const cleanUrl = url.trim();
+  try {
+    if (cleanUrl.includes("youtube.com") || cleanUrl.includes("youtu.be")) {
+      const parsed = new URL(cleanUrl.startsWith("http") ? cleanUrl : `https://${cleanUrl}`);
+      const v = parsed.searchParams.get("v");
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) {
+        return v;
+      }
+    }
+  } catch {
+    // Fall through
+  }
+  const match = cleanUrl.match(
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|shorts\/|live\/|v\/|watch\?(?:.*&)?v=))([a-zA-Z0-9_-]{11})/i
+  );
+  return match ? match[1] : null;
+}
+
+function extractVimeoId(url?: string | null): string | null {
+  if (!url) return null;
+  const match = url.trim().match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)(\d+)/i);
+  return match ? match[1] : null;
+}
+
 interface SortablePhotoCardProps {
   item: MediaAsset;
   idx: number;
@@ -277,10 +303,15 @@ function SortableShowcaseVideoCard({
     opacity: isDragging ? 0.6 : undefined,
   };
 
-  const cloudName = getCloudNameFromUrl(item.secureUrl || item.url);
+  const videoUrl = item.secureUrl || item.url;
+  const ytId = extractYouTubeId(videoUrl);
+  const vimeoId = extractVimeoId(videoUrl);
+  const cloudName = getCloudNameFromUrl(videoUrl);
   const thumbnail =
     item.thumbnailUrl ||
-    (item.publicId
+    (ytId
+      ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
+      : item.publicId
       ? `https://res.cloudinary.com/${cloudName}/video/upload/w_600,h_400,c_fill,so_0,f_jpg/${item.publicId}.jpg`
       : "/images/placeholder.jpg");
 
@@ -301,7 +332,7 @@ function SortableShowcaseVideoCard({
         />
         <div
           className="absolute inset-0 bg-black/40 flex items-center justify-center group-hover:bg-black/20 transition-colors cursor-pointer"
-          onClick={() => onPreview(item.secureUrl || item.url)}
+          onClick={() => onPreview(videoUrl)}
         >
           <div className="w-12 h-12 rounded-full bg-blue-600/90 text-white flex items-center justify-center shadow-lg transform group-hover:scale-110 transition-transform">
             <Play className="w-5 h-5 fill-current ml-0.5" />
@@ -312,6 +343,16 @@ function SortableShowcaseVideoCard({
           <Badge className="bg-slate-900/80 text-white font-mono text-xs backdrop-blur-sm border border-white/10">
             #{idx + 1}
           </Badge>
+          {ytId && (
+            <Badge className="bg-red-600 hover:bg-red-700 text-white font-bold text-[10px] px-1.5 py-0 border-0 shadow-xs">
+              YouTube
+            </Badge>
+          )}
+          {vimeoId && (
+            <Badge className="bg-sky-500 hover:bg-sky-600 text-white font-bold text-[10px] px-1.5 py-0 border-0 shadow-xs">
+              Vimeo
+            </Badge>
+          )}
           {item.duration && (
             <Badge variant="outline" className="bg-black/60 text-white border-white/20 text-[10px] gap-1">
               <Clock className="w-3 h-3" />
@@ -898,15 +939,46 @@ export default function MediaShowcasePage() {
 
       {/* ================= MODAL: VIDEO PREVIEW ================= */}
       <Dialog open={!!previewVideoUrl} onOpenChange={(open) => !open && setPreviewVideoUrl(null)}>
-        <DialogContent className="max-w-3xl p-0 overflow-hidden bg-black aspect-video flex items-center justify-center">
-          {previewVideoUrl && (
-            <video
-              src={previewVideoUrl}
-              controls
-              autoPlay
-              className="w-full h-full max-h-[70vh] object-contain"
-            />
-          )}
+        <DialogContent className="max-w-4xl p-0 overflow-hidden bg-black rounded-3xl aspect-video flex items-center justify-center border border-white/15">
+          {(() => {
+            if (!previewVideoUrl) return null;
+            const ytId = extractYouTubeId(previewVideoUrl);
+            const vimeoId = extractVimeoId(previewVideoUrl);
+
+            if (ytId) {
+              return (
+                <iframe
+                  src={`https://www.youtube-nocookie.com/embed/${ytId}?autoplay=1&rel=0`}
+                  title="YouTube Video Player"
+                  className="w-full h-full aspect-video border-0 bg-black"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                  allowFullScreen
+                />
+              );
+            }
+
+            if (vimeoId) {
+              return (
+                <iframe
+                  src={`https://player.vimeo.com/video/${vimeoId}?autoplay=1`}
+                  title="Vimeo Video Player"
+                  className="w-full h-full aspect-video border-0 bg-black"
+                  allow="autoplay; fullscreen; picture-in-picture"
+                  allowFullScreen
+                />
+              );
+            }
+
+            return (
+              <video
+                src={previewVideoUrl}
+                controls
+                autoPlay
+                playsInline
+                className="w-full h-full max-h-[75vh] object-contain bg-black"
+              />
+            );
+          })()}
         </DialogContent>
       </Dialog>
     </div>

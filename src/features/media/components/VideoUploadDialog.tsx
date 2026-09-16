@@ -46,15 +46,27 @@ interface VideoUploadDialogProps {
 
 function extractYouTubeId(url: string): string | null {
   if (!url) return null;
-  const match = url.match(
-    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([a-zA-Z0-9_-]{11})/
+  const cleanUrl = url.trim();
+  try {
+    if (cleanUrl.includes("youtube.com") || cleanUrl.includes("youtu.be")) {
+      const parsed = new URL(cleanUrl.startsWith("http") ? cleanUrl : `https://${cleanUrl}`);
+      const v = parsed.searchParams.get("v");
+      if (v && /^[a-zA-Z0-9_-]{11}$/.test(v)) {
+        return v;
+      }
+    }
+  } catch {
+    // Fall through to regex
+  }
+  const match = cleanUrl.match(
+    /(?:youtu\.be\/|youtube(?:-nocookie)?\.com\/(?:embed\/|shorts\/|live\/|v\/|watch\?(?:.*&)?v=))([a-zA-Z0-9_-]{11})/i
   );
   return match ? match[1] : null;
 }
 
 function extractVimeoId(url: string): string | null {
   if (!url) return null;
-  const match = url.match(/vimeo\.com\/(?:video\/)?(\d+)/);
+  const match = url.trim().match(/vimeo\.com\/(?:channels\/(?:\w+\/)?|groups\/[^/]*\/videos\/|album\/(?:\d+\/)?video\/|video\/|)(\d+)/i);
   return match ? match[1] : null;
 }
 

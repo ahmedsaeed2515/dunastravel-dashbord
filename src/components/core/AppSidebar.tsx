@@ -3,7 +3,7 @@
 import React, { memo, useState, useMemo, useEffect } from "react";
 import { usePathname } from "@/i18n/routing";
 import { Link } from "@/i18n/routing";
-import { useTranslations } from "next-intl";
+import { useTranslations, useLocale } from "next-intl";
 import { adminRoutes } from "@/config/admin-routes";
 import {
   Sidebar,
@@ -76,6 +76,7 @@ interface NavSectionConfig {
 
 export const AppSidebar = memo(function AppSidebar() {
   const pathname = usePathname();
+  const locale = useLocale();
   const tNav = useTranslations("navigation");
   const { user, logout } = useAuth();
   const { isB2B, isAgent, isCompany, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, isLoading } = usePermissions();
@@ -84,7 +85,7 @@ export const AppSidebar = memo(function AppSidebar() {
   const [searchQuery, setSearchQuery] = useState("");
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
 
-  const isAr = !pathname.startsWith("/en") && !pathname.startsWith("/es") && !pathname.startsWith("/pt") && !pathname.startsWith("/it");
+  const isAr = locale === "ar";
 
   const handleNavClick = () => {
     if (isMobile) {
@@ -100,11 +101,6 @@ export const AppSidebar = memo(function AppSidebar() {
       const validLocale = ["en", "ar", "es", "pt", "it"].includes(first) ? first : "ar";
       window.location.href = `/${validLocale}/login`;
     }
-  };
-
-  const isActiveRoute = (href: string, exact = false) => {
-    if (exact) return pathname === href;
-    return pathname === href || pathname.startsWith(href + "/") || pathname.startsWith(href);
   };
 
   const toggleSection = (sectionId: string) => {
@@ -224,6 +220,33 @@ export const AppSidebar = memo(function AppSidebar() {
       },
     ];
   }, [isB2B, isAdmin, canAccessFullOperations, canManageAdmins, canManageRoles, tNav, isAr]);
+
+  const cleanPath = useMemo(() => pathname.replace(/\/$/, "") || "/", [pathname]);
+
+  const allNavHrefs = useMemo(() => {
+    const hrefs: string[] = [adminRoutes.dashboard];
+    sections.forEach((sec) => {
+      sec.items.forEach((item) => {
+        hrefs.push(item.href.replace(/\/$/, ""));
+      });
+    });
+    return hrefs;
+  }, [sections]);
+
+  const isActiveRoute = (href: string, exact = false) => {
+    const cleanHref = href.replace(/\/$/, "");
+    if (cleanPath === cleanHref) return true;
+    if (exact) return false;
+    if (!cleanPath.startsWith(cleanHref + "/")) return false;
+
+    // Do not mark parent routes active if a more specific sidebar route matches the current path
+    return !allNavHrefs.some(
+      (otherHref) =>
+        otherHref !== cleanHref &&
+        otherHref.length > cleanHref.length &&
+        (cleanPath === otherHref || cleanPath.startsWith(otherHref + "/"))
+    );
+  };
 
   // Auto-expand section containing the active route on initial load or route changes
   useEffect(() => {

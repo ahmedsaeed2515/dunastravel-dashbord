@@ -337,6 +337,16 @@ export function TestingLabTab({
             </button>
           </div>
 
+          {lastTrace.telemetry?.providerError && (
+            <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs flex items-start gap-2">
+              <AlertCircle className="h-4 w-4 shrink-0 mt-0.5" />
+              <div>
+                <span className="font-bold">{isAr ? "تنبيه المزود: " : "Provider Notice: "}</span>
+                <span>{lastTrace.telemetry.providerError}</span>
+              </div>
+            </div>
+          )}
+
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 text-xs font-mono">
             <div className="p-2.5 rounded-xl bg-muted/40 border border-border/60">
               <span className="text-[10px] text-muted-foreground block font-sans">{isAr ? "زمن الاستجابة:" : "Latency:"}</span>
