@@ -11,7 +11,7 @@ export function getFrontendBaseUrl(): string {
   const envUrl = process.env.NEXT_PUBLIC_FRONTEND_URL?.trim();
 
   // 1. Explicit environment variable (ignore obsolete legacy domains)
-  if (envUrl && !envUrl.includes("luxury-project")) {
+  if (envUrl && !envUrl.includes("luxury-project") && !envUrl.includes("1z5s")) {
     return envUrl.replace(/\/$/, "");
   }
 

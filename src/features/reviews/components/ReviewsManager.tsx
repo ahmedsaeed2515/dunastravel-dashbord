@@ -4,6 +4,7 @@ import { PageHelpTooltip } from "@/components/shared/ui/PageHelpTooltip";
 import React, { useState, useMemo, useEffect, useRef } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import { reviewsApi } from "../api/reviewsApi";
+import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import { useTranslations } from "next-intl";
 import {
   Star,
@@ -871,7 +872,7 @@ export function ReviewsManager() {
                               /{review.tour.slug}
                             </span>
                             <a
-                              href={`${process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:5173"}/tours/${review.tour.slug}?reviewId=${review.id}#reviews`}
+                              href={`${getFrontendTourUrl(review.tour.slug)}?reviewId=${review.id}#reviews`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="inline-flex items-center gap-1 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline shrink-0"
@@ -1159,7 +1160,7 @@ export function ReviewsManager() {
                       </Badge>
                       {review.tour?.slug && (
                         <a
-                          href={`${process.env.NEXT_PUBLIC_FRONTEND_URL || "http://localhost:5173"}/tours/${review.tour.slug}?reviewId=${review.id}#reviews`}
+                          href={`${getFrontendTourUrl(review.tour.slug)}?reviewId=${review.id}#reviews`}
                           target="_blank"
                           rel="noopener noreferrer"
                           className="inline-flex items-center gap-0.5 text-[10px] font-bold text-amber-600 dark:text-amber-400 hover:text-amber-500 hover:underline"
