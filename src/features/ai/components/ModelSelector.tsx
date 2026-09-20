@@ -32,6 +32,7 @@ export interface ModelPreset {
 const RETIRED_GOOGLE_MODEL_IDS = new Set<string>([
   "gemini-2.5-flash",
   "gemini-2.5-flash-lite",
+  "gemini-2.0-flash-lite",
   "gemini-1.5-flash",
   "gemini-1.5-pro",
   "gemini-1.5-flash-8b",
@@ -260,7 +261,7 @@ export function ModelSelector({
             {isCurrentValueDeprecated
               ? isAr
                 ? `⚠️ الموديل الحالي '${value}' تم إيقافه رسمياً. يرجى اختيار موديل معتمد.`
-                : `⚠️ The current model '${value}' is deprecated. Please select a supported model.`
+                : `⚠️ The current model '${value}' is shut down (deprecated). Please select a supported model.`
               : isAr
               ? `⚠️ الموديل المحدد (${value}) غير متاح في قائمة المزود الحية. يرجى اختيار موديل معتمد.`
               : `⚠️ The selected model (${value}) is not present in the live provider list.`}

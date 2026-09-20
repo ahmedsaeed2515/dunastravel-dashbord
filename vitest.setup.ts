@@ -42,3 +42,16 @@ vi.mock('@/i18n/routing', () => ({
   usePathname: () => '/admin',
   useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
 }));
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: vi.fn(),
+    replace: vi.fn(),
+    prefetch: vi.fn(),
+    back: vi.fn(),
+    forward: vi.fn(),
+  }),
+  usePathname: () => '/admin',
+  useSearchParams: () => new URLSearchParams(),
+  useParams: () => ({}),
+}));
