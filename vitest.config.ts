@@ -11,5 +11,8 @@ export default defineConfig({
     globals: true,
     setupFiles: ['./vitest.setup.ts'],
     fileParallelism: false,
+    forks: {
+      singleFork: true,
+    },
   },
 })
