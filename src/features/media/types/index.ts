@@ -175,16 +175,17 @@ export interface OptimizeAssetPayload {
   maxHeight?: number;
 }
 
-export interface MediaUsageItem {
-  entityType: string;
-  entityId: string;
-  title?: string;
-  field: string;
+export interface MediaUsageDetails {
+  tours: number;
+  hotels: number;
+  showcase: boolean;
+  documents: number;
+  attachments: number;
 }
 
 export interface MediaUsageResponse {
-  isUsed: boolean;
-  count: number;
-  usages: MediaUsageItem[];
+  isInUse: boolean;
+  locations: string[];
+  details: MediaUsageDetails;
 }
 
