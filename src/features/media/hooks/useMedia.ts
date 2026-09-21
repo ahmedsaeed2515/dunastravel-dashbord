@@ -273,9 +273,10 @@ export function useOptimizeAsset() {
   return useMutation({
     mutationFn: ({ id, payload }: { id: string; payload: OptimizeAssetPayload }) =>
       mediaApi.optimizeAsset(id, payload),
-    onSuccess: () => {
+    onSuccess: (updatedAsset) => {
       queryClient.invalidateQueries({ queryKey: mediaKeys.all });
       toast.success("Asset optimized with WebP URL successfully.");
+      return updatedAsset;
     },
     onError: (err: any) => {
       toast.error(getErrorMessage(err, "Failed to optimize asset."));
