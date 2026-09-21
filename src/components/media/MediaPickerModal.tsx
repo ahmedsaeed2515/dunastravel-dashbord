@@ -11,7 +11,6 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
 import {
@@ -113,7 +112,7 @@ export function MediaPickerModal({
 
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-4xl w-[94vw] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 rounded-3xl shadow-2xl">
+      <DialogContent className="max-w-4xl w-[94vw] h-[85vh] max-h-[85vh] flex flex-col p-0 overflow-hidden bg-card border border-border/80 rounded-3xl shadow-2xl">
         {/* Header */}
         <DialogHeader className="p-5 border-b border-border/60 bg-muted/20 shrink-0">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -239,7 +238,7 @@ export function MediaPickerModal({
         </DialogHeader>
 
         {/* Gallery Grid */}
-        <ScrollArea className="flex-1 min-h-0 h-full p-5">
+        <div className="flex-1 min-h-0 overflow-y-auto p-5 custom-scrollbar overscroll-contain">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
@@ -295,7 +294,7 @@ export function MediaPickerModal({
               )}
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {multiple && (
           <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 shrink-0 flex items-center justify-between">
