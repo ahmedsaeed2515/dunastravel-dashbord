@@ -304,7 +304,7 @@ export function WebPOptimizerStudio({
 
         {/* ================= CONTENT: FLOW A (LOCAL CONVERSION) ================= */}
         {activeTab === "convert-local" && (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
             {/* Settings Bar */}
             <div className="p-4 rounded-2xl bg-muted/40 border border-border/70 grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="space-y-2">
@@ -469,7 +469,7 @@ export function WebPOptimizerStudio({
 
         {/* ================= CONTENT: FLOW B (LIBRARY OPTIMIZATION) ================= */}
         {activeTab === "optimize-library" && (
-          <div className="flex-1 overflow-y-auto p-6 space-y-6">
+          <div className="flex-1 min-h-0 overflow-y-auto p-6 space-y-6">
             {/* Step 1: Asset Picker / Current Selected Asset */}
             {!selectedLibraryAsset ? (
               <div className="space-y-3">
@@ -639,10 +639,14 @@ export function WebPOptimizerStudio({
                     <div className="rounded-2xl border-2 border-emerald-500/60 overflow-hidden bg-emerald-500/5 space-y-2 p-3">
                       <div className="flex items-center justify-between text-xs mb-1">
                         <Badge className="bg-emerald-500 text-slate-950 font-bold text-[10px]">
-                          {isAr ? "المحسّن (WebP Delivery)" : "Optimized WebP"}
+                          {isAr ? `المحسّن (${targetFormat.toUpperCase()} Delivery)` : `Optimized ${targetFormat.toUpperCase()}`}
                         </Badge>
                         <span className="text-[11px] text-emerald-400 font-mono font-bold">
-                          {targetFormat.toUpperCase()} ~65% smaller
+                          {targetFormat === "avif"
+                            ? (isAr ? "~50-80% أصغر" : "~50–80% smaller")
+                            : targetFormat === "webp"
+                            ? (isAr ? "~30-70% أصغر" : "~30–70% smaller")
+                            : (isAr ? "~30-75% أصغر (Auto)" : "~30–75% smaller (Auto)")}
                         </span>
                       </div>
                       <div className="aspect-[16/10] w-full rounded-xl overflow-hidden bg-black/5 flex items-center justify-center border border-emerald-500/30">

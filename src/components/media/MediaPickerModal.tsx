@@ -239,7 +239,7 @@ export function MediaPickerModal({
         </DialogHeader>
 
         {/* Gallery Grid */}
-        <ScrollArea className="flex-1 p-5">
+        <ScrollArea className="flex-1 min-h-0 h-full p-5">
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
