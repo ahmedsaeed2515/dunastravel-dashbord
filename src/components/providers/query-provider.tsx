@@ -1,11 +1,16 @@
 "use client";
 
 import { QueryCache, QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { ApiError } from "@/lib/api-types";
+import { initDashboardSentry, captureDashboardException } from "@/lib/sentry";
 
 export function QueryProvider({ children }: { children: React.ReactNode }) {
+  useEffect(() => {
+    initDashboardSentry();
+  }, []);
+
   const [queryClient] = useState(
     () =>
       new QueryClient({
@@ -15,6 +20,9 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             // Auth errors (401/403) are handled gracefully by redirection logic
             if (apiError?.status === 401 || apiError?.status === 403) {
               return;
+            }
+            if (!apiError?.status || apiError.status >= 500) {
+              captureDashboardException(error);
             }
             toast.error(apiError?.message || "Could not load the requested data.");
           },
