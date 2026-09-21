@@ -1150,15 +1150,15 @@ export default function MediaPage() {
                   <Loader2 className="w-4 h-4 animate-spin" />
                   <span>{isAr ? "جارٍ التحقق من الاستخدام..." : "Checking usage references..."}</span>
                 </div>
-              ) : usageData?.isUsed ? (
+              ) : usageData?.isInUse ? (
                 <div className="space-y-3">
                   <div className="flex items-start gap-2 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-600 dark:text-amber-400 text-xs">
                     <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
                     <div>
                       <p className="font-bold">
                         {isAr
-                          ? `تحذير: هذه الصورة مستخدمة في ${usageData.count} مكان في النظام!`
-                          : `Warning: This asset is currently used in ${usageData.count} place(s)!`}
+                          ? `تحذير: هذه الصورة مستخدمة في ${usageData.locations.length} مكان في النظام!`
+                          : `Warning: This asset is currently used in ${usageData.locations.length} place(s)!`}
                       </p>
                       <p className="text-[11px] opacity-90 mt-0.5">
                         {isAr
@@ -1168,15 +1168,36 @@ export default function MediaPage() {
                     </div>
                   </div>
 
-                  <div className="max-h-40 overflow-y-auto space-y-1.5 border rounded-xl p-2 bg-muted/10 text-xs">
-                    {usageData.usages.map((u, i) => (
-                      <div key={i} className="flex items-center justify-between p-1.5 rounded-lg bg-muted/30 border">
-                        <span className="font-semibold truncate">{u.title || u.entityId}</span>
-                        <Badge variant="outline" className="text-[10px] shrink-0 font-mono">
-                          {u.entityType} ({u.field})
-                        </Badge>
+                  <div className="max-h-44 overflow-y-auto space-y-1.5 border rounded-xl p-2 bg-muted/10 text-xs">
+                    {usageData.locations.map((location, i) => (
+                      <div key={i} className="flex items-center gap-2 p-1.5 rounded-lg bg-muted/30 border">
+                        <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" />
+                        <span className="font-semibold">{location}</span>
                       </div>
                     ))}
+                    {/* Breakdown badges */}
+                    <div className="flex flex-wrap gap-1.5 pt-1">
+                      {usageData.details.tours > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-amber-500/20 text-amber-600 dark:text-amber-400 font-bold text-[10px]">
+                          {isAr ? `رحلات: ${usageData.details.tours}` : `Tours: ${usageData.details.tours}`}
+                        </span>
+                      )}
+                      {usageData.details.hotels > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-sky-500/20 text-sky-600 dark:text-sky-400 font-bold text-[10px]">
+                          {isAr ? `فنادق: ${usageData.details.hotels}` : `Hotels: ${usageData.details.hotels}`}
+                        </span>
+                      )}
+                      {usageData.details.showcase && (
+                        <span className="px-2 py-0.5 rounded-md bg-violet-500/20 text-violet-600 dark:text-violet-400 font-bold text-[10px]">
+                          {isAr ? "سلايدر الرئيسية" : "Homepage Showcase"}
+                        </span>
+                      )}
+                      {usageData.details.documents > 0 && (
+                        <span className="px-2 py-0.5 rounded-md bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-[10px]">
+                          {isAr ? `مستندات: ${usageData.details.documents}` : `Documents: ${usageData.details.documents}`}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               ) : (
@@ -1208,7 +1229,7 @@ export default function MediaPage() {
               >
                 <Trash2 className="w-4 h-4" />
                 <span>
-                  {usageData?.isUsed
+                  {usageData?.isInUse
                     ? (isAr ? "حذف رغم ذلك (إجباري)" : "Delete Anyway")
                     : (isAr ? "تأكيد الحذف" : "Confirm Delete")}
                 </span>
