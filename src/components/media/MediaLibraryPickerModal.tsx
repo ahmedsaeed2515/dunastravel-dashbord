@@ -263,7 +263,12 @@ export function MediaLibraryPickerModal({
             </div>
           </DialogHeader>
 
-          <div className="p-6 max-h-[55vh] overflow-y-auto min-h-[300px] custom-scrollbar">
+          <div
+            className="p-6 max-h-[55vh] overflow-y-auto min-h-[300px] custom-scrollbar focus:outline-none"
+            onWheel={(e) => e.stopPropagation()}
+            onTouchMove={(e) => e.stopPropagation()}
+            tabIndex={0}
+          >
             {isLoading ? (
               <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
                 <Loader2 className="w-8 h-8 text-amber-500 animate-spin" />

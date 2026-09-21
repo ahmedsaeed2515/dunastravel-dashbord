@@ -238,7 +238,12 @@ export function MediaPickerModal({
         </DialogHeader>
 
         {/* Gallery Grid */}
-        <div className="flex-1 min-h-0 overflow-y-auto p-5 custom-scrollbar overscroll-contain">
+        <div
+          className="flex-1 min-h-0 overflow-y-auto p-5 custom-scrollbar overscroll-contain focus:outline-none"
+          onWheel={(e) => e.stopPropagation()}
+          onTouchMove={(e) => e.stopPropagation()}
+          tabIndex={0}
+        >
           {isLoading ? (
             <div className="flex flex-col items-center justify-center py-20 gap-2 text-muted-foreground">
               <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
