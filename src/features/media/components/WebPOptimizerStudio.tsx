@@ -209,6 +209,10 @@ export function WebPOptimizerStudio({
   const [targetQuality, setTargetQuality] = useState<string>("auto");
   const [targetWidth, setTargetWidth] = useState<string>("2000");
 
+  // Real-time size measurement of the Cloudinary-transformed preview
+  const [optimizedBytes, setOptimizedBytes] = useState<number | null>(null);
+  const [isFetchingSize, setIsFetchingSize] = useState(false);
+
   const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
     page: 1,
     limit: 30,
@@ -230,6 +234,40 @@ export function WebPOptimizerStudio({
         return rawUrl.replace(/\/image\/upload\//, `/image/upload/${transform}/`);
       })()
     : null;
+
+  // Fetch real size of the optimized preview via HEAD request (Cloudinary supports CORS)
+  useEffect(() => {
+    if (!livePreviewUrl || !selectedLibraryAsset) {
+      setOptimizedBytes(null);
+      return;
+    }
+
+    setIsFetchingSize(true);
+    setOptimizedBytes(null);
+
+    const controller = new AbortController();
+    const timer = setTimeout(() => {
+      fetch(livePreviewUrl, { method: "HEAD", signal: controller.signal })
+        .then((res) => {
+          const contentLength = res.headers.get("content-length");
+          if (contentLength) {
+            setOptimizedBytes(parseInt(contentLength, 10));
+          } else {
+            // Fallback: load the image as a blob to get real size
+            return fetch(livePreviewUrl, { signal: controller.signal })
+              .then((r) => r.blob())
+              .then((blob) => setOptimizedBytes(blob.size));
+          }
+        })
+        .catch(() => setOptimizedBytes(null))
+        .finally(() => setIsFetchingSize(false));
+    }, 600); // debounce 600ms
+
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [livePreviewUrl, selectedLibraryAsset]);
 
   const handleApplyLibraryOptimization = () => {
     if (!selectedLibraryAsset) return;
@@ -641,15 +679,28 @@ export function WebPOptimizerStudio({
                         <Badge className="bg-emerald-500 text-slate-950 font-bold text-[10px]">
                           {isAr ? `المحسّن (${targetFormat.toUpperCase()} Delivery)` : `Optimized ${targetFormat.toUpperCase()}`}
                         </Badge>
-                        <span className="text-[11px] text-emerald-400 font-mono font-bold">
-                          {targetFormat === "avif"
-                            ? (isAr ? "~50-80% أصغر" : "~50–80% smaller")
-                            : targetFormat === "webp"
-                            ? (isAr ? "~30-70% أصغر" : "~30–70% smaller")
-                            : (isAr ? "~30-75% أصغر (Auto)" : "~30–75% smaller (Auto)")}
+                        <span className="text-[11px] font-mono font-bold flex items-center gap-1">
+                          {isFetchingSize ? (
+                            <span className="flex items-center gap-1 text-amber-400">
+                              <Loader2 className="w-3 h-3 animate-spin" />
+                              {isAr ? "جاري الحساب..." : "Calculating..."}
+                            </span>
+                          ) : optimizedBytes !== null ? (
+                            <span className={optimizedBytes < selectedLibraryAsset.bytes ? "text-emerald-400" : "text-amber-400"}>
+                              {formatBytes(optimizedBytes)}
+                              {" "}
+                              {optimizedBytes < selectedLibraryAsset.bytes
+                                ? `(-${Math.round(((selectedLibraryAsset.bytes - optimizedBytes) / selectedLibraryAsset.bytes) * 100)}%)`
+                                : `(+${Math.round(((optimizedBytes - selectedLibraryAsset.bytes) / selectedLibraryAsset.bytes) * 100)}%)`}
+                            </span>
+                          ) : (
+                            <span className="text-muted-foreground text-[10px]">
+                              {isAr ? "اختر إعدادات لحساب الحجم" : "Adjust settings to calculate"}
+                            </span>
+                          )}
                         </span>
                       </div>
-                      <div className="aspect-[16/10] w-full rounded-xl overflow-hidden bg-black/5 flex items-center justify-center border border-emerald-500/30">
+                      <div className="aspect-[16/10] w-full rounded-xl overflow-hidden bg-black/5 flex items-center justify-center border border-emerald-500/30 relative">
                         {livePreviewUrl && (
                           <img
                             src={livePreviewUrl}
@@ -657,16 +708,52 @@ export function WebPOptimizerStudio({
                             className="w-full h-full object-cover"
                           />
                         )}
+                        {isFetchingSize && (
+                          <div className="absolute inset-0 bg-black/30 flex items-center justify-center rounded-xl">
+                            <Loader2 className="w-6 h-6 animate-spin text-emerald-400" />
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
                 </div>
 
+                {/* Real savings summary */}
+                {optimizedBytes !== null && !isFetchingSize && (
+                  <div className={`flex items-center justify-between p-3 rounded-2xl border text-xs font-bold ${
+                    optimizedBytes < selectedLibraryAsset.bytes
+                      ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-400"
+                      : "bg-amber-500/10 border-amber-500/30 text-amber-400"
+                  }`}>
+                    <span className="flex items-center gap-2">
+                      <HardDrive className="w-4 h-4" />
+                      {isAr ? "نتيجة التحسين:" : "Optimization Result:"}
+                    </span>
+                    <span className="font-mono">
+                      {isAr
+                        ? `${formatBytes(selectedLibraryAsset.bytes)} → ${formatBytes(optimizedBytes)}`
+                        : `${formatBytes(selectedLibraryAsset.bytes)} → ${formatBytes(optimizedBytes)}`}
+                      {" "}
+                      {optimizedBytes < selectedLibraryAsset.bytes ? (
+                        <span className="text-emerald-300">
+                          {isAr
+                            ? `(وفّرت ${formatBytes(selectedLibraryAsset.bytes - optimizedBytes)} · ${Math.round(((selectedLibraryAsset.bytes - optimizedBytes) / selectedLibraryAsset.bytes) * 100)}%)`
+                            : `(saved ${formatBytes(selectedLibraryAsset.bytes - optimizedBytes)} · ${Math.round(((selectedLibraryAsset.bytes - optimizedBytes) / selectedLibraryAsset.bytes) * 100)}%)`}
+                        </span>
+                      ) : (
+                        <span className="text-amber-300">
+                          {isAr ? "(الصورة أكبر — غيّر الإعدادات)" : "(larger — adjust settings)"}
+                        </span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
                 {/* Apply Button */}
                 <div className="pt-2 flex justify-end">
                   <Button
                     onClick={handleApplyLibraryOptimization}
-                    disabled={isOptimizing}
+                    disabled={isOptimizing || isFetchingSize}
                     className="gap-2 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-bold shadow-md rounded-xl h-10 px-6"
                   >
                     {isOptimizing ? (
@@ -677,7 +764,15 @@ export function WebPOptimizerStudio({
                     ) : (
                       <>
                         <CheckCircle2 className="w-4 h-4" />
-                        <span>{isAr ? "حفظ رابط WebP في قاعدة البيانات" : "Apply & Save WebP URL"}</span>
+                        <span>
+                          {isAr
+                            ? optimizedBytes !== null
+                              ? `حفظ رابط ${targetFormat.toUpperCase()} (${formatBytes(optimizedBytes)}) في قاعدة البيانات`
+                              : "حفظ رابط WebP في قاعدة البيانات"
+                            : optimizedBytes !== null
+                              ? `Apply & Save ${targetFormat.toUpperCase()} URL (${formatBytes(optimizedBytes)})`
+                              : "Apply & Save WebP URL"}
+                        </span>
                       </>
                     )}
                   </Button>
