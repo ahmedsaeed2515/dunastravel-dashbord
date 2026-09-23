@@ -140,6 +140,21 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
   const isAr = currentLocale === 'ar';
   const queryClient = useQueryClient();
 
+  const { data: landingPagesData } = useLandingPages({ type: 'DESTINATION', limit: 100 });
+
+  const effectiveDestinations = useMemo(() => {
+    const pages = Array.isArray(landingPagesData?.data) ? landingPagesData.data : [];
+    if (pages.length === 0) return destinations;
+
+    return pages.map((page) => ({
+      id: page.slug,
+      nameAr: page.titleJsonb?.ar || page.titleJsonb?.en || page.slug,
+      nameEn: page.titleJsonb?.en || page.slug,
+      flag: DEST_FLAGS[page.slug.toLowerCase()] || '📍',
+      code: page.slug.substring(0, 3).toUpperCase(),
+    }));
+  }, [landingPagesData, destinations]);
+
   const isModalOpen = Boolean(isOpen ?? open);
   const handleClose = () => {
     if (onClose) onClose();
@@ -230,7 +245,7 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
         queryClient.invalidateQueries({ queryKey: LANDING_PAGES_QUERY_KEY }),
       ]);
 
-      const destObj = destinations.find((d) => d.id.toLowerCase() === selectedDestination.toLowerCase());
+      const destObj = effectiveDestinations.find((d) => d.id.toLowerCase() === selectedDestination.toLowerCase());
       const destName = isAr ? (destObj?.nameAr || selectedDestination) : (destObj?.nameEn || selectedDestination);
 
       toast.success(
@@ -319,12 +334,12 @@ export const TransferTripModal: React.FC<TransferTripModalProps> = memo(({
                 <span>{isAr ? 'اختر الوجهة الجديدة (Select Destination):' : 'Select New Destination:'}</span>
               </span>
               <span className="text-[11px] font-bold text-muted-foreground">
-                {destinations.length} {isAr ? 'وجهات سياحية' : 'destinations'}
+                {effectiveDestinations.length} {isAr ? 'وجهات سياحية' : 'destinations'}
               </span>
             </label>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-2.5">
-              {destinations.map((dest) => {
+              {effectiveDestinations.map((dest) => {
                 const isSelected = selectedDestination.toLowerCase() === dest.id.toLowerCase();
                 const flag = dest.flag || DEST_FLAGS[dest.id.toLowerCase()] || '📍';
                 const code = dest.code || dest.id.substring(0, 2).toUpperCase();
