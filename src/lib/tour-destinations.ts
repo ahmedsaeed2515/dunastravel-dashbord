@@ -1,7 +1,7 @@
 import type { Tour } from "@/features/tours/types";
 
 export const DESTINATIONS_LIST = [
-  { id: "ALL", nameEn: "All Destinations", nameAr: "جميع الواجهات الـ 8", flag: "🌐", code: "ALL" },
+  { id: "ALL", nameEn: "All Destinations", nameAr: "جميع الواجهات", flag: "🌐", code: "ALL" },
   { id: "Egypt", nameEn: "Egypt", nameAr: "مصر", flag: "🇪🇬", code: "EG" },
   { id: "Turkey", nameEn: "Turkey", nameAr: "تركيا", flag: "🇹🇷", code: "TR" },
   { id: "Jordan", nameEn: "Jordan", nameAr: "الأردن", flag: "🇯🇴", code: "JO" },
@@ -9,6 +9,7 @@ export const DESTINATIONS_LIST = [
   { id: "Dubai", nameEn: "Dubai & UAE", nameAr: "دبي والإمارات", flag: "🇦🇪", code: "AE" },
   { id: "Tunisia", nameEn: "Tunisia", nameAr: "تونس", flag: "🇹🇳", code: "TN" },
   { id: "Greece", nameEn: "Greece", nameAr: "اليونان", flag: "🇬🇷", code: "GR" },
+  { id: "HolyLand", nameEn: "Holy Land", nameAr: "الأراضي المقدسة", flag: "🕊️", code: "HL" },
   { id: "Multi-Country", nameEn: "Multi-Country", nameAr: "مشترك", flag: "🌍", code: "MC" },
   { id: "Religious", nameEn: "Religious", nameAr: "دينية", flag: "🕊️", code: "RL" },
 ] as const;
@@ -21,6 +22,8 @@ const CANONICAL_DESTINATION_LABELS: Record<string, string> = {
   dubai: "Dubai",
   tunisia: "Tunisia",
   greece: "Greece",
+  holyland: "Holy Land",
+  "holy-land": "Holy Land",
   "multi-country": "Multi-Country",
   religious: "Religious",
 };
@@ -35,7 +38,7 @@ export const DEST_FLAGS: Record<string, string> = {
   greece: "🇬🇷",
   religious: "🕊️",
   holyland: "🕊️",
-  "multi-country": "🌍",
+  "holy-land": "🕊️",
   all: "🌐",
 };
 
@@ -49,6 +52,7 @@ export const DEST_GRADIENTS: Record<string, string> = {
   tunisia: "from-orange-500/20 to-orange-600/10",
   religious: "from-purple-500/20 to-purple-600/10",
   holyland: "from-purple-500/20 to-purple-600/10",
+  "holy-land": "from-purple-500/20 to-purple-600/10",
   "multi-country": "from-indigo-500/20 to-indigo-600/10",
 };
 
@@ -76,6 +80,8 @@ export function resolveTourDestination(tour: Tour): string {
     dubai: "Dubai",
     tunisia: "Tunisia",
     greece: "Greece",
+    holyland: "Holy Land",
+    "holy-land": "Holy Land",
     "multi-country": "Multi-Country",
     religious: "Religious",
   };
