@@ -275,6 +275,24 @@ export function resolveTourDestination(tour: Tour): string {
     return "Greece";
   }
 
+  if (
+    c.includes("holyland") ||
+    c.includes("holy land") ||
+    c.includes("holy-land") ||
+    c.includes("الأراضي المقدسة") ||
+    c.includes("الأرض المقدسة") ||
+    cat.includes("holyland") ||
+    cat.includes("holy land") ||
+    cat.includes("holy-land") ||
+    slug.includes("holyland") ||
+    slug.includes("holy-land") ||
+    titleEn.includes("holy land") ||
+    titleAr.includes("الأراضي المقدسة") ||
+    titleAr.includes("الأرض المقدسة")
+  ) {
+    return "Holy Land";
+  }
+
   return "Egypt";
 }
 
