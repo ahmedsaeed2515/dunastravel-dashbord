@@ -529,7 +529,7 @@ export default function ToursPage() {
             value="destinations"
             className="flex-1 flex items-center justify-center gap-2 rounded-xl py-2.5 text-xs font-black transition-all data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-sm cursor-pointer"
           >
-            <Globe className="w-4 h-4" /> {isAr ? "الواجهات الـ 8 وباقات مصر" : "8 Destinations & Egypt Packages"}
+            <Globe className="w-4 h-4" /> {isAr ? "الوجهات السياحية وباقات مصر" : "Destinations & Egypt Packages"}
           </TabsTrigger>
           <TabsTrigger
             value="table"
