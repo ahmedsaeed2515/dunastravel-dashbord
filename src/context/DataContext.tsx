@@ -74,11 +74,11 @@ export const DESTINATIONS_LIST: DestinationModel[] = [
   },
   {
     id: 'holyland',
-    nameAr: 'الأرض المقدسة',
+    nameAr: 'الأراضي المقدسة',
     nameEn: 'Holy Land',
     flag: '🕊️',
     gradient: 'from-purple-500/20 to-purple-600/10',
-    description: 'المعالم الروحية والتاريخية العريقة',
+    description: 'المعالم الروحية والتاريخية العريقة في القدس وبيت لحم ومسار العائلة المقدسة',
     image: 'https://images.unsplash.com/photo-1544971587-b842c27f8c14?q=80&w=1200',
   },
 ];
