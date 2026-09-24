@@ -47,20 +47,20 @@ export const columns: ColumnDef<Inquiry>[] = [
         <div className="flex flex-col gap-0.5">
           <span className="font-bold text-xs text-foreground">{name}</span>
           <span className="text-[10px] text-muted-foreground dir-ltr">{row.original.email}</span>
-          {cleanPhone && (
-            <div className="flex items-center gap-1.5 pt-0.5">
+          <div className="flex items-center gap-1.5 pt-0.5">
+            {row.original.phone && (
               <span className="text-[10px] font-mono text-muted-foreground dir-ltr">{row.original.phone}</span>
-              <a
-                href={`https://wa.me/${cleanPhone}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-0.5"
-                title="WhatsApp"
-              >
-                💬 واتساب
-              </a>
-            </div>
-          )}
+            )}
+            <a
+              href="https://wa.me/201149401111"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-[9px] px-1 py-0.2 rounded bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold inline-flex items-center gap-0.5"
+              title="WhatsApp"
+            >
+              💬 واتساب
+            </a>
+          </div>
         </div>
       );
     },

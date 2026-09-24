@@ -76,7 +76,7 @@ export function WelcomeBanner() {
             )}
           >
             <Layers size={16} className="text-amber-400" />
-            <span>الواجهات السياحية الـ 8</span>
+            <span>الوجهات السياحية</span>
           </Link>
         </div>
       </div>

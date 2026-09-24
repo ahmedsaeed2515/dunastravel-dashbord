@@ -359,7 +359,7 @@ export function DestinationEditorDrawer({
         side="right"
         className="w-full sm:max-w-2xl md:max-w-3xl flex flex-col p-0 bg-background border-l shadow-2xl z-[100]"
       >
-        <SheetHeader className="px-6 py-4 border-b bg-card/60 backdrop-blur-md">
+        <SheetHeader className="px-6 py-4 border-b bg-card/60 backdrop-blur-md shrink-0">
           <div className="flex items-center justify-between">
             <div>
               <SheetTitle className="text-lg font-bold flex items-center gap-2 text-foreground">
@@ -384,7 +384,7 @@ export function DestinationEditorDrawer({
         </SheetHeader>
 
         {/* Status Bar */}
-        <div className="px-6 py-2.5 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="px-6 py-2.5 bg-muted/30 border-b flex flex-wrap items-center justify-between gap-3 text-xs shrink-0">
           <div className="flex items-center gap-3">
             <label className="font-bold text-muted-foreground">الحالة:</label>
             <select
@@ -422,8 +422,8 @@ export function DestinationEditorDrawer({
         </div>
 
         {/* Main Tab Navigation */}
-        <div className="px-6 pt-3 border-b bg-background">
-          <div className="flex gap-2">
+        <div className="px-6 pt-3 border-b bg-background shrink-0 overflow-x-auto custom-scrollbar">
+          <div className="flex gap-2 min-w-max">
             <button
               onClick={() => setActiveTab("content")}
               className={`pb-2.5 px-3 font-bold text-xs border-b-2 transition-all flex items-center gap-1.5 cursor-pointer ${
@@ -472,7 +472,7 @@ export function DestinationEditorDrawer({
         </div>
 
         {/* Scrollable Content Body */}
-        <ScrollArea className="flex-1 px-6 py-4">
+        <div className="flex-1 min-h-0 overflow-y-auto px-4 sm:px-6 py-4 space-y-6 custom-scrollbar">
           {/* TAB 1: Content & 5 Languages */}
           {activeTab === "content" && (
             <div className="space-y-5">
@@ -966,10 +966,10 @@ export function DestinationEditorDrawer({
               </div>
             </div>
           )}
-        </ScrollArea>
+        </div>
 
         {/* Sticky Footer */}
-        <div className="px-6 py-4 border-t bg-card/90 backdrop-blur-md flex items-center justify-between gap-3">
+        <div className="px-6 py-4 border-t bg-card/90 backdrop-blur-md flex items-center justify-between gap-3 shrink-0">
           <Button
             type="button"
             variant="outline"

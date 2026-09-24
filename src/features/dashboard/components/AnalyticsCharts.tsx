@@ -557,7 +557,7 @@ export function AnalyticsCharts({
           <div>
             <h3 className="text-sm font-bold text-foreground flex items-center gap-2 mb-4 pb-2 border-b border-border/60">
               <PieChart className="w-4 h-4 text-amber-500" />
-              {isAr ? "توزيع الإيرادات حسب الواجهات الـ 8 🕓" : "Revenue by Destinations 🕓"}
+              {isAr ? "توزيع الإيرادات حسب الوجهات السياحية 🕓" : "Revenue by Destinations 🕓"}
             </h3>
 
             {/* Destination Items List */}

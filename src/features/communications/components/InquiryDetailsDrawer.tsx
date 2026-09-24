@@ -237,16 +237,14 @@ export function InquiryDetailsDrawer({
               </SheetDescription>
             </div>
 
-            {cleanPhone && (
-              <a
-                href={`https://wa.me/${cleanPhone}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
-              >
-                <MessageCircle className="w-4 h-4" /> {isAr ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
-              </a>
-            )}
+            <a
+              href="https://wa.me/201149401111"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-sm transition-all cursor-pointer"
+            >
+              <MessageCircle className="w-4 h-4" /> {isAr ? "تواصل عبر واتساب" : "Chat on WhatsApp"}
+            </a>
           </div>
         </SheetHeader>
 

@@ -221,6 +221,7 @@ export function WebPOptimizerStudio({
 
   // ==================== FLOW B: CLOUDINARY MEDIA ASSET OPTIMIZATION ====================
 
+
   const { mutate: optimizeAsset, isPending: isOptimizing } = useOptimizeAsset();
 
   // Generate live Cloudinary transformed URL for side-by-side preview
