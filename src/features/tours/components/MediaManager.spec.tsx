@@ -49,7 +49,13 @@ describe("MediaManager", () => {
     renderManager();
     fireEvent.click(screen.getByRole("button", { name: /upload image/i }));
     const file = new File(["image"], "nile.webp", { type: "image/webp" });
-    fireEvent.change(screen.getByLabelText("Image file"), { target: { files: [file] } });
+    const input = screen.getByLabelText("Image file");
+    Object.defineProperty(input, "files", {
+      value: [file],
+      writable: true,
+      configurable: true,
+    });
+    fireEvent.change(input);
     fireEvent.click(screen.getByRole("button", { name: /^upload image$/i }));
 
     expect(mocks.uploadMedia).toHaveBeenCalledWith(

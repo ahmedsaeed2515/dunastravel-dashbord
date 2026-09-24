@@ -1,4 +1,5 @@
 import { render, screen } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { BookingsTable } from '../BookingsTable';
 import { vi, describe, it, expect } from 'vitest';
 import { useBookings } from '../../../hooks/useBookings';
@@ -17,6 +18,11 @@ vi.mock('../../../hooks/useBookings', () => ({
 vi.mock('../../../hooks/useBookingDetail', () => ({
   useBookingDetail: () => ({ data: null, isLoading: false })
 }));
+
+function renderWithClient(ui: React.ReactElement) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  return render(<QueryClientProvider client={queryClient}>{ui}</QueryClientProvider>);
+}
 
 describe('BookingsTable', () => {
   const mockData: any[] = [
@@ -45,7 +51,7 @@ describe('BookingsTable', () => {
 
     (useBookings as any).mockReturnValue({ data: { data: mockData, meta: { lastPage: 1 } }, isLoading: false });
 
-    render(
+    renderWithClient(
       <BookingsTable />
     );
 
@@ -59,7 +65,7 @@ describe('BookingsTable', () => {
   it('shows loading state', () => {
     (useBookings as any).mockReturnValue({ data: undefined, isLoading: true });
 
-    render(
+    renderWithClient(
       <BookingsTable />
     );
 

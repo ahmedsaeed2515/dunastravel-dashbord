@@ -2,6 +2,7 @@ import { Suspense } from "react";
 import { act, cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 const state = vi.hoisted(() => ({
   preview: undefined as unknown,
@@ -47,12 +48,15 @@ const canonicalPreview = {
 const previewParams = Promise.resolve({ slug: "nile-journey", locale: "en" });
 
 const renderPreview = async () => {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   let view: ReturnType<typeof render> | undefined;
   await act(async () => {
     view = render(
-      <Suspense fallback={<span>Suspended</span>}>
-        <VisitorTourPreviewPage params={previewParams} />
-      </Suspense>,
+      <QueryClientProvider client={queryClient}>
+        <Suspense fallback={<span>Suspended</span>}>
+          <VisitorTourPreviewPage params={previewParams} />
+        </Suspense>
+      </QueryClientProvider>,
     );
     await previewParams;
   });
