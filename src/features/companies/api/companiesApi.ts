@@ -1,14 +1,27 @@
 import { apiClient } from "@/lib/axios";
-import { env } from "@/config/env";
 import { 
   Company, 
   CompanyDetail, 
   CompanyMetrics, 
   CompanyQueryFilters, 
+  CompanyStatus,
   CreateCompanyPayload, 
   UpdateCompanyPayload 
 } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
+
+const normalizeCompany = (raw: any): Company => ({
+  ...raw,
+  commissionRate: parseFloat(String(raw?.commissionRate ?? '0')) || 0,
+  currentBalance: parseFloat(String(raw?.currentBalance ?? '0')) || 0,
+});
+
+const normalizeCompanyDetail = (raw: any): CompanyDetail => ({
+  ...raw,
+  ...normalizeCompany(raw),
+  users: Array.isArray(raw?.users) ? raw.users : [],
+  bookings: Array.isArray(raw?.bookings) ? raw.bookings : [],
+});
 
 export const companiesApi = {
   getMetrics: async (): Promise<CompanyMetrics> => {
@@ -16,38 +29,33 @@ export const companiesApi = {
   },
 
   getCompanies: async (filters: CompanyQueryFilters): Promise<PaginatedResponse<Company>> => {
-    return apiClient.get<PaginatedResponse<Company>, PaginatedResponse<Company>>("/admin/companies", { params: filters });
+    const res = await apiClient.get<PaginatedResponse<Company>, PaginatedResponse<Company>>("/admin/companies", { params: filters });
+    return {
+      ...res,
+      data: Array.isArray(res?.data) ? res.data.map(normalizeCompany) : [],
+    };
   },
 
   getCompanyById: async (id: string): Promise<CompanyDetail> => {
-    return apiClient.get<CompanyDetail, CompanyDetail>(`/admin/companies/${id}`);
+    const res = await apiClient.get<CompanyDetail, CompanyDetail>(`/admin/companies/${id}`);
+    return normalizeCompanyDetail(res);
   },
 
   createCompany: async (payload: CreateCompanyPayload): Promise<Company> => {
-    return apiClient.post<Company, Company>("/admin/companies", payload);
+    const res = await apiClient.post<Company, Company>("/admin/companies", payload);
+    return normalizeCompany(res);
   },
 
   updateCompany: async (id: string, payload: UpdateCompanyPayload): Promise<Company> => {
-    return apiClient.patch<Company, Company>(`/admin/companies/${id}`, payload);
+    const res = await apiClient.patch<Company, Company>(`/admin/companies/${id}`, payload);
+    return normalizeCompany(res);
   },
 
-  bulkUpdate: async (payload: { companyIds: string[]; status?: string; tags?: string[]; segments?: string[] }): Promise<{ count: number }> => {
+  bulkUpdate: async (payload: { companyIds: string[]; status?: CompanyStatus; tags?: string[]; segments?: string[] }): Promise<{ count: number }> => {
     return apiClient.patch<{ count: number }, { count: number }>("/admin/companies/bulk/update", payload);
   },
 
   exportCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
-    const params: Record<string, string> = {};
-    Object.entries(filters).forEach(([k, v]) => {
-      if (v !== undefined && v !== null && v !== '') params[k] = String(v);
-    });
-    const res = await apiClient.get('/admin/companies/export/csv', {
-      params,
-      responseType: 'blob',
-    });
-    return res.data as Blob;
-  },
-
-  exportCompaniesCsv: async (filters: CompanyQueryFilters): Promise<Blob> => {
     const params: Record<string, string> = {};
     Object.entries(filters).forEach(([k, v]) => {
       if (v !== undefined && v !== null && v !== '') params[k] = String(v);

@@ -1,5 +1,5 @@
 export type CompanyType = 'AGENCY' | 'CORPORATE' | 'AFFILIATE';
-export type CompanyStatus = 'ACTIVE' | 'INACTIVE' | 'BLACKLISTED';
+export type CompanyStatus = 'ACTIVE' | 'INACTIVE' | 'SUSPENDED' | 'BLACKLISTED';
 
 export interface Company {
   id: string;

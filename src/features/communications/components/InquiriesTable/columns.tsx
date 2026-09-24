@@ -215,7 +215,12 @@ export const columns: ColumnDef<Inquiry>[] = [
 function ActionCell({ inquiry }: { inquiry: Inquiry }) {
   const [detailsOpen, setDetailsOpen] = useState(false);
   const assignInquiry = useAssignInquiry();
-  const { data: usersData } = useUsers({ role: "ADMIN", limit: 50 });
+  const { data: adminsData } = useUsers({ role: "ADMIN", limit: 50 });
+  const { data: agentsData } = useUsers({ role: "AGENT", limit: 50 });
+  const staffUsers = [
+    ...(adminsData?.data || []),
+    ...(agentsData?.data || []),
+  ].filter((u, index, self) => index === self.findIndex((t) => t.id === u.id));
 
   return (
     <>
@@ -239,17 +244,17 @@ function ActionCell({ inquiry }: { inquiry: Inquiry }) {
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
               <DropdownMenuSubContent className="font-bold text-xs">
-                {usersData?.data?.map((user) => (
+                {staffUsers.map((user) => (
                   <DropdownMenuItem
                     key={user.id}
                     onClick={() => assignInquiry.mutate({ referenceCode: inquiry.referenceCode, assigneeId: user.id })}
                     disabled={assignInquiry.isPending}
                     className="cursor-pointer"
                   >
-                    {user.name} ({user.email})
+                    {user.name} ({user.email}) - {user.role}
                   </DropdownMenuItem>
                 ))}
-                {!usersData?.data?.length && (
+                {!staffUsers.length && (
                   <DropdownMenuItem disabled>لا يوجد موظفون متاحون</DropdownMenuItem>
                 )}
               </DropdownMenuSubContent>

@@ -62,9 +62,9 @@ export const bookingsApi = {
     return apiClient.post(`/admin/bookings/${referenceCode}/payments`, data);
   },
 
-  // NOTE: Online refunds are disabled by business policy — all refunds are
-  // processed offline directly by company finance, so there is deliberately
-  // no refund API call here.
+  cancelWithRefund: async (referenceCode: string, data?: { reason?: string }): Promise<any> => {
+    return apiClient.post(`/admin/bookings/${referenceCode}/refund-and-cancel`, data || {});
+  },
 
   getBookingInvoice: async (bookingReferenceOrId: string): Promise<any> => {
     return apiClient.get<any, any>(`/admin/invoices/${encodeURIComponent(bookingReferenceOrId)}`);

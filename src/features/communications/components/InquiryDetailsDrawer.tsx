@@ -63,7 +63,12 @@ export function InquiryDetailsDrawer({
   const updateInquiry = useUpdateInquiry();
   const assignInquiry = useAssignInquiry();
   const convertInquiry = useConvertInquiryToBooking();
-  const { data: usersData } = useUsers({ role: "ADMIN", limit: 50 });
+  const { data: adminsData } = useUsers({ role: "ADMIN", limit: 50 });
+  const { data: agentsData } = useUsers({ role: "AGENT", limit: 50 });
+  const staffUsers = [
+    ...(adminsData?.data || []),
+    ...(agentsData?.data || []),
+  ].filter((u, index, self) => index === self.findIndex((t) => t.id === u.id));
 
   const [status, setStatus] = useState<string>(inquiry?.status || "NEWLY_RECEIVED");
   const [assigneeId, setAssigneeId] = useState<string>(inquiry?.assigneeId || "");
@@ -163,10 +168,33 @@ export function InquiryDetailsDrawer({
 
   const handleConvertToBooking = async () => {
     const amountNum = quoteInput ? Math.round(parseFloat(quoteInput) * 100) / 100 : undefined;
+    const finalAmount = amountNum && !isNaN(amountNum) && amountNum > 0 ? amountNum : Number(inquiry.quotedAmountUsd || 0);
+
+    if (!finalAmount || finalAmount <= 0) {
+      toast.error(isAr ? "يرجى إدخال وتحديد مبلغ عرض السعر قبل تحويل الاستفسار إلى حجز." : "Please specify a valid quote amount before converting to booking.");
+      return;
+    }
+
+    // If not approved yet, automatically approve it with the quote amount first
+    if (inquiry.status !== "APPROVED" && status !== "APPROVED") {
+      try {
+        await updateInquiry.mutateAsync({
+          referenceCode: inquiry.referenceCode,
+          data: {
+            status: "APPROVED",
+            quotedAmountUsd: finalAmount,
+          },
+        });
+        setStatus("APPROVED");
+      } catch {
+        return; // error handled by mutation onError
+      }
+    }
+
     await convertInquiry.mutateAsync({
       referenceCode: inquiry.referenceCode,
       payload: {
-        quotedAmountUsd: amountNum && !isNaN(amountNum) ? amountNum : undefined,
+        quotedAmountUsd: finalAmount,
       },
     });
   };
@@ -251,9 +279,9 @@ export function InquiryDetailsDrawer({
                 </SelectTrigger>
                 <SelectContent className="text-xs font-medium">
                   <SelectItem value="UNASSIGNED">{isAr ? "غير معيّن (Unassigned)" : "Unassigned"}</SelectItem>
-                  {usersData?.data?.map((u) => (
+                  {staffUsers.map((u) => (
                     <SelectItem key={u.id} value={u.id}>
-                      {u.name} ({u.email})
+                      {u.name} ({u.email}) - {u.role}
                     </SelectItem>
                   ))}
                 </SelectContent>

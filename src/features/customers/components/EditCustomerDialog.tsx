@@ -34,63 +34,96 @@ interface EditCustomerDialogProps {
   onSuccess?: () => void;
 }
 
+interface FormState {
+  name: string;
+  email: string;
+  phone: string;
+  nationality: string;
+  gender: string;
+  dateOfBirth: string;
+  passportNumber: string;
+  isVip: boolean;
+  status: string;
+  preferredLanguage: string;
+  preferredCurrency: string;
+  preferredDestination: string;
+  preferredTravelType: string;
+  customerSource: string;
+  tagsString: string;
+  segmentsString: string;
+  addressStreet: string;
+  addressCity: string;
+  addressCountry: string;
+  emergencyName: string;
+  emergencyPhone: string;
+  emergencyRel: string;
+}
+
+function getInitialFormData(customer: Customer | CustomerDetail | null): FormState {
+  if (!customer) {
+    return {
+      name: "",
+      email: "",
+      phone: "",
+      nationality: "",
+      gender: "",
+      dateOfBirth: "",
+      passportNumber: "",
+      isVip: false,
+      status: "ACTIVE",
+      preferredLanguage: "en",
+      preferredCurrency: "USD",
+      preferredDestination: "",
+      preferredTravelType: "",
+      customerSource: "ADMIN",
+      tagsString: "",
+      segmentsString: "",
+      addressStreet: "",
+      addressCity: "",
+      addressCountry: "",
+      emergencyName: "",
+      emergencyPhone: "",
+      emergencyRel: "",
+    };
+  }
+
+  const detail = customer as Partial<CustomerDetail>;
+  return {
+    name: customer.name || "",
+    email: customer.email || "",
+    phone: customer.phone || "",
+    nationality: customer.nationality || detail.nationality || "",
+    gender: detail.gender || "",
+    dateOfBirth: detail.dateOfBirth ? detail.dateOfBirth.split("T")[0] : "",
+    passportNumber: detail.passportNumber || "",
+    isVip: Boolean(customer.isVip),
+    status: customer.status || "ACTIVE",
+    preferredLanguage: detail.preferredLanguage || "en",
+    preferredCurrency: detail.preferredCurrency || "USD",
+    preferredDestination: detail.preferredDestination || "",
+    preferredTravelType: detail.preferredTravelType || "",
+    customerSource: detail.customerSource || "ADMIN",
+    tagsString: Array.isArray(customer.tags) ? customer.tags.join(", ") : "",
+    segmentsString: Array.isArray(customer.segments) ? customer.segments.join(", ") : "",
+    addressStreet: detail.address?.street || "",
+    addressCity: detail.address?.city || "",
+    addressCountry: detail.address?.country || "",
+    emergencyName: detail.emergencyContact?.name || "",
+    emergencyPhone: detail.emergencyContact?.phone || "",
+    emergencyRel: detail.emergencyContact?.relationship || "",
+  };
+}
+
 export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: EditCustomerDialogProps) {
   const tCustomers = useTranslations("customers");
   const tCommon = useTranslations("common");
   const updateCrm = useUpdateCustomerCrm();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phone: "",
-    nationality: "",
-    gender: "",
-    dateOfBirth: "",
-    passportNumber: "",
-    isVip: false,
-    status: "ACTIVE",
-    preferredLanguage: "en",
-    preferredCurrency: "USD",
-    preferredDestination: "",
-    preferredTravelType: "",
-    customerSource: "ADMIN",
-    tagsString: "",
-    segmentsString: "",
-    addressStreet: "",
-    addressCity: "",
-    addressCountry: "",
-    emergencyName: "",
-    emergencyPhone: "",
-    emergencyRel: "",
-  });
+  const [formData, setFormData] = useState<FormState>(() => getInitialFormData(customer));
 
   useEffect(() => {
     if (customer) {
-      const custAny = customer as any;
-      setFormData({
-        name: customer.name || "",
-        email: customer.email || "",
-        phone: customer.phone || "",
-        nationality: custAny.nationality || "",
-        gender: custAny.gender || "",
-        dateOfBirth: custAny.dateOfBirth ? custAny.dateOfBirth.split("T")[0] : "",
-        passportNumber: custAny.passportNumber || "",
-        isVip: Boolean(customer.isVip),
-        status: customer.status || "ACTIVE",
-        preferredLanguage: custAny.preferredLanguage || "en",
-        preferredCurrency: custAny.preferredCurrency || "USD",
-        preferredDestination: custAny.preferredDestination || "",
-        preferredTravelType: custAny.preferredTravelType || "",
-        customerSource: custAny.customerSource || "ADMIN",
-        tagsString: Array.isArray(customer.tags) ? customer.tags.join(", ") : "",
-        segmentsString: Array.isArray(customer.segments) ? customer.segments.join(", ") : "",
-        addressStreet: custAny.address?.street || "",
-        addressCity: custAny.address?.city || "",
-        addressCountry: custAny.address?.country || "",
-        emergencyName: custAny.emergencyContact?.name || "",
-        emergencyPhone: custAny.emergencyContact?.phone || "",
-        emergencyRel: custAny.emergencyContact?.relationship || "",
-      });
+      setFormData(getInitialFormData(customer));
     }
   }, [customer]);
 
@@ -111,14 +144,20 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
         ? formData.segmentsString.split(",").map((s) => s.trim()).filter(Boolean)
         : [];
 
+      const hasAddress = formData.addressStreet.trim() || formData.addressCity.trim() || formData.addressCountry.trim();
+      const hasEmergency = formData.emergencyName.trim() && formData.emergencyPhone.trim();
+
       await updateCrm.mutateAsync({
         id: customer.id,
         data: {
+          name: formData.name.trim(),
+          email: formData.email.trim() || undefined,
+          phone: formData.phone.trim() || undefined,
           isVip: formData.isVip,
           status: formData.status,
           nationality: formData.nationality.trim() || undefined,
           gender: formData.gender.trim() || undefined,
-          dateOfBirth: formData.dateOfBirth || undefined,
+          dateOfBirth: formData.dateOfBirth.trim() || undefined,
           passportNumber: formData.passportNumber.trim() || undefined,
           preferredLanguage: formData.preferredLanguage,
           preferredCurrency: formData.preferredCurrency,
@@ -127,24 +166,29 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
           customerSource: formData.customerSource,
           tags,
           segments,
-          address: {
-            street: formData.addressStreet,
-            city: formData.addressCity,
-            country: formData.addressCountry,
-          },
-          emergencyContact: {
-            name: formData.emergencyName,
-            phone: formData.emergencyPhone,
-            relationship: formData.emergencyRel,
-          },
+          ...(hasAddress && {
+            address: {
+              ...(formData.addressStreet.trim() && { street: formData.addressStreet.trim() }),
+              ...(formData.addressCity.trim() && { city: formData.addressCity.trim() }),
+              ...(formData.addressCountry.trim() && { country: formData.addressCountry.trim() }),
+            },
+          }),
+          ...(hasEmergency && {
+            emergencyContact: {
+              name: formData.emergencyName.trim(),
+              phone: formData.emergencyPhone.trim(),
+              ...(formData.emergencyRel.trim() && { relationship: formData.emergencyRel.trim() }),
+            },
+          }),
         },
       });
 
       toast.success(tCommon("success") || "Customer updated successfully!");
       if (onSuccess) onSuccess();
       onClose();
-    } catch (error: any) {
-      toast.error(error?.response?.data?.message || tCommon("error") || "Failed to update customer.");
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } }; message?: string };
+      toast.error(err?.response?.data?.message || err?.message || tCommon("error") || "Failed to update customer.");
     }
   };
 
@@ -156,10 +200,10 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
             <div className="space-y-1">
               <DialogTitle className="text-xl font-black tracking-tight flex items-center gap-2.5">
                 <User className="h-5 w-5 text-amber-500" />
-                <span>تعديل بيانات العميل: {customer.name}</span>
+                <span>{tCustomers("editTitle", { name: customer.name })}</span>
               </DialogTitle>
               <DialogDescription className="text-xs font-mono text-muted-foreground">
-                كود العميل: #{customer.customerNumber || customer.id.slice(0, 8)} • {customer.email}
+                {tCustomers("customerCode")}: #{customer.customerNumber || customer.id.slice(0, 8)} • {customer.email}
               </DialogDescription>
             </div>
 
@@ -176,10 +220,10 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
         <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto p-5 sm:p-6 space-y-6">
           <Tabs defaultValue="basic" className="w-full">
             <TabsList className="grid grid-cols-4 h-10 p-1 bg-muted/60 rounded-xl mb-5">
-              <TabsTrigger value="basic" className="text-xs font-bold rounded-lg">البيانات الأساسية</TabsTrigger>
-              <TabsTrigger value="preferences" className="text-xs font-bold rounded-lg">تفضيلات السفر</TabsTrigger>
-              <TabsTrigger value="identity" className="text-xs font-bold rounded-lg">الهوية والإقامة</TabsTrigger>
-              <TabsTrigger value="tags" className="text-xs font-bold rounded-lg">التصنيفات والطوارئ</TabsTrigger>
+              <TabsTrigger value="basic" className="text-xs font-bold rounded-lg">{tCustomers("tabBasic")}</TabsTrigger>
+              <TabsTrigger value="preferences" className="text-xs font-bold rounded-lg">{tCustomers("tabPreferences")}</TabsTrigger>
+              <TabsTrigger value="identity" className="text-xs font-bold rounded-lg">{tCustomers("tabIdentity")}</TabsTrigger>
+              <TabsTrigger value="tags" className="text-xs font-bold rounded-lg">{tCustomers("tabTags")}</TabsTrigger>
             </TabsList>
 
             {/* TAB 1: BASIC INFO */}
@@ -187,7 +231,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" /> الاسم الكامل
+                    <User className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("fullName")}
                   </Label>
                   <Input
                     value={formData.name}
@@ -199,19 +243,20 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Mail className="h-3.5 w-3.5 text-muted-foreground" /> البريد الإلكتروني
+                    <Mail className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("email")}
                   </Label>
                   <Input
                     type="email"
                     value={formData.email}
-                    disabled
-                    className="h-10 rounded-xl text-sm bg-muted/40 font-mono text-muted-foreground"
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="h-10 rounded-xl text-sm font-mono"
+                    required
                   />
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Phone className="h-3.5 w-3.5 text-muted-foreground" /> رقم الهاتف
+                    <Phone className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("phone")}
                   </Label>
                   <Input
                     value={formData.phone}
@@ -222,20 +267,20 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Shield className="h-3.5 w-3.5 text-muted-foreground" /> حالة الحساب
+                    <Shield className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("accountStatus")}
                   </Label>
                   <Select
                     value={formData.status}
                     onValueChange={(val) => setFormData({ ...formData, status: val })}
                   >
                     <SelectTrigger className="h-10 rounded-xl text-sm">
-                      <SelectValue placeholder="اختر الحالة" />
+                      <SelectValue placeholder={tCustomers("selectStatus")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="ACTIVE">نشط (ACTIVE)</SelectItem>
-                      <SelectItem value="INACTIVE">غير نشط (INACTIVE)</SelectItem>
-                      <SelectItem value="SUSPENDED">موقوف (SUSPENDED)</SelectItem>
-                      <SelectItem value="BLOCKED">محظور (BLOCKED)</SelectItem>
+                      <SelectItem value="ACTIVE">{tCustomers("statusActive")}</SelectItem>
+                      <SelectItem value="INACTIVE">{tCustomers("statusInactive")}</SelectItem>
+                      <SelectItem value="SUSPENDED">{tCustomers("statusSuspended")}</SelectItem>
+                      <SelectItem value="BLOCKED">{tCustomers("statusBlocked")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -246,10 +291,10 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
                 <div className="space-y-0.5">
                   <div className="text-sm font-black text-foreground flex items-center gap-1.5">
                     <Crown className="h-4 w-4 text-amber-500" />
-                    <span>عميل مميز (VIP Concierge Member)</span>
+                    <span>{tCustomers("vipMember")}</span>
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    تفعيل الخدمات الاستثنائية والخصومات المخصصة لكبار الشخصيات.
+                    {tCustomers("vipDesc")}
                   </div>
                 </div>
                 <Switch
@@ -264,7 +309,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Globe className="h-3.5 w-3.5 text-muted-foreground" /> اللغة المفضلة
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("preferredLanguage")}
                   </Label>
                   <Select
                     value={formData.preferredLanguage}
@@ -285,7 +330,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <DollarSign className="h-3.5 w-3.5 text-muted-foreground" /> العملة المفضلة
+                    <DollarSign className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("preferredCurrency")}
                   </Label>
                   <Select
                     value={formData.preferredCurrency}
@@ -295,22 +340,22 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="USD">USD ($) - دولار أمريكي</SelectItem>
-                      <SelectItem value="EUR">EUR (€) - يورو</SelectItem>
-                      <SelectItem value="GBP">GBP (£) - جنيه إسترليني</SelectItem>
-                      <SelectItem value="SAR">SAR (ر.س) - ريال سعودي</SelectItem>
-                      <SelectItem value="AED">AED (د.إ) - درهم إماراتي</SelectItem>
-                      <SelectItem value="EGP">EGP (ج.م) - جنيه مصري</SelectItem>
+                      <SelectItem value="USD">USD ($) - US Dollar</SelectItem>
+                      <SelectItem value="EUR">EUR (€) - Euro</SelectItem>
+                      <SelectItem value="GBP">GBP (£) - British Pound</SelectItem>
+                      <SelectItem value="SAR">SAR (ر.س) - Saudi Riyal</SelectItem>
+                      <SelectItem value="AED">AED (د.إ) - UAE Dirham</SelectItem>
+                      <SelectItem value="EGP">EGP (ج.م) - Egyptian Pound</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Compass className="h-3.5 w-3.5 text-muted-foreground" /> الوجهة المفضلة
+                    <Compass className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("preferredDestination")}
                   </Label>
                   <Input
-                    placeholder="مثال: الأقصر وأسوان، القاهرة، الغردقة"
+                    placeholder={tCustomers("destinationPlaceholder")}
                     value={formData.preferredDestination}
                     onChange={(e) => setFormData({ ...formData, preferredDestination: e.target.value })}
                     className="h-10 rounded-xl text-sm"
@@ -319,10 +364,10 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Compass className="h-3.5 w-3.5 text-muted-foreground" /> نمط ونوع الرحلة المفضلة
+                    <Compass className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("preferredTravelType")}
                   </Label>
                   <Input
-                    placeholder="مثال: رحلات نيلية فاخرة، سياحة أثرية، مغامرات سفاري"
+                    placeholder={tCustomers("travelTypePlaceholder")}
                     value={formData.preferredTravelType}
                     onChange={(e) => setFormData({ ...formData, preferredTravelType: e.target.value })}
                     className="h-10 rounded-xl text-sm"
@@ -336,7 +381,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <FileText className="h-3.5 w-3.5 text-muted-foreground" /> رقم جواز السفر
+                    <FileText className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("passportNumber")}
                   </Label>
                   <Input
                     placeholder="A12345678"
@@ -348,10 +393,10 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <Globe className="h-3.5 w-3.5 text-muted-foreground" /> الجنسية / الدولة
+                    <Globe className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("nationalityCountry")}
                   </Label>
                   <Input
-                    placeholder="مثال: Saudi Arabia, Spain, USA"
+                    placeholder={tCustomers("nationalityPlaceholder")}
                     value={formData.nationality}
                     onChange={(e) => setFormData({ ...formData, nationality: e.target.value })}
                     className="h-10 rounded-xl text-sm"
@@ -360,7 +405,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
                 <div className="space-y-1.5">
                   <Label className="text-xs font-bold flex items-center gap-1.5">
-                    <User className="h-3.5 w-3.5 text-muted-foreground" /> تاريخ الميلاد
+                    <User className="h-3.5 w-3.5 text-muted-foreground" /> {tCustomers("dateOfBirth")}
                   </Label>
                   <Input
                     type="date"
@@ -373,23 +418,23 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
               <div className="p-4 bg-muted/40 rounded-2xl space-y-3">
                 <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <MapPin className="h-3.5 w-3.5 text-amber-500" /> بيانات العنوان والإقامة
+                  <MapPin className="h-3.5 w-3.5 text-amber-500" /> {tCustomers("addressSection")}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input
-                    placeholder="الشارع / العنوان"
+                    placeholder={tCustomers("street")}
                     value={formData.addressStreet}
                     onChange={(e) => setFormData({ ...formData, addressStreet: e.target.value })}
                     className="h-9 rounded-xl text-xs"
                   />
                   <Input
-                    placeholder="المدينة"
+                    placeholder={tCustomers("city")}
                     value={formData.addressCity}
                     onChange={(e) => setFormData({ ...formData, addressCity: e.target.value })}
                     className="h-9 rounded-xl text-xs"
                   />
                   <Input
-                    placeholder="الدولة"
+                    placeholder={tCustomers("country")}
                     value={formData.addressCountry}
                     onChange={(e) => setFormData({ ...formData, addressCountry: e.target.value })}
                     className="h-9 rounded-xl text-xs"
@@ -402,7 +447,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
             <TabsContent value="tags" className="space-y-4 pt-1">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">الوسوم (Tags - مفصولة بفواصل)</Label>
+                  <Label className="text-xs font-bold">{tCustomers("tagsLabel")}</Label>
                   <Input
                     placeholder="VIP, RepeatTraveler, Honeymoon, LuxuryNile"
                     value={formData.tagsString}
@@ -412,7 +457,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
                 </div>
 
                 <div className="space-y-1.5">
-                  <Label className="text-xs font-bold">شرائح العملاء (Segments)</Label>
+                  <Label className="text-xs font-bold">{tCustomers("segmentsLabel")}</Label>
                   <Input
                     placeholder="Luxury, Corporate, Family"
                     value={formData.segmentsString}
@@ -424,23 +469,23 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
 
               <div className="p-4 bg-muted/40 rounded-2xl space-y-3">
                 <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                  <Phone className="h-3.5 w-3.5 text-rose-500" /> جهة الاتصال في حالات الطوارئ
+                  <Phone className="h-3.5 w-3.5 text-rose-500" /> {tCustomers("emergencyContact")}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   <Input
-                    placeholder="اسم جهة الاتصال"
+                    placeholder={tCustomers("emergencyName")}
                     value={formData.emergencyName}
                     onChange={(e) => setFormData({ ...formData, emergencyName: e.target.value })}
                     className="h-9 rounded-xl text-xs"
                   />
                   <Input
-                    placeholder="رقم الهاتف"
+                    placeholder={tCustomers("emergencyPhone")}
                     value={formData.emergencyPhone}
                     onChange={(e) => setFormData({ ...formData, emergencyPhone: e.target.value })}
                     className="h-9 rounded-xl text-xs font-mono"
                   />
                   <Input
-                    placeholder="صلة القرابة (مثال: الزوج، الأخ)"
+                    placeholder={tCustomers("emergencyRelationship")}
                     value={formData.emergencyRel}
                     onChange={(e) => setFormData({ ...formData, emergencyRel: e.target.value })}
                     className="h-9 rounded-xl text-xs"
@@ -474,7 +519,7 @@ export function EditCustomerDialog({ customer, isOpen, onClose, onSuccess }: Edi
               ) : (
                 <>
                   <Save className="h-4 w-4" />
-                  <span>حفظ التعديلات</span>
+                  <span>{tCustomers("saveChanges")}</span>
                 </>
               )}
             </Button>

@@ -48,6 +48,7 @@ export interface User {
 export interface UserQueryFilters {
   search?: string;
   role?: UserRole | "ALL";
+  companyId?: string | null;
   status?: string;
   isVerified?: boolean;
   dateFrom?: string;

@@ -125,6 +125,9 @@ export interface ListCustomersParams {
 }
 
 export interface UpdateCustomerCrmPayload {
+  name?: string;
+  email?: string;
+  phone?: string;
   customerNumber?: string;
   isVip?: boolean;
   tags?: string[];

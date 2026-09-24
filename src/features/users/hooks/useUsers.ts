@@ -3,7 +3,7 @@ import { usersApi } from "../api/usersApi";
 import { UserQueryFilters } from "../types";
 import { queryKeys } from "@/lib/query-keys";
 import { toast } from "sonner";
-import { UserFormValues } from "../schemas/user.schema";
+import { UserFormValues, UpdateUserFormValues } from "../schemas/user.schema";
 import { ApiError } from "@/lib/api-types";
 
 export function useUsers(filters: UserQueryFilters) {
@@ -152,7 +152,7 @@ export function useUpdateUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: Partial<UserFormValues> }) =>
+    mutationFn: ({ id, data }: { id: string; data: Partial<UserFormValues | UpdateUserFormValues> }) =>
       usersApi.updateUser(id, data),
     onSuccess: (_, variables) => {
       toast.success("User updated successfully");

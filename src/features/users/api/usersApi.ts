@@ -7,7 +7,7 @@ import {
   LiveActivityItem,
 } from "../types";
 import { PaginatedResponse } from "@/lib/api-types";
-import { UserFormValues } from "../schemas/user.schema";
+import { UserFormValues, UpdateUserFormValues } from "../schemas/user.schema";
 
 export const usersApi = {
   getUsers: async (filters: UserQueryFilters): Promise<PaginatedResponse<User>> => {
@@ -53,7 +53,7 @@ export const usersApi = {
     return apiClient.post<User, User>("/admin/users", payload);
   },
 
-  updateUser: async (id: string, data: Partial<UserFormValues>): Promise<User> => {
+  updateUser: async (id: string, data: Partial<UserFormValues | UpdateUserFormValues>): Promise<User> => {
     const payload = { ...data };
     delete (payload as any).confirmPassword;
     if (typeof payload.password === "string" && payload.password.trim() === "") {

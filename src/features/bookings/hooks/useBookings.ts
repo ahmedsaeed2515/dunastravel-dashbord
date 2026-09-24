@@ -223,6 +223,25 @@ export function useRecordManualPayment() {
   });
 }
 
-// NOTE: Online refunds are disabled by business policy — all refunds are
-// processed offline directly by company finance. There is deliberately no
-// refund mutation here.
+export function useCancelWithRefund() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({
+      referenceCode,
+      reason,
+    }: {
+      referenceCode: string;
+      reason?: string;
+    }) => bookingsApi.cancelWithRefund(referenceCode, { reason }),
+    onSuccess: (_, variables) => {
+      toast.success("تم استرداد المبلغ وإلغاء الحجز بنجاح");
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
+      queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(variables.referenceCode) });
+      queryClient.invalidateQueries({ queryKey: ['finance'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard'] });
+    },
+    onError: (error: ApiError) => {
+      toast.error(error?.message || "فشل استرداد المبلغ وإلغاء الحجز");
+    },
+  });
+}

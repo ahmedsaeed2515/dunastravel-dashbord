@@ -23,6 +23,8 @@ import {
   ExternalLink,
   Calendar,
   Shield,
+  ShieldAlert,
+  ShieldCheck,
   MapPin,
   DollarSign,
   Activity,
@@ -146,6 +148,16 @@ export function CustomerProfileModal({
     if (onCustomerUpdated) onCustomerUpdated();
   };
 
+  const handleToggleStatus = async () => {
+    const nextStatus = currentCustomer.status === "ACTIVE" ? "INACTIVE" : "ACTIVE";
+    await updateCrm.mutateAsync({
+      id: customer.id,
+      data: { status: nextStatus },
+    });
+    refetch();
+    if (onCustomerUpdated) onCustomerUpdated();
+  };
+
   const bookingsList = detail?.bookings || [];
   const notesList = detail?.notes || [];
   const documentsList = detail?.documents || [];
@@ -208,6 +220,29 @@ export function CustomerProfileModal({
 
               {/* Action Buttons */}
               <div className="flex items-center gap-2 self-end sm:self-center">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={handleToggleStatus}
+                  className={`rounded-xl font-bold text-xs gap-1.5 h-9 ${
+                    currentCustomer.status === "ACTIVE"
+                      ? "text-red-600 dark:text-red-400 hover:bg-red-500/10 border-red-500/30"
+                      : "text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10 border-emerald-500/30"
+                  }`}
+                >
+                  {currentCustomer.status === "ACTIVE" ? (
+                    <>
+                      <ShieldAlert className="h-4 w-4" />
+                      <span>تعطيل الحساب</span>
+                    </>
+                  ) : (
+                    <>
+                      <ShieldCheck className="h-4 w-4" />
+                      <span>تفعيل الحساب</span>
+                    </>
+                  )}
+                </Button>
+
                 <Button
                   size="sm"
                   variant="outline"

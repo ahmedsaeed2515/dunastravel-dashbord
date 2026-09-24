@@ -75,6 +75,7 @@ export const userFormSchema = z
     email: z.string().email("البريد الإلكتروني غير صالح"),
     phone: z.string().optional(),
     role: userRoleEnum,
+    companyId: z.string().nullable().optional(),
     password: z.string().min(12, "كلمة المرور يجب أن تكون 12 حرفاً على الأقل"),
     confirmPassword: z.string().min(1, "يرجى تأكيد كلمة المرور"),
   })
@@ -102,6 +103,7 @@ export const updateUserFormSchema = z
     email: z.string().email("البريد الإلكتروني غير صالح"),
     phone: z.string().optional(),
     role: userRoleEnum,
+    companyId: z.string().nullable().optional(),
     password: z.string().optional(),
     confirmPassword: z.string().optional(),
   })
@@ -137,3 +139,4 @@ export const updateUserFormSchema = z
   });
 
 export type UserFormValues = z.infer<typeof userFormSchema>;
+export type UpdateUserFormValues = z.infer<typeof updateUserFormSchema>;

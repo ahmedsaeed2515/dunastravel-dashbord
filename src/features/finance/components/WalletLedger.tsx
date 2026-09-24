@@ -81,7 +81,7 @@ export function WalletLedger({ ownerType, ownerId, walletId: propWalletId, initi
       <Card className="border-border/40 shadow-sm rounded-2xl">
         <CardHeader className="flex flex-row items-center justify-between pb-2">
           <CardTitle className="text-base font-bold">سجل المعاملات والتحويلات المالية</CardTitle>
-          <Button size="sm" variant="outline" className="h-8 gap-1.5 font-bold rounded-xl" onClick={() => setIsDialogOpen(true)} disabled={!wallet}>
+          <Button size="sm" variant="outline" className="h-8 gap-1.5 font-bold rounded-xl" onClick={() => setIsDialogOpen(true)} disabled={!ownerId}>
             <Plus className="h-3.5 w-3.5" />
             إضافة معاملة يدوية ➕
           </Button>

@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { companiesApi } from "../api/companiesApi";
-import { CompanyQueryFilters, CreateCompanyPayload, UpdateCompanyPayload } from "../types";
+import { CompanyQueryFilters, CompanyStatus, CreateCompanyPayload, UpdateCompanyPayload } from "../types";
 import { toast } from "sonner";
 
 export const companyKeys = {
@@ -32,7 +32,7 @@ export function useCompany(id: string, options?: { enabled?: boolean }) {
   return useQuery({
     queryKey: companyKeys.detail(id),
     queryFn: () => companiesApi.getCompanyById(id),
-    enabled: options?.enabled,
+    enabled: options?.enabled !== undefined ? options.enabled : !!id,
   });
 }
 
@@ -66,7 +66,7 @@ export function useUpdateCompany() {
 export function useBulkUpdateCompanies() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: (data: { companyIds: string[]; status?: string; tags?: string[]; segments?: string[] }) => companiesApi.bulkUpdate(data),
+    mutationFn: (data: { companyIds: string[]; status?: CompanyStatus; tags?: string[]; segments?: string[] }) => companiesApi.bulkUpdate(data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: companyKeys.lists() });
       queryClient.invalidateQueries({ queryKey: companyKeys.metrics() });

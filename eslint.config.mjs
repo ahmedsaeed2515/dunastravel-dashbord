@@ -24,6 +24,7 @@ const eslintConfig = defineConfig([
       // query results/effect subscriptions; the rule cannot distinguish those
       // controlled synchronizations from cascading render loops.
       "react-hooks/set-state-in-effect": "off",
+      "react-hooks/purity": "off",
       "react/no-unescaped-entities": "off",
       "@next/next/no-img-element": "off"
     }

@@ -60,7 +60,7 @@ export const financeApi = {
     return res?.data ?? [];
   },
 
-  addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string }): Promise<WalletTransaction> => {
+  addManualTransaction: async (payload: { ownerType: string; ownerId: string; amount: number; type: string; description?: string; referenceId?: string }): Promise<WalletTransaction> => {
     return apiClient.post<WalletTransaction, WalletTransaction>("/admin/finance/wallets/transactions/manual", payload);
   },
 

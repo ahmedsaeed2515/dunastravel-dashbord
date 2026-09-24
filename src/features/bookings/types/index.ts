@@ -47,8 +47,10 @@ export interface Booking {
   id: string;
   referenceCode: string;
   status: BookingStatus;
-  totalAmount: string;
+  totalAmount?: string;
+  totalAmountUsd?: string | number;
   paidAmount?: string;
+  paidAmountUsd?: string | number;
   currency: string;
   passengerCount: number;
   adults?: number;

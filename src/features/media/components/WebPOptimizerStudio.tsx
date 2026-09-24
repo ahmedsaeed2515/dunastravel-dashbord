@@ -88,6 +88,23 @@ export function WebPOptimizerStudio({
     initialAsset ? "optimize-library" : "convert-local"
   );
 
+  // ==================== FLOW B: CLOUDINARY MEDIA ASSET OPTIMIZATION ====================
+  const [selectedLibraryAsset, setSelectedLibraryAsset] = useState<MediaAsset | null>(initialAsset);
+  const [librarySearch, setLibrarySearch] = useState("");
+  const [targetFormat, setTargetFormat] = useState<"webp" | "avif" | "auto">("webp");
+  const [targetQuality, setTargetQuality] = useState<string>("auto");
+  const [targetWidth, setTargetWidth] = useState<string>("2000");
+
+  // Real-time size measurement of the Cloudinary-transformed preview
+  const [optimizedBytes, setOptimizedBytes] = useState<number | null>(null);
+  const [isFetchingSize, setIsFetchingSize] = useState(false);
+
+  const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
+    page: 1,
+    limit: 30,
+    search: librarySearch || undefined,
+  });
+
   useEffect(() => {
     if (initialAsset) {
       setActiveTab("optimize-library");
@@ -203,21 +220,6 @@ export function WebPOptimizerStudio({
   const totalSavingsPct = totalOriginal > 0 ? Math.round((totalSaved / totalOriginal) * 100) : 0;
 
   // ==================== FLOW B: CLOUDINARY MEDIA ASSET OPTIMIZATION ====================
-  const [selectedLibraryAsset, setSelectedLibraryAsset] = useState<MediaAsset | null>(initialAsset);
-  const [librarySearch, setLibrarySearch] = useState("");
-  const [targetFormat, setTargetFormat] = useState<"webp" | "avif" | "auto">("webp");
-  const [targetQuality, setTargetQuality] = useState<string>("auto");
-  const [targetWidth, setTargetWidth] = useState<string>("2000");
-
-  // Real-time size measurement of the Cloudinary-transformed preview
-  const [optimizedBytes, setOptimizedBytes] = useState<number | null>(null);
-  const [isFetchingSize, setIsFetchingSize] = useState(false);
-
-  const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
-    page: 1,
-    limit: 30,
-    search: librarySearch || undefined,
-  });
 
   const { mutate: optimizeAsset, isPending: isOptimizing } = useOptimizeAsset();
 

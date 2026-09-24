@@ -50,6 +50,18 @@ export function ConversationsTab({ onRefreshOverview, t, isAr }: ConversationsTa
   const [sendingReply, setSendingReply] = useState(false);
   const [statusFilter, setStatusFilter] = useState("ALL");
 
+  const handleSelectConversation = async (id: string) => {
+    setLoadingDetail(true);
+    try {
+      const detail = await aiApi.getConversationDetail(id);
+      setSelectedConvo(detail);
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load conversation transcript.");
+    } finally {
+      setLoadingDetail(false);
+    }
+  };
+
   const fetchConversations = async () => {
     setLoading(true);
     try {
@@ -71,18 +83,6 @@ export function ConversationsTab({ onRefreshOverview, t, isAr }: ConversationsTa
   useEffect(() => {
     fetchConversations();
   }, [statusFilter]);
-
-  const handleSelectConversation = async (id: string) => {
-    setLoadingDetail(true);
-    try {
-      const detail = await aiApi.getConversationDetail(id);
-      setSelectedConvo(detail);
-    } catch (err: any) {
-      toast.error(err?.message || "Failed to load conversation transcript.");
-    } finally {
-      setLoadingDetail(false);
-    }
-  };
 
   const handleTakeover = async () => {
     if (!selectedConvo) return;

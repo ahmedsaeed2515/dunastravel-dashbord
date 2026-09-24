@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,6 +35,21 @@ export function ManualWalletTransactionDialog({
   const [type, setType] = useState<"CREDIT" | "DEBIT">(defaultType);
   const [amount, setAmount] = useState<number | "">("");
   const [description, setDescription] = useState("");
+  const [referenceId, setReferenceId] = useState<string>(() =>
+    typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+      ? crypto.randomUUID()
+      : Math.random().toString(36).substring(2)
+  );
+
+  useEffect(() => {
+    if (isOpen) {
+      setReferenceId(
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2)
+      );
+    }
+  }, [isOpen]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -50,6 +65,7 @@ export function ManualWalletTransactionDialog({
         ownerId: wallet.ownerId,
         amount: Number(amount),
         type,
+        referenceId,
         description: description.trim() || (type === "CREDIT" ? "Manual Credit Deposit" : "Manual Debit Adjustment"),
       });
 
@@ -58,6 +74,11 @@ export function ManualWalletTransactionDialog({
       onClose();
       setAmount("");
       setDescription("");
+      setReferenceId(
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : Math.random().toString(36).substring(2)
+      );
     } catch (err: any) {
       toast.error(err?.response?.data?.message || err?.message || "Failed to execute transaction.");
     } finally {

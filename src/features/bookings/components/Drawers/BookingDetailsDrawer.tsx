@@ -12,9 +12,11 @@ import { useParams } from "next/navigation";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import { useRestoreBooking } from "../../hooks/useBookings";
 import { useBookingDetail } from "../../hooks/useBookingDetail";
+import { useAuth } from "@/features/auth/hooks/useAuth";
 import {
   FileText,
   RefreshCcw,
+  RotateCcw,
   Paperclip,
   Plus,
   User,
@@ -104,21 +106,24 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
   );
 
   const booking = detailedBooking || initialBooking;
+  const { role } = useAuth();
 
   const [noteOpen, setNoteOpen] = useState(false);
   const [attachmentOpen, setAttachmentOpen] = useState(false);
   const [passengerOpen, setPassengerOpen] = useState(false);
   const [paymentOpen, setPaymentOpen] = useState(false);
+  const [refundOpen, setRefundOpen] = useState(false);
   const [invoiceOpen, setInvoiceOpen] = useState(false);
   const [copiedRef, setCopiedRef] = useState(false);
 
   if (!booking) return null;
 
-  const totalNum = parseFloat(String(booking.totalAmount || "0")) || 0;
-  const paidNum = parseFloat(String(booking.paidAmount || "0")) || 0;
+  const totalNum = parseFloat(String(booking.totalAmountUsd ?? booking.totalAmount ?? "0")) || 0;
+  const paidNum = parseFloat(String(booking.paidAmountUsd ?? booking.paidAmount ?? "0")) || 0;
   const balanceDue = Math.max(0, totalNum - paidNum);
   const percentPaid = totalNum > 0 ? Math.min(100, Math.round((paidNum / totalNum) * 100)) : 0;
   const isFullyPaid = totalNum > 0 && paidNum >= totalNum;
+  const canRefund = (role === "ADMIN" || role === "SUPER_ADMIN") && paidNum > 0 && booking.status !== "CANCELLED" && booking.status !== "REFUNDED";
   const langMeta = getLangMeta(booking.language);
 
   const copyRefCode = () => {
@@ -842,23 +847,36 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
 
               {/* Payments History */}
               <div className="space-y-3">
-                <div className="flex items-center justify-between">
+                <div className="flex items-center justify-between flex-wrap gap-2">
                   <h4 className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
                     <CreditCard className="w-4 h-4 text-primary" />
                     <span>
                       {isAr ? "سجل المدفوعات والعمليات البنكية" : "Transaction & Gateway Records"} ({booking.payments?.length || 0})
                     </span>
                   </h4>
-                  {balanceDue > 0 && (
-                    <Button
-                      size="sm"
-                      onClick={() => setPaymentOpen(true)}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 h-8 cursor-pointer shadow-xs"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>{isAr ? "تسجيل دفعة جديدة" : "Record Payment"}</span>
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-2">
+                    {canRefund && (
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        onClick={() => setRefundOpen(true)}
+                        className="rounded-xl text-xs font-bold gap-1.5 h-8 cursor-pointer shadow-xs"
+                      >
+                        <RotateCcw className="w-3.5 h-3.5" />
+                        <span>{isAr ? "استرداد وإلغاء" : "Refund & Cancel"}</span>
+                      </Button>
+                    )}
+                    {balanceDue > 0 && (
+                      <Button
+                        size="sm"
+                        onClick={() => setPaymentOpen(true)}
+                        className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold gap-1.5 h-8 cursor-pointer shadow-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{isAr ? "تسجيل دفعة جديدة" : "Record Payment"}</span>
+                      </Button>
+                    )}
+                  </div>
                 </div>
 
                 {booking.payments && booking.payments.length > 0 ? (
@@ -1067,10 +1085,19 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
       />
       <RecordPaymentDialog
         referenceCode={booking.referenceCode}
-        totalAmount={booking.totalAmount}
-        paidAmount={booking.paidAmount}
+        totalAmount={booking.totalAmountUsd ?? booking.totalAmount}
+        paidAmount={booking.paidAmountUsd ?? booking.paidAmount}
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
+        mode="payment"
+      />
+      <RecordPaymentDialog
+        referenceCode={booking.referenceCode}
+        totalAmount={booking.totalAmountUsd ?? booking.totalAmount}
+        paidAmount={booking.paidAmountUsd ?? booking.paidAmount}
+        isOpen={refundOpen}
+        onClose={() => setRefundOpen(false)}
+        mode="refund"
       />
       <BookingInvoiceDialog
         open={invoiceOpen}

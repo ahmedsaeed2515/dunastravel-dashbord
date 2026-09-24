@@ -133,6 +133,8 @@ export interface InquiryQueryFilters {
   status?: string;
   assigneeId?: string;
   search?: string;
+  referenceCode?: string;
+  partnerCode?: string;
   dateFrom?: string;
   dateTo?: string;
 }

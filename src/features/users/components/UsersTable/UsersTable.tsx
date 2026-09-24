@@ -38,6 +38,11 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
   const { data, isLoading, error } = useUsers(queryFilters);
   const { mutate: deleteUser } = useDeleteUser();
 
+  // Drawer & Dialog states (must be declared before any conditional return)
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+
   if (
     error &&
     ((error as any)?.response?.status === 403 ||
@@ -58,11 +63,6 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
       </div>
     );
   }
-
-  // Drawer & Dialog states
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
-  const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   const handleView = (user: User) => {
     setSelectedUser(user);

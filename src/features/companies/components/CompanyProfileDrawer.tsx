@@ -1,13 +1,20 @@
 "use client";
 
+import { useState } from "react";
+import { useParams } from "next/navigation";
+import { useQueryClient } from "@tanstack/react-query";
 import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Company } from "../types";
-import { useCompany, useUpdateCompany } from "../hooks/useCompanies";
+import { useCompany, useUpdateCompany, companyKeys } from "../hooks/useCompanies";
+import { useUsers, useUpdateUser } from "@/features/users/hooks/useUsers";
 import { WalletLedger } from "@/features/finance/components/WalletLedger";
 import { format } from "date-fns";
+import { toast } from "sonner";
 import { 
   Building2, 
   MapPin, 
@@ -22,7 +29,10 @@ import {
   FileText,
   Loader2,
   CalendarDays,
-  ExternalLink
+  ExternalLink,
+  ShieldCheck,
+  ShieldBan,
+  UserPlus
 } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
@@ -34,14 +44,46 @@ interface CompanyProfileDrawerProps {
 }
 
 export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfileDrawerProps) {
+  const params = useParams();
+  const locale = (params?.locale as string) || "en";
+  const isAr = locale === "ar";
+  const queryClient = useQueryClient();
+
   const tCompanies = useTranslations("companies");
   const tCommon = useTranslations("common");
   const tFinance = useTranslations("finance");
   const tNav = useTranslations("navigation");
   const tAgents = useTranslations("agents");
 
+  const [linkDialogOpen, setLinkDialogOpen] = useState(false);
+  const [selectedAgentId, setSelectedAgentId] = useState<string>("");
+
   const { data: detail, isLoading } = useCompany(company?.id as string, { enabled: !!company?.id && isOpen });
   const { mutate: updateCompany, isPending: isUpdating } = useUpdateCompany();
+
+  const { data: unassignedAgentsData, isLoading: isLoadingUnassigned } = useUsers({
+    role: "AGENT",
+    companyId: "null",
+  });
+  const unassignedAgents = unassignedAgentsData?.data || [];
+
+  const { mutateAsync: updateUserMutation, isPending: isLinkingAgent } = useUpdateUser();
+
+  const handleLinkAgent = async () => {
+    if (!selectedAgentId || !company?.id) return;
+    try {
+      await updateUserMutation({
+        id: selectedAgentId,
+        data: { companyId: company.id },
+      });
+      queryClient.invalidateQueries({ queryKey: companyKeys.detail(company.id) });
+      toast.success(isAr ? "تم ربط الوكيل بالشركة بنجاح" : "Agent linked to company successfully");
+      setSelectedAgentId("");
+      setLinkDialogOpen(false);
+    } catch {
+      toast.error(isAr ? "فشل ربط الوكيل بالشركة" : "Failed to link agent to company");
+    }
+  };
 
   if (!company) return null;
 
@@ -80,7 +122,32 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
                 })()}</span>
               </div>
             </div>
-            <StatusBadge status={company.status} />
+            <div className="flex flex-col items-end gap-2">
+              <StatusBadge status={detail?.status || company.status} />
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={isUpdating}
+                onClick={() => {
+                  const currentStatus = detail?.status || company.status;
+                  const nextStatus = currentStatus === 'ACTIVE' ? 'INACTIVE' : 'ACTIVE';
+                  updateCompany({ id: company.id, data: { status: nextStatus } });
+                }}
+                className="h-8 text-xs font-bold rounded-xl gap-1.5 bg-white/10 hover:bg-white/20 text-white border-white/20"
+              >
+                {(detail?.status || company.status) === 'ACTIVE' ? (
+                  <>
+                    <ShieldBan className="h-3.5 w-3.5" />
+                    <span>تعطيل الشريك</span>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-3.5 w-3.5" />
+                    <span>تفعيل الشريك</span>
+                  </>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
 
@@ -168,6 +235,14 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
                 <TabsContent value="agents" className="space-y-4 m-0">
                   <div className="flex items-center justify-between">
                     <h3 className="font-semibold text-gray-900 dark:text-white">{tNav("agents")}</h3>
+                    <Button
+                      size="sm"
+                      onClick={() => setLinkDialogOpen(true)}
+                      className="h-8 text-xs font-bold rounded-xl gap-1.5 bg-primary text-primary-foreground hover:bg-primary/90"
+                    >
+                      <UserPlus className="h-3.5 w-3.5" />
+                      <span>{isAr ? "ربط وكيل حالي" : "Link Existing Agent"}</span>
+                    </Button>
                   </div>
                   <div className="space-y-2">
                     {detail.users && detail.users.length > 0 ? (
@@ -252,6 +327,73 @@ export function CompanyProfileDrawer({ company, isOpen, onClose }: CompanyProfil
           )}
         </div>
       </SheetContent>
+
+      <Dialog open={linkDialogOpen} onOpenChange={setLinkDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-base font-bold flex items-center gap-2">
+              <UserPlus className="h-4 w-4 text-primary" />
+              <span>{isAr ? "ربط وكيل سياحي بالشركة" : "Link Travel Agent to Company"}</span>
+            </DialogTitle>
+            <DialogDescription className="text-xs">
+              {isAr 
+                ? "اختر وكيلاً غير مرتبط بشركة حالياً لضمه إلى فريق هذه الشركة."
+                : "Select an unassigned travel agent to associate with this company."}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4 space-y-3">
+            {isLoadingUnassigned ? (
+              <div className="flex items-center justify-center py-6 text-muted-foreground text-xs gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                <span>{tCommon("loading")}...</span>
+              </div>
+            ) : unassignedAgents.length === 0 ? (
+              <div className="text-center py-6 text-muted-foreground text-xs border border-dashed rounded-xl">
+                {isAr ? "لا يوجد وكلاء غير مرتبطين متاحين حالياً." : "No unassigned agents currently available."}
+              </div>
+            ) : (
+              <Select value={selectedAgentId} onValueChange={setSelectedAgentId}>
+                <SelectTrigger className="w-full text-xs">
+                  <SelectValue placeholder={isAr ? "اختر وكيلاً..." : "Select an agent..."} />
+                </SelectTrigger>
+                <SelectContent>
+                  {unassignedAgents.map((agent) => (
+                    <SelectItem key={agent.id} value={agent.id} className="text-xs">
+                      {agent.name} ({agent.email})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+
+          <DialogFooter className="flex items-center justify-between sm:justify-between">
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSelectedAgentId("");
+                setLinkDialogOpen(false);
+              }}
+              className="text-xs"
+            >
+              {tCommon("cancel")}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              disabled={!selectedAgentId || isLinkingAgent}
+              onClick={handleLinkAgent}
+              className="text-xs font-bold gap-1.5"
+            >
+              {isLinkingAgent && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+              <span>{isAr ? "تأكيد الربط" : "Confirm Link"}</span>
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Sheet>
   );
 }

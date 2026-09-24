@@ -482,7 +482,7 @@ export const DestinationsManager: React.FC<DestinationsManagerProps> = React.mem
 
   // Filter and sort trips
   const filteredTrips = useMemo(() => {
-    let result = realTrips.filter((t) => {
+    const result = realTrips.filter((t) => {
       const aDest = (activeDestId || '').toLowerCase();
       const belongs =
         t.landingPageSlugs && t.landingPageSlugs.length > 0
