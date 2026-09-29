@@ -209,6 +209,28 @@ export function useAssignShowcase() {
   });
 }
 
+export function useAssignBulkShowcase() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: async (payloads: AssignShowcasePayload[]) => {
+      const results = [];
+      for (const payload of payloads) {
+        const res = await mediaApi.assignShowcase(payload);
+        results.push(res);
+      }
+      return results;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: mediaKeys.showcase() });
+      queryClient.invalidateQueries({ queryKey: mediaKeys.lists() });
+    },
+    onError: (err: any) => {
+      toast.error(getErrorMessage(err, "Failed to assign items to showcase."));
+    },
+  });
+}
+
+
 export function useUpdateShowcaseItem() {
   const queryClient = useQueryClient();
   return useMutation({
