@@ -11,6 +11,7 @@ import {
   useRemoveFromShowcase,
   useUploadVideo,
   useMediaAssets,
+  useMediaCategories,
   useSyncEntities,
 } from "@/features/media/hooks/useMedia";
 import { MediaAsset } from "@/features/media/types";
@@ -54,6 +55,10 @@ import {
   Check,
   CheckSquare,
   Square,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  FolderOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -468,29 +473,45 @@ export default function MediaShowcasePage() {
   const [editingItem, setEditingItem] = useState<MediaAsset | null>(null);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
   const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [selectedAssetsMap, setSelectedAssetsMap] = useState<Record<string, MediaAsset>>({});
 
-  // Library Picker state for Photo
+  // Library Picker state for Photo & Video
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: libraryCategories = [] } = useMediaCategories();
+
   const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
-    page: 1,
-    limit: 48,
+    page: libraryPage,
+    limit: 100,
+    category: categoryFilter,
     search: (searchQuery || "").trim() || undefined,
   });
 
   const photos = showcaseData?.photos || [];
   const videos = showcaseData?.videos || [];
 
-  const toggleSelectAsset = (id: string) => {
-    setSelectedAssetIds((prev) =>
-      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id]
-    );
+  const toggleSelectAssetObj = (asset: MediaAsset) => {
+    setSelectedAssetIds((prev) => {
+      const exists = prev.includes(asset.id);
+      if (exists) {
+        const nextMap = { ...selectedAssetsMap };
+        delete nextMap[asset.id];
+        setSelectedAssetsMap(nextMap);
+        return prev.filter((item) => item !== asset.id);
+      } else {
+        setSelectedAssetsMap((prevMap) => ({ ...prevMap, [asset.id]: asset }));
+        return [...prev, asset.id];
+      }
+    });
   };
 
   const handleConfirmAddSelected = () => {
     if (selectedAssetIds.length === 0) return;
 
     const payloads = selectedAssetIds.map((id) => {
-      const asset = libraryMedia?.data?.find((a) => a.id === id);
+      const asset = selectedAssetsMap[id] || libraryMedia?.data?.find((a) => a.id === id);
       return {
         assetId: id,
         mediaId: id,
@@ -510,6 +531,8 @@ export default function MediaShowcasePage() {
         setIsAddPhotoOpen(false);
         setIsAddVideoOpen(false);
         setSelectedAssetIds([]);
+        setSelectedAssetsMap({});
+        setLibraryPage(1);
       },
     });
   };
@@ -815,21 +838,26 @@ export default function MediaShowcasePage() {
             setIsAddPhotoOpen(false);
             setIsAddVideoOpen(false);
             setSelectedAssetIds([]);
+            setSelectedAssetsMap({});
             setSearchQuery("");
+            setCategoryFilter(undefined);
+            setLibraryPage(1);
           }
         }}
       >
-        <DialogContent className="max-w-4xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[88vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>
-              {isAddPhotoOpen
-                ? (isAr ? "إضافة صور من المكتبة" : "Add Photos from Library")
-                : (isAr ? "إضافة فيديوهات من المكتبة" : "Add Videos from Library")}
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {isAddPhotoOpen
+                  ? (isAr ? "إضافة صور من المكتبة" : "Add Photos from Library")
+                  : (isAr ? "إضافة فيديوهات من المكتبة" : "Add Videos from Library")}
+              </span>
             </DialogTitle>
             <DialogDescription>
               {isAr
-                ? "اختر صورة واحدة أو عدة صور من مكتبة الوسائط الحالية لإضافتها إلى قائمة العرض في الصفحة الرئيسية."
-                : "Select one or multiple media assets from your library to add to the homepage showcase."}
+                ? "اختر من المكتبة العامة أو التصنيفات المتاحة لإضافة صورة أو عدة صور مباشرة إلى الصفحة الرئيسية."
+                : "Select from the general media library or categories to feature photos or videos on the homepage."}
             </DialogDescription>
           </DialogHeader>
 
@@ -851,20 +879,52 @@ export default function MediaShowcasePage() {
                 const visibleIds = availableAssets.map((a) => a.id);
                 setSelectedAssetIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
               } else {
+                availableAssets.forEach((asset) => {
+                  setSelectedAssetsMap((prevMap) => ({ ...prevMap, [asset.id]: asset }));
+                });
                 const visibleIds = availableAssets.map((a) => a.id);
                 setSelectedAssetIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
               }
             };
 
+            const totalPages = libraryMedia?.meta?.totalPages || 1;
+            const totalAssets = libraryMedia?.meta?.total ?? availableAssets.length;
+
             return (
               <>
+                {/* Search & Category Filter Toolbar */}
                 <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 py-2">
-                  <Input
-                    placeholder={isAr ? "ابحث في مكتبة الوسائط..." : "Search media library..."}
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="flex-1"
-                  />
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      placeholder={isAr ? "ابحث في مكتبة الوسائط..." : "Search media library..."}
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setLibraryPage(1);
+                      }}
+                      className="flex-1"
+                    />
+
+                    {/* Category Filter Selector */}
+                    <div className="relative shrink-0">
+                      <select
+                        value={categoryFilter || "all"}
+                        onChange={(e) => {
+                          setCategoryFilter(e.target.value === "all" ? undefined : e.target.value);
+                          setLibraryPage(1);
+                        }}
+                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus:outline-hidden focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                      >
+                        <option value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</option>
+                        {libraryCategories.map((cat) => (
+                          <option key={cat.id || cat.slug} value={cat.slug}>
+                            {isAr ? cat.nameAr || cat.nameEn : cat.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
                   <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
                     {selectedAssetIds.length > 0 && (
                       <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-2.5 py-1">
@@ -882,12 +942,12 @@ export default function MediaShowcasePage() {
                         {allVisibleSelected ? (
                           <>
                             <Square className="w-3.5 h-3.5" />
-                            {isAr ? "إلغاء تحديد الكل" : "Deselect All"}
+                            {isAr ? "إلغاء تحديد الصفّ" : "Deselect Page"}
                           </>
                         ) : (
                           <>
                             <CheckSquare className="w-3.5 h-3.5" />
-                            {isAr ? "تحديد الكل" : "Select All"}
+                            {isAr ? "تحديد هذا الصفّ" : "Select Page"}
                           </>
                         )}
                       </Button>
@@ -895,14 +955,55 @@ export default function MediaShowcasePage() {
                   </div>
                 </div>
 
-                <div className="flex-1 overflow-y-auto min-h-[320px] border rounded-lg p-3">
+                {/* Sub-header with Total Counter & Page Pagination */}
+                <div className="flex items-center justify-between px-1 text-xs text-muted-foreground pb-1 border-b border-border/40">
+                  <span className="flex items-center gap-1.5">
+                    <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
+                    {isAr
+                      ? `إجمالي عناصر المكتبة: ${totalAssets}`
+                      : `Total library assets: ${totalAssets}`}
+                  </span>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={libraryPage <= 1}
+                        onClick={() => setLibraryPage((p) => Math.max(1, p - 1))}
+                        title={isAr ? "الصفحة السابقة" : "Previous page"}
+                      >
+                        {isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                      </Button>
+                      <span className="font-mono text-[11px] px-1">
+                        {libraryPage} / {totalPages}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={libraryPage >= totalPages}
+                        onClick={() => setLibraryPage((p) => p + 1)}
+                        title={isAr ? "الصفحة التالية" : "Next page"}
+                      >
+                        {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Grid */}
+                <div className="flex-1 overflow-y-auto min-h-[340px] max-h-[460px] border rounded-lg p-3 mt-2">
                   {isLibraryLoading ? (
                     <div className="flex items-center justify-center h-48">
                       <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
                     </div>
                   ) : availableAssets.length === 0 ? (
                     <div className="text-center py-12 text-muted-foreground text-sm">
-                      {isAr ? "لا توجد نتائج مطابقة" : "No matching assets found"}
+                      {isAr ? "لا توجد نتائج مطابقة في المكتبة" : "No matching assets found in library"}
                     </div>
                   ) : (
                     <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
@@ -920,7 +1021,7 @@ export default function MediaShowcasePage() {
                                 ? "border-amber-500 ring-2 ring-amber-500/80 shadow-md scale-[0.98]"
                                 : "border-border/70 hover:border-amber-500/70"
                             }`}
-                            onClick={() => toggleSelectAsset(asset.id)}
+                            onClick={() => toggleSelectAssetObj(asset)}
                           >
                             <img
                               src={asset.optimizedUrl || asset.thumbnailUrl || asset.secureUrl || asset.url}
@@ -972,6 +1073,8 @@ export default function MediaShowcasePage() {
                       setIsAddPhotoOpen(false);
                       setIsAddVideoOpen(false);
                       setSelectedAssetIds([]);
+                      setSelectedAssetsMap({});
+                      setLibraryPage(1);
                     }}
                   >
                     {isAr ? "إلغاء" : "Cancel"}
