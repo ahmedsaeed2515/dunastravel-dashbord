@@ -59,6 +59,7 @@ import {
   ChevronRight,
   Filter,
   FolderOpen,
+  Shuffle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -537,6 +538,28 @@ export default function MediaShowcasePage() {
     });
   };
 
+  const handleShufflePhotos = () => {
+    if (photos.length === 0) return;
+    const shuffled = [...photos];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const items = shuffled.map((item, idx) => ({ id: item.id, position: idx + 1 }));
+    reorderShowcase(
+      { section: "PHOTO", items },
+      {
+        onSuccess: () => {
+          toast.success(
+            isAr
+              ? "تمت إعادة تدوير وتبديل عروض الصور بنجاح! سيظهر 15 صورة جديدة ومتنوعة على الواجهة الرئيسية."
+              : "Showcase photos successfully rotated! 15 items featured on homepage."
+          );
+        },
+      }
+    );
+  };
+
   // Handlers for Reordering
   const handleMove = (section: "PHOTO" | "VIDEO", index: number, direction: "up" | "down") => {
     const list = section === "PHOTO" ? [...photos] : [...videos];
@@ -678,24 +701,42 @@ export default function MediaShowcasePage() {
 
         {/* ================= SECTION A: PHOTO SHOWCASE ================= */}
         <TabsContent value="photos" className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
-                {isAr ? "صور قسم 'لمحات عن رحلتك'" : "Photo Carousel Items"}
-              </h2>
-              <p className="text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {isAr ? "صور قسم 'لمحات عن رحلتك'" : "Photo Carousel Items"}
+                </h2>
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-[11px] py-0.5">
+                  <Clock className="w-3 h-3" />
+                  {isAr ? "تدوير تلقائي 24h (عرض 15 صورة)" : "24h Auto-Rotate (15 Photos)"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {isAr
-                  ? "تظهر هذه الصور في السلايدر التفاعلي الأول مباشرة بعد قسم الخدمات."
-                  : "These images appear on the interactive homepage carousel right after Services."}
+                  ? "يتم تدوير وحساب 15 صورة عشوائية ومختلفة تلقائياً كل 24 ساعة على الواجهة الرئيسية من بين جميع الصور المضافة هنا."
+                  : "15 unique featured photos rotate automatically every 24 hours on the homepage carousel from your collection."}
               </p>
             </div>
-            <Button
-              onClick={() => setIsAddPhotoOpen(true)}
-              className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              {isAr ? "إضافة صورة من المكتبة" : "Add Photo from Library"}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={handleShufflePhotos}
+                disabled={isReordering || photos.length === 0}
+                className="gap-2 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                title={isAr ? "تبديل وتدوير ترتيب الصور فورياً" : "Instantly rotate and shuffle photos"}
+              >
+                <Shuffle className={`w-4 h-4 ${isReordering ? "animate-spin" : ""}`} />
+                {isAr ? "تدوير وتبديل الصور الآن" : "Rotate & Shuffle Now"}
+              </Button>
+              <Button
+                onClick={() => setIsAddPhotoOpen(true)}
+                className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                {isAr ? "إضافة صورة من المكتبة" : "Add Photo from Library"}
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
