@@ -10,6 +10,7 @@ import { Search } from "lucide-react";
 import { PageHeader } from "@/components/shared/PageHeader";
 import { StatusBadge } from "@/components/shared/ui/StatusBadge";
 import { useTranslations } from "next-intl";
+import { ActivityDetailsModal } from "@/features/dashboard/components/ActivityDetailsModal";
 
 export default function AuditLogsPage() {
   const tAudit = useTranslations("audit");
@@ -18,6 +19,7 @@ export default function AuditLogsPage() {
   const [dateFrom, setDateFrom] = useState<string>("");
   const [dateTo, setDateTo] = useState<string>("");
   const [search, setSearch] = useState<string>("");
+  const [selectedLog, setSelectedLog] = useState<any | null>(null);
   
   const { data, isLoading } = useAuditLogs({
     page: 1,
@@ -84,10 +86,14 @@ export default function AuditLogsPage() {
                   </TableRow>
                 ) : logs.length > 0 ? (
                   logs.map((log) => (
-                    <TableRow key={log.id} className="hover:bg-muted/30 transition-colors">
+                    <TableRow 
+                      key={log.id} 
+                      onClick={() => setSelectedLog(log)}
+                      className="hover:bg-muted/50 transition-colors cursor-pointer"
+                    >
                       <TableCell className="font-mono text-xs text-muted-foreground dir-ltr text-start">{log.id.slice(0, 8)}</TableCell>
                       <TableCell>
-                        <span className="font-mono text-xs">{log.action}</span>
+                        <span className="font-mono text-xs font-semibold">{log.action}</span>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">{log.resourceType} {log.resourceId}</TableCell>
                       <TableCell>
@@ -112,6 +118,12 @@ export default function AuditLogsPage() {
           </div>
         </CardContent>
       </Card>
+
+      <ActivityDetailsModal
+        isOpen={!!selectedLog}
+        onClose={() => setSelectedLog(null)}
+        activity={selectedLog}
+      />
     </div>
   );
 }
