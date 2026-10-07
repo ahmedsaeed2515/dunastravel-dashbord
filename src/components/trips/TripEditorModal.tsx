@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -135,6 +135,140 @@ const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [n
   { dbKey: 'barcelona', nameAr: 'برشلونة', nameEn: 'Barcelona', coords: [41.3851, 2.1734] },
   { dbKey: 'madrid', nameAr: 'مدريد', nameEn: 'Madrid', coords: [40.4168, -3.7038] },
 ];
+
+const LocationSearchInput: React.FC<{
+  value: string;
+  onSelect: (name: string, lat: number, lng: number) => void;
+  onChangeRaw: (val: string) => void;
+  placeholder?: string;
+}> = ({ value, onSelect, onChangeRaw, placeholder }) => {
+  const [query, setQuery] = useState(value || '');
+  const [results, setResults] = useState<{ display_name: string; name: string; lat: number; lng: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setQuery(value || '');
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (text: string) => {
+    setQuery(text);
+    onChangeRaw(text);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!text.trim() || text.length < 2) {
+      setResults([]);
+      setIsOpen(false);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsOpen(true);
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=7&accept-language=ar,en`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const mapped = data.map((item: any) => {
+            const parts = (item.display_name || '').split(',');
+            const shortName = item.name || parts[0] || text;
+            return {
+              display_name: item.display_name,
+              name: shortName.trim(),
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+            };
+          });
+          setResults(mapped);
+        }
+      } catch (err) {
+        console.error('Location search error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 350);
+  };
+
+  const handleSelectResult = (res: { name: string; lat: number; lng: number; display_name: string }) => {
+    setQuery(res.name);
+    onSelect(res.name, res.lat, res.lng);
+    setIsOpen(false);
+    toast.success(`📍 تم اختيار الموقع: ${res.name} (${res.lat.toFixed(4)}, ${res.lng.toFixed(4)})`);
+  };
+
+  return (
+    <div ref={containerRef} className="relative flex-1">
+      <div className="relative">
+        <Input
+          value={query}
+          onChange={e => handleInputChange(e.target.value)}
+          onFocus={() => { if (results.length > 0) setIsOpen(true); }}
+          placeholder={placeholder || 'ابحث عن أي موقع في العالم (مدينة، فندق، معلم سياحي)...'}
+          className="h-10 text-xs font-bold rounded-xl pr-8 pl-8 bg-background shadow-2xs border-amber-500/30 focus:border-amber-500"
+        />
+        <MapPin className="w-4 h-4 text-amber-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-90" />
+        {isLoading && (
+          <Loader2 className="w-4 h-4 text-amber-500 animate-spin absolute left-2.5 top-1/2 -translate-y-1/2" />
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border/90 shadow-2xl rounded-xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-border/30">
+          {isLoading && results.length === 0 && (
+            <div className="p-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+              جاري البحث عن الموقع عالمياً...
+            </div>
+          )}
+
+          {!isLoading && results.length === 0 && (
+            <div className="p-3 text-center text-xs text-muted-foreground">
+              لم يتم العثور على خريطة مطابقة فورية، يمكنك إدخال الإحداثيات يدوياً.
+            </div>
+          )}
+
+          {results.map((res, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSelectResult(res)}
+              className="w-full text-right p-2.5 hover:bg-amber-500/15 transition-colors text-right flex items-start gap-2.5 group cursor-pointer"
+            >
+              <Globe2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-black text-foreground group-hover:text-amber-500 truncate">
+                  {res.name}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate">
+                  {res.display_name}
+                </div>
+                <div className="text-[9px] font-mono font-bold text-amber-600/90 mt-0.5">
+                  📍 [{res.lat.toFixed(4)}, {res.lng.toFixed(4)}]
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface TripEditorModalProps {
   trip?: TripModel | null;
@@ -612,6 +746,59 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           lng: baseLocations[idx].lng,
           daysVisited: baseLocations[idx].daysVisited,
           name: baseLocations[idx].name,
+        };
+      }
+
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, locations: transLocations } };
+
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+        translations: trans,
+      };
+    });
+  };
+
+  const selectGeoLocation = (idx: number, name: string, lat: number, lng: number) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+
+      const cleanLat = parseFloat(lat.toFixed(6));
+      const cleanLng = parseFloat(lng.toFixed(6));
+
+      if (!baseLocations[idx]) {
+        baseLocations[idx] = { dbKey: name, lat: cleanLat, lng: cleanLng, daysVisited: [idx + 1], name, description: '' };
+      } else {
+        baseLocations[idx] = {
+          ...baseLocations[idx],
+          dbKey: name,
+          name: name,
+          lat: cleanLat,
+          lng: cleanLng,
+        };
+      }
+
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      const transLocations = [...(transRoute.locations || [])];
+      if (!transLocations[idx]) {
+        transLocations[idx] = {
+          dbKey: name,
+          lat: cleanLat,
+          lng: cleanLng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: name,
+          description: baseLocations[idx].description || '',
+        };
+      } else {
+        transLocations[idx] = {
+          ...transLocations[idx],
+          dbKey: name,
+          lat: cleanLat,
+          lng: cleanLng,
+          name: name,
         };
       }
 
@@ -1577,25 +1764,14 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                         <span className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
                           {idx + 1}
                         </span>
-                        {/* Interactive Location Input with Autocomplete & Presets */}
+                        {/* Interactive Location Input with Global Geocoding & Presets */}
                         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 min-w-[280px]">
-                          <div className="relative flex-1">
-                            <Input
-                              list={`preset-cities-list-${idx}`}
-                              value={loc.name || loc.dbKey || ''}
-                              onChange={e => updateRouteLocationField(idx, 'dbKey', e.target.value)}
-                              placeholder="اكتب اسم أي موقع، مدينة، أو معلَم (مثل: مرسى علم، جزيرة الجفتون)..."
-                              className="h-10 text-xs font-bold rounded-xl pr-8 bg-background shadow-2xs"
-                            />
-                            <datalist id={`preset-cities-list-${idx}`}>
-                              {PRESET_CITIES.map(city => (
-                                <option key={city.dbKey} value={city.nameAr}>
-                                  📍 {city.nameEn} ({city.dbKey}) - [{city.coords[0]}, {city.coords[1]}]
-                                </option>
-                              ))}
-                            </datalist>
-                            <MapPin className="w-4 h-4 text-amber-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
-                          </div>
+                          <LocationSearchInput
+                            value={loc.name || loc.dbKey || ''}
+                            onSelect={(name, lat, lng) => selectGeoLocation(idx, name, lat, lng)}
+                            onChangeRaw={val => updateRouteLocationField(idx, 'dbKey', val)}
+                            placeholder="ابحث عن أي موقع، فندق، أو معلم في العالم (مثل: Eiffel Tower, برج خليفة, مرسى علم)..."
+                          />
 
                           <select
                             value={
@@ -1616,7 +1792,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                 updateRouteLocationField(idx, 'dbKey', e.target.value);
                               }
                             }}
-                            className="h-10 px-2.5 rounded-xl border border-input bg-background/90 text-[11px] font-bold sm:w-[200px] shrink-0 text-muted-foreground focus:text-foreground cursor-pointer"
+                            className="h-10 px-2.5 rounded-xl border border-input bg-background/90 text-[11px] font-bold sm:w-[190px] shrink-0 text-muted-foreground focus:text-foreground cursor-pointer"
                             title="اختيار سريع من الأماكن الجاهزة"
                           >
                             <option value="">-- أو اختر مكان جاهز --</option>
