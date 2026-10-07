@@ -62,18 +62,56 @@ const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [n
   { dbKey: 'giza', nameAr: 'الجيزة', nameEn: 'Giza', coords: [29.9792, 31.1342] },
   { dbKey: 'pyramids', nameAr: 'الأهرامات', nameEn: 'Pyramids', coords: [29.9792, 31.1342] },
   { dbKey: 'sphinx', nameAr: 'أبو الهول', nameEn: 'Sphinx', coords: [29.9753, 31.1376] },
+  { dbKey: 'grand egyptian museum', nameAr: 'المتحف المصري الكبير', nameEn: 'Grand Egyptian Museum', coords: [29.9947, 31.1172] },
+  { dbKey: 'egyptian museum', nameAr: 'المتحف المصري بالتحرير', nameEn: 'Egyptian Museum Tahrir', coords: [30.0478, 31.2336] },
+  { dbKey: 'khan el khalili', nameAr: 'خان الخليلي', nameEn: 'Khan El-Khalili', coords: [30.0475, 31.2622] },
+  { dbKey: 'citadel of saladin', nameAr: 'قلعة صلاح الدين', nameEn: 'Citadel of Saladin', coords: [30.0299, 31.2611] },
+  { dbKey: 'saqqara', nameAr: 'سقارة', nameEn: 'Saqqara', coords: [29.8713, 31.2164] },
+  { dbKey: 'dahshur', nameAr: 'دهشور', nameEn: 'Dahshur', coords: [29.8086, 31.2061] },
   { dbKey: 'luxor', nameAr: 'الأقصر', nameEn: 'Luxor', coords: [25.6872, 32.6396] },
-  { dbKey: 'aswan', nameAr: 'أسوان', nameEn: 'Aswan', coords: [24.0889, 32.8998] },
-  { dbKey: 'alexandria', nameAr: 'الإسكندرية', nameEn: 'Alexandria', coords: [31.2001, 29.9187] },
-  { dbKey: 'hurghada', nameAr: 'الغردقة', nameEn: 'Hurghada', coords: [27.2579, 33.8116] },
-  { dbKey: 'sharm', nameAr: 'شرم الشيخ', nameEn: 'Sharm El Sheikh', coords: [27.9158, 34.3299] },
-  { dbKey: 'siwa', nameAr: 'سيوة', nameEn: 'Siwa', coords: [29.2032, 25.5189] },
-  { dbKey: 'abu simbel', nameAr: 'أبو سمبل', nameEn: 'Abu Simbel', coords: [22.3372, 31.6258] },
-  { dbKey: 'kom ombo', nameAr: 'كوم أمبو', nameEn: 'Kom Ombo', coords: [24.4711, 32.9469] },
-  { dbKey: 'edfu', nameAr: 'إدفو', nameEn: 'Edfu', coords: [24.9781, 32.8789] },
-  { dbKey: 'philae', nameAr: 'فيلة', nameEn: 'Philae', coords: [24.0250, 32.8844] },
-  { dbKey: 'karnak', nameAr: 'الكرنك', nameEn: 'Karnak', coords: [25.7188, 32.6573] },
+  { dbKey: 'karnak', nameAr: 'معبد الكرنك', nameEn: 'Karnak Temple', coords: [25.7188, 32.6573] },
+  { dbKey: 'luxor temple', nameAr: 'معبد الأقصر', nameEn: 'Luxor Temple', coords: [25.6996, 32.6392] },
   { dbKey: 'valley of the kings', nameAr: 'وادي الملوك', nameEn: 'Valley of the Kings', coords: [25.7402, 32.6014] },
+  { dbKey: 'hatshepsut', nameAr: 'معبد حتشبسوت', nameEn: 'Hatshepsut Temple', coords: [25.7383, 32.6065] },
+  { dbKey: 'colossi of memnon', nameAr: 'تمثالا ممنون', nameEn: 'Colossi of Memnon', coords: [25.7206, 32.6105] },
+  { dbKey: 'aswan', nameAr: 'أسوان', nameEn: 'Aswan', coords: [24.0889, 32.8998] },
+  { dbKey: 'philae', nameAr: 'معبد فيلة', nameEn: 'Philae Temple', coords: [24.0250, 32.8844] },
+  { dbKey: 'high dam', nameAr: 'السد العالي', nameEn: 'High Dam', coords: [23.9702, 32.8770] },
+  { dbKey: 'unfinished obelisk', nameAr: 'المسلة الناقصة', nameEn: 'Unfinished Obelisk', coords: [24.0769, 32.8953] },
+  { dbKey: 'elephantine island', nameAr: 'جزيرة الفنتين', nameEn: 'Elephantine Island', coords: [24.0903, 32.8872] },
+  { dbKey: 'abu simbel', nameAr: 'معابد أبو سمبل', nameEn: 'Abu Simbel Temples', coords: [22.3372, 31.6258] },
+  { dbKey: 'kom ombo', nameAr: 'معبد كوم أمبو', nameEn: 'Kom Ombo Temple', coords: [24.4711, 32.9469] },
+  { dbKey: 'edfu', nameAr: 'معبد إدفو', nameEn: 'Edfu Temple', coords: [24.9781, 32.8789] },
+  { dbKey: 'alexandria', nameAr: 'الإسكندرية', nameEn: 'Alexandria', coords: [31.2001, 29.9187] },
+  { dbKey: 'qaitbay citadel', nameAr: 'قلعة قايتباي', nameEn: 'Qaitbay Citadel', coords: [31.2141, 29.8854] },
+  { dbKey: 'bibliotheca alexandrina', nameAr: 'مكتبة الإسكندرية', nameEn: 'Bibliotheca Alexandrina', coords: [31.2089, 29.9092] },
+  { dbKey: 'montaza palace', nameAr: 'قصر المنتزه', nameEn: 'Montaza Palace', coords: [31.2883, 30.0163] },
+  { dbKey: 'hurghada', nameAr: 'الغردقة', nameEn: 'Hurghada', coords: [27.2579, 33.8116] },
+  { dbKey: 'giftun island', nameAr: 'جزيرة الجفتون', nameEn: 'Giftun Island', coords: [27.2341, 33.9452] },
+  { dbKey: 'el gouna', nameAr: 'الجونة', nameEn: 'El Gouna', coords: [27.3951, 33.6781] },
+  { dbKey: 'sahl hasheesh', nameAr: 'سهل حشيش', nameEn: 'Sahl Hasheesh', coords: [27.0494, 33.8863] },
+  { dbKey: 'soma bay', nameAr: 'سوما باي', nameEn: 'Soma Bay', coords: [26.8524, 33.9392] },
+  { dbKey: 'makadi bay', nameAr: 'خليج مكادي', nameEn: 'Makadi Bay', coords: [26.9897, 33.8967] },
+  { dbKey: 'marsa alam', nameAr: 'مرسى علم', nameEn: 'Marsa Alam', coords: [25.0784, 34.8913] },
+  { dbKey: 'sataya reef', nameAr: 'شعاب سطايح (دلفين ريف)', nameEn: 'Sataya Reef', coords: [24.1611, 35.4851] },
+  { dbKey: 'sharm', nameAr: 'شرم الشيخ', nameEn: 'Sharm El Sheikh', coords: [27.9158, 34.3299] },
+  { dbKey: 'ras mohammed', nameAr: 'محمية رأس محمد', nameEn: 'Ras Mohammed', coords: [27.7344, 34.2497] },
+  { dbKey: 'naama bay', nameAr: 'خليج نعمة', nameEn: 'Naama Bay', coords: [27.9139, 34.3283] },
+  { dbKey: 'dahab', nameAr: 'دهب', nameEn: 'Dahab', coords: [28.5097, 34.5136] },
+  { dbKey: 'blue hole', nameAr: 'الثقب الأزرق (بلو هول)', nameEn: 'Blue Hole', coords: [28.5722, 34.5367] },
+  { dbKey: 'nuweiba', nameAr: 'نويبع', nameEn: 'Nuweiba', coords: [29.0345, 34.6653] },
+  { dbKey: 'taba', nameAr: 'طابا', nameEn: 'Taba', coords: [29.4925, 34.8958] },
+  { dbKey: 'saint catherine', nameAr: 'دير سانت كاترين', nameEn: 'Saint Catherine Monastery', coords: [28.5559, 33.9762] },
+  { dbKey: 'mount sinai', nameAr: 'جبل موسى', nameEn: 'Mount Sinai', coords: [28.5394, 33.9753] },
+  { dbKey: 'siwa', nameAr: 'سيوة', nameEn: 'Siwa Oasis', coords: [29.2032, 25.5189] },
+  { dbKey: 'fayoum', nameAr: 'الفيوم', nameEn: 'Fayoum Oasis', coords: [29.3084, 30.8428] },
+  { dbKey: 'wadi el rayan', nameAr: 'وادي الريان', nameEn: 'Wadi El Rayan', coords: [29.1867, 30.4356] },
+  { dbKey: 'magic lake', nameAr: 'البحيرة السحرية', nameEn: 'Magic Lake Fayoum', coords: [29.2134, 30.3951] },
+  { dbKey: 'white desert', nameAr: 'الصحراء البيضاء', nameEn: 'White Desert', coords: [27.3242, 28.1756] },
+  { dbKey: 'bahariya oasis', nameAr: 'الواحات البحرية', nameEn: 'Bahariya Oasis', coords: [28.3541, 28.8961] },
+  { dbKey: 'ain sokhna', nameAr: 'العين السخنة', nameEn: 'Ain Sokhna', coords: [29.6019, 32.3275] },
+  { dbKey: 'al alamein', nameAr: 'العلمين الجديدة', nameEn: 'New Alamein', coords: [30.8333, 28.9500] },
+  { dbKey: 'marsa matrouh', nameAr: 'مرسى مطروح', nameEn: 'Marsa Matrouh', coords: [31.3543, 27.2373] },
   { dbKey: 'istanbul', nameAr: 'إسطنبول', nameEn: 'Istanbul', coords: [41.0082, 28.9784] },
   { dbKey: 'cappadocia', nameAr: 'كبادوكيا', nameEn: 'Cappadocia', coords: [38.6431, 34.8281] },
   { dbKey: 'pamukkale', nameAr: 'باموكالي', nameEn: 'Pamukkale', coords: [37.9221, 29.1212] },
@@ -91,7 +129,11 @@ const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [n
   { dbKey: 'jerusalem', nameAr: 'القدس', nameEn: 'Jerusalem', coords: [31.7683, 35.2137] },
   { dbKey: 'athens', nameAr: 'أثينا', nameEn: 'Athens', coords: [37.9838, 23.7275] },
   { dbKey: 'santorini', nameAr: 'سانتوريني', nameEn: 'Santorini', coords: [36.3932, 25.4615] },
-  { dbKey: 'tunis', nameAr: 'تونس', nameEn: 'Tunis', coords: [36.8065, 10.1815] },
+  { dbKey: 'rome', nameAr: 'روما', nameEn: 'Rome', coords: [41.9028, 12.4964] },
+  { dbKey: 'paris', nameAr: 'باريس', nameEn: 'Paris', coords: [48.8566, 2.3522] },
+  { dbKey: 'london', nameAr: 'لندن', nameEn: 'London', coords: [51.5074, -0.1278] },
+  { dbKey: 'barcelona', nameAr: 'برشلونة', nameEn: 'Barcelona', coords: [41.3851, 2.1734] },
+  { dbKey: 'madrid', nameAr: 'مدريد', nameEn: 'Madrid', coords: [40.4168, -3.7038] },
 ];
 
 interface TripEditorModalProps {
@@ -505,35 +547,72 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       }
 
       if (field === 'dbKey') {
-        const preset = PRESET_CITIES.find(p => p.dbKey === value);
-        baseLocations[idx] = {
-          ...baseLocations[idx],
-          dbKey: value,
-          lat: preset ? preset.coords[0] : baseLocations[idx].lat,
-          lng: preset ? preset.coords[1] : baseLocations[idx].lng,
-          name: activeLang === 'ar' ? (preset ? preset.nameAr : value) : (preset ? preset.nameEn : value),
-        };
+        const valStr = String(value || '').trim();
+        const valLower = valStr.toLowerCase();
+
+        // Check if value matches a preset city by dbKey, nameAr, nameEn, or option label
+        const preset = PRESET_CITIES.find(p =>
+          p.dbKey.toLowerCase() === valLower ||
+          p.nameAr.toLowerCase() === valLower ||
+          p.nameEn.toLowerCase() === valLower ||
+          `${p.nameAr} (${p.nameEn})`.toLowerCase() === valLower
+        );
+
+        if (preset) {
+          baseLocations[idx] = {
+            ...baseLocations[idx],
+            dbKey: preset.dbKey,
+            lat: preset.coords[0],
+            lng: preset.coords[1],
+            name: activeLang === 'ar' ? preset.nameAr : preset.nameEn,
+          };
+        } else {
+          // Custom place name typed by user!
+          baseLocations[idx] = {
+            ...baseLocations[idx],
+            dbKey: valStr,
+            name: valStr,
+          };
+        }
       } else if (field === 'daysVisited') {
         const days = typeof value === 'string'
           ? value.split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n))
           : value;
         baseLocations[idx] = { ...baseLocations[idx], daysVisited: days };
-      } else if (activeLang === 'ar' || field === 'lat' || field === 'lng') {
+      } else if (field === 'lat' || field === 'lng') {
+        const numVal = typeof value === 'number' ? value : parseFloat(value);
+        baseLocations[idx] = { ...baseLocations[idx], [field]: isNaN(numVal) ? 0 : numVal };
+      } else if (activeLang === 'ar' || field === 'name' || field === 'description') {
         baseLocations[idx] = { ...baseLocations[idx], [field]: value };
       }
 
+      // Sync active language translation block
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
       const transRoute = trans[activeLang]?.routeMap || { locations: [] };
       const transLocations = [...(transRoute.locations || [])];
       if (!transLocations[idx]) {
-        transLocations[idx] = { dbKey: baseLocations[idx].dbKey, lat: baseLocations[idx].lat, lng: baseLocations[idx].lng, daysVisited: baseLocations[idx].daysVisited, name: '', description: '' };
+        transLocations[idx] = {
+          dbKey: baseLocations[idx].dbKey,
+          lat: baseLocations[idx].lat,
+          lng: baseLocations[idx].lng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: baseLocations[idx].name,
+          description: baseLocations[idx].description,
+        };
       }
 
       if (field === 'name' || field === 'description') {
         transLocations[idx] = { ...transLocations[idx], [field]: value };
       } else {
-        transLocations[idx] = { ...transLocations[idx], [field]: value };
+        transLocations[idx] = {
+          ...transLocations[idx],
+          dbKey: baseLocations[idx].dbKey,
+          lat: baseLocations[idx].lat,
+          lng: baseLocations[idx].lng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: baseLocations[idx].name,
+        };
       }
 
       trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, locations: transLocations } };
@@ -1498,20 +1577,56 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                         <span className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
                           {idx + 1}
                         </span>
-                        {/* Preset City Selector */}
-                        <select
-                          value={loc.dbKey || 'cairo'}
-                          onChange={e => updateRouteLocationField(idx, 'dbKey', e.target.value)}
-                          className="h-10 px-3 rounded-xl border border-input bg-background text-xs font-bold flex-1"
-                        >
-                          <optgroup label="المدن والمعالم الجاهزة (Preset Locations)">
+                        {/* Interactive Location Input with Autocomplete & Presets */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 min-w-[280px]">
+                          <div className="relative flex-1">
+                            <Input
+                              list={`preset-cities-list-${idx}`}
+                              value={loc.name || loc.dbKey || ''}
+                              onChange={e => updateRouteLocationField(idx, 'dbKey', e.target.value)}
+                              placeholder="اكتب اسم أي موقع، مدينة، أو معلَم (مثل: مرسى علم، جزيرة الجفتون)..."
+                              className="h-10 text-xs font-bold rounded-xl pr-8 bg-background shadow-2xs"
+                            />
+                            <datalist id={`preset-cities-list-${idx}`}>
+                              {PRESET_CITIES.map(city => (
+                                <option key={city.dbKey} value={city.nameAr}>
+                                  📍 {city.nameEn} ({city.dbKey}) - [{city.coords[0]}, {city.coords[1]}]
+                                </option>
+                              ))}
+                            </datalist>
+                            <MapPin className="w-4 h-4 text-amber-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-80" />
+                          </div>
+
+                          <select
+                            value={
+                              PRESET_CITIES.some(p =>
+                                p.dbKey.toLowerCase() === (loc.dbKey || '').toLowerCase() ||
+                                p.nameAr === loc.name ||
+                                p.nameEn === loc.name
+                              )
+                                ? (PRESET_CITIES.find(p =>
+                                    p.dbKey.toLowerCase() === (loc.dbKey || '').toLowerCase() ||
+                                    p.nameAr === loc.name ||
+                                    p.nameEn === loc.name
+                                  )?.dbKey || '')
+                                : ''
+                            }
+                            onChange={e => {
+                              if (e.target.value) {
+                                updateRouteLocationField(idx, 'dbKey', e.target.value);
+                              }
+                            }}
+                            className="h-10 px-2.5 rounded-xl border border-input bg-background/90 text-[11px] font-bold sm:w-[200px] shrink-0 text-muted-foreground focus:text-foreground cursor-pointer"
+                            title="اختيار سريع من الأماكن الجاهزة"
+                          >
+                            <option value="">-- أو اختر مكان جاهز --</option>
                             {PRESET_CITIES.map(city => (
                               <option key={city.dbKey} value={city.dbKey}>
-                                📍 {city.nameAr} ({city.nameEn}) - [{city.coords[0]}, {city.coords[1]}]
+                                📍 {city.nameAr} ({city.nameEn})
                               </option>
                             ))}
-                          </optgroup>
-                        </select>
+                          </select>
+                        </div>
                       </div>
 
                       <div className="flex items-center gap-2">
