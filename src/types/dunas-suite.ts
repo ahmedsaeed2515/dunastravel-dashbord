@@ -1,5 +1,21 @@
 export type LanguageCode = 'ar' | 'en' | 'es' | 'pt' | 'it';
 
+export interface RouteMapLocation {
+  id?: string;
+  dbKey: string;
+  lat: number;
+  lng: number;
+  daysVisited: number[];
+  name: string;
+  description: string;
+}
+
+export interface RouteMapData {
+  title?: string;
+  subtitle?: string;
+  locations: RouteMapLocation[];
+}
+
 export interface TranslationDict {
   title?: string;
   subtitle?: string;
@@ -15,6 +31,18 @@ export interface TranslationDict {
     description: string;
     meals: string;
   }[];
+  routeMap?: {
+    title?: string;
+    subtitle?: string;
+    locations?: {
+      dbKey?: string;
+      lat?: number;
+      lng?: number;
+      daysVisited?: number[];
+      name?: string;
+      description?: string;
+    }[];
+  };
 }
 
 export interface AccommodationItem {
@@ -72,6 +100,9 @@ export interface TripModel {
 
   // Day-by-Day Itinerary
   itinerary: ItineraryItem[];
+
+  // Interactive Route Map
+  routeMap?: RouteMapData;
 
   // 5-Language Translations Dictionary
   translations: {

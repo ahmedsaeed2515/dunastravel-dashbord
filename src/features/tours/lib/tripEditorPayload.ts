@@ -117,6 +117,45 @@ export function buildTripEditorPayload(
       }
     : null;
 
+  const rawRouteLocations = formData.routeMap?.locations ?? [];
+  const routeMapLocations = rawRouteLocations.map((loc, idx) => ({
+    id: loc.id || `loc-${idx + 1}`,
+    dbKey: text(loc.dbKey) || 'cairo',
+    lat: Number(loc.lat) || 0,
+    lng: Number(loc.lng) || 0,
+    daysVisited: Array.isArray(loc.daysVisited) ? loc.daysVisited : [],
+    nameJsonb: Object.fromEntries(LOCALES.map((locale) => [
+      locale,
+      locale === 'ar'
+        ? text(loc.name)
+        : text(translation(translations, locale).routeMap?.locations?.[idx]?.name) || text(loc.name),
+    ])),
+    descriptionJsonb: Object.fromEntries(LOCALES.map((locale) => [
+      locale,
+      locale === 'ar'
+        ? text(loc.description)
+        : text(translation(translations, locale).routeMap?.locations?.[idx]?.description) || text(loc.description),
+    ])),
+  }));
+
+  const routeMapJsonb = routeMapLocations.length > 0
+    ? {
+        titleJsonb: Object.fromEntries(LOCALES.map((locale) => [
+          locale,
+          locale === 'ar'
+            ? text(formData.routeMap?.title) || 'Interactive Itinerary Journey Map'
+            : text(translation(translations, locale).routeMap?.title) || 'Interactive Itinerary Journey Map',
+        ])),
+        subtitleJsonb: Object.fromEntries(LOCALES.map((locale) => [
+          locale,
+          locale === 'ar'
+            ? text(formData.routeMap?.subtitle) || 'Explore your day-by-day path across premier luxury landmarks'
+            : text(translation(translations, locale).routeMap?.subtitle) || 'Explore your day-by-day path across premier luxury landmarks',
+        ])),
+        locations: routeMapLocations,
+      }
+    : null;
+
   return {
     slug: text(formData.slug),
     titleJsonb: localizedText(translations, 'title', formData.title),
@@ -138,6 +177,7 @@ export function buildTripEditorPayload(
     includedServicesJsonb: localizedList(translations, 'included', formData.included),
     excludedServicesJsonb: localizedList(translations, 'excluded', formData.excluded),
     highlightsJsonb: localizedList(translations, 'highlights', formData.highlights),
+    routeMapJsonb,
     itineraries: itinerary,
     images,
   };

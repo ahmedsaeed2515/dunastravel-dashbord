@@ -89,6 +89,7 @@ export interface Tour {
   importantNotesJsonb?: Record<string, any> | null;
   termsJsonb?: Record<string, any> | null;
   cancellationPolicyJsonb?: Record<string, any> | null;
+  routeMapJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: string;
   currency: string;
@@ -208,6 +209,7 @@ export interface CreateTourPayload {
   importantNotesJsonb?: Record<string, any> | null;
   termsJsonb?: Record<string, any> | null;
   cancellationPolicyJsonb?: Record<string, any> | null;
+  routeMapJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: number;
   currency?: string;
