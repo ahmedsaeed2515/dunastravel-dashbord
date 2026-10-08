@@ -38,7 +38,16 @@ export default function proxy(request: NextRequest) {
     if (token && !isExplicitLogin) {
       return NextResponse.redirect(new URL(`/${validLocale}/dashboard`, request.url));
     }
-    return NextResponse.redirect(new URL(`/${validLocale}/login`, request.url));
+    const loginRedirectUrl = new URL(`/${validLocale}/login`, request.url);
+    if (request.nextUrl.search) {
+      loginRedirectUrl.search = request.nextUrl.search;
+    }
+    const res = NextResponse.redirect(loginRedirectUrl);
+    if (isExplicitLogin) {
+      res.cookies.delete('access_token');
+      res.cookies.delete('refresh_token');
+    }
+    return res;
   }
 
   // Handle direct root /
@@ -62,7 +71,12 @@ export default function proxy(request: NextRequest) {
   }
 
   // Apply next-intl middleware for internationalization
-  return intlMiddleware(request);
+  const res = intlMiddleware(request);
+  if (isExplicitLogin) {
+    res.cookies.delete('access_token');
+    res.cookies.delete('refresh_token');
+  }
+  return res;
 }
 
 export const config = {

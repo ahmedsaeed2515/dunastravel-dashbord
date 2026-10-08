@@ -76,33 +76,38 @@ export async function initDashboardSentry(): Promise<void> {
   if (!dsn || isDashboardInitialized) return;
 
   try {
-    const sentryPkg = '@sentry/nextjs';
-    const Sentry = await import(/* @vite-ignore */ sentryPkg);
-    Sentry.init({
-      dsn,
-      environment: process.env.NODE_ENV || 'production',
-      release: process.env.NEXT_PUBLIC_RELEASE || 'dunastravel-dashboard@1.0.0',
-      tracesSampleRate: 0.1,
-      sendDefaultPii: false,
-      beforeSend: scrubDashboardEvent,
-    });
-    isDashboardInitialized = true;
-    console.info('[Sentry] Dashboard observability initialized.');
-  } catch (err: any) {
-    console.warn('[Sentry] Next.js Sentry package absent or initialization skipped:', err?.message);
+    const req = typeof eval !== 'undefined' ? eval('require') : null;
+    const Sentry = req ? req('@sentry/nextjs') : null;
+    if (Sentry && typeof Sentry.init === 'function') {
+      Sentry.init({
+        dsn,
+        environment: process.env.NODE_ENV || 'production',
+        release: process.env.NEXT_PUBLIC_RELEASE || 'dunastravel-dashboard@1.0.0',
+        tracesSampleRate: 0.1,
+        sendDefaultPii: false,
+        beforeSend: scrubDashboardEvent,
+      });
+      isDashboardInitialized = true;
+      console.info('[Sentry] Dashboard observability initialized.');
+    }
+  } catch {
+    // Next.js Sentry package absent or initialization skipped
   }
 }
 
 export function captureDashboardException(error: any, context?: any): void {
   if (!isDashboardInitialized) {
-    console.error('[Dashboard Error Captured]', error, context);
+    if (process.env.NODE_ENV === 'development') {
+      console.error('[Dashboard Error Captured]', error, context);
+    }
     return;
   }
   try {
-    const sentryPkg = '@sentry/nextjs';
-    import(/* @vite-ignore */ sentryPkg).then((Sentry) => {
+    const req = typeof eval !== 'undefined' ? eval('require') : null;
+    const Sentry = req ? req('@sentry/nextjs') : null;
+    if (Sentry && typeof Sentry.captureException === 'function') {
       Sentry.captureException(error, { extra: scrubDashboardData(context) });
-    });
+    }
   } catch {
     // Fail silently
   }
