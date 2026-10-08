@@ -58,9 +58,9 @@ export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowAction
   const canDelete = isSuperAdmin && user.role !== "SUPER_ADMIN" && user.id !== currentUser?.id;
 
   const handleSuspend = () => {
-    if (!suspendReason.trim()) return;
+    const reasonToSend = suspendReason.trim() || "تم إيقاف الحساب بواسطة مدير النظام";
     suspendUser(
-      { id: user.id, reason: suspendReason },
+      { id: user.id, reason: reasonToSend },
       {
         onSuccess: () => {
           setShowSuspendDialog(false);
@@ -147,31 +147,31 @@ export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowAction
 
       {/* Suspend Confirmation Dialog */}
       <Dialog open={showSuspendDialog} onOpenChange={setShowSuspendDialog}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle className="text-base font-bold text-destructive flex items-center gap-2">
-              <ShieldAlert className="h-5 w-5" />
+        <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-[440px] rounded-2xl border border-border/80 shadow-2xl p-4 sm:p-6">
+          <DialogHeader className="space-y-1 text-start">
+            <DialogTitle className="text-base font-extrabold text-destructive flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 shrink-0" />
               <span>{tUsers("suspendAccountTitle")}: {user.name}</span>
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-3 pt-2">
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-muted-foreground leading-relaxed">
               {tUsers("suspendAccountConfirmDesc", {
-                defaultValue: "          .",
+                defaultValue: "سيتم إنهاء الجلسات النشطة ومنع المستخدم من الوصول حتى إعادة التفعيل.",
               })}
             </p>
             <Textarea
-              placeholder={tUsers("suspendReasonRequired")}
+              placeholder={tUsers("suspendReasonRequired", { defaultValue: "سبب الإيقاف (اختياري)..." })}
               value={suspendReason}
               onChange={(e) => setSuspendReason(e.target.value)}
               className="text-xs min-h-[80px] rounded-xl"
             />
-            <div className="flex justify-end gap-2 pt-2">
+            <div className="flex flex-col-reverse sm:flex-row justify-end gap-2 pt-2">
               <Button
                 variant="ghost"
                 size="sm"
                 onClick={() => setShowSuspendDialog(false)}
-                className="rounded-xl font-bold"
+                className="rounded-xl font-bold w-full sm:w-auto"
               >
                 {tCommon("cancel")}
               </Button>
@@ -179,8 +179,8 @@ export function UserRowActions({ user, onView, onEdit, onDelete }: UserRowAction
                 variant="destructive"
                 size="sm"
                 onClick={handleSuspend}
-                disabled={!suspendReason.trim() || isSuspending}
-                className="rounded-xl font-bold"
+                disabled={isSuspending}
+                className="rounded-xl font-bold w-full sm:w-auto"
               >
                 {isSuspending ? tCommon("loading") : tUsers("confirmSuspend")}
               </Button>

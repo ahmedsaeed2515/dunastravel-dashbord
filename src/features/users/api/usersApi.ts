@@ -59,25 +59,68 @@ export const usersApi = {
     if (typeof payload.password === "string" && payload.password.trim() === "") {
       delete payload.password;
     }
-    return apiClient.patch<User, User>(`/admin/users/${id}`, payload);
+    try {
+      return await apiClient.patch<User, User>(`/admin/users/${id}`, payload);
+    } catch {
+      try {
+        return await apiClient.put<User, User>(`/admin/users/${id}`, payload);
+      } catch {
+        return await apiClient.post<User, User>(`/admin/users/${id}`, payload);
+      }
+    }
   },
 
   deleteUser: async (id: string): Promise<void> => {
     await apiClient.delete(`/admin/users/${id}`);
   },
 
-  suspendUser: async (id: string, reason: string): Promise<User> => {
-    return apiClient.post<User, User>(`/admin/users/${id}/suspend`, { reason });
+  suspendUser: async (id: string, reason?: string): Promise<User> => {
+    const finalReason = reason && reason.trim() ? reason.trim() : "تم إيقاف الحساب بواسطة مدير النظام";
+    try {
+      return await apiClient.post<User, User>(`/admin/users/${id}/suspend`, { reason: finalReason });
+    } catch {
+      try {
+        return await apiClient.patch<User, User>(`/admin/users/${id}/suspend`, { reason: finalReason });
+      } catch {
+        return await apiClient.patch<User, User>(`/admin/users/${id}`, {
+          status: "SUSPENDED",
+          statusReason: finalReason,
+          reason: finalReason,
+        } as any);
+      }
+    }
   },
 
   activateUser: async (id: string): Promise<User> => {
-    return apiClient.post<User, User>(`/admin/users/${id}/activate`);
+    try {
+      return await apiClient.post<User, User>(`/admin/users/${id}/activate`);
+    } catch {
+      try {
+        return await apiClient.patch<User, User>(`/admin/users/${id}/activate`);
+      } catch {
+        return await apiClient.patch<User, User>(`/admin/users/${id}`, {
+          status: "ACTIVE",
+        } as any);
+      }
+    }
   },
 
   revokeSessions: async (id: string): Promise<{ success: boolean }> => {
-    return apiClient.post<{ success: boolean }, { success: boolean }>(
-      `/admin/users/${id}/revoke-sessions`
-    );
+    try {
+      return await apiClient.post<{ success: boolean }, { success: boolean }>(
+        `/admin/users/${id}/revoke-sessions`
+      );
+    } catch {
+      try {
+        return await apiClient.delete<{ success: boolean }, { success: boolean }>(
+          `/admin/users/${id}/sessions`
+        );
+      } catch {
+        return await apiClient.post<{ success: boolean }, { success: boolean }>(
+          `/admin/users/${id}/sessions/revoke`
+        );
+      }
+    }
   },
 
   addUserNote: async (

@@ -84,7 +84,7 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
 
   const renderToolbarActions = () => {
     return (
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col sm:flex-row flex-wrap items-stretch sm:items-center gap-2 w-full sm:w-auto">
         <div className="relative w-full sm:w-64">
           <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
           <Input
@@ -95,16 +95,16 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
               setSearch(e.target.value);
               setPagination((prev) => ({ ...prev, pageIndex: 0 }));
             }}
-            className="h-8 ps-8 text-xs rounded-lg"
+            className="h-8 ps-8 text-xs rounded-lg w-full"
           />
         </div>
 
         {/* Status Quick Filter */}
-        <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/80 text-xs">
+        <div className="flex items-center justify-between sm:justify-start gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/80 text-xs w-full sm:w-auto">
           <button
             type="button"
             onClick={() => setStatusFilter("ALL")}
-            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+            className={`flex-1 sm:flex-initial px-2.5 py-1 rounded-md font-semibold transition-colors text-center ${
               statusFilter === "ALL"
                 ? "bg-card text-foreground shadow-xs font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -115,7 +115,7 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
           <button
             type="button"
             onClick={() => setStatusFilter("ACTIVE")}
-            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+            className={`flex-1 sm:flex-initial px-2.5 py-1 rounded-md font-semibold transition-colors text-center ${
               statusFilter === "ACTIVE"
                 ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -126,7 +126,7 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
           <button
             type="button"
             onClick={() => setStatusFilter("SUSPENDED")}
-            className={`px-2.5 py-1 rounded-md font-semibold transition-colors ${
+            className={`flex-1 sm:flex-initial px-2.5 py-1 rounded-md font-semibold transition-colors text-center ${
               statusFilter === "SUSPENDED"
                 ? "bg-red-500/15 text-red-600 dark:text-red-400 font-bold"
                 : "text-muted-foreground hover:text-foreground"
@@ -138,7 +138,7 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
 
         <Button
           size="sm"
-          className="h-8 gap-1.5 font-bold rounded-lg"
+          className="h-8 gap-1.5 font-bold rounded-lg w-full sm:w-auto justify-center"
           onClick={() => {
             setSelectedUser(null);
             setIsDialogOpen(true);
@@ -154,7 +154,7 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
   return (
     <div className="space-y-4">
       {/* Role Filter Tabs */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="w-full overflow-x-auto pb-1 no-scrollbar">
         <Tabs
           defaultValue="ALL"
           value={roleTab}
@@ -162,15 +162,15 @@ export function UsersTable({ initialStatus }: UsersTableProps) {
             setRoleTab(val || "ALL");
             setPagination((prev) => ({ ...prev, pageIndex: 0 }));
           }}
-          className="w-full sm:w-auto"
+          className="w-full"
         >
-          <TabsList className="grid grid-cols-6 h-9 p-1 bg-muted/60 rounded-xl" aria-label={tCommon("role")}>
-            <TabsTrigger value="ALL" className="text-xs font-bold rounded-lg">{tCommon("all")}</TabsTrigger>
-            <TabsTrigger value="ADMIN" className="text-xs font-bold rounded-lg">{tStatus("ADMIN")}</TabsTrigger>
-            <TabsTrigger value="AGENT" className="text-xs font-bold rounded-lg">{tStatus("AGENT")}</TabsTrigger>
-            <TabsTrigger value="COMPANY" className="text-xs font-bold rounded-lg">B2B</TabsTrigger>
-            <TabsTrigger value="USER" className="text-xs font-bold rounded-lg">{tUsers("title")}</TabsTrigger>
-            <TabsTrigger value="GUEST" className="text-xs font-bold rounded-lg">Guest</TabsTrigger>
+          <TabsList className="inline-flex h-9 p-1 bg-muted/60 rounded-xl min-w-full sm:min-w-0" aria-label={tCommon("role")}>
+            <TabsTrigger value="ALL" className="text-xs font-bold rounded-lg px-3">{tCommon("all")}</TabsTrigger>
+            <TabsTrigger value="ADMIN" className="text-xs font-bold rounded-lg px-3">{tStatus("ADMIN")}</TabsTrigger>
+            <TabsTrigger value="AGENT" className="text-xs font-bold rounded-lg px-3">{tStatus("AGENT")}</TabsTrigger>
+            <TabsTrigger value="COMPANY" className="text-xs font-bold rounded-lg px-3">B2B</TabsTrigger>
+            <TabsTrigger value="USER" className="text-xs font-bold rounded-lg px-3">{tUsers("title")}</TabsTrigger>
+            <TabsTrigger value="GUEST" className="text-xs font-bold rounded-lg px-3">Guest</TabsTrigger>
           </TabsList>
         </Tabs>
       </div>

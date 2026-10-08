@@ -36,8 +36,12 @@ export function BaseForm<T extends FieldValues>({
         
         {children}
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isSubmitting || !form.formState.isDirty}>
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-2 pt-2">
+          <Button 
+            type="submit" 
+            disabled={isSubmitting}
+            className="w-full sm:w-auto font-bold rounded-xl h-10 px-5 text-sm cursor-pointer"
+          >
             {isSubmitting ? tCommon("saving") : defaultLabel}
           </Button>
         </div>
