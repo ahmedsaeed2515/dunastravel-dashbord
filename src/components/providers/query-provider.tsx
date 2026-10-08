@@ -15,7 +15,7 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
     () =>
       new QueryClient({
         queryCache: new QueryCache({
-          onError: (error) => {
+          onError: (error, query) => {
             const apiError = error as ApiError;
             // Auth errors (401/403) are handled gracefully by redirection logic
             if (apiError?.status === 401 || apiError?.status === 403) {
@@ -24,7 +24,10 @@ export function QueryProvider({ children }: { children: React.ReactNode }) {
             if (!apiError?.status || apiError.status >= 500) {
               captureDashboardException(error);
             }
-            toast.error(apiError?.message || "Could not load the requested data.");
+            // Only show floating toast if the query explicitly requested toast notification on error
+            if ((query?.meta as any)?.showToastOnError) {
+              toast.error(apiError?.message || "Could not load the requested data.");
+            }
           },
         }),
         defaultOptions: {
