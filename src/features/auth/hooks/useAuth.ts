@@ -35,6 +35,10 @@ export function useAuth() {
       queryClient.setQueryData(queryKeys.auth.me(), null);
       queryClient.clear();
     },
+    onError: () => {
+      queryClient.setQueryData(queryKeys.auth.me(), null);
+      queryClient.clear();
+    },
   });
 
   return {
