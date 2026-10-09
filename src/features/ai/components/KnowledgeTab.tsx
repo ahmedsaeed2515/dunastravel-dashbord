@@ -142,6 +142,128 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
   const [newAutoTranslate, setNewAutoTranslate] = useState(true);
   const [creatingKnowledge, setCreatingKnowledge] = useState(false);
 
+  // Direct Q&A Response Rules Modal State
+  const [isRulesModalOpen, setIsRulesModalOpen] = useState(false);
+  const [responseRules, setResponseRules] = useState<any[]>([]);
+  const [loadingResponseRules, setLoadingResponseRules] = useState(false);
+  const [ruleTriggerQuestion, setRuleTriggerQuestion] = useState("");
+  const [rulePrescribedAnswer, setRulePrescribedAnswer] = useState("");
+  const [ruleCategory, setRuleCategory] = useState("FAQ");
+  const [ruleAutoTranslate, setRuleAutoTranslate] = useState(true);
+  const [creatingRule, setCreatingRule] = useState(false);
+  const [activeRulesTab, setActiveRulesTab] = useState<"list" | "create">("list");
+
+  const RULE_PRESETS = [
+    {
+      labelAr: "خصومات المجموعات والعائلات",
+      labelEn: "Group & Family Discounts",
+      triggerAr: "لو حد قالك هل في خصم للمجموعات أو العائلات الكبيرة؟",
+      answerAr: "نعم! تقدم دوناس ترافيل خصماً خاصاً ومميزاً للمجموعات والعائلات المكونة من 6 أفراد أو أكثر عند الحجز المباشر عبر قسم المبيعات والاستشارات السياحية.",
+    },
+    {
+      labelAr: "تذاكر الطيران الدولي",
+      labelEn: "International Flight Tickets",
+      triggerAr: "لو حد سأل عن الطيران الدولي وهل هو شامل في أسعار البرامج؟",
+      answerAr: "أسعار البرامج السياحية المعلنة تشمل الإقامة الفندقية، الجولات السياحية مع مرشد مرخص، التنقلات، والرحلات النيلية والطيران الداخلي فقط. تذاكر الطيران الدولي غير شاملة ويستطيع فريقنا مساعدتك في ترتيبها.",
+    },
+    {
+      labelAr: "تأشيرة دخول مصر",
+      labelEn: "Egypt Entry Visa Guidance",
+      triggerAr: "لو حد سأل عن التأشيرة السياحية وشروط الحصول عليها لمصر",
+      answerAr: "تأشيرة السياحة لمصر ميسرة للغاية وتُصدر فورياً عند الوصول للمطار لمواطني الاتحاد الأوروبي، الولايات المتحدة، المملكة المتحدة، دول الخليج والعديد من الجنسيات الأخرى، كما تتوفر عبر البوابة الإلكترونية الرسمية.",
+    },
+    {
+      labelAr: "طريقة الدفع بنسبة مقدم",
+      labelEn: "Deposit & Payment Terms",
+      triggerAr: "لو حد سأل عن كيفية تأكيد الحجز ونسبة الدفع المقدمة",
+      answerAr: "يتطلب تأكيد الحجز النهائي دفع عربون مقدم بنسبة 20% لتأمين الفنادق والنايل كروز عبر بوابة GetPayIn الآمنة، ويمكن سداد المتبقي إما قبل السفر أو نقدياً عند الوصول لممثلنا بالشركة.",
+    },
+  ];
+
+  const fetchResponseRules = async () => {
+    setLoadingResponseRules(true);
+    try {
+      const res = await aiApi.getResponseRules();
+      if (res?.rules) {
+        setResponseRules(res.rules);
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to load response rules.");
+    } finally {
+      setLoadingResponseRules(false);
+    }
+  };
+
+  const handleCreateResponseRule = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!ruleTriggerQuestion.trim() || !rulePrescribedAnswer.trim()) {
+      toast.error(isAr ? "يرجى تعبئة سؤال/موضوع الاستفسار والرد المعتمد." : "Question and Prescribed Answer are required.");
+      return;
+    }
+
+    setCreatingRule(true);
+    try {
+      const res = await aiApi.createResponseRule({
+        triggerQuestion: ruleTriggerQuestion.trim(),
+        prescribedAnswer: rulePrescribedAnswer.trim(),
+        category: ruleCategory,
+        sourceLocale: "ar",
+        autoTranslate: ruleAutoTranslate,
+        priority: 40,
+      });
+
+      if (res?.success) {
+        toast.success(
+          isAr
+            ? `✓ تم حفظ وتفعيل قاعدة الرد المباشر لـ GuideR (${res.createdCount} لغات)!`
+            : `✓ Q&A Direct Response Rule saved and activated across ${res.createdCount} languages!`
+        );
+        setRuleTriggerQuestion("");
+        setRulePrescribedAnswer("");
+        setActiveRulesTab("list");
+        fetchResponseRules();
+        fetchCanonicalEntities();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to save response rule.");
+    } finally {
+      setCreatingRule(false);
+    }
+  };
+
+  const handleToggleResponseRule = async (ruleId: string, currentExcluded: boolean) => {
+    try {
+      const res = await aiApi.toggleResponseRule(ruleId, !currentExcluded);
+      if (res?.success) {
+        toast.success(
+          !currentExcluded
+            ? (isAr ? "تم إيقاف قاعدة الرد مؤقتاً." : "Rule paused.")
+            : (isAr ? "تم إعادة تفعيل قاعدة الرد لـ GuideR." : "Rule activated.")
+        );
+        fetchResponseRules();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to toggle rule state.");
+    }
+  };
+
+  const handleDeleteResponseRule = async (ruleId: string) => {
+    if (!confirm(isAr ? "هل أنت تأكد من حذف قاعدة الرد المباشر هذه بجميع اللغات؟" : "Are you sure you want to delete this Q&A directive across all languages?")) {
+      return;
+    }
+
+    try {
+      const res = await aiApi.deleteResponseRule(ruleId);
+      if (res?.success) {
+        toast.success(isAr ? "تم حذف قاعدة الرد بنجاح." : "Rule deleted successfully.");
+        fetchResponseRules();
+        fetchCanonicalEntities();
+      }
+    } catch (err: any) {
+      toast.error(err?.message || "Failed to delete response rule.");
+    }
+  };
+
   const KNOWLEDGE_CATEGORIES_LIST = [
     { value: "COMPANY", labelAr: "معلومات عن الشركة (دوناس ترافيل)", labelEn: "Company Profile (Dunas Travel)", icon: "🏢" },
     { value: "GENERAL", labelAr: "دليل الموقع وطرق الحجز", labelEn: "Website & Booking Guide", icon: "🌐" },
@@ -594,7 +716,19 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            onClick={() => {
+              setIsRulesModalOpen(true);
+              fetchResponseRules();
+            }}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700 text-white font-bold text-xs h-9 gap-1.5 shadow-sm cursor-pointer border border-indigo-400/30"
+          >
+            <Zap className="h-3.5 w-3.5 text-amber-300 fill-amber-300 animate-pulse" />
+            {isAr ? "قواعد الرد المباشر (لو اتسألت...)" : "Q&A Directives (If asked X...)"}
+          </Button>
+
           <Button
             size="sm"
             onClick={() => setIsCreateModalOpen(true)}
@@ -1763,6 +1897,350 @@ export function KnowledgeTab({ t, isAr }: KnowledgeTabProps) {
           </div>
         </div>
       )}
-    </div>
-  );
-}
+
+      {/* ── 6. DIRECT Q&A RESPONSE RULES MODAL (لو اتسألت علي كذا قول كذا) ─────── */}
+      {isRulesModalOpen && (
+        <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in">
+          <div className="bg-card border border-border/80 rounded-2xl max-w-4xl w-full shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+            {/* Modal Header */}
+            <div className="p-4 border-b border-border/60 flex items-center justify-between bg-gradient-to-r from-indigo-500/10 via-purple-500/5 to-transparent">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-2xl bg-indigo-500/15 border border-indigo-500/30 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold shrink-0">
+                  <Zap className="h-5 w-5 text-amber-400 fill-amber-400" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h3 className="text-base font-bold text-foreground">
+                      {isAr ? "توجيهات وقواعد الرد المباشر لـ GuideR" : "GuideR Direct Response Rules (Q&A Directives)"}
+                    </h3>
+                    <Badge variant="outline" className="border-indigo-500/40 bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[10px] font-bold">
+                      {responseRules.filter((r) => !r.isExcludedFromAi).length} {isAr ? "قواعد نشطة" : "Active Rules"}
+                    </Badge>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">
+                    {isAr
+                      ? "حدد لـ GuideR كيف يجيب بدقة: (لو اتسألت على كذا ➔ قول كدا) مع ترجمة تلقائية وتفعيل فورى عبر اللغات 🇸🇦 🇬🇧 🇪🇸 🇧🇷 🇮🇹."
+                      : "Define strict response directives for GuideR: (If asked X ➔ Answer Y) automatically translated across all languages."}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsRulesModalOpen(false)}
+                className="h-8 w-8 rounded-xl hover:bg-muted/80 flex items-center justify-center text-muted-foreground hover:text-foreground cursor-pointer transition-all"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {/* Modal View Switcher Tabs */}
+            <div className="px-5 pt-3 border-b border-border/60 bg-muted/20 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setActiveRulesTab("list")}
+                className={`px-4 py-2 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeRulesTab === "list"
+                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Layers className="h-3.5 w-3.5" />
+                {isAr ? `قائمة القواعد المفعلة (${responseRules.length})` : `Active Rules (${responseRules.length})`}
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setActiveRulesTab("create")}
+                className={`px-4 py-2 text-xs font-bold border-b-2 transition-all cursor-pointer flex items-center gap-1.5 ${
+                  activeRulesTab === "create"
+                    ? "border-indigo-500 text-indigo-600 dark:text-indigo-400"
+                    : "border-transparent text-muted-foreground hover:text-foreground"
+                }`}
+              >
+                <Plus className="h-3.5 w-3.5" />
+                {isAr ? "إضافة قاعدة رد مباشرة جديدة" : "Add New Response Rule"}
+              </button>
+            </div>
+
+            {/* Modal Body */}
+            <div className="p-5 overflow-y-auto flex-1 text-xs space-y-4">
+              {/* TAB 1: LIST ACTIVE RULES */}
+              {activeRulesTab === "list" && (
+                <div className="space-y-4">
+                  {/* Preset Suggestions Bar */}
+                  <div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/5 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 dark:text-amber-300 font-bold text-xs">
+                      <Sparkles className="h-4 w-4 text-amber-500" />
+                      <span>{isAr ? "نماذج وقواعد رد شائعة جاهزة للاستخدام (اضغط لتعبئة القاعدة فوراً):" : "Popular Ready-to-Use Response Directives (Click to fill):"}</span>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {RULE_PRESETS.map((preset, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => {
+                            setRuleTriggerQuestion(preset.triggerAr);
+                            setRulePrescribedAnswer(preset.answerAr);
+                            setActiveRulesTab("create");
+                          }}
+                          className="px-3 py-1.5 rounded-lg border border-amber-500/30 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 dark:text-amber-200 text-[11px] font-bold transition-all cursor-pointer flex items-center gap-1"
+                        >
+                          <span>💡 {isAr ? preset.labelAr : preset.labelEn}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Rules List */}
+                  {loadingResponseRules ? (
+                    <div className="p-8 text-center text-muted-foreground space-y-2">
+                      <RefreshCw className="h-6 w-6 animate-spin mx-auto text-indigo-500" />
+                      <p>{isAr ? "جاري تحميل قواعد الرد المباشرة لـ GuideR..." : "Loading GuideR response rules..."}</p>
+                    </div>
+                  ) : responseRules.length === 0 ? (
+                    <div className="p-10 border border-dashed border-border/80 rounded-2xl text-center space-y-3 bg-muted/10">
+                      <div className="h-12 w-12 rounded-2xl bg-indigo-500/10 text-indigo-500 mx-auto flex items-center justify-center font-bold text-xl">
+                        ⚡
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-sm text-foreground">
+                          {isAr ? "لا توجد قواعد رد مباشر مخصصة حتى الآن" : "No Direct Response Rules Defined Yet"}
+                        </h4>
+                        <p className="text-xs text-muted-foreground mt-1 max-w-md mx-auto">
+                          {isAr
+                            ? "أضف قاعدتك الأولى لتقول لـ GuideR (لو اتسألت على كذا ➔ قول كدا) وسيقوم بالرد الفوري والدقيق على عملائك."
+                            : "Add your first rule to tell GuideR (If asked X ➔ Answer Y) for 100% accurate responses."}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        onClick={() => setActiveRulesTab("create")}
+                        className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-8 gap-1.5 cursor-pointer"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                        {isAr ? "إضافة قاعدة رد الآن" : "Add First Rule"}
+                      </Button>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {responseRules.map((rule) => (
+                        <div
+                          key={rule.ruleId}
+                          className={`p-4 rounded-xl border transition-all ${
+                            rule.isExcludedFromAi
+                              ? "bg-muted/30 border-border opacity-70"
+                              : "bg-card border-indigo-500/30 hover:border-indigo-500/60 shadow-xs"
+                          }`}
+                        >
+                          <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
+                            <div className="space-y-2 flex-1">
+                              {/* Trigger Question */}
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="outline" className="bg-indigo-500/10 border-indigo-500/30 text-indigo-600 dark:text-indigo-400 font-bold text-[10px]">
+                                  {isAr ? "إذا سألك العميل عن:" : "IF ASKED ABOUT:"}
+                                </Badge>
+                                <span className="font-bold text-sm text-foreground">
+                                  {rule.triggerQuestion}
+                                </span>
+                              </div>
+
+                              {/* Prescribed Answer */}
+                              <div className="p-3 rounded-xl bg-muted/40 border border-border/60 space-y-1">
+                                <span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 block">
+                                  {isAr ? "➔ الرد المعتمد لـ GuideR:" : "➔ PRESCRIBED ANSWER:"}
+                                </span>
+                                <p className="text-xs text-foreground font-medium leading-relaxed">
+                                  {rule.prescribedAnswer}
+                                </p>
+                              </div>
+
+                              {/* Languages Badges */}
+                              <div className="flex flex-wrap items-center gap-1.5 pt-1">
+                                <span className="text-[10px] text-muted-foreground">{isAr ? "اللغات المغطاة:" : "Languages:"}</span>
+                                {SUPPORTED_LOCALES.map((locObj) => {
+                                  const langItem = rule.languagesList?.find((l: any) => l.locale === locObj.code);
+                                  return (
+                                    <span
+                                      key={locObj.code}
+                                      className={`px-2 py-0.5 rounded-md text-[10px] font-mono font-bold border ${
+                                        langItem?.isComplete
+                                          ? "bg-emerald-500/10 border-emerald-500/30 text-emerald-600 dark:text-emerald-400"
+                                          : "bg-muted border-border text-muted-foreground opacity-50"
+                                      }`}
+                                      title={langItem?.isComplete ? `Covered (${locObj.code.toUpperCase()})` : `Missing (${locObj.code.toUpperCase()})`}
+                                    >
+                                      {locObj.flag} {locObj.code.toUpperCase()}
+                                    </span>
+                                  );
+                                })}
+                              </div>
+                            </div>
+
+                            {/* Rule Actions */}
+                            <div className="flex items-center gap-2 shrink-0 self-end sm:self-start">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleToggleResponseRule(rule.ruleId, rule.isExcludedFromAi)}
+                                className={`h-8 text-[11px] font-bold gap-1 cursor-pointer ${
+                                  rule.isExcludedFromAi
+                                    ? "border-emerald-500/40 text-emerald-600 hover:bg-emerald-500/10"
+                                    : "border-amber-500/40 text-amber-600 hover:bg-amber-500/10"
+                                }`}
+                              >
+                                {rule.isExcludedFromAi ? (
+                                  <>✓ {isAr ? "تفعيل" : "Enable"}</>
+                                ) : (
+                                  <>⏸ {isAr ? "إيقاف مؤقت" : "Pause"}</>
+                                )}
+                              </Button>
+
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleDeleteResponseRule(rule.ruleId)}
+                                className="h-8 w-8 p-0 text-rose-600 hover:bg-rose-500/10 hover:text-rose-700 border-rose-500/30 cursor-pointer"
+                                title={isAr ? "حذف القاعدة" : "Delete Rule"}
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 2: CREATE NEW RESPONSE RULE */}
+              {activeRulesTab === "create" && (
+                <form onSubmit={handleCreateResponseRule} className="space-y-4">
+                  <div className="p-3 rounded-xl bg-indigo-500/10 border border-indigo-500/30 flex items-center gap-2">
+                    <Zap className="h-4 w-4 text-indigo-500 shrink-0" />
+                    <p className="text-[11px] text-indigo-900 dark:text-indigo-200">
+                      {isAr
+                        ? "أدخل السؤال أو موضوع الاستفسار، ثم اكتب الرد المعتمد الذي تريده أن يصدر عن GuideR. سيتم ترجمتها وفهرستها لـ 5 لغات فوراً."
+                        : "Enter the user query trigger and the exact answer GuideR must give. It will be indexed across 5 languages."}
+                    </p>
+                  </div>
+
+                  {/* Trigger Question Input */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-foreground block">
+                      {isAr ? "لو اتسألت عن / إذا سألك العميل عن... *" : "If Asked About / Trigger Query... *"}
+                    </label>
+                    <Input
+                      value={ruleTriggerQuestion}
+                      onChange={(e) => setRuleTriggerQuestion(e.target.value)}
+                      placeholder={
+                        isAr
+                          ? "مثال: لو اتسألت عن سياسة استقبال الأطفال في الرحلات النيلية أو الخصومات..."
+                          : "e.g. If asked about children policy on Nile cruises or group discounts..."
+                      }
+                      className="h-10 text-xs bg-background font-medium"
+                      required
+                    />
+                  </div>
+
+                  {/* Prescribed Answer Textarea */}
+                  <div className="space-y-1.5">
+                    <label className="font-bold text-foreground block">
+                      {isAr ? "فيكون الرد المعتمد لـ GuideR (قول كدا...) *" : "Prescribed Answer for GuideR... *"}
+                    </label>
+                    <Textarea
+                      value={rulePrescribedAnswer}
+                      onChange={(e) => setRulePrescribedAnswer(e.target.value)}
+                      placeholder={
+                        isAr
+                          ? "اكتب الرد الرسمي والمعتمد بالتفصيل ليقوله GuideR مباشرة للعميل عند الاستفسار عن هذا الموضوع..."
+                          : "Write the official answer in detail for GuideR to reply directly..."
+                      }
+                      rows={5}
+                      className="text-xs bg-background resize-y font-medium"
+                      required
+                    />
+                  </div>
+
+                  {/* Category & Auto Translate */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                    <div className="space-y-1.5">
+                      <label className="font-bold text-foreground block">
+                        {isAr ? "التصنيف الموضوعي" : "Category"}
+                      </label>
+                      <select
+                        value={ruleCategory}
+                        onChange={(e) => setRuleCategory(e.target.value)}
+                        className="w-full h-9 px-3 rounded-xl border border-border bg-background text-xs text-foreground font-medium"
+                      >
+                        {KNOWLEDGE_CATEGORIES_LIST.map((cat) => (
+                          <option key={cat.value} value={cat.value}>
+                            {cat.icon} {isAr ? cat.labelAr : cat.labelEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="p-3 rounded-xl border border-blue-500/30 bg-blue-500/5 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-2">
+                        <Globe2 className="h-4 w-4 text-blue-500 shrink-0" />
+                        <div>
+                          <span className="font-bold text-foreground block text-[11px]">
+                            {isAr ? "ترجمة تلقائية للغات الخمس" : "Auto-translate to 5 languages"}
+                          </span>
+                          <p className="text-[10px] text-muted-foreground">
+                            {isAr ? "توليد نسخ بالإنجليزية والإسبانية والبرتغالية والإيطالية فوراً." : "Generate EN, ES, PT, IT versions."}
+                          </p>
+                        </div>
+                      </div>
+
+                      <input
+                        type="checkbox"
+                        checked={ruleAutoTranslate}
+                        onChange={(e) => setRuleAutoTranslate(e.target.checked)}
+                        className="h-4 w-4 rounded border-border text-indigo-600 focus:ring-indigo-500 cursor-pointer"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Submit buttons */}
+                  <div className="pt-4 border-t border-border/60 flex items-center justify-end gap-2">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setActiveRulesTab("list")}
+                      className="h-9 text-xs cursor-pointer"
+                    >
+                      {isAr ? "إلغاء" : "Cancel"}
+                    </Button>
+
+                    <Button
+                      type="submit"
+                      size="sm"
+                      disabled={creatingRule}
+                      className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs h-9 px-5 gap-1.5 shadow-sm cursor-pointer"
+                    >
+                      {creatingRule ? (
+                        <>
+                          <RefreshCw className="h-3.5 w-3.5 animate-spin" />
+                          <span>{isAr ? "جاري الحفظ والترجمة..." : "Saving & Translating..."}</span>
+                        </>
+                      ) : (
+                        <>
+                          <Zap className="h-3.5 w-3.5 text-amber-300 fill-amber-300" />
+                          <span>{isAr ? "حفظ وتفعيل قاعدة الرد" : "Save & Activate Rule"}</span>
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+      </div>
+    );
+  }

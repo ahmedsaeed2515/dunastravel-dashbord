@@ -243,6 +243,25 @@ export interface CanonicalKnowledgeEntity {
   }>;
 }
 
+export interface AiResponseRuleItem {
+  ruleId: string;
+  triggerQuestion: string;
+  prescribedAnswer: string;
+  category: string;
+  priority: number;
+  isExcludedFromAi: boolean;
+  createdAt: string;
+  updatedAt: string;
+  languagesList: Array<{
+    locale: string;
+    isComplete: boolean;
+    id?: string;
+    triggerQuestion?: string;
+    prescribedAnswer?: string;
+    isExcludedFromAi?: boolean;
+  }>;
+}
+
 export interface AiKnowledgeVersionItem {
   id: string;
   knowledgeItemId: string;
@@ -960,6 +979,30 @@ export const aiApi = {
     groundedSummaryText: string;
   }> => {
     return apiClient.post<unknown, any>("/admin/ai/knowledge/test-retrieval", payload);
+  },
+
+  // Direct Q&A Response Rules ("لو اتسألت عن X قول Y")
+  getResponseRules: async (): Promise<{ rules: AiResponseRuleItem[]; total: number }> => {
+    return apiClient.get<unknown, { rules: AiResponseRuleItem[]; total: number }>("/admin/ai/knowledge/response-rules");
+  },
+
+  createResponseRule: async (payload: {
+    triggerQuestion: string;
+    prescribedAnswer: string;
+    category?: string;
+    sourceLocale?: string;
+    autoTranslate?: boolean;
+    priority?: number;
+  }): Promise<{ success: boolean; ruleId: string; createdCount: number }> => {
+    return apiClient.post<unknown, any>("/admin/ai/knowledge/response-rules", payload);
+  },
+
+  toggleResponseRule: async (ruleId: string, isExcludedFromAi: boolean): Promise<{ success: boolean; ruleId: string; isExcludedFromAi: boolean }> => {
+    return apiClient.patch<unknown, any>(`/admin/ai/knowledge/response-rules/${encodeURIComponent(ruleId)}/toggle`, { isExcludedFromAi });
+  },
+
+  deleteResponseRule: async (ruleId: string): Promise<{ success: boolean; deletedCount: number }> => {
+    return apiClient.delete<unknown, any>(`/admin/ai/knowledge/response-rules/${encodeURIComponent(ruleId)}`);
   },
 
   // Agent Registry
