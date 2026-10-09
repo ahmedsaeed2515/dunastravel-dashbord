@@ -123,7 +123,11 @@ export function buildTripEditorPayload(
     dbKey: text(loc.dbKey) || 'cairo',
     lat: Number(loc.lat) || 0,
     lng: Number(loc.lng) || 0,
-    daysVisited: Array.isArray(loc.daysVisited) ? loc.daysVisited : [],
+    daysVisited: Array.isArray(loc.daysVisited)
+      ? loc.daysVisited
+      : (typeof loc.daysVisited === 'string'
+          ? (loc.daysVisited as string).split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n))
+          : []),
     nameJsonb: Object.fromEntries(LOCALES.map((locale) => [
       locale,
       locale === 'ar'
