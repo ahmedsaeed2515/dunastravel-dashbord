@@ -655,6 +655,40 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     handleChange('accommodation', rows);
   };
 
+  const getLocalizedRouteMapTitle = (): string => {
+    if (activeLang === 'ar') return formData.routeMap?.title || 'Interactive Itinerary Journey Map';
+    return formData.translations?.[activeLang]?.routeMap?.title || formData.routeMap?.title || 'Interactive Itinerary Journey Map';
+  };
+
+  const getLocalizedRouteMapSubtitle = (): string => {
+    if (activeLang === 'ar') return formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+    return formData.translations?.[activeLang]?.routeMap?.subtitle || formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+  };
+
+  const updateRouteMapTitle = (val: string) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const updatedRoute = { ...currentRoute, title: activeLang === 'ar' ? val : currentRoute.title };
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, title: val } };
+      return { ...prev, routeMap: updatedRoute, translations: trans };
+    });
+  };
+
+  const updateRouteMapSubtitle = (val: string) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const updatedRoute = { ...currentRoute, subtitle: activeLang === 'ar' ? val : currentRoute.subtitle };
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, subtitle: val } };
+      return { ...prev, routeMap: updatedRoute, translations: trans };
+    });
+  };
+
   const getLocalizedRouteLocations = (): { dbKey: string; lat: number; lng: number; daysVisited: number[]; name: string; description: string }[] => {
     const baseLocations = formData.routeMap?.locations || [];
     if (activeLang === 'ar') {
@@ -1753,6 +1787,27 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   >
                     <Plus className="w-3.5 h-3.5" /> إضافة مدينة / معلم +
                   </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">عنوان الخريطة في الموقع ({activeLang.toUpperCase()})</label>
+                  <Input
+                    value={getLocalizedRouteMapTitle()}
+                    onChange={e => updateRouteMapTitle(e.target.value)}
+                    placeholder="Interactive Itinerary Journey Map"
+                    className="rounded-xl text-xs font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">الوصف الفرعي للخريطة ({activeLang.toUpperCase()})</label>
+                  <Input
+                    value={getLocalizedRouteMapSubtitle()}
+                    onChange={e => updateRouteMapSubtitle(e.target.value)}
+                    placeholder="Explore your day-by-day path across premier luxury landmarks"
+                    className="rounded-xl text-xs font-medium"
+                  />
                 </div>
               </div>
 
