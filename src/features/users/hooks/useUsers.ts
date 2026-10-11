@@ -49,11 +49,13 @@ export function useCreateUser() {
   return useMutation({
     mutationFn: (data: UserFormValues) => usersApi.createUser(data),
     onSuccess: () => {
-      toast.success("User created successfully");
+      toast.success("تم إنشاء حساب المستخدم بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to create user");
+      toast.error(error?.message || "فشل إنشاء حساب المستخدم");
     },
   });
 }
@@ -64,11 +66,13 @@ export function useDeleteUser() {
   return useMutation({
     mutationFn: (id: string) => usersApi.deleteUser(id),
     onSuccess: () => {
-      toast.success("User deleted successfully");
+      toast.success("تم حذف المستخدم بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to delete user");
+      toast.error(error?.message || "فشل حذف المستخدم");
     },
   });
 }
@@ -77,16 +81,19 @@ export function useSuspendUser() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: ({ id, reason }: { id: string; reason: string }) =>
+    mutationFn: ({ id, reason }: { id: string; reason?: string }) =>
       usersApi.suspendUser(id, reason),
     onSuccess: (_, variables) => {
-      toast.success("User suspended successfully");
+      toast.success("تم إيقاف حساب المستخدم بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (variables?.id) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to suspend user");
+      toast.error(error?.message || "فشل إيقاف حساب المستخدم");
     },
   });
 }
@@ -97,13 +104,16 @@ export function useActivateUser() {
   return useMutation({
     mutationFn: (id: string) => usersApi.activateUser(id),
     onSuccess: (_, variables) => {
-      toast.success("User activated successfully");
+      toast.success("تم إعادة تفعيل حساب المستخدم بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
-      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables) });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
+      if (variables) {
+        queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables) });
+      }
       queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to activate user");
+      toast.error(error?.message || "فشل إعادة تفعيل حساب المستخدم");
     },
   });
 }
@@ -114,11 +124,14 @@ export function useRevokeUserSessions() {
   return useMutation({
     mutationFn: (id: string) => usersApi.revokeSessions(id),
     onSuccess: (_, id) => {
-      toast.success("All user sessions revoked successfully");
+      toast.success("تم إنهاء كافة جلسات المستخدم بنجاح");
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to revoke user sessions");
+      toast.error(error?.message || "فشل إنهاء جلسات المستخدم");
     },
   });
 }
@@ -139,11 +152,11 @@ export function useAddUserMonitoringNote() {
       isPinned?: boolean;
     }) => usersApi.addUserNote(id, content, noteType, isPinned),
     onSuccess: (_, variables) => {
-      toast.success("Note added successfully");
+      toast.success("تم إضافة الملاحظة بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to add note");
+      toast.error(error?.message || "فشل إضافة الملاحظة");
     },
   });
 }
@@ -155,13 +168,15 @@ export function useUpdateUser() {
     mutationFn: ({ id, data }: { id: string; data: Partial<UserFormValues | UpdateUserFormValues> }) =>
       usersApi.updateUser(id, data),
     onSuccess: (_, variables) => {
-      toast.success("User updated successfully");
+      toast.success("تم تحديث بيانات وصلاحيات المستخدم بنجاح");
       queryClient.invalidateQueries({ queryKey: queryKeys.users.all });
+      queryClient.invalidateQueries({ queryKey: ["users"] });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringDetail(variables.id) });
       queryClient.invalidateQueries({ queryKey: queryKeys.users.detail(variables.id) });
+      queryClient.invalidateQueries({ queryKey: queryKeys.users.monitoringOverview() });
     },
     onError: (error: ApiError) => {
-      toast.error(error?.message || "Failed to update user");
+      toast.error(error?.message || "فشل تحديث بيانات المستخدم");
     },
   });
 }

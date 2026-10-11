@@ -292,6 +292,39 @@ export async function autoTranslateFullTrip(
     })
   );
 
+  // 4. Translate Interactive Route Map
+  const sourceRouteMap = cloned.routeMap;
+  if (sourceRouteMap?.locations && sourceRouteMap.locations.length > 0) {
+    onProgress?.('جاري ترجمة الخريطة التفاعلية والمدن...', 92);
+    await Promise.all(
+      targets.map(async (lang) => {
+        const trans: TranslationDict = cloned.translations[lang] || {};
+        const translatedLocations = await Promise.all(
+          sourceRouteMap.locations.map(async (loc) => {
+            const [name, description] = await Promise.all([
+              translateText(loc.name || '', lang, sourceLang),
+              translateText(loc.description || '', lang, sourceLang),
+            ]);
+            return {
+              dbKey: loc.dbKey,
+              lat: loc.lat,
+              lng: loc.lng,
+              daysVisited: loc.daysVisited,
+              name: name || loc.name,
+              description: description || loc.description,
+            };
+          })
+        );
+        trans.routeMap = {
+          title: sourceRouteMap.title || 'Interactive Itinerary Journey Map',
+          subtitle: sourceRouteMap.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+          locations: translatedLocations,
+        };
+        cloned.translations[lang] = trans;
+      })
+    );
+  }
+
   // Ensure source language is also mirrored
   if (sourceLang === 'ar') {
     cloned.translations.ar = {
@@ -304,6 +337,11 @@ export async function autoTranslateFullTrip(
       included: [...sourceIncluded],
       excluded: [...sourceExcluded],
       itinerary: sourceItinerary.map(d => ({ ...d })),
+      routeMap: sourceRouteMap ? {
+        title: sourceRouteMap.title || 'Interactive Itinerary Journey Map',
+        subtitle: sourceRouteMap.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+        locations: sourceRouteMap.locations.map(loc => ({ ...loc })),
+      } : undefined,
     };
   }
 

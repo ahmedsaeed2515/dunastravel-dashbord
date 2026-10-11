@@ -6,6 +6,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } f
 import { UserForm } from "../UserForms/UserForm";
 import { useCreateUser, useUpdateUser } from "../../hooks/useUsers";
 
+import { useLocale } from "next-intl";
+
 interface UserDialogProps {
   user: User | null;
   open: boolean;
@@ -13,6 +15,8 @@ interface UserDialogProps {
 }
 
 export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
+  const locale = useLocale();
+  const isAr = locale === "ar";
   const { mutate: createUser, isPending: isCreating } = useCreateUser();
   const { mutate: updateUser, isPending: isUpdating } = useUpdateUser();
 
@@ -46,17 +50,21 @@ export function UserDialog({ user, open, onOpenChange }: UserDialogProps) {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[450px]">
-        <DialogHeader>
-          <DialogTitle>{isEdit ? "Edit User" : "Create User"}</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="w-[calc(100vw-1.5rem)] sm:w-full max-w-[95vw] sm:max-w-[480px] max-h-[90vh] overflow-y-auto p-4 sm:p-6 rounded-2xl border border-border/80 shadow-2xl">
+        <DialogHeader className="space-y-1 text-start">
+          <DialogTitle className="text-base sm:text-lg font-black text-foreground">
             {isEdit 
-              ? "Update the user's role and basic information."
-              : "Create a new user account and set an initial password."}
+              ? (isAr ? "تعديل رتبة وصلاحيات المستخدم" : "Edit User & Role") 
+              : (isAr ? "إضافة مستخدم جديد" : "Create New User")}
+          </DialogTitle>
+          <DialogDescription className="text-xs sm:text-sm leading-relaxed text-muted-foreground">
+            {isEdit 
+              ? (isAr ? "تحديث بيانات الحساب وتعيين الدور والصلاحيات المناسبة." : "Update the user's role and basic information.")
+              : (isAr ? "إنشاء حساب جديد في المنصة وتحديد كلمة المرور والدور المطلوب." : "Create a new user account and set an initial password.")}
           </DialogDescription>
         </DialogHeader>
 
-        <div className="mt-4">
+        <div className="mt-3 sm:mt-4">
           <UserForm 
             initialData={user || undefined}
             onSubmit={handleSubmit}

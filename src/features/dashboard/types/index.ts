@@ -181,6 +181,16 @@ export interface RecentActivityItem {
   entity: string;
   timestamp: string;
   type: string;
+  metadata?: Record<string, any> | null;
+  details?: Record<string, any> | null;
+  ipAddress?: string | null;
+  userAgent?: string | null;
+  entityType?: string | null;
+  entityId?: string | null;
+  actorRole?: string | null;
+  actorId?: string | null;
+  bookingId?: string | null;
+  bookingRef?: string | null;
 }
 
 export interface TopDestinationItem {

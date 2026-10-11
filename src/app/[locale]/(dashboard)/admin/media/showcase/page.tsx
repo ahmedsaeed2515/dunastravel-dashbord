@@ -5,11 +5,13 @@ import { useParams } from "next/navigation";
 import {
   useShowcaseMedia,
   useAssignShowcase,
+  useAssignBulkShowcase,
   useUpdateShowcaseItem,
   useReorderShowcase,
   useRemoveFromShowcase,
   useUploadVideo,
   useMediaAssets,
+  useMediaCategories,
   useSyncEntities,
 } from "@/features/media/hooks/useMedia";
 import { MediaAsset } from "@/features/media/types";
@@ -50,6 +52,14 @@ import {
   UploadCloud,
   Film,
   GripVertical,
+  Check,
+  CheckSquare,
+  Square,
+  ChevronLeft,
+  ChevronRight,
+  Filter,
+  FolderOpen,
+  Shuffle,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -451,6 +461,7 @@ export default function MediaShowcasePage() {
 
   const { data: showcaseData, isLoading, refetch } = useShowcaseMedia();
   const { mutate: assignShowcase, isPending: isAssigning } = useAssignShowcase();
+  const { mutate: assignBulkShowcase, isPending: isAssigningBulk } = useAssignBulkShowcase();
   const { mutate: updateShowcaseItem, isPending: isUpdating } = useUpdateShowcaseItem();
   const { mutate: reorderShowcase, isPending: isReordering } = useReorderShowcase();
   const { mutate: removeFromShowcase, isPending: isRemoving } = useRemoveFromShowcase();
@@ -462,17 +473,92 @@ export default function MediaShowcasePage() {
   const [isUploadVideoOpen, setIsUploadVideoOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<MediaAsset | null>(null);
   const [previewVideoUrl, setPreviewVideoUrl] = useState<string | null>(null);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<string[]>([]);
+  const [selectedAssetsMap, setSelectedAssetsMap] = useState<Record<string, MediaAsset>>({});
 
-  // Library Picker state for Photo
+  // Library Picker state for Photo & Video
+  const [libraryPage, setLibraryPage] = useState(1);
+  const [categoryFilter, setCategoryFilter] = useState<string | undefined>(undefined);
   const [searchQuery, setSearchQuery] = useState("");
+
+  const { data: libraryCategories = [] } = useMediaCategories();
+
   const { data: libraryMedia, isLoading: isLibraryLoading } = useMediaAssets({
-    page: 1,
-    limit: 48,
+    page: libraryPage,
+    limit: 100,
+    category: categoryFilter,
     search: (searchQuery || "").trim() || undefined,
   });
 
   const photos = showcaseData?.photos || [];
   const videos = showcaseData?.videos || [];
+
+  const toggleSelectAssetObj = (asset: MediaAsset) => {
+    setSelectedAssetIds((prev) => {
+      const exists = prev.includes(asset.id);
+      if (exists) {
+        const nextMap = { ...selectedAssetsMap };
+        delete nextMap[asset.id];
+        setSelectedAssetsMap(nextMap);
+        return prev.filter((item) => item !== asset.id);
+      } else {
+        setSelectedAssetsMap((prevMap) => ({ ...prevMap, [asset.id]: asset }));
+        return [...prev, asset.id];
+      }
+    });
+  };
+
+  const handleConfirmAddSelected = () => {
+    if (selectedAssetIds.length === 0) return;
+
+    const payloads = selectedAssetIds.map((id) => {
+      const asset = selectedAssetsMap[id] || libraryMedia?.data?.find((a) => a.id === id);
+      return {
+        assetId: id,
+        mediaId: id,
+        section: isAddPhotoOpen ? ("PHOTO" as const) : ("VIDEO" as const),
+        title: String(asset?.altText || asset?.title || "Showcase Item").trim(),
+      };
+    });
+
+    assignBulkShowcase(payloads, {
+      onSuccess: () => {
+        const count = selectedAssetIds.length;
+        toast.success(
+          isAr
+            ? `تمت إضافة ${count} ${isAddPhotoOpen ? "صورة" : "فيديو"} إلى معرض الواجهة الرئيسية بنجاح`
+            : `Successfully added ${count} item(s) to showcase`
+        );
+        setIsAddPhotoOpen(false);
+        setIsAddVideoOpen(false);
+        setSelectedAssetIds([]);
+        setSelectedAssetsMap({});
+        setLibraryPage(1);
+      },
+    });
+  };
+
+  const handleShufflePhotos = () => {
+    if (photos.length === 0) return;
+    const shuffled = [...photos];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    const items = shuffled.map((item, idx) => ({ id: item.id, position: idx + 1 }));
+    reorderShowcase(
+      { section: "PHOTO", items },
+      {
+        onSuccess: () => {
+          toast.success(
+            isAr
+              ? "تمت إعادة تدوير وتبديل عروض الصور بنجاح! سيظهر 15 صورة جديدة ومتنوعة على الواجهة الرئيسية."
+              : "Showcase photos successfully rotated! 15 items featured on homepage."
+          );
+        },
+      }
+    );
+  };
 
   // Handlers for Reordering
   const handleMove = (section: "PHOTO" | "VIDEO", index: number, direction: "up" | "down") => {
@@ -615,24 +701,42 @@ export default function MediaShowcasePage() {
 
         {/* ================= SECTION A: PHOTO SHOWCASE ================= */}
         <TabsContent value="photos" className="mt-6 space-y-4">
-          <div className="flex items-center justify-between">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div>
-              <h2 className="text-lg font-semibold text-foreground">
-                {isAr ? "صور قسم 'لمحات عن رحلتك'" : "Photo Carousel Items"}
-              </h2>
-              <p className="text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {isAr ? "صور قسم 'لمحات عن رحلتك'" : "Photo Carousel Items"}
+                </h2>
+                <Badge variant="outline" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/30 gap-1 text-[11px] py-0.5">
+                  <Clock className="w-3 h-3" />
+                  {isAr ? "تدوير تلقائي 24h (عرض 15 صورة)" : "24h Auto-Rotate (15 Photos)"}
+                </Badge>
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">
                 {isAr
-                  ? "تظهر هذه الصور في السلايدر التفاعلي الأول مباشرة بعد قسم الخدمات."
-                  : "These images appear on the interactive homepage carousel right after Services."}
+                  ? "يتم تدوير وحساب 15 صورة عشوائية ومختلفة تلقائياً كل 24 ساعة على الواجهة الرئيسية من بين جميع الصور المضافة هنا."
+                  : "15 unique featured photos rotate automatically every 24 hours on the homepage carousel from your collection."}
               </p>
             </div>
-            <Button
-              onClick={() => setIsAddPhotoOpen(true)}
-              className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
-            >
-              <Plus className="w-4 h-4" />
-              {isAr ? "إضافة صورة من المكتبة" : "Add Photo from Library"}
-            </Button>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Button
+                variant="outline"
+                onClick={handleShufflePhotos}
+                disabled={isReordering || photos.length === 0}
+                className="gap-2 border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10"
+                title={isAr ? "تبديل وتدوير ترتيب الصور فورياً" : "Instantly rotate and shuffle photos"}
+              >
+                <Shuffle className={`w-4 h-4 ${isReordering ? "animate-spin" : ""}`} />
+                {isAr ? "تدوير وتبديل الصور الآن" : "Rotate & Shuffle Now"}
+              </Button>
+              <Button
+                onClick={() => setIsAddPhotoOpen(true)}
+                className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
+              >
+                <Plus className="w-4 h-4" />
+                {isAr ? "إضافة صورة من المكتبة" : "Add Photo from Library"}
+              </Button>
+            </div>
           </div>
 
           {isLoading ? (
@@ -774,95 +878,275 @@ export default function MediaShowcasePage() {
           if (!open) {
             setIsAddPhotoOpen(false);
             setIsAddVideoOpen(false);
+            setSelectedAssetIds([]);
+            setSelectedAssetsMap({});
+            setSearchQuery("");
+            setCategoryFilter(undefined);
+            setLibraryPage(1);
           }
         }}
       >
-        <DialogContent className="max-w-3xl max-h-[85vh] flex flex-col">
+        <DialogContent className="max-w-4xl max-h-[88vh] flex flex-col">
           <DialogHeader>
-            <DialogTitle>
-              {isAddPhotoOpen
-                ? (isAr ? "إضافة صورة إلى المعرض" : "Add Photo to Showcase")
-                : (isAr ? "إضافة فيديو إلى المعرض" : "Add Video to Showcase")}
+            <DialogTitle className="flex items-center justify-between">
+              <span>
+                {isAddPhotoOpen
+                  ? (isAr ? "إضافة صور من المكتبة" : "Add Photos from Library")
+                  : (isAr ? "إضافة فيديوهات من المكتبة" : "Add Videos from Library")}
+              </span>
             </DialogTitle>
             <DialogDescription>
               {isAr
-                ? "اختر عنصراً من مكتبة الوسائط الحالية لإضافته إلى قائمة العرض في الصفحة الرئيسية."
-                : "Select an existing media asset from your library to add to the showcase carousel."}
+                ? "اختر من المكتبة العامة أو التصنيفات المتاحة لإضافة صورة أو عدة صور مباشرة إلى الصفحة الرئيسية."
+                : "Select from the general media library or categories to feature photos or videos on the homepage."}
             </DialogDescription>
           </DialogHeader>
 
-          <div className="py-2">
-            <Input
-              placeholder={isAr ? "ابحث في مكتبة الوسائط..." : "Search media library..."}
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full"
-            />
-          </div>
+          {(() => {
+            const availableAssets = (libraryMedia?.data || []).filter((asset) => {
+              const isImage = !asset.mediaType || asset.mediaType === "IMAGE";
+              const isVideo = asset.mediaType === "VIDEO" || String(asset.mimeType).startsWith("video/");
+              if (isAddPhotoOpen) return isImage;
+              if (isAddVideoOpen) return isVideo;
+              return true;
+            });
 
-          <div className="flex-1 overflow-y-auto min-h-[300px] border rounded-lg p-3">
-            {isLibraryLoading ? (
-              <div className="flex items-center justify-center h-48">
-                <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-              </div>
-            ) : libraryMedia?.data?.length === 0 ? (
-              <div className="text-center py-12 text-muted-foreground text-sm">
-                {isAr ? "لا توجد نتائج مطابقة" : "No matching assets found"}
-              </div>
-            ) : (
-              <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
-                {libraryMedia?.data?.map((asset) => {
-                  const isImage = !asset.mediaType || asset.mediaType === "IMAGE";
-                  const isVideo = asset.mediaType === "VIDEO" || String(asset.mimeType).startsWith("video/");
-                  if (isAddPhotoOpen && !isImage) return null;
-                  if (isAddVideoOpen && !isVideo) return null;
+            const allVisibleSelected =
+              availableAssets.length > 0 &&
+              availableAssets.every((a) => selectedAssetIds.includes(a.id));
 
-                  return (
-                    <div
-                      key={asset.id}
-                      className="group relative aspect-square rounded-md overflow-hidden border border-border/70 hover:border-amber-500 cursor-pointer bg-muted transition-all"
-                      onClick={() => {
-                        assignShowcase({
-                          assetId: asset.id,
-                          mediaId: asset.id,
-                          section: isAddPhotoOpen ? "PHOTO" : "VIDEO",
-                          title: String(asset.altText || asset.title || "Showcase Item").trim(),
-                        }, {
-                          onSuccess: () => {
-                            setIsAddPhotoOpen(false);
-                            setIsAddVideoOpen(false);
-                          }
-                        });
+            const handleToggleSelectAll = () => {
+              if (allVisibleSelected) {
+                const visibleIds = availableAssets.map((a) => a.id);
+                setSelectedAssetIds((prev) => prev.filter((id) => !visibleIds.includes(id)));
+              } else {
+                availableAssets.forEach((asset) => {
+                  setSelectedAssetsMap((prevMap) => ({ ...prevMap, [asset.id]: asset }));
+                });
+                const visibleIds = availableAssets.map((a) => a.id);
+                setSelectedAssetIds((prev) => Array.from(new Set([...prev, ...visibleIds])));
+              }
+            };
+
+            const totalPages = libraryMedia?.meta?.totalPages || 1;
+            const totalAssets = libraryMedia?.meta?.total ?? availableAssets.length;
+
+            return (
+              <>
+                {/* Search & Category Filter Toolbar */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 py-2">
+                  <div className="flex items-center gap-2 flex-1">
+                    <Input
+                      placeholder={isAr ? "ابحث في مكتبة الوسائط..." : "Search media library..."}
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setLibraryPage(1);
                       }}
-                    >
-                      <img
-                        src={asset.optimizedUrl || asset.thumbnailUrl || asset.secureUrl || asset.url}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                      />
-                      <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center p-2 text-center">
-                        <span className="text-white text-xs font-semibold">
-                          {isAr ? "اختيار" : "Select"}
-                        </span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-          </div>
+                      className="flex-1"
+                    />
 
-          <DialogFooter>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setIsAddPhotoOpen(false);
-                setIsAddVideoOpen(false);
-              }}
-            >
-              {isAr ? "إلغاء" : "Cancel"}
-            </Button>
-          </DialogFooter>
+                    {/* Category Filter Selector */}
+                    <div className="relative shrink-0">
+                      <select
+                        value={categoryFilter || "all"}
+                        onChange={(e) => {
+                          setCategoryFilter(e.target.value === "all" ? undefined : e.target.value);
+                          setLibraryPage(1);
+                        }}
+                        className="h-9 rounded-md border border-input bg-background px-3 py-1 text-xs shadow-xs focus:outline-hidden focus:ring-1 focus:ring-amber-500 cursor-pointer"
+                      >
+                        <option value="all">{isAr ? "جميع التصنيفات" : "All Categories"}</option>
+                        {libraryCategories.map((cat) => (
+                          <option key={cat.id || cat.slug} value={cat.slug}>
+                            {isAr ? cat.nameAr || cat.nameEn : cat.nameEn}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center justify-between sm:justify-end gap-2 text-xs">
+                    {selectedAssetIds.length > 0 && (
+                      <Badge variant="secondary" className="bg-amber-500/10 text-amber-600 dark:text-amber-400 font-semibold px-2.5 py-1">
+                        {isAr ? `تم تحديد ${selectedAssetIds.length}` : `${selectedAssetIds.length} selected`}
+                      </Badge>
+                    )}
+                    {availableAssets.length > 0 && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={handleToggleSelectAll}
+                        className="h-8 text-xs gap-1.5 shrink-0"
+                      >
+                        {allVisibleSelected ? (
+                          <>
+                            <Square className="w-3.5 h-3.5" />
+                            {isAr ? "إلغاء تحديد الصفّ" : "Deselect Page"}
+                          </>
+                        ) : (
+                          <>
+                            <CheckSquare className="w-3.5 h-3.5" />
+                            {isAr ? "تحديد هذا الصفّ" : "Select Page"}
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sub-header with Total Counter & Page Pagination */}
+                <div className="flex items-center justify-between px-1 text-xs text-muted-foreground pb-1 border-b border-border/40">
+                  <span className="flex items-center gap-1.5">
+                    <FolderOpen className="w-3.5 h-3.5 text-amber-500" />
+                    {isAr
+                      ? `إجمالي عناصر المكتبة: ${totalAssets}`
+                      : `Total library assets: ${totalAssets}`}
+                  </span>
+
+                  {totalPages > 1 && (
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={libraryPage <= 1}
+                        onClick={() => setLibraryPage((p) => Math.max(1, p - 1))}
+                        title={isAr ? "الصفحة السابقة" : "Previous page"}
+                      >
+                        {isAr ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                      </Button>
+                      <span className="font-mono text-[11px] px-1">
+                        {libraryPage} / {totalPages}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        disabled={libraryPage >= totalPages}
+                        onClick={() => setLibraryPage((p) => p + 1)}
+                        title={isAr ? "الصفحة التالية" : "Next page"}
+                      >
+                        {isAr ? <ChevronLeft className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                      </Button>
+                    </div>
+                  )}
+                </div>
+
+                {/* Grid */}
+                <div className="flex-1 overflow-y-auto min-h-[340px] max-h-[460px] border rounded-lg p-3 mt-2">
+                  {isLibraryLoading ? (
+                    <div className="flex items-center justify-center h-48">
+                      <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+                    </div>
+                  ) : availableAssets.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground text-sm">
+                      {isAr ? "لا توجد نتائج مطابقة في المكتبة" : "No matching assets found in library"}
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                      {availableAssets.map((asset) => {
+                        const isSelected = selectedAssetIds.includes(asset.id);
+                        const isAlreadyInShowcase = isAddPhotoOpen
+                          ? photos.some((p) => p.id === asset.id || (p as any).mediaId === asset.id)
+                          : videos.some((v) => v.id === asset.id || (v as any).mediaId === asset.id);
+
+                        return (
+                          <div
+                            key={asset.id}
+                            className={`group relative aspect-square rounded-lg overflow-hidden border cursor-pointer bg-muted transition-all select-none ${
+                              isSelected
+                                ? "border-amber-500 ring-2 ring-amber-500/80 shadow-md scale-[0.98]"
+                                : "border-border/70 hover:border-amber-500/70"
+                            }`}
+                            onClick={() => toggleSelectAssetObj(asset)}
+                          >
+                            <img
+                              src={asset.optimizedUrl || asset.thumbnailUrl || asset.secureUrl || asset.url}
+                              alt={asset.altText || asset.title || ""}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            />
+
+                            {/* Top left badge if already in showcase */}
+                            {isAlreadyInShowcase && (
+                              <div className="absolute top-1.5 left-1.5 z-10">
+                                <Badge className="bg-black/75 backdrop-blur-xs text-amber-400 border border-amber-500/40 text-[10px] px-1.5 py-0.5">
+                                  {isAr ? "مضاف" : "Added"}
+                                </Badge>
+                              </div>
+                            )}
+
+                            {/* Top right check mark indicator */}
+                            <div className="absolute top-1.5 right-1.5 z-10">
+                              <div
+                                className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${
+                                  isSelected
+                                    ? "bg-amber-500 text-white shadow-xs scale-110"
+                                    : "bg-black/40 text-white/70 group-hover:bg-black/60"
+                                }`}
+                              >
+                                {isSelected ? (
+                                  <Check className="w-3.5 h-3.5 stroke-[3]" />
+                                ) : (
+                                  <div className="w-2 h-2 rounded-full border border-white/60" />
+                                )}
+                              </div>
+                            </div>
+
+                            {/* Hover label overlay */}
+                            <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent p-1.5 pt-4 text-center text-[10px] text-white truncate opacity-0 group-hover:opacity-100 transition-opacity">
+                              {asset.title || asset.altText || (isAr ? "بدون عنوان" : "Untitled")}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+
+                <DialogFooter className="gap-2 sm:gap-0 mt-4">
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setIsAddPhotoOpen(false);
+                      setIsAddVideoOpen(false);
+                      setSelectedAssetIds([]);
+                      setSelectedAssetsMap({});
+                      setLibraryPage(1);
+                    }}
+                  >
+                    {isAr ? "إلغاء" : "Cancel"}
+                  </Button>
+                  <Button
+                    onClick={handleConfirmAddSelected}
+                    disabled={selectedAssetIds.length === 0 || isAssigningBulk}
+                    className="gap-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-sm"
+                  >
+                    {isAssigningBulk ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        {isAr ? "جاري الإضافة..." : "Adding..."}
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="w-4 h-4" />
+                        {isAddPhotoOpen
+                          ? isAr
+                            ? `إضافة الصور المختارة (${selectedAssetIds.length})`
+                            : `Add Selected Photos (${selectedAssetIds.length})`
+                          : isAr
+                          ? `إضافة الفيديوهات المختارة (${selectedAssetIds.length})`
+                          : `Add Selected Videos (${selectedAssetIds.length})`}
+                      </>
+                    )}
+                  </Button>
+                </DialogFooter>
+              </>
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

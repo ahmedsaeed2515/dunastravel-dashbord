@@ -215,13 +215,13 @@ export default function RolesPage() {
       >
         <div className="flex items-center justify-between">
           <TabsList className="grid grid-cols-2 w-full sm:w-[460px] h-11 p-1 bg-muted/70 rounded-xl">
-            <TabsTrigger value="roles-overview" className="text-xs font-bold gap-2 rounded-lg">
-              <Layers className="h-4 w-4 text-amber-500" />
-              <span>{isAr ? "مصفوفة وصلاحيات الأدوار" : "Roles & Permissions Matrix"}</span>
+            <TabsTrigger value="roles-overview" className="text-[11px] sm:text-xs font-bold gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-3">
+              <Layers className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-amber-500 shrink-0" />
+              <span className="truncate">{isAr ? "مصفوفة وصلاحيات الأدوار" : "Roles & Permissions Matrix"}</span>
             </TabsTrigger>
-            <TabsTrigger value="users-roles" className="text-xs font-bold gap-2 rounded-lg">
-              <Users className="h-4 w-4 text-blue-500" />
-              <span>{isAr ? "تعيين أدوار المستخدمين" : "Assign User Roles"}</span>
+            <TabsTrigger value="users-roles" className="text-[11px] sm:text-xs font-bold gap-1.5 sm:gap-2 rounded-lg px-1.5 sm:px-3">
+              <Users className="h-3.5 w-3.5 sm:h-4 sm:w-4 text-blue-500 shrink-0" />
+              <span className="truncate">{isAr ? "تعيين أدوار المستخدمين" : "Assign User Roles"}</span>
             </TabsTrigger>
           </TabsList>
         </div>

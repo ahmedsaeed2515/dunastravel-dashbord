@@ -38,6 +38,23 @@ function tourToTripModel(tour: Tour): TripModel {
     meals: localeText(item.mealsJsonb, 'ar'),
   }));
 
+  const routeMapFromTour = tour.routeMapJsonb || (tour as any).routeMap;
+  const routeMap = routeMapFromTour ? {
+    title: localeText(routeMapFromTour.titleJsonb, 'ar') || 'Interactive Itinerary Journey Map',
+    subtitle: localeText(routeMapFromTour.subtitleJsonb, 'ar') || 'Explore your day-by-day path across premier luxury landmarks',
+    locations: Array.isArray(routeMapFromTour.locations)
+      ? routeMapFromTour.locations.map((loc: any, index: number) => ({
+          id: loc.id || `loc-${index + 1}`,
+          dbKey: loc.dbKey || 'cairo',
+          lat: typeof loc.lat === 'number' ? loc.lat : 0,
+          lng: typeof loc.lng === 'number' ? loc.lng : 0,
+          daysVisited: Array.isArray(loc.daysVisited) ? loc.daysVisited : [],
+          name: localeText(loc.nameJsonb, 'ar') || loc.name || '',
+          description: localeText(loc.descriptionJsonb, 'ar') || loc.description || '',
+        }))
+      : [],
+  } : undefined;
+
   return {
     id: tour.id,
     slug: tour.slug,
@@ -89,6 +106,7 @@ function tourToTripModel(tour: Tour): TripModel {
     hotels: '',
     accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
     itinerary,
+    routeMap,
     translations: Object.fromEntries(
       LOCALES.map((locale) => [
         locale,
@@ -106,6 +124,20 @@ function tourToTripModel(tour: Tour): TripModel {
             description: localeText(item.descriptionJsonb, locale),
             meals: localeText(item.mealsJsonb, locale),
           })),
+          routeMap: routeMapFromTour ? {
+            title: localeText(routeMapFromTour.titleJsonb, locale),
+            subtitle: localeText(routeMapFromTour.subtitleJsonb, locale),
+            locations: Array.isArray(routeMapFromTour.locations)
+              ? routeMapFromTour.locations.map((loc: any) => ({
+                  dbKey: loc.dbKey || 'cairo',
+                  lat: loc.lat,
+                  lng: loc.lng,
+                  daysVisited: loc.daysVisited,
+                  name: localeText(loc.nameJsonb, locale) || loc.name || '',
+                  description: localeText(loc.descriptionJsonb, locale) || loc.description || '',
+                }))
+              : [],
+          } : undefined,
         },
       ])
     ) as TripModel['translations'],

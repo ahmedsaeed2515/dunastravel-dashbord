@@ -104,14 +104,14 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="role"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold">الدور والصلاحية</FormLabel>
+              <FormLabel className="font-bold text-xs sm:text-sm">الدور والصلاحية</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
-                  <SelectTrigger className="rounded-xl font-bold">
+                  <SelectTrigger className="rounded-xl font-bold h-10 text-xs sm:text-sm">
                     <SelectValue placeholder="اختر الدور" />
                   </SelectTrigger>
                 </FormControl>
-                <SelectContent className="font-bold">
+                <SelectContent className="font-bold max-h-[50vh] overflow-y-auto z-[60]">
                   {isSuperAdmin && (
                     <SelectItem value="SUPER_ADMIN">مدير نظام رئيسي (Super Admin)</SelectItem>
                   )}
@@ -132,7 +132,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold">
+              <FormLabel className="font-bold text-xs sm:text-sm">
                 {isEdit
                   ? "كلمة المرور (اتركها فارغة للإبقاء عليها — 12 حرفاً على الأقل في حال التغيير)"
                   : "كلمة المرور (12 حرفاً على الأقل)"}
@@ -144,13 +144,13 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     placeholder="••••••••"
                     autoComplete="new-password"
                     {...field}
-                    className="rounded-xl font-mono"
+                    className="rounded-xl font-mono text-xs sm:text-sm pe-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
+                    className="absolute end-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowPassword(!showPassword)}
                     aria-label={showPassword ? "إخفاء كلمة المرور" : "إظهار كلمة المرور"}
                   >
@@ -172,7 +172,7 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
           name="confirmPassword"
           render={({ field }) => (
             <FormItem>
-              <FormLabel className="font-bold">تأكيد كلمة المرور</FormLabel>
+              <FormLabel className="font-bold text-xs sm:text-sm">تأكيد كلمة المرور</FormLabel>
               <FormControl>
                 <div className="relative">
                   <Input
@@ -180,13 +180,13 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
                     placeholder="••••••••"
                     autoComplete="new-password"
                     {...field}
-                    className="rounded-xl font-mono"
+                    className="rounded-xl font-mono text-xs sm:text-sm pe-10"
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
+                    className="absolute end-0 top-0 h-full px-3 py-2 text-muted-foreground hover:text-foreground"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     aria-label={showConfirmPassword ? "إخفاء تأكيد كلمة المرور" : "إظهار تأكيد كلمة المرور"}
                   >
@@ -205,9 +205,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
 
         {/* Password Helper & Generator Strip */}
         <div className="rounded-xl border border-border/70 bg-muted/40 p-3 space-y-2">
-          <div className="flex items-center justify-between gap-2">
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
             <span className="text-[11px] font-bold text-foreground flex items-center gap-1.5">
-              <KeyRound className="h-3.5 w-3.5 text-amber-500" />
+              <KeyRound className="h-3.5 w-3.5 text-amber-500 shrink-0" />
               <span>معايير أمان كلمة المرور:</span>
             </span>
             <Button
@@ -215,9 +215,9 @@ export function UserForm({ initialData, onSubmit, isSubmitting }: UserFormProps)
               variant="outline"
               size="sm"
               onClick={handleGeneratePassword}
-              className="h-7 px-2.5 text-xs font-bold gap-1.5 rounded-lg border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-500"
+              className="h-8 sm:h-7 px-2.5 text-xs font-bold gap-1.5 rounded-lg border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 hover:text-amber-500 w-full sm:w-auto justify-center"
             >
-              <Wand2 className="h-3.5 w-3.5" />
+              <Wand2 className="h-3.5 w-3.5 shrink-0" />
               <span>توليد كلمة مرور قوية</span>
             </Button>
           </div>

@@ -13,8 +13,17 @@ export const authApi = {
     return user;
   },
   async logout(): Promise<{ message: string }> {
-    try { return await apiClient.post<{ message: string }, { message: string }>('/auth/logout', {}); }
-    finally { clearCsrfToken(); }
+    try { 
+      return await apiClient.post<{ message: string }, { message: string }>('/auth/logout', {}); 
+    } catch {
+      return { message: 'Logged out locally' };
+    } finally { 
+      clearCsrfToken();
+      if (typeof document !== 'undefined') {
+        document.cookie = 'access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;';
+        document.cookie = 'refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;';
+      }
+    }
   },
   getMe: (): Promise<UserSession> => apiClient.get<UserSession, UserSession>('/auth/me'),
   getCsrfToken: (): Promise<{ csrfToken: string }> => apiClient.get<{ csrfToken: string }, { csrfToken: string }>('/auth/csrf'),

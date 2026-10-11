@@ -2,7 +2,7 @@
 
 import React, { memo, useState, useEffect } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { Search, Languages, Moon, Sun } from "lucide-react";
+import { Languages, Moon, Sun } from "lucide-react";
 import { useTheme } from "next-themes";
 import { usePathname, useRouter } from "@/i18n/routing";
 import { useParams, useSearchParams } from "next/navigation";
@@ -15,7 +15,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
-import { Button } from "@/components/ui/button";
 import { NotificationBellDropdown } from "./NotificationBellDropdown";
 import { useAuth } from "@/features/auth/hooks/useAuth";
 import { useSetting } from "@/features/settings/hooks/useSettings";
@@ -62,7 +61,6 @@ export const Topbar = memo(function Topbar() {
   const params = useParams();
   const searchParams = useSearchParams();
   const tCommon = useTranslations("common");
-  const tAccess = useTranslations("accessibility");
   const tNav = useTranslations("navigation");
 
   useEffect(() => {
@@ -78,12 +76,18 @@ export const Topbar = memo(function Topbar() {
   };
 
   const handleLogout = async () => {
+    if (typeof document !== "undefined") {
+      document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;";
+      document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;";
+    }
     try {
       await logout();
+    } catch {
+      // Ignore error
     } finally {
-      const first = pathname.split('/').filter(Boolean)[0];
-      const validLocale = ['en', 'ar', 'es', 'pt', 'it'].includes(first) ? first : 'ar';
-      window.location.href = `/${validLocale}/login`;
+      const first = pathname.split("/").filter(Boolean)[0];
+      const validLocale = ["en", "ar", "es", "pt", "it"].includes(first) ? first : "ar";
+      window.location.href = `/${validLocale}/login?logout=1`;
     }
   };
 
@@ -100,38 +104,8 @@ export const Topbar = memo(function Topbar() {
         <SidebarTrigger />
       </div>
 
-      {/* Right: Controls (Search, Theme, Language, Notifications, User Profile) */}
+      {/* Right: Controls (Theme, Language, Notifications, User Profile) */}
       <div className="flex items-center gap-1 sm:gap-2.5">
-        {/* Desktop Search */}
-        <button
-          type="button"
-          onClick={() => {
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
-          }}
-          aria-label={tAccess("searchDashboard")}
-          className="hidden sm:flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 hover:border-amber-500/40 px-3 py-1.5 rounded-xl w-44 transition-all duration-200"
-        >
-          <Search className="w-4 h-4 shrink-0 text-slate-400" />
-          <span className="truncate">{tCommon("searchPlaceholder")}</span>
-          <kbd className="ms-auto pointer-events-none inline-flex h-5 select-none items-center gap-0.5 rounded border border-slate-300 dark:border-slate-700 bg-slate-200/60 dark:bg-slate-800 px-1.5 font-mono text-[10px] font-medium text-slate-600 dark:text-slate-400">
-            <span className="text-xs">⌘</span>K
-          </kbd>
-        </button>
-
-        {/* Mobile Quick Search */}
-        <Button
-          variant="ghost"
-          size="icon-sm"
-          className="sm:hidden text-slate-700 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700 p-1.5"
-          onClick={() => {
-            window.dispatchEvent(new KeyboardEvent('keydown', { key: 'k', metaKey: true, ctrlKey: true }));
-          }}
-          title="Search"
-          aria-label="Search"
-        >
-          <Search className="h-4 w-4" />
-        </Button>
-
         {/* Theme Toggle Button */}
         <button
           onClick={() => setTheme(isDark ? "light" : "dark")}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useMemo, memo } from 'react';
+import React, { useState, useEffect, useMemo, useRef, memo } from 'react';
 import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
@@ -58,6 +58,219 @@ import {
 import { toast } from 'sonner';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
 
+const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [number, number] }[] = [
+  { dbKey: 'cairo', nameAr: 'القاهرة', nameEn: 'Cairo', coords: [30.0444, 31.2357] },
+  { dbKey: 'giza', nameAr: 'الجيزة', nameEn: 'Giza', coords: [29.9792, 31.1342] },
+  { dbKey: 'pyramids', nameAr: 'الأهرامات', nameEn: 'Pyramids', coords: [29.9792, 31.1342] },
+  { dbKey: 'sphinx', nameAr: 'أبو الهول', nameEn: 'Sphinx', coords: [29.9753, 31.1376] },
+  { dbKey: 'grand egyptian museum', nameAr: 'المتحف المصري الكبير', nameEn: 'Grand Egyptian Museum', coords: [29.9947, 31.1172] },
+  { dbKey: 'egyptian museum', nameAr: 'المتحف المصري بالتحرير', nameEn: 'Egyptian Museum Tahrir', coords: [30.0478, 31.2336] },
+  { dbKey: 'khan el khalili', nameAr: 'خان الخليلي', nameEn: 'Khan El-Khalili', coords: [30.0475, 31.2622] },
+  { dbKey: 'citadel of saladin', nameAr: 'قلعة صلاح الدين', nameEn: 'Citadel of Saladin', coords: [30.0299, 31.2611] },
+  { dbKey: 'saqqara', nameAr: 'سقارة', nameEn: 'Saqqara', coords: [29.8713, 31.2164] },
+  { dbKey: 'dahshur', nameAr: 'دهشور', nameEn: 'Dahshur', coords: [29.8086, 31.2061] },
+  { dbKey: 'luxor', nameAr: 'الأقصر', nameEn: 'Luxor', coords: [25.6872, 32.6396] },
+  { dbKey: 'karnak', nameAr: 'معبد الكرنك', nameEn: 'Karnak Temple', coords: [25.7188, 32.6573] },
+  { dbKey: 'luxor temple', nameAr: 'معبد الأقصر', nameEn: 'Luxor Temple', coords: [25.6996, 32.6392] },
+  { dbKey: 'valley of the kings', nameAr: 'وادي الملوك', nameEn: 'Valley of the Kings', coords: [25.7402, 32.6014] },
+  { dbKey: 'hatshepsut', nameAr: 'معبد حتشبسوت', nameEn: 'Hatshepsut Temple', coords: [25.7383, 32.6065] },
+  { dbKey: 'colossi of memnon', nameAr: 'تمثالا ممنون', nameEn: 'Colossi of Memnon', coords: [25.7206, 32.6105] },
+  { dbKey: 'aswan', nameAr: 'أسوان', nameEn: 'Aswan', coords: [24.0889, 32.8998] },
+  { dbKey: 'philae', nameAr: 'معبد فيلة', nameEn: 'Philae Temple', coords: [24.0250, 32.8844] },
+  { dbKey: 'high dam', nameAr: 'السد العالي', nameEn: 'High Dam', coords: [23.9702, 32.8770] },
+  { dbKey: 'unfinished obelisk', nameAr: 'المسلة الناقصة', nameEn: 'Unfinished Obelisk', coords: [24.0769, 32.8953] },
+  { dbKey: 'elephantine island', nameAr: 'جزيرة الفنتين', nameEn: 'Elephantine Island', coords: [24.0903, 32.8872] },
+  { dbKey: 'abu simbel', nameAr: 'معابد أبو سمبل', nameEn: 'Abu Simbel Temples', coords: [22.3372, 31.6258] },
+  { dbKey: 'kom ombo', nameAr: 'معبد كوم أمبو', nameEn: 'Kom Ombo Temple', coords: [24.4711, 32.9469] },
+  { dbKey: 'edfu', nameAr: 'معبد إدفو', nameEn: 'Edfu Temple', coords: [24.9781, 32.8789] },
+  { dbKey: 'alexandria', nameAr: 'الإسكندرية', nameEn: 'Alexandria', coords: [31.2001, 29.9187] },
+  { dbKey: 'qaitbay citadel', nameAr: 'قلعة قايتباي', nameEn: 'Qaitbay Citadel', coords: [31.2141, 29.8854] },
+  { dbKey: 'bibliotheca alexandrina', nameAr: 'مكتبة الإسكندرية', nameEn: 'Bibliotheca Alexandrina', coords: [31.2089, 29.9092] },
+  { dbKey: 'montaza palace', nameAr: 'قصر المنتزه', nameEn: 'Montaza Palace', coords: [31.2883, 30.0163] },
+  { dbKey: 'hurghada', nameAr: 'الغردقة', nameEn: 'Hurghada', coords: [27.2579, 33.8116] },
+  { dbKey: 'giftun island', nameAr: 'جزيرة الجفتون', nameEn: 'Giftun Island', coords: [27.2341, 33.9452] },
+  { dbKey: 'el gouna', nameAr: 'الجونة', nameEn: 'El Gouna', coords: [27.3951, 33.6781] },
+  { dbKey: 'sahl hasheesh', nameAr: 'سهل حشيش', nameEn: 'Sahl Hasheesh', coords: [27.0494, 33.8863] },
+  { dbKey: 'soma bay', nameAr: 'سوما باي', nameEn: 'Soma Bay', coords: [26.8524, 33.9392] },
+  { dbKey: 'makadi bay', nameAr: 'خليج مكادي', nameEn: 'Makadi Bay', coords: [26.9897, 33.8967] },
+  { dbKey: 'marsa alam', nameAr: 'مرسى علم', nameEn: 'Marsa Alam', coords: [25.0784, 34.8913] },
+  { dbKey: 'sataya reef', nameAr: 'شعاب سطايح (دلفين ريف)', nameEn: 'Sataya Reef', coords: [24.1611, 35.4851] },
+  { dbKey: 'sharm', nameAr: 'شرم الشيخ', nameEn: 'Sharm El Sheikh', coords: [27.9158, 34.3299] },
+  { dbKey: 'ras mohammed', nameAr: 'محمية رأس محمد', nameEn: 'Ras Mohammed', coords: [27.7344, 34.2497] },
+  { dbKey: 'naama bay', nameAr: 'خليج نعمة', nameEn: 'Naama Bay', coords: [27.9139, 34.3283] },
+  { dbKey: 'dahab', nameAr: 'دهب', nameEn: 'Dahab', coords: [28.5097, 34.5136] },
+  { dbKey: 'blue hole', nameAr: 'الثقب الأزرق (بلو هول)', nameEn: 'Blue Hole', coords: [28.5722, 34.5367] },
+  { dbKey: 'nuweiba', nameAr: 'نويبع', nameEn: 'Nuweiba', coords: [29.0345, 34.6653] },
+  { dbKey: 'taba', nameAr: 'طابا', nameEn: 'Taba', coords: [29.4925, 34.8958] },
+  { dbKey: 'saint catherine', nameAr: 'دير سانت كاترين', nameEn: 'Saint Catherine Monastery', coords: [28.5559, 33.9762] },
+  { dbKey: 'mount sinai', nameAr: 'جبل موسى', nameEn: 'Mount Sinai', coords: [28.5394, 33.9753] },
+  { dbKey: 'siwa', nameAr: 'سيوة', nameEn: 'Siwa Oasis', coords: [29.2032, 25.5189] },
+  { dbKey: 'fayoum', nameAr: 'الفيوم', nameEn: 'Fayoum Oasis', coords: [29.3084, 30.8428] },
+  { dbKey: 'wadi el rayan', nameAr: 'وادي الريان', nameEn: 'Wadi El Rayan', coords: [29.1867, 30.4356] },
+  { dbKey: 'magic lake', nameAr: 'البحيرة السحرية', nameEn: 'Magic Lake Fayoum', coords: [29.2134, 30.3951] },
+  { dbKey: 'white desert', nameAr: 'الصحراء البيضاء', nameEn: 'White Desert', coords: [27.3242, 28.1756] },
+  { dbKey: 'bahariya oasis', nameAr: 'الواحات البحرية', nameEn: 'Bahariya Oasis', coords: [28.3541, 28.8961] },
+  { dbKey: 'ain sokhna', nameAr: 'العين السخنة', nameEn: 'Ain Sokhna', coords: [29.6019, 32.3275] },
+  { dbKey: 'al alamein', nameAr: 'العلمين الجديدة', nameEn: 'New Alamein', coords: [30.8333, 28.9500] },
+  { dbKey: 'marsa matrouh', nameAr: 'مرسى مطروح', nameEn: 'Marsa Matrouh', coords: [31.3543, 27.2373] },
+  { dbKey: 'istanbul', nameAr: 'إسطنبول', nameEn: 'Istanbul', coords: [41.0082, 28.9784] },
+  { dbKey: 'cappadocia', nameAr: 'كبادوكيا', nameEn: 'Cappadocia', coords: [38.6431, 34.8281] },
+  { dbKey: 'pamukkale', nameAr: 'باموكالي', nameEn: 'Pamukkale', coords: [37.9221, 29.1212] },
+  { dbKey: 'ephesus', nameAr: 'أفسس', nameEn: 'Ephesus', coords: [37.9394, 27.3410] },
+  { dbKey: 'antalya', nameAr: 'أنطاليا', nameEn: 'Antalya', coords: [36.8969, 30.7133] },
+  { dbKey: 'amman', nameAr: 'عمان', nameEn: 'Amman', coords: [31.9454, 35.9284] },
+  { dbKey: 'petra', nameAr: 'البتراء', nameEn: 'Petra', coords: [30.3285, 35.4444] },
+  { dbKey: 'wadi rum', nameAr: 'وادي رم', nameEn: 'Wadi Rum', coords: [29.5781, 35.4206] },
+  { dbKey: 'dead sea', nameAr: 'البحر الميت', nameEn: 'Dead Sea', coords: [31.5590, 35.4732] },
+  { dbKey: 'dubai', nameAr: 'دبي', nameEn: 'Dubai', coords: [25.2048, 55.2708] },
+  { dbKey: 'abu dhabi', nameAr: 'أبوظبي', nameEn: 'Abu Dhabi', coords: [24.4539, 54.3773] },
+  { dbKey: 'marrakech', nameAr: 'مراكش', nameEn: 'Marrakech', coords: [31.6295, -7.9811] },
+  { dbKey: 'casablanca', nameAr: 'الدار البيضاء', nameEn: 'Casablanca', coords: [33.5731, -7.5898] },
+  { dbKey: 'fes', nameAr: 'فاس', nameEn: 'Fes', coords: [34.0181, -5.0078] },
+  { dbKey: 'jerusalem', nameAr: 'القدس', nameEn: 'Jerusalem', coords: [31.7683, 35.2137] },
+  { dbKey: 'athens', nameAr: 'أثينا', nameEn: 'Athens', coords: [37.9838, 23.7275] },
+  { dbKey: 'santorini', nameAr: 'سانتوريني', nameEn: 'Santorini', coords: [36.3932, 25.4615] },
+  { dbKey: 'rome', nameAr: 'روما', nameEn: 'Rome', coords: [41.9028, 12.4964] },
+  { dbKey: 'paris', nameAr: 'باريس', nameEn: 'Paris', coords: [48.8566, 2.3522] },
+  { dbKey: 'london', nameAr: 'لندن', nameEn: 'London', coords: [51.5074, -0.1278] },
+  { dbKey: 'barcelona', nameAr: 'برشلونة', nameEn: 'Barcelona', coords: [41.3851, 2.1734] },
+  { dbKey: 'madrid', nameAr: 'مدريد', nameEn: 'Madrid', coords: [40.4168, -3.7038] },
+];
+
+const LocationSearchInput: React.FC<{
+  value: string;
+  onSelect: (name: string, lat: number, lng: number) => void;
+  onChangeRaw: (val: string) => void;
+  placeholder?: string;
+}> = ({ value, onSelect, onChangeRaw, placeholder }) => {
+  const [query, setQuery] = useState(value || '');
+  const [results, setResults] = useState<{ display_name: string; name: string; lat: number; lng: number }[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [isOpen, setIsOpen] = useState(false);
+  const searchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setQuery(value || '');
+  }, [value]);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleInputChange = (text: string) => {
+    setQuery(text);
+    onChangeRaw(text);
+
+    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current);
+    if (!text.trim() || text.length < 2) {
+      setResults([]);
+      setIsOpen(false);
+      setIsLoading(false);
+      return;
+    }
+
+    setIsLoading(true);
+    setIsOpen(true);
+
+    searchTimeoutRef.current = setTimeout(async () => {
+      try {
+        const response = await fetch(
+          `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(text)}&limit=7&accept-language=ar,en`
+        );
+        if (response.ok) {
+          const data = await response.json();
+          const mapped = data.map((item: any) => {
+            const parts = (item.display_name || '').split(',');
+            const shortName = item.name || parts[0] || text;
+            return {
+              display_name: item.display_name,
+              name: shortName.trim(),
+              lat: parseFloat(item.lat),
+              lng: parseFloat(item.lon),
+            };
+          });
+          setResults(mapped);
+        }
+      } catch (err) {
+        console.error('Location search error:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    }, 350);
+  };
+
+  const handleSelectResult = (res: { name: string; lat: number; lng: number; display_name: string }) => {
+    setQuery(res.name);
+    onSelect(res.name, res.lat, res.lng);
+    setIsOpen(false);
+    toast.success(`📍 تم اختيار الموقع: ${res.name} (${res.lat.toFixed(4)}, ${res.lng.toFixed(4)})`);
+  };
+
+  return (
+    <div ref={containerRef} className="relative flex-1">
+      <div className="relative">
+        <Input
+          value={query}
+          onChange={e => handleInputChange(e.target.value)}
+          onFocus={() => { if (results.length > 0) setIsOpen(true); }}
+          placeholder={placeholder || 'ابحث عن أي موقع في العالم (مدينة، فندق، معلم سياحي)...'}
+          className="h-10 text-xs font-bold rounded-xl pr-8 pl-8 bg-background shadow-2xs border-amber-500/30 focus:border-amber-500"
+        />
+        <MapPin className="w-4 h-4 text-amber-500 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none opacity-90" />
+        {isLoading && (
+          <Loader2 className="w-4 h-4 text-amber-500 animate-spin absolute left-2.5 top-1/2 -translate-y-1/2" />
+        )}
+      </div>
+
+      {isOpen && (
+        <div className="absolute z-50 left-0 right-0 mt-1 bg-card border border-border/90 shadow-2xl rounded-xl overflow-hidden max-h-64 overflow-y-auto divide-y divide-border/30">
+          {isLoading && results.length === 0 && (
+            <div className="p-3 text-center text-xs text-muted-foreground flex items-center justify-center gap-2">
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-amber-500" />
+              جاري البحث عن الموقع عالمياً...
+            </div>
+          )}
+
+          {!isLoading && results.length === 0 && (
+            <div className="p-3 text-center text-xs text-muted-foreground">
+              لم يتم العثور على خريطة مطابقة فورية، يمكنك إدخال الإحداثيات يدوياً.
+            </div>
+          )}
+
+          {results.map((res, i) => (
+            <button
+              key={i}
+              type="button"
+              onClick={() => handleSelectResult(res)}
+              className="w-full text-right p-2.5 hover:bg-amber-500/15 transition-colors text-right flex items-start gap-2.5 group cursor-pointer"
+            >
+              <Globe2 className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
+              <div className="flex-1 min-w-0">
+                <div className="text-xs font-black text-foreground group-hover:text-amber-500 truncate">
+                  {res.name}
+                </div>
+                <div className="text-[10px] text-muted-foreground truncate">
+                  {res.display_name}
+                </div>
+                <div className="text-[9px] font-mono font-bold text-amber-600/90 mt-0.5">
+                  📍 [{res.lat.toFixed(4)}, {res.lng.toFixed(4)}]
+                </div>
+              </div>
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 interface TripEditorModalProps {
   trip?: TripModel | null;
   isOpen: boolean;
@@ -92,6 +305,11 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   hotels: '5-Star Luxury Hotels',
   accommodation: [],
   itinerary: [],
+  routeMap: {
+    title: 'Interactive Itinerary Journey Map',
+    subtitle: 'Explore your day-by-day path across premier luxury landmarks',
+    locations: [],
+  },
   translations: {
     ar: {},
     en: {},
@@ -165,6 +383,23 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         toursApi.getTourBySlug(trip.slug).then((fullTour) => {
           if (!fullTour) return;
           const hydrated = tourToTripModel(fullTour);
+          const routeMapFromApi = fullTour.routeMapJsonb || (fullTour as any).routeMap;
+
+          const apiRouteMap = routeMapFromApi ? {
+            title: routeMapFromApi.titleJsonb?.ar || routeMapFromApi.title || 'Interactive Itinerary Journey Map',
+            subtitle: routeMapFromApi.subtitleJsonb?.ar || routeMapFromApi.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+            locations: Array.isArray(routeMapFromApi.locations)
+              ? routeMapFromApi.locations.map((l: any, idx: number) => ({
+                  id: l.id || `loc-${idx + 1}`,
+                  dbKey: l.dbKey || 'cairo',
+                  lat: typeof l.lat === 'number' ? l.lat : 0,
+                  lng: typeof l.lng === 'number' ? l.lng : 0,
+                  daysVisited: Array.isArray(l.daysVisited) ? l.daysVisited : [],
+                  name: l.nameJsonb?.ar || l.name || '',
+                  description: l.descriptionJsonb?.ar || l.description || '',
+                }))
+              : [],
+          } : undefined;
 
           setFormData(prev => {
             const trans = { ...(prev.translations || {}) };
@@ -179,6 +414,22 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 highlights: (hydLoc.highlights && hydLoc.highlights.length > 0) ? hydLoc.highlights : (trans[loc].highlights || []),
                 itinerary: (hydLoc.itinerary && hydLoc.itinerary.length > 0) ? hydLoc.itinerary : (trans[loc].itinerary || []),
               };
+              if (routeMapFromApi && (!trans[loc].routeMap || !trans[loc].routeMap.locations || trans[loc].routeMap.locations.length === 0)) {
+                trans[loc].routeMap = {
+                  title: routeMapFromApi.titleJsonb?.[loc] || routeMapFromApi.title || 'Interactive Itinerary Journey Map',
+                  subtitle: routeMapFromApi.subtitleJsonb?.[loc] || routeMapFromApi.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+                  locations: Array.isArray(routeMapFromApi.locations)
+                    ? routeMapFromApi.locations.map((l: any) => ({
+                        dbKey: l.dbKey || 'cairo',
+                        lat: l.lat,
+                        lng: l.lng,
+                        daysVisited: l.daysVisited,
+                        name: l.nameJsonb?.[loc] || l.name || '',
+                        description: l.descriptionJsonb?.[loc] || l.description || '',
+                      }))
+                    : [],
+                };
+              }
             });
 
             return {
@@ -192,6 +443,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               accommodation: hydrated.accommodation.length > 0 ? hydrated.accommodation : (prev.accommodation || []),
               seasonPricing: (hydrated.seasonPricing && hydrated.seasonPricing.length > 0) ? hydrated.seasonPricing : (prev.seasonPricing || []),
               itinerary: hydrated.itinerary.length > 0 ? hydrated.itinerary : (prev.itinerary || []),
+              routeMap: (prev.routeMap && prev.routeMap.locations && prev.routeMap.locations.length > 0) ? prev.routeMap : apiRouteMap,
+              translations: trans,
+            };
+          });
               translations: trans,
             };
           });
@@ -451,6 +706,295 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     });
     handleChange('seasonPricing', rules);
     toast.success(`تم استيراد ${rules.length} مواسم تسعير بنجاح!`);
+  };
+
+  const getLocalizedRouteMapTitle = (): string => {
+    if (activeLang === 'ar') return formData.routeMap?.title || 'Interactive Itinerary Journey Map';
+    return formData.translations?.[activeLang]?.routeMap?.title || formData.routeMap?.title || 'Interactive Itinerary Journey Map';
+  };
+
+  const getLocalizedRouteMapSubtitle = (): string => {
+    if (activeLang === 'ar') return formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+    return formData.translations?.[activeLang]?.routeMap?.subtitle || formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+  };
+
+  const updateRouteMapTitle = (val: string) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const updatedRoute = { ...currentRoute, title: activeLang === 'ar' ? val : currentRoute.title };
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, title: val } };
+      return { ...prev, routeMap: updatedRoute, translations: trans };
+    });
+  };
+
+  const updateRouteMapSubtitle = (val: string) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const updatedRoute = { ...currentRoute, subtitle: activeLang === 'ar' ? val : currentRoute.subtitle };
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, subtitle: val } };
+      return { ...prev, routeMap: updatedRoute, translations: trans };
+    });
+  };
+
+  const getLocalizedRouteLocations = (): { dbKey: string; lat: number; lng: number; daysVisited: number[]; name: string; description: string }[] => {
+    const baseLocations = formData.routeMap?.locations || [];
+    if (activeLang === 'ar') {
+      return baseLocations;
+    }
+    const transLocations = formData.translations?.[activeLang]?.routeMap?.locations || [];
+    return baseLocations.map((loc, idx) => {
+      const transLoc = transLocations[idx];
+      return {
+        ...loc,
+        name: transLoc?.name ?? loc.name,
+        description: transLoc?.description ?? loc.description,
+      };
+    });
+  };
+
+  const updateRouteLocationField = (idx: number, field: 'dbKey' | 'lat' | 'lng' | 'daysVisited' | 'name' | 'description', value: any) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+
+      if (!baseLocations[idx]) {
+        baseLocations[idx] = { dbKey: 'cairo', lat: 30.0444, lng: 31.2357, daysVisited: [1], name: 'القاهرة', description: '' };
+      }
+
+      if (field === 'dbKey') {
+        const valStr = String(value || '').trim();
+        const valLower = valStr.toLowerCase();
+
+        // Check if value matches a preset city by dbKey, nameAr, nameEn, or option label
+        const preset = PRESET_CITIES.find(p =>
+          p.dbKey.toLowerCase() === valLower ||
+          p.nameAr.toLowerCase() === valLower ||
+          p.nameEn.toLowerCase() === valLower ||
+          `${p.nameAr} (${p.nameEn})`.toLowerCase() === valLower
+        );
+
+        if (preset) {
+          baseLocations[idx] = {
+            ...baseLocations[idx],
+            dbKey: preset.dbKey,
+            lat: preset.coords[0],
+            lng: preset.coords[1],
+            name: activeLang === 'ar' ? preset.nameAr : preset.nameEn,
+          };
+        } else {
+          // Custom place name typed by user!
+          baseLocations[idx] = {
+            ...baseLocations[idx],
+            dbKey: valStr,
+            name: valStr,
+          };
+        }
+      } else if (field === 'daysVisited') {
+        const days = typeof value === 'string'
+          ? value.split(',').map(n => parseInt(n.trim(), 10)).filter(n => !isNaN(n))
+          : value;
+        baseLocations[idx] = { ...baseLocations[idx], daysVisited: days };
+      } else if (field === 'lat' || field === 'lng') {
+        const numVal = typeof value === 'number' ? value : parseFloat(value);
+        baseLocations[idx] = { ...baseLocations[idx], [field]: isNaN(numVal) ? 0 : numVal };
+      } else if (activeLang === 'ar' || field === 'name' || field === 'description') {
+        baseLocations[idx] = { ...baseLocations[idx], [field]: value };
+      }
+
+      // Sync active language translation block
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      const transLocations = [...(transRoute.locations || [])];
+      if (!transLocations[idx]) {
+        transLocations[idx] = {
+          dbKey: baseLocations[idx].dbKey,
+          lat: baseLocations[idx].lat,
+          lng: baseLocations[idx].lng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: baseLocations[idx].name,
+          description: baseLocations[idx].description,
+        };
+      }
+
+      if (field === 'name' || field === 'description') {
+        transLocations[idx] = { ...transLocations[idx], [field]: value };
+      } else {
+        transLocations[idx] = {
+          ...transLocations[idx],
+          dbKey: baseLocations[idx].dbKey,
+          lat: baseLocations[idx].lat,
+          lng: baseLocations[idx].lng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: baseLocations[idx].name,
+        };
+      }
+
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, locations: transLocations } };
+
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+        translations: trans,
+      };
+    });
+  };
+
+  const selectGeoLocation = (idx: number, name: string, lat: number, lng: number) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+
+      const cleanLat = parseFloat(lat.toFixed(6));
+      const cleanLng = parseFloat(lng.toFixed(6));
+
+      if (!baseLocations[idx]) {
+        baseLocations[idx] = { dbKey: name, lat: cleanLat, lng: cleanLng, daysVisited: [idx + 1], name, description: '' };
+      } else {
+        baseLocations[idx] = {
+          ...baseLocations[idx],
+          dbKey: name,
+          name: name,
+          lat: cleanLat,
+          lng: cleanLng,
+        };
+      }
+
+      const trans = { ...(prev.translations || {}) };
+      if (!trans[activeLang]) trans[activeLang] = {};
+      const transRoute = trans[activeLang]?.routeMap || { locations: [] };
+      const transLocations = [...(transRoute.locations || [])];
+      if (!transLocations[idx]) {
+        transLocations[idx] = {
+          dbKey: name,
+          lat: cleanLat,
+          lng: cleanLng,
+          daysVisited: baseLocations[idx].daysVisited,
+          name: name,
+          description: baseLocations[idx].description || '',
+        };
+      } else {
+        transLocations[idx] = {
+          ...transLocations[idx],
+          dbKey: name,
+          lat: cleanLat,
+          lng: cleanLng,
+          name: name,
+        };
+      }
+
+      trans[activeLang] = { ...trans[activeLang], routeMap: { ...transRoute, locations: transLocations } };
+
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+        translations: trans,
+      };
+    });
+  };
+
+  const addRouteLocation = () => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+      const newIdx = baseLocations.length + 1;
+      const defaultPreset = PRESET_CITIES[newIdx % PRESET_CITIES.length] || PRESET_CITIES[0];
+      const newLoc = {
+        dbKey: defaultPreset.dbKey,
+        lat: defaultPreset.coords[0],
+        lng: defaultPreset.coords[1],
+        daysVisited: [newIdx],
+        name: activeLang === 'ar' ? defaultPreset.nameAr : defaultPreset.nameEn,
+        description: `${activeLang === 'ar' ? 'زيارة' : 'Visit'} ${defaultPreset.nameEn}`,
+      };
+      baseLocations.push(newLoc);
+
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+      };
+    });
+  };
+
+  const removeRouteLocation = (idx: number) => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+      baseLocations.splice(idx, 1);
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+      };
+    });
+  };
+
+  const moveRouteLocation = (idx: number, direction: 'up' | 'down') => {
+    setFormData(prev => {
+      const currentRoute = prev.routeMap || { locations: [] };
+      const baseLocations = [...(currentRoute.locations || [])];
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= baseLocations.length) return prev;
+      const temp = baseLocations[idx];
+      baseLocations[idx] = baseLocations[targetIdx];
+      baseLocations[targetIdx] = temp;
+      return {
+        ...prev,
+        routeMap: { ...currentRoute, locations: baseLocations },
+      };
+    });
+  };
+
+  const handleAutoGenerateRouteMap = () => {
+    const itinerary = formData.itinerary || [];
+    if (itinerary.length === 0) {
+      toast.error('يرجى إضافة أيام للبرنامج اليومي أولاً لتوليد نقاط الخريطة تلقائياً.');
+      return;
+    }
+
+    const autoLocations: any[] = [];
+    const addedKeys = new Set<string>();
+
+    itinerary.forEach((day, idx) => {
+      const textToSearch = `${day.title || ''} ${day.description || ''}`.toLowerCase();
+      PRESET_CITIES.forEach(city => {
+        if (textToSearch.includes(city.dbKey) || textToSearch.includes(city.nameAr.toLowerCase()) || textToSearch.includes(city.nameEn.toLowerCase())) {
+          if (!addedKeys.has(city.dbKey)) {
+            addedKeys.add(city.dbKey);
+            autoLocations.push({
+              dbKey: city.dbKey,
+              lat: city.coords[0],
+              lng: city.coords[1],
+              daysVisited: [idx + 1],
+              name: city.nameAr,
+              description: `اليوم ${idx + 1}: ${day.title || city.nameAr}`,
+            });
+          }
+        }
+      });
+    });
+
+    if (autoLocations.length === 0) {
+      autoLocations.push(
+        { dbKey: 'cairo', lat: 30.0444, lng: 31.2357, daysVisited: [1, 2], name: 'القاهرة والأهرامات', description: 'اليوم 1-2: استكشاف القاهرة وأهرامات الجيزة' },
+        { dbKey: 'luxor', lat: 25.6872, lng: 32.6396, daysVisited: [3, 4], name: 'الأقصر والكرنك', description: 'اليوم 3-4: زيارة وادي الملوك ومعابد الأقصر' }
+      );
+    }
+
+    setFormData(prev => ({
+      ...prev,
+      routeMap: {
+        title: 'Interactive Itinerary Journey Map',
+        subtitle: 'Explore your day-by-day path across premier luxury landmarks',
+        locations: autoLocations,
+      },
+    }));
+    toast.success(`تم توليد ${autoLocations.length} محطة سياحية للخريطة التفاعلية بنجاح!`);
   };
 
   const formatSlug = (input: string): string => {
@@ -805,14 +1349,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               <TabsTrigger value="itinerary" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <Calendar className="w-3.5 h-3.5 me-1.5" /> 3. البرنامج اليومي ({formData.itinerary?.length || 0})
               </TabsTrigger>
+              <TabsTrigger value="routemap" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+                <MapPin className="w-3.5 h-3.5 me-1.5 text-amber-500" /> 4. الخريطة التفاعلية والمدن ({formData.routeMap?.locations?.length || 0})
+              </TabsTrigger>
               <TabsTrigger value="inclusions" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
-                <CheckCircle2 className="w-3.5 h-3.5 me-1.5" /> 4. المشتملات والمميزات
+                <CheckCircle2 className="w-3.5 h-3.5 me-1.5" /> 5. المشتملات والمميزات
               </TabsTrigger>
               <TabsTrigger value="gallery" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
-                <ImageIcon className="w-3.5 h-3.5 me-1.5" /> 5. معرض الصور ({formData.images?.length || 0})
+                <ImageIcon className="w-3.5 h-3.5 me-1.5" /> 6. معرض الصور ({formData.images?.length || 0})
               </TabsTrigger>
               <TabsTrigger value="matrix" className="rounded-xl px-3.5 py-2 text-xs font-black data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-xs cursor-pointer">
-                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 6. جدول الترجمات الـ 5 🌐
+                <Globe2 className="w-3.5 h-3.5 me-1.5" /> 7. جدول الترجمات الـ 5 🌐
               </TabsTrigger>
             </TabsList>
           </div>
@@ -1477,7 +2024,228 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               </div>
             </TabsContent>
 
-            {/* TAB 4: INCLUSIONS & HIGHLIGHTS */}
+            {/* TAB 4: INTERACTIVE JOURNEY ROUTE MAP */}
+            <TabsContent value="routemap" className="space-y-5 m-0">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <div>
+                  <h3 className="text-sm font-black text-foreground flex items-center gap-2">
+                    <MapPin className="w-4 h-4 text-amber-500" />
+                    خريطة مسار الرحلة التفاعلية (Interactive Itinerary Journey Map)
+                  </h3>
+                  <p className="text-xs text-muted-foreground mt-0.5 font-medium">
+                    Explore Your Day-By-Day Path Across Premier Luxury Landmarks — حدد المدن والمعالم التي تزورها الرحلة بالتفصيل مع الإحداثيات وأيام الزيارة.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleAutoGenerateRouteMap}
+                    className="text-xs font-bold text-amber-600 border-amber-500/40 hover:bg-amber-500/10 gap-1.5 rounded-xl cursor-pointer"
+                  >
+                    <Wand2 className="w-3.5 h-3.5 text-amber-500" /> توليد تلقائي من أيام البرنامج
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={addRouteLocation}
+                    className="text-xs font-bold bg-amber-500 text-slate-950 hover:bg-amber-600 gap-1.5 rounded-xl cursor-pointer"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة مدينة / معلم +
+                  </Button>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-card border border-border/80 shadow-xs">
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">عنوان الخريطة في الموقع ({activeLang.toUpperCase()})</label>
+                  <Input
+                    value={getLocalizedRouteMapTitle()}
+                    onChange={e => updateRouteMapTitle(e.target.value)}
+                    placeholder="Interactive Itinerary Journey Map"
+                    className="rounded-xl text-xs font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[11px] font-bold text-muted-foreground">الوصف الفرعي للخريطة ({activeLang.toUpperCase()})</label>
+                  <Input
+                    value={getLocalizedRouteMapSubtitle()}
+                    onChange={e => updateRouteMapSubtitle(e.target.value)}
+                    placeholder="Explore your day-by-day path across premier luxury landmarks"
+                    className="rounded-xl text-xs font-medium"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                {getLocalizedRouteLocations().map((loc, idx) => (
+                  <div key={idx} className="p-4.5 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
+                    <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border/40 pb-2.5">
+                      <div className="flex items-center gap-2.5 flex-1 min-w-[280px]">
+                        <span className="w-7 h-7 rounded-xl bg-amber-500/20 text-amber-500 font-black text-xs flex items-center justify-center border border-amber-500/30 shrink-0">
+                          {idx + 1}
+                        </span>
+                        {/* Interactive Location Input with Global Geocoding & Presets */}
+                        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 flex-1 min-w-[280px]">
+                          <LocationSearchInput
+                            value={loc.name || loc.dbKey || ''}
+                            onSelect={(name, lat, lng) => selectGeoLocation(idx, name, lat, lng)}
+                            onChangeRaw={val => updateRouteLocationField(idx, 'dbKey', val)}
+                            placeholder="ابحث عن أي موقع، فندق، أو معلم في العالم (مثل: Eiffel Tower, برج خليفة, مرسى علم)..."
+                          />
+
+                          <select
+                            value={
+                              PRESET_CITIES.some(p =>
+                                p.dbKey.toLowerCase() === (loc.dbKey || '').toLowerCase() ||
+                                p.nameAr === loc.name ||
+                                p.nameEn === loc.name
+                              )
+                                ? (PRESET_CITIES.find(p =>
+                                    p.dbKey.toLowerCase() === (loc.dbKey || '').toLowerCase() ||
+                                    p.nameAr === loc.name ||
+                                    p.nameEn === loc.name
+                                  )?.dbKey || '')
+                                : ''
+                            }
+                            onChange={e => {
+                              if (e.target.value) {
+                                updateRouteLocationField(idx, 'dbKey', e.target.value);
+                              }
+                            }}
+                            className="h-10 px-2.5 rounded-xl border border-input bg-background/90 text-[11px] font-bold sm:w-[190px] shrink-0 text-muted-foreground focus:text-foreground cursor-pointer"
+                            title="اختيار سريع من الأماكن الجاهزة"
+                          >
+                            <option value="">-- أو اختر مكان جاهز --</option>
+                            {PRESET_CITIES.map(city => (
+                              <option key={city.dbKey} value={city.dbKey}>
+                                📍 {city.nameAr} ({city.nameEn})
+                              </option>
+                            ))}
+                          </select>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        {/* Reorder and Delete */}
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          disabled={idx === 0}
+                          onClick={() => moveRouteLocation(idx, 'up')}
+                          className="text-muted-foreground hover:text-foreground rounded-xl"
+                          title="تحريك لأعلى"
+                        >
+                          <ArrowUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          disabled={idx === getLocalizedRouteLocations().length - 1}
+                          onClick={() => moveRouteLocation(idx, 'down')}
+                          className="text-muted-foreground hover:text-foreground rounded-xl"
+                          title="تحريك لأسفل"
+                        >
+                          <ArrowDown className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          size="icon-sm"
+                          variant="ghost"
+                          onClick={() => removeRouteLocation(idx)}
+                          className="text-destructive hover:bg-destructive/10 rounded-xl"
+                          title="حذف المحطة"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+                      {/* Custom Localized Name */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-muted-foreground">اسم المحطة / المدينة ({activeLang.toUpperCase()})</label>
+                        <Input
+                          value={loc.name || ''}
+                          onChange={e => updateRouteLocationField(idx, 'name', e.target.value)}
+                          placeholder="مثال: القاهرة وأهرامات الجيزة"
+                          className="rounded-xl text-xs font-bold"
+                        />
+                      </div>
+
+                      {/* Days Visited */}
+                      <div className="space-y-1">
+                        <label className="text-[11px] font-bold text-muted-foreground">أيام الزيارة (مثال: 1, 2 أو 3)</label>
+                        <Input
+                          value={Array.isArray(loc.daysVisited) ? loc.daysVisited.join(', ') : ''}
+                          onChange={e => updateRouteLocationField(idx, 'daysVisited', e.target.value)}
+                          placeholder="1, 2"
+                          className="rounded-xl text-xs font-semibold font-mono"
+                        />
+                      </div>
+
+                      {/* Coordinates (Lat, Lng) */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-muted-foreground">Lat</label>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={loc.lat ?? 0}
+                            onChange={e => updateRouteLocationField(idx, 'lat', parseFloat(e.target.value) || 0)}
+                            className="rounded-xl text-xs font-mono"
+                          />
+                        </div>
+                        <div className="space-y-1">
+                          <label className="text-[11px] font-bold text-muted-foreground">Lng</label>
+                          <Input
+                            type="number"
+                            step="any"
+                            value={loc.lng ?? 0}
+                            onChange={e => updateRouteLocationField(idx, 'lng', parseFloat(e.target.value) || 0)}
+                            className="rounded-xl text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Description / Summary */}
+                    <div className="space-y-1 pt-1">
+                      <label className="text-[11px] font-bold text-muted-foreground">وصف المحطة / المعلم للمسافرين ({activeLang.toUpperCase()})</label>
+                      <Input
+                        value={loc.description || ''}
+                        onChange={e => updateRouteLocationField(idx, 'description', e.target.value)}
+                        placeholder="مثال: اليوم 1-2: جولة خاصة بمدينة القاهرة وزيارة الأهرامات والمتحف الكبير..."
+                        className="rounded-xl text-xs font-medium"
+                      />
+                    </div>
+                  </div>
+                ))}
+
+                {(formData.routeMap?.locations || []).length === 0 && (
+                  <div className="p-10 text-center rounded-2xl border border-dashed border-border bg-muted/20 space-y-3">
+                    <MapPin className="w-10 h-10 mx-auto text-amber-500/50" />
+                    <div className="space-y-1">
+                      <h4 className="text-xs font-bold text-foreground">لم يتم تخصيص محطات الخريطة التفاعلية يدوياً حتى الآن.</h4>
+                      <p className="text-[11px] text-muted-foreground max-w-md mx-auto">
+                        (النظام حالياً يتعرف على المدن تلقائياً من أيام البرنامج، ولكن يمكنك الضغط أدناه لتخصيص الخريطة بالكامل)
+                      </p>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 pt-2">
+                      <Button size="sm" onClick={handleAutoGenerateRouteMap} variant="outline" className="rounded-xl border-amber-500/40 text-amber-600 font-bold text-xs">
+                        <Wand2 className="w-3.5 h-3.5 text-amber-500 me-1" /> توليد محطات من البرنامج تلقائياً
+                      </Button>
+                      <Button size="sm" onClick={addRouteLocation} className="rounded-xl bg-amber-500 text-slate-950 font-black text-xs">
+                        <Plus className="w-3.5 h-3.5 me-1" /> إضافة مدينة / معلم يدوي +
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+
+            {/* TAB 5: INCLUSIONS & HIGHLIGHTS */}
             <TabsContent value="inclusions" className="space-y-5 m-0">
               {/* Highlights */}
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">

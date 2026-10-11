@@ -98,7 +98,7 @@ import {
   SeasonRecord,
 } from "@/features/hotels/types";
 import { format } from "date-fns";
-import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
+import { useMediaAssets, useUploadMedia, useUpdateMedia } from "@/features/media/hooks/useMedia";
 import { MediaAsset, MediaEntityType } from "@/features/media/types";
 import { autoTranslateMissingEntityFields } from "@/lib/translationService";
 
@@ -2103,6 +2103,7 @@ function MediaLibraryPickerModal({
   onSelect,
   selectedAssetId,
   selectedAssetUrl,
+  entityId,
   locale = "ar",
 }: {
   open: boolean;
@@ -2110,6 +2111,8 @@ function MediaLibraryPickerModal({
   onSelect: (asset: { id: string; url: string; altText?: string }) => void;
   selectedAssetId?: string;
   selectedAssetUrl?: string;
+  /** Existing hotel id. Omitted for a hotel that has not been created yet. */
+  entityId?: string;
   locale?: string;
 }) {
   const isAr = locale === "ar";
@@ -2155,10 +2158,14 @@ function MediaLibraryPickerModal({
     }
 
     try {
+      // entityType HOTEL requires a valid entityId server-side; fall back to a
+      // GENERAL asset filed under the "hotels" category when there is no id yet.
+      const linkedHotelId = entityId?.trim();
       const res = await uploadMutation.mutateAsync({
         file,
-        entityType: "HOTEL" as MediaEntityType,
-        categorySlug: "hotels",
+        ...(linkedHotelId
+          ? { entityType: "HOTEL" as MediaEntityType, entityId: linkedHotelId }
+          : { entityType: "GENERAL" as MediaEntityType, categorySlug: "hotels" }),
       });
       const chosen = {
         id: res.id,
@@ -2433,6 +2440,8 @@ interface RoomEditorModalProps {
   room: FormRoomItem | null;
   roomIndex: number | null;
   onSave: (room: FormRoomItem, index: number | null) => void;
+  /** Existing hotel id. Omitted for a hotel that has not been created yet. */
+  entityId?: string;
   locale?: string;
 }
 
@@ -2442,6 +2451,7 @@ function RoomEditorModal({
   room,
   roomIndex,
   onSave,
+  entityId,
   locale = "ar",
 }: RoomEditorModalProps) {
   const isAr = locale === "ar";
@@ -2595,10 +2605,14 @@ function RoomEditorModal({
 
     setIsUploadingPhoto(true);
     try {
+      // entityType HOTEL requires a valid entityId server-side; fall back to a
+      // GENERAL asset filed under the "hotels" category when there is no id yet.
+      const linkedHotelId = entityId?.trim();
       const res = await uploadMutation.mutateAsync({
         file,
-        entityType: "HOTEL" as MediaEntityType,
-        categorySlug: "hotels",
+        ...(linkedHotelId
+          ? { entityType: "HOTEL" as MediaEntityType, entityId: linkedHotelId }
+          : { entityType: "GENERAL" as MediaEntityType, categorySlug: "hotels" }),
       });
       const url = res.secureUrl || res.url;
       setRoomData((prev) => ({
@@ -3557,6 +3571,7 @@ function RoomEditorModal({
         onClose={() => setIsMediaPickerOpen(false)}
         onSelect={handleSelectMediaAsset}
         selectedAssetUrl={roomData.image}
+        entityId={entityId}
         locale={locale}
       />
     </Dialog>
@@ -3598,7 +3613,13 @@ function HotelEditorDialog({
   const createMutation = useCreateHotel();
   const updateMutation = useUpdateHotel();
   const uploadHeroMutation = useUploadMedia();
+  const linkHeroMediaMutation = useUpdateMedia();
   const isSaving = createMutation.isPending || updateMutation.isPending;
+
+  // Hero image uploaded while the hotel did not exist yet is stored as a GENERAL
+  // library asset. Once the hotel is created we re-link it to the real hotel so it
+  // also shows up under the "Hotels" category filter in the media library.
+  const [pendingHeroMediaId, setPendingHeroMediaId] = useState<string | null>(null);
 
   const handleHeroFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -3612,10 +3633,15 @@ function HotelEditorDialog({
 
     setIsUploadingHero(true);
     try {
+      // The backend REQUIRES a valid entityId when entityType is HOTEL, so a brand-new
+      // hotel (no id yet) must be uploaded as a GENERAL library asset in the "hotels"
+      // category instead. For an existing hotel we can link the asset directly.
+      const linkedHotelId = hotel?.id?.trim();
       const res = await uploadHeroMutation.mutateAsync({
         file,
-        entityType: "HOTEL" as MediaEntityType,
-        categorySlug: "hotels",
+        ...(linkedHotelId
+          ? { entityType: "HOTEL" as MediaEntityType, entityId: linkedHotelId }
+          : { entityType: "GENERAL" as MediaEntityType, categorySlug: "hotels" }),
       });
       const secureUrl = res.secureUrl || res.url;
       setForm((prev) => ({
@@ -3623,6 +3649,7 @@ function HotelEditorDialog({
         heroMediaId: res.id,
         heroImageUrl: secureUrl,
       }));
+      setPendingHeroMediaId(linkedHotelId ? null : res.id);
       toast.success(isAr ? "تم رفع الصورة وربطها بالفندق بنجاح! 📸" : "Photo uploaded and attached to hotel! 📸");
     } catch {
       toast.error(isAr ? "تعذر رفع الصورة، يرجى المحاولة مرة أخرى." : "Failed to upload image.");
@@ -3638,6 +3665,8 @@ function HotelEditorDialog({
       heroMediaId: asset.id,
       heroImageUrl: asset.url,
     }));
+    // The picked asset already lives in the library, so nothing needs re-linking.
+    setPendingHeroMediaId(null);
     setIsMediaPickerOpen(false);
   };
 
@@ -3647,6 +3676,7 @@ function HotelEditorDialog({
       heroMediaId: "",
       heroImageUrl: "",
     }));
+    setPendingHeroMediaId(null);
     toast.info(isAr ? "تمت إزالة صورة الفندق." : "Hotel image removed.");
   };
 
@@ -3744,6 +3774,7 @@ function HotelEditorDialog({
       }
       setActiveTab("basic");
       setIsRoomEditorOpen(false);
+      setPendingHeroMediaId(null);
     }
   }, [hotel, open]);
 
@@ -4090,7 +4121,22 @@ function HotelEditorDialog({
         await updateMutation.mutateAsync({ id: hotel.id, payload });
         toast.success(isAr ? `تم تحديث بيانات الفندق "${form.nameEn}" والغرف بنجاح!` : `Hotel "${form.nameEn}" and rooms updated successfully!`);
       } else {
-        await createMutation.mutateAsync(payload);
+        const created = await createMutation.mutateAsync(payload);
+        // Now that the hotel has an id, attach the hero image asset to it so the
+        // asset is grouped under Hotels in the media library. Best-effort: the
+        // hotel itself is already saved, so a failure here must not block saving.
+        const assetIdToLink = pendingHeroMediaId || form.heroMediaId?.trim();
+        const createdId = created?.id?.trim();
+        if (assetIdToLink && createdId) {
+          try {
+            await linkHeroMediaMutation.mutateAsync({
+              id: assetIdToLink,
+              payload: { entityType: "HOTEL" as MediaEntityType, entityId: createdId },
+            });
+          } catch {
+            // Image stays usable via the GENERAL "hotels" category; ignore.
+          }
+        }
         toast.success(isAr ? `تمت إضافة فندق "${form.nameEn}" والغرف بنجاح!` : `Hotel "${form.nameEn}" and rooms created successfully!`);
       }
       onOpenChange(false);
@@ -5268,6 +5314,7 @@ function HotelEditorDialog({
         onSelect={handleSelectMediaFromPicker}
         selectedAssetId={form.heroMediaId}
         selectedAssetUrl={form.heroImageUrl}
+        entityId={hotel?.id}
         locale={locale}
       />
 
@@ -5278,6 +5325,7 @@ function HotelEditorDialog({
         room={editingRoom}
         roomIndex={editingRoomIndex}
         onSave={handleSaveRoomFromModal}
+        entityId={hotel?.id}
         locale={locale}
       />
     </Dialog>

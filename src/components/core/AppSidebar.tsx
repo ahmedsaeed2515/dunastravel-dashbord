@@ -94,12 +94,18 @@ export const AppSidebar = memo(function AppSidebar() {
   };
 
   const handleLogout = async () => {
+    if (typeof document !== "undefined") {
+      document.cookie = "access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;";
+      document.cookie = "refresh_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; max-age=0;";
+    }
     try {
       await logout();
+    } catch {
+      // Ignore error
     } finally {
       const first = pathname.split("/").filter(Boolean)[0];
       const validLocale = ["en", "ar", "es", "pt", "it"].includes(first) ? first : "ar";
-      window.location.href = `/${validLocale}/login`;
+      window.location.href = `/${validLocale}/login?logout=1`;
     }
   };
 
