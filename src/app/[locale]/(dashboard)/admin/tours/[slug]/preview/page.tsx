@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useTourAvailabilities, useTourPreview } from "@/features/tours/hooks/useTours";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Check, Clock, Edit, Globe, Loader2, MapPin, Monitor, ShieldAlert, Smartphone, Tablet, Tag, Users, X, ExternalLink } from "lucide-react";
+import { ArrowLeft, BedDouble, CalendarRange, Check, Clock, Edit, Globe, Hotel, Loader2, MapPin, Monitor, ShieldAlert, Smartphone, Star, Tablet, Tag, Users, X, ExternalLink } from "lucide-react";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
 
 export const TOUR_PREVIEW_LOCALES = [
@@ -35,6 +35,10 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
   const soldOutDepartures = departures?.filter((departure) => departure.status === "SOLD_OUT").length ?? 0;
   const numericPrice = Number(tour.basePriceUsd);
   const price = Number.isFinite(numericPrice) ? new Intl.NumberFormat(activeLanguage.code, { style: "currency", currency: tour.currency, minimumFractionDigits: 2 }).format(numericPrice) : "Price not recorded";
+  const accommodationSummary = tour.hotelInfo?.accommodation ?? "";
+  const assignedAccommodations = tour.accommodations && tour.accommodations.length > 0 ? tour.accommodations : [];
+  const legacyHotels: Array<{ name: string; city?: string; category?: string; nights?: number }> = Array.isArray(tour.hotelInfo?.hotels) ? tour.hotelInfo.hotels : [];
+  const seasonRules: Array<{ season?: string; seasonName?: string; seasonCode?: string; startDate?: string; endDate?: string; priceUsd: number }> = Array.isArray(tour.seasonPricing?.rules) ? tour.seasonPricing.rules : [];
 
   return <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
     <div className="bg-slate-900 border-b border-slate-800 p-3 px-4 flex flex-col sm:flex-row justify-between items-center gap-3 sticky top-0 z-50 shadow-md">
@@ -124,6 +128,76 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
               <EmptyContent label={previewLang === "ar" ? "لم يتم تسجيل جدول الأيام." : "No itinerary days have been recorded."} />
             )}
           </PreviewSection>
+
+          {(accommodationSummary || assignedAccommodations.length > 0 || legacyHotels.length > 0) && (
+            <PreviewSection title={previewLang === "ar" ? "الإقامة والفنادق المعتمدة" : "Accommodation & Partner Hotels"}>
+              {accommodationSummary && (
+                <p className="text-slate-300 leading-relaxed text-sm mb-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
+                  {accommodationSummary}
+                </p>
+              )}
+              {assignedAccommodations.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {assignedAccommodations.map((acc, idx) => (
+                    <div key={acc.id ?? `${acc.hotelId}-${idx}`} className="p-4 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                            <Hotel className="w-4 h-4 text-amber-400 shrink-0" />
+                            {acc.hotel?.name ?? acc.hotelId}
+                          </h4>
+                          {acc.hotel?.city && <p className="text-xs text-slate-400 mt-0.5">{acc.hotel.city}</p>}
+                        </div>
+                        {acc.hotel?.stars && (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                            <Star className="w-3 h-3 fill-amber-400" /> {acc.hotel.stars}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-300">
+                        <Badge variant="outline" className="border-slate-600 text-slate-200">{acc.nights} {previewLang === "ar" ? "ليالٍ" : "Nights"}</Badge>
+                        {acc.boardBasis && <Badge variant="outline" className="border-amber-500/30 text-amber-300">{acc.boardBasis}</Badge>}
+                        {acc.room && (
+                          <Badge variant="outline" className="border-sky-500/30 text-sky-300 flex items-center gap-1">
+                            <BedDouble className="w-3 h-3" /> {acc.room.name}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : legacyHotels.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {legacyHotels.map((h, idx) => (
+                    <div key={`${h.name}-${idx}`} className="p-4 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-1">
+                      <h4 className="font-bold text-white text-sm">{h.name}</h4>
+                      <p className="text-xs text-slate-400">{[h.city, h.category, h.nights ? `${h.nights} nights` : null].filter(Boolean).join(" • ")}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </PreviewSection>
+          )}
+
+          {seasonRules.length > 0 && (
+            <PreviewSection title={previewLang === "ar" ? "أسعار المواسم والفترات" : "Seasonal Pricing Tiers"}>
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+                {seasonRules.map((rule, idx) => (
+                  <div key={`${rule.seasonName ?? rule.season ?? rule.seasonCode ?? 's'}-${idx}`} className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/60 space-y-1.5">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs font-bold text-amber-400 flex items-center gap-1">
+                        <CalendarRange className="w-3.5 h-3.5" /> {rule.seasonName ?? rule.season ?? rule.seasonCode}
+                      </span>
+                      <span className="text-sm font-black text-white">${Number(rule.priceUsd).toFixed(2)}</span>
+                    </div>
+                    {(rule.startDate || rule.endDate) && (
+                      <p className="text-[11px] text-slate-400 font-mono">{rule.startDate ?? "—"} → {rule.endDate ?? "—"}</p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </PreviewSection>
+          )}
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-4">
             <ServiceList title={previewLang === "ar" ? "الخدمات المشمولة" : "Included services"} icon={<Check className="w-4 h-4" />} items={tour.includedServices} empty={previewLang === "ar" ? "لا توجد خدمات مشمولة مسجلة." : "No included services have been recorded."} tone="included" />

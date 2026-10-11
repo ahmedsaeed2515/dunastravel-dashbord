@@ -1,5 +1,42 @@
 export type HotelStatus = 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
 
+export interface SeasonRecord {
+  id: string;
+  code: string;
+  nameJsonb: Record<string, string>;
+  startDate: string;
+  endDate: string;
+  multiplier: number;
+  isActive: boolean;
+  sortOrder: number;
+}
+
+export interface SeasonPayload {
+  code: string;
+  nameJsonb: Record<string, string>;
+  startDate: string;
+  endDate: string;
+  multiplier?: number;
+  isActive?: boolean;
+  sortOrder?: number;
+}
+
+export interface RoomSeasonPricingItem {
+  id?: string;
+  seasonId: string;
+  seasonCode?: string;
+  seasonName?: Record<string, string>;
+  startDate?: string;
+  endDate?: string;
+  ratePerNight: number;
+  singleSupplement?: number | null;
+  childRate?: number | null;
+  extraBedRate?: number | null;
+  currency?: string;
+  boardBasis?: string;
+  isActive?: boolean;
+}
+
 export interface HotelRoomRecord {
   id: string;
   slug: string;
@@ -18,9 +55,11 @@ export interface HotelRoomRecord {
   image?: string | null;
   gallery?: string[];
   amenities?: string[];
+  seasonPricings?: RoomSeasonPricingItem[];
 }
 
 export interface HotelRoomPayload {
+  id?: string;
   slug: string;
   nameJsonb: Record<string, string>;
   descriptionJsonb?: Record<string, any>;
@@ -31,6 +70,7 @@ export interface HotelRoomPayload {
   inventory: number;
   isActive?: boolean;
   sortOrder?: number;
+  seasonPricings?: RoomSeasonPricingItem[];
 }
 
 export interface AdminHotel {

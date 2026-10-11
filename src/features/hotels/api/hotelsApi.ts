@@ -1,5 +1,5 @@
 import { apiClient } from '@/lib/axios';
-import { AdminHotel, HotelPayload, HotelsQuery, PaginatedHotels } from '../types';
+import { AdminHotel, HotelPayload, HotelsQuery, PaginatedHotels, SeasonPayload, SeasonRecord } from '../types';
 
 export const hotelsApi = {
   list: (query: HotelsQuery): Promise<PaginatedHotels> =>
@@ -16,4 +16,14 @@ export const hotelsApi = {
   archive: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/archive`),
   unarchive: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/unarchive`),
   restore: (id: string): Promise<AdminHotel> => apiClient.post<AdminHotel, AdminHotel>(`/admin/hotels/${id}/restore`),
+  listSeasons: (): Promise<SeasonRecord[]> =>
+    apiClient.get<SeasonRecord[], SeasonRecord[]>('/admin/hotels/seasons'),
+  createSeason: (payload: SeasonPayload): Promise<SeasonRecord> =>
+    apiClient.post<SeasonRecord, SeasonRecord>('/admin/hotels/seasons', payload),
+  updateSeason: (id: string, payload: Partial<SeasonPayload>): Promise<SeasonRecord> =>
+    apiClient.put<SeasonRecord, SeasonRecord>(`/admin/hotels/seasons/${id}`, payload),
+  deleteSeason: async (id: string): Promise<void> => {
+    await apiClient.delete(`/admin/hotels/seasons/${id}`);
+  },
 };
+

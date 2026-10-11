@@ -63,6 +63,42 @@ export interface UpdateTourAvailabilityPayload {
   expectedUpdatedAt: string;
 }
 
+export interface TripAccommodationRecord {
+  id?: string;
+  hotelId: string;
+  roomId?: string | null;
+  destination?: string;
+  nights: number;
+  regime?: string;
+  boardBasis?: string | null;
+  dayRange?: string | null;
+  categoryTier?: string;
+  priceSupplementUsd?: number;
+  priceSupplement?: number;
+  isDefault?: boolean;
+  sortOrder?: number;
+  notes?: string | null;
+  hotel?: {
+    id: string;
+    slug: string;
+    name?: string;
+    nameJsonb?: Record<string, string>;
+    city: string;
+    stars: number;
+    rating?: number | null;
+    heroImage?: string | null;
+  };
+  room?: {
+    id: string;
+    slug: string;
+    name?: string;
+    nameJsonb?: Record<string, string>;
+    ratePerNight: number;
+    currency: string;
+    maxOccupancy: number;
+  } | null;
+}
+
 export interface Tour {
   id: string;
   slug: string;
@@ -113,6 +149,7 @@ export interface Tour {
   updatedAt: string;
   deletedAt?: string | null;
   itineraries?: TourItinerary[];
+  accommodations?: TripAccommodationRecord[];
   images?: TourImage[];
   reviews?: any[];
   activityLogs?: any[];
@@ -136,8 +173,9 @@ export interface TourPreview {
   cancellationPolicy: string | null;
   includedServices: string[];
   excludedServices: string[];
-  hotelInfo: string | null;
-  seasonPricing: string | null;
+  hotelInfo: any;
+  seasonPricing: any;
+  accommodations?: TripAccommodationRecord[];
   tags: string[];
   difficultyLevel: string | null;
   meetingPoint: string | null;
@@ -229,6 +267,7 @@ export interface CreateTourPayload {
   seoDescription?: string | null;
   tags?: string[];
   itineraries?: TourItinerary[];
+  accommodations?: TripAccommodationRecord[];
   images?: TourImage[];
 }
 

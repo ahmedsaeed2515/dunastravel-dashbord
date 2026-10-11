@@ -54,6 +54,7 @@ import {
   ArchiveRestore,
   RotateCcw,
   Wand2,
+  Calendar,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -72,10 +73,14 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import {
   useCreateHotel,
+  useCreateSeason,
   useDeleteHotel,
+  useDeleteSeason,
   useHotelLifecycle,
   useHotels,
+  useSeasons,
   useUpdateHotel,
+  useUpdateSeason,
 } from "@/features/hotels/hooks/useHotels";
 import {
   useHotelBookings,
@@ -88,6 +93,9 @@ import {
   HotelStatus,
   HotelBooking,
   HotelBookingStatus,
+  RoomSeasonPricingItem,
+  SeasonPayload,
+  SeasonRecord,
 } from "@/features/hotels/types";
 import { format } from "date-fns";
 import { useMediaAssets, useUploadMedia } from "@/features/media/hooks/useMedia";
@@ -359,6 +367,7 @@ export interface FormRoomItem {
   amenities?: string[];
   smokingAllowed?: boolean;
   petsAllowed?: boolean;
+  seasonPricings?: RoomSeasonPricingItem[];
 }
 
 interface HotelFormData {
@@ -517,8 +526,96 @@ export function HotelsManager() {
   const lifecycleMutation = useHotelLifecycle();
   const deleteMutation = useDeleteHotel();
 
-  // Standalone Hotel Bookings Workspace State
-  const [activeMainTab, setActiveMainTab] = useState<"catalog" | "bookings">("catalog");
+  // Standalone Hotel Bookings & Seasons Workspace State
+  const [activeMainTab, setActiveMainTab] = useState<"catalog" | "seasons" | "bookings">("catalog");
+  const { data: seasonsData, isLoading: isSeasonsLoading } = useSeasons();
+  const createSeasonMutation = useCreateSeason();
+  const updateSeasonMutation = useUpdateSeason();
+  const deleteSeasonMutation = useDeleteSeason();
+
+  const seasons: SeasonRecord[] = useMemo(() => {
+    return Array.isArray(seasonsData) ? seasonsData : [];
+  }, [seasonsData]);
+
+  const [editingSeason, setEditingSeason] = useState<SeasonRecord | null>(null);
+  const [seasonForm, setSeasonForm] = useState({
+    code: "",
+    nameEn: "",
+    nameAr: "",
+    nameEs: "",
+    namePt: "",
+    nameIt: "",
+    startDate: "2026-10-01",
+    endDate: "2027-04-30",
+    multiplier: 1.2,
+    isActive: true,
+    sortOrder: 0,
+  });
+
+  const handleResetSeasonForm = () => {
+    setEditingSeason(null);
+    setSeasonForm({
+      code: "",
+      nameEn: "",
+      nameAr: "",
+      nameEs: "",
+      namePt: "",
+      nameIt: "",
+      startDate: "2026-10-01",
+      endDate: "2027-04-30",
+      multiplier: 1.2,
+      isActive: true,
+      sortOrder: seasons.length,
+    });
+  };
+
+  const handleSelectEditSeason = (season: SeasonRecord) => {
+    setEditingSeason(season);
+    setSeasonForm({
+      code: season.code,
+      nameEn: season.nameJsonb?.en || "",
+      nameAr: season.nameJsonb?.ar || "",
+      nameEs: season.nameJsonb?.es || "",
+      namePt: season.nameJsonb?.pt || "",
+      nameIt: season.nameJsonb?.it || "",
+      startDate: (season.startDate || "").slice(0, 10),
+      endDate: (season.endDate || "").slice(0, 10),
+      multiplier: Number(season.multiplier) || 1.0,
+      isActive: season.isActive ?? true,
+      sortOrder: season.sortOrder ?? 0,
+    });
+  };
+
+  const handleSaveSeason = async () => {
+    const cleanCode = (seasonForm.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "_");
+    const cleanNameEn = (seasonForm.nameEn || "").trim();
+    if (!cleanCode || !cleanNameEn) {
+      toast.error(isAr ? "يرجى إدخال كود الموسم والاسم بالإنجليزية." : "Season code and English name are required.");
+      return;
+    }
+    const payload: SeasonPayload = {
+      code: cleanCode,
+      nameJsonb: {
+        en: cleanNameEn,
+        ar: (seasonForm.nameAr || "").trim() || cleanNameEn,
+        es: (seasonForm.nameEs || "").trim() || cleanNameEn,
+        pt: (seasonForm.namePt || "").trim() || cleanNameEn,
+        it: (seasonForm.nameIt || "").trim() || cleanNameEn,
+      },
+      startDate: seasonForm.startDate,
+      endDate: seasonForm.endDate,
+      multiplier: Number(seasonForm.multiplier) || 1.0,
+      isActive: seasonForm.isActive,
+      sortOrder: Number(seasonForm.sortOrder) || 0,
+    };
+    if (editingSeason) {
+      await updateSeasonMutation.mutateAsync({ id: editingSeason.id, payload });
+    } else {
+      await createSeasonMutation.mutateAsync(payload);
+    }
+    handleResetSeasonForm();
+  };
+
   const [bookingStatusFilter, setBookingStatusFilter] = useState<string>("ALL");
   const [bookingSearch, setBookingSearch] = useState("");
   const [selectedBookingForDetails, setSelectedBookingForDetails] = useState<HotelBooking | null>(null);
@@ -701,6 +798,21 @@ export function HotelsManager() {
             <span>{isAr ? "دليل الفنادق والغرف (Catalog)" : "Hotels & Rooms Catalog"}</span>
             <span className="bg-slate-950/20 text-slate-950 text-[10px] font-mono font-black px-2 py-0.5 rounded-full">
               {totalHotels}
+            </span>
+          </button>
+
+          <button
+            onClick={() => setActiveMainTab("seasons")}
+            className={`flex items-center gap-2.5 px-5 py-2.5 rounded-2xl text-xs font-black transition-all cursor-pointer ${
+              activeMainTab === "seasons"
+                ? "bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 scale-[1.01]"
+                : "text-muted-foreground hover:text-foreground hover:bg-card/70"
+            }`}
+          >
+            <Calendar className="w-4 h-4" />
+            <span>{isAr ? "المواسم والتسعير الموسمي (Seasons & Pricing)" : "Seasons & Pricing Matrix"}</span>
+            <span className="bg-amber-600 text-white text-[10px] font-mono font-black px-2 py-0.5 rounded-full">
+              {seasons.length}
             </span>
           </button>
 
@@ -1160,6 +1272,301 @@ export function HotelsManager() {
       )}
 
               </div>
+      )}
+
+      {/* Seasons & Pricing Matrix Workspace */}
+      {activeMainTab === "seasons" && (
+        <div className="space-y-6">
+          <div className="grid gap-6 lg:grid-cols-12">
+            {/* Left: Season Editor Card */}
+            <Card className="lg:col-span-5 p-6 bg-card border border-border/80 rounded-3xl shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2.5 rounded-2xl bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                    <Calendar className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="text-sm font-black text-foreground">
+                      {editingSeason
+                        ? (isAr ? "تعديل بيانات الموسم" : "Edit Pricing Season")
+                        : (isAr ? "إضافة موسم تسعير جديد" : "Create Pricing Season")}
+                    </h3>
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      {isAr
+                        ? "تحديد فترات المواسم ومعامل التسعير الافتراضي باللغات الـ 5."
+                        : "Define global seasonal windows, multipliers, and 5-locale titles."}
+                    </p>
+                  </div>
+                </div>
+                {editingSeason && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={handleResetSeasonForm}
+                    className="h-8 text-xs font-bold text-muted-foreground"
+                  >
+                    {isAr ? "إلغاء" : "Reset"}
+                  </Button>
+                )}
+              </div>
+
+              {/* Quick Season Presets */}
+              <div className="space-y-1.5">
+                <span className="text-[11px] font-bold text-muted-foreground block">
+                  {isAr ? "قوالب مواسم جاهزة:" : "Quick Season Templates:"}
+                </span>
+                <div className="flex flex-wrap gap-1.5">
+                  {[
+                    { code: "HIGH_WINTER", nameEn: "Peak Winter Season", nameAr: "موسم الذروة الشتوي", nameEs: "Temporada Alta de Invierno", namePt: "Alta Temporada de Inverno", nameIt: "Alta Stagione Invernale", startDate: "2026-10-01", endDate: "2027-04-30", multiplier: 1.25 },
+                    { code: "LOW_SUMMER", nameEn: "Summer Value Season", nameAr: "الموسم الصيفي الاقتصادي", nameEs: "Temporada Baja de Verano", namePt: "Baixa Temporada de Verão", nameIt: "Bassa Stagione Estiva", startDate: "2026-05-01", endDate: "2026-09-30", multiplier: 0.9 },
+                    { code: "FESTIVE_PEAK", nameEn: "New Year & Festive Peak", nameAr: "موسم الأعياد ورأس السنة", nameEs: "Temporada Festiva y Fin de Año", namePt: "Temporada Festiva e Ano Novo", nameIt: "Stagione Festiva e Capodanno", startDate: "2026-12-20", endDate: "2027-01-07", multiplier: 1.5 },
+                  ].map((preset) => (
+                    <button
+                      key={preset.code}
+                      type="button"
+                      onClick={() =>
+                        setSeasonForm({
+                          ...seasonForm,
+                          code: preset.code,
+                          nameEn: preset.nameEn,
+                          nameAr: preset.nameAr,
+                          nameEs: preset.nameEs,
+                          namePt: preset.namePt,
+                          nameIt: preset.nameIt,
+                          startDate: preset.startDate,
+                          endDate: preset.endDate,
+                          multiplier: preset.multiplier,
+                        })
+                      }
+                      className="px-2.5 py-1 rounded-xl border border-amber-500/30 bg-amber-500/5 hover:bg-amber-500/15 text-[11px] font-bold text-amber-500 transition-colors cursor-pointer"
+                    >
+                      + {isAr ? preset.nameAr : preset.nameEn} ({preset.multiplier}x)
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {isAr ? "كود الموسم (Code) *" : "Season Code *"}
+                  </label>
+                  <Input
+                    value={seasonForm.code}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, code: e.target.value.toUpperCase() }))}
+                    placeholder="HIGH_WINTER"
+                    className="h-9 text-xs font-mono font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {isAr ? "معامل السعر (Multiplier) *" : "Price Multiplier *"}
+                  </label>
+                  <Input
+                    type="number"
+                    step="0.05"
+                    min="0.1"
+                    max="10"
+                    value={seasonForm.multiplier}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, multiplier: Number(e.target.value) }))}
+                    className="h-9 text-xs font-mono font-bold"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {isAr ? "تاريخ البداية *" : "Start Date *"}
+                  </label>
+                  <Input
+                    type="date"
+                    value={seasonForm.startDate}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, startDate: e.target.value }))}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">
+                    {isAr ? "تاريخ النهاية *" : "End Date *"}
+                  </label>
+                  <Input
+                    type="date"
+                    value={seasonForm.endDate}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, endDate: e.target.value }))}
+                    className="h-9 text-xs font-mono"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2 pt-1 border-t">
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">🇬🇧 Season Name (EN) *</label>
+                  <Input
+                    value={seasonForm.nameEn}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, nameEn: e.target.value }))}
+                    placeholder="Peak Winter Season"
+                    className="h-9 text-xs font-bold"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-extrabold text-foreground">🇸🇦 اسم الموسم (AR)</label>
+                  <Input
+                    value={seasonForm.nameAr}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, nameAr: e.target.value }))}
+                    placeholder="موسم الذروة الشتوي"
+                    className="h-9 text-xs font-bold"
+                    dir="rtl"
+                  />
+                </div>
+                <div className="grid grid-cols-3 gap-2">
+                  <Input
+                    value={seasonForm.nameEs}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, nameEs: e.target.value }))}
+                    placeholder="🇪🇸 Español"
+                    className="h-8 text-[11px]"
+                  />
+                  <Input
+                    value={seasonForm.namePt}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, namePt: e.target.value }))}
+                    placeholder="🇵🇹 Português"
+                    className="h-8 text-[11px]"
+                  />
+                  <Input
+                    value={seasonForm.nameIt}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, nameIt: e.target.value }))}
+                    placeholder="🇮🇹 Italiano"
+                    className="h-8 text-[11px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <label className="flex items-center gap-2 text-xs font-bold cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={seasonForm.isActive}
+                    onChange={(e) => setSeasonForm((prev) => ({ ...prev, isActive: e.target.checked }))}
+                    className="w-4 h-4 rounded text-amber-500"
+                  />
+                  <span>{isAr ? "موسم نشط ومفعل" : "Active Season"}</span>
+                </label>
+
+                <Button
+                  type="button"
+                  onClick={handleSaveSeason}
+                  disabled={createSeasonMutation.isPending || updateSeasonMutation.isPending}
+                  className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black text-xs px-5 cursor-pointer"
+                >
+                  {(createSeasonMutation.isPending || updateSeasonMutation.isPending) && (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin mr-1.5" />
+                  )}
+                  <span>
+                    {editingSeason
+                      ? (isAr ? "حفظ تعديلات الموسم" : "Update Season")
+                      : (isAr ? "إضافة الموسم +" : "Create Season +")}
+                  </span>
+                </Button>
+              </div>
+            </Card>
+
+            {/* Right: Configured Seasons List */}
+            <Card className="lg:col-span-7 p-6 bg-card border border-border/80 rounded-3xl shadow-xs space-y-4">
+              <div className="flex items-center justify-between border-b pb-3">
+                <div>
+                  <h3 className="text-sm font-black text-foreground">
+                    {isAr ? "جدول المواسم المعتمدة للتسعير" : "Configured Global Pricing Seasons"}
+                  </h3>
+                  <p className="text-[11px] text-muted-foreground font-semibold">
+                    {isAr
+                      ? "تُستخدم هذه المواسم لتحديد أسعار الغرف الموسمية (RoomSeasonPricing) ومعاملات تسعير الرحلات."
+                      : "Used across Room Seasonal Pricing matrices and automated tour date pricing."}
+                  </p>
+                </div>
+                <Badge className="bg-amber-500/15 text-amber-500 border border-amber-500/30 font-mono text-xs">
+                  {seasons.length} {isAr ? "مواسم" : "Seasons"}
+                </Badge>
+              </div>
+
+              {isSeasonsLoading ? (
+                <div className="py-16 flex flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
+                  <span className="text-xs font-bold">{isAr ? "جاري تحميل المواسم..." : "Loading seasons..."}</span>
+                </div>
+              ) : seasons.length === 0 ? (
+                <div className="py-16 text-center border-2 border-dashed rounded-2xl space-y-2">
+                  <Calendar className="w-8 h-8 text-muted-foreground/40 mx-auto" />
+                  <p className="text-xs font-bold text-muted-foreground">
+                    {isAr
+                      ? "لا توجد مواسم مسجلة بعد. استخدم النموذج الجانبي لإضافة موسم جديد."
+                      : "No pricing seasons configured yet. Use the form on the left to add one."}
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {seasons.map((s) => {
+                    const title = s.nameJsonb?.[locale] || s.nameJsonb?.en || s.code;
+                    return (
+                      <div
+                        key={s.id}
+                        className="p-4 rounded-2xl border border-border/80 bg-muted/20 hover:border-amber-500/40 transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-mono text-xs font-black px-2 py-0.5 rounded-md bg-amber-500/15 text-amber-500 border border-amber-500/30">
+                              {s.code}
+                            </span>
+                            <span className="text-sm font-black text-foreground">{title}</span>
+                            <Badge
+                              variant="outline"
+                              className={
+                                s.isActive
+                                  ? "border-emerald-500/40 text-emerald-500 text-[10px]"
+                                  : "border-border text-muted-foreground text-[10px]"
+                              }
+                            >
+                              {s.isActive ? (isAr ? "نشط" : "Active") : (isAr ? "غير نشط" : "Inactive")}
+                            </Badge>
+                          </div>
+                          <div className="text-xs text-muted-foreground font-mono flex items-center gap-3">
+                            <span>📅 {(s.startDate || "").slice(0, 10)} ➔ {(s.endDate || "").slice(0, 10)}</span>
+                            <span className="text-amber-500 font-bold">
+                              ×{Number(s.multiplier).toFixed(2)} {isAr ? "معامل السعر" : "Multiplier"}
+                            </span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-1.5 self-end sm:self-center">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSelectEditSeason(s)}
+                            className="h-8 text-xs font-bold rounded-xl gap-1 cursor-pointer"
+                          >
+                            <Edit3 className="w-3.5 h-3.5 text-amber-500" />
+                            <span>{isAr ? "تعديل" : "Edit"}</span>
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => deleteSeasonMutation.mutate(s.id)}
+                            disabled={deleteSeasonMutation.isPending}
+                            className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 rounded-xl cursor-pointer"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+            </Card>
+          </div>
+        </div>
       )}
 
       {/* Standalone Hotel Bookings Workspace */}
@@ -2047,6 +2454,11 @@ function RoomEditorModal({
   const [showUrlInput, setShowUrlInput] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const uploadMutation = useUploadMedia();
+  const { data: seasonsListData } = useSeasons();
+  const availableSeasons: SeasonRecord[] = useMemo(
+    () => (Array.isArray(seasonsListData) ? seasonsListData : []),
+    [seasonsListData]
+  );
 
   const [roomData, setRoomData] = useState<FormRoomItem>({
     slug: "",
@@ -2080,6 +2492,7 @@ function RoomEditorModal({
     amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
     smokingAllowed: false,
     petsAllowed: false,
+    seasonPricings: [],
   });
 
   useEffect(() => {
@@ -2121,6 +2534,7 @@ function RoomEditorModal({
           amenities: room.amenities || ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
           smokingAllowed: room.smokingAllowed ?? false,
           petsAllowed: room.petsAllowed ?? false,
+          seasonPricings: Array.isArray(room.seasonPricings) ? room.seasonPricings : [],
         });
       } else {
         setRoomData({
@@ -2155,6 +2569,7 @@ function RoomEditorModal({
           amenities: ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
           smokingAllowed: false,
           petsAllowed: false,
+          seasonPricings: [],
         });
       }
       setLangTab("en");
@@ -2699,6 +3114,220 @@ function RoomEditorModal({
             </div>
           </div>
 
+          {/* Seasonal Pricing Matrix (RoomSeasonPricing) */}
+          <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h5 className="text-xs font-black text-foreground flex items-center gap-1.5">
+                  <Calendar className="w-4 h-4 text-amber-500" />
+                  <span>
+                    {isAr
+                      ? "مصفوفة الأسعار الموسمية (Room Seasonal Pricing):"
+                      : "Seasonal Room Pricing Matrix:"}
+                  </span>
+                </h5>
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  {isAr
+                    ? "تخصيص سعر الليلة وإضافة الغرفة المفردة والطفل والسرير الإضافي لكل موسم."
+                    : "Configure per-season nightly rate, single supplement, child rate, and extra bed rate."}
+                </p>
+              </div>
+
+              {availableSeasons.length > 0 && (
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    const existingIds = new Set((roomData.seasonPricings || []).map((sp) => sp.seasonId));
+                    const nextSeason = availableSeasons.find((s) => !existingIds.has(s.id)) || availableSeasons[0];
+                    if (!nextSeason) return;
+                    const defaultRate = Math.round(
+                      (Number(roomData.ratePerNight) || 120) * (Number(nextSeason.multiplier) || 1)
+                    );
+                    setRoomData((prev) => ({
+                      ...prev,
+                      seasonPricings: [
+                        ...(prev.seasonPricings || []),
+                        {
+                          seasonId: nextSeason.id,
+                          seasonCode: nextSeason.code,
+                          seasonName: nextSeason.nameJsonb,
+                          ratePerNight: defaultRate,
+                          singleSupplement: Math.round(defaultRate * 0.4),
+                          childRate: Math.round(defaultRate * 0.5),
+                          extraBedRate: Math.round(defaultRate * 0.35),
+                          boardBasis: (prev.mealPlan || "BB").toUpperCase(),
+                          currency: "USD",
+                          isActive: true,
+                        },
+                      ],
+                    }));
+                  }}
+                  className="h-8 rounded-xl border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 text-xs font-bold gap-1 cursor-pointer shrink-0"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                  <span>{isAr ? "إضافة تسعير موسمي +" : "Add Season Rate +"}</span>
+                </Button>
+              )}
+            </div>
+
+            {availableSeasons.length === 0 ? (
+              <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 text-[11px] text-muted-foreground">
+                {isAr
+                  ? "لا توجد مواسم مضافة بعد. يمكنك إنشاء المواسم من تبويب (المواسم والتسعير الموسمي) في الصفحة الرئيسية."
+                  : "No global seasons configured yet. Create seasons from the 'Seasons & Pricing Matrix' tab first."}
+              </div>
+            ) : (roomData.seasonPricings || []).length === 0 ? (
+              <div className="p-3 rounded-xl border border-dashed text-[11px] text-muted-foreground text-center">
+                {isAr
+                  ? "يتم تطبيق السعر الأساسي ($" + roomData.ratePerNight + ") افتراضياً. اضغط (إضافة تسعير موسمي +) لتخصيص أسعار المواسم."
+                  : `Base rate ($${roomData.ratePerNight}/night) applies by default. Click 'Add Season Rate +' to override by season.`}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {(roomData.seasonPricings || []).map((sp, spIdx) => (
+                  <div
+                    key={`${sp.seasonId}-${spIdx}`}
+                    className="p-3 rounded-xl bg-background border border-border/80 grid grid-cols-1 sm:grid-cols-6 gap-2 items-end"
+                  >
+                    <div className="sm:col-span-2 space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground">
+                        {isAr ? "الموسم" : "Season"}
+                      </label>
+                      <select
+                        value={sp.seasonId}
+                        onChange={(e) => {
+                          const chosen = availableSeasons.find((s) => s.id === e.target.value);
+                          setRoomData((prev) => ({
+                            ...prev,
+                            seasonPricings: (prev.seasonPricings || []).map((item, idx) =>
+                              idx === spIdx
+                                ? {
+                                    ...item,
+                                    seasonId: e.target.value,
+                                    seasonCode: chosen?.code,
+                                    seasonName: chosen?.nameJsonb,
+                                  }
+                                : item
+                            ),
+                          }));
+                        }}
+                        className="w-full h-8 px-2 rounded-lg border bg-card text-xs font-bold"
+                      >
+                        {availableSeasons.map((s) => (
+                          <option key={s.id} value={s.id}>
+                            {s.code} — {s.nameJsonb?.[locale] || s.nameJsonb?.en || s.code}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground">
+                        {isAr ? "الليلة ($)" : "Night ($)"}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={sp.ratePerNight}
+                        onChange={(e) =>
+                          setRoomData((prev) => ({
+                            ...prev,
+                            seasonPricings: (prev.seasonPricings || []).map((item, idx) =>
+                              idx === spIdx ? { ...item, ratePerNight: Number(e.target.value) } : item
+                            ),
+                          }))
+                        }
+                        className="h-8 text-xs font-mono font-bold"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground">
+                        {isAr ? "إضافة مفرد ($)" : "Single Supp ($)"}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={sp.singleSupplement ?? 0}
+                        onChange={(e) =>
+                          setRoomData((prev) => ({
+                            ...prev,
+                            seasonPricings: (prev.seasonPricings || []).map((item, idx) =>
+                              idx === spIdx ? { ...item, singleSupplement: Number(e.target.value) } : item
+                            ),
+                          }))
+                        }
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground">
+                        {isAr ? "سعر الطفل ($)" : "Child ($)"}
+                      </label>
+                      <Input
+                        type="number"
+                        min="0"
+                        value={sp.childRate ?? 0}
+                        onChange={(e) =>
+                          setRoomData((prev) => ({
+                            ...prev,
+                            seasonPricings: (prev.seasonPricings || []).map((item, idx) =>
+                              idx === spIdx ? { ...item, childRate: Number(e.target.value) } : item
+                            ),
+                          }))
+                        }
+                        className="h-8 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <div className="flex-1 space-y-1">
+                        <label className="text-[10px] font-bold text-muted-foreground">
+                          {isAr ? "الوجبات" : "Board"}
+                        </label>
+                        <select
+                          value={(sp.boardBasis || "BB").toUpperCase()}
+                          onChange={(e) =>
+                            setRoomData((prev) => ({
+                              ...prev,
+                              seasonPricings: (prev.seasonPricings || []).map((item, idx) =>
+                                idx === spIdx ? { ...item, boardBasis: e.target.value } : item
+                              ),
+                            }))
+                          }
+                          className="w-full h-8 px-1.5 rounded-lg border bg-card text-[11px] font-mono font-bold"
+                        >
+                          <option value="BB">BB</option>
+                          <option value="HB">HB</option>
+                          <option value="FB">FB</option>
+                          <option value="AI">AI</option>
+                          <option value="RO">RO</option>
+                        </select>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() =>
+                          setRoomData((prev) => ({
+                            ...prev,
+                            seasonPricings: (prev.seasonPricings || []).filter((_, idx) => idx !== spIdx),
+                          }))
+                        }
+                        className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </Button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
           {/* Room Photo & Media Section */}
           <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3">
             <div className="flex items-center justify-between">
@@ -3046,16 +3675,22 @@ function HotelEditorDialog({
           website: hotel.website || "",
           heroMediaId: hotel.heroMediaId || "",
           heroImageUrl: hotel.heroImageUrl || "",
-          amenities: (hotel.amenitiesJsonb as Record<string, boolean>) || {
-            pool: true,
-            spa: true,
-            wifi: true,
-            restaurant: true,
-            gym: true,
-            breakfast: true,
-            concierge: true,
-            roomService: true,
-          },
+          amenities: (() => {
+            if (hotel.amenitiesJsonb && typeof hotel.amenitiesJsonb === "object" && !Array.isArray(hotel.amenitiesJsonb)) {
+              const { heroImageUrl: _h, images: _i, ...rest } = hotel.amenitiesJsonb as Record<string, any>;
+              return rest as Record<string, boolean>;
+            }
+            return {
+              pool: true,
+              spa: true,
+              wifi: true,
+              restaurant: true,
+              gym: true,
+              breakfast: true,
+              concierge: true,
+              roomService: true,
+            };
+          })(),
           checkIn: (hotel.policiesJsonb?.checkIn as string) || "14:00",
           checkOut: (hotel.policiesJsonb?.checkOut as string) || "12:00",
           cancellationPolicy: (hotel.policiesJsonb?.cancellation as string) || "Free cancellation up to 48 hours before check-in.",
@@ -3098,6 +3733,7 @@ function HotelEditorDialog({
                 amenities: r.amenities || ["wifi", "ac", "bathroom", "minibar", "coffee", "linen", "tv", "safe"],
                 smokingAllowed: r.smokingAllowed ?? false,
                 petsAllowed: r.petsAllowed ?? false,
+                seasonPricings: Array.isArray(r.seasonPricings) ? r.seasonPricings : [],
               }))
             : defaultFormData().rooms,
         });
@@ -3330,6 +3966,7 @@ function HotelEditorDialog({
     const roomsPayload: HotelRoomPayload[] = form.rooms.map((r, idx) => {
       const roomNameEn = (r.nameEn || "").trim();
       return {
+        ...(r.id ? { id: r.id } : {}),
         slug: slugify(r.slug || roomNameEn || `room-${idx + 1}`),
         nameJsonb: {
           en: roomNameEn,
@@ -3384,6 +4021,18 @@ function HotelEditorDialog({
       },
       isActive: r.isActive ?? true,
       sortOrder: idx,
+      seasonPricings: (Array.isArray(r.seasonPricings) ? r.seasonPricings : [])
+        .filter((sp) => Boolean(sp?.seasonId))
+        .map((sp) => ({
+          seasonId: sp.seasonId,
+          ratePerNight: Number(sp.ratePerNight) || 0,
+          singleSupplement: sp.singleSupplement ?? null,
+          childRate: sp.childRate ?? null,
+          extraBedRate: sp.extraBedRate ?? null,
+          currency: sp.currency || form.currency.toUpperCase() || "USD",
+          boardBasis: sp.boardBasis || (r.mealPlan || "BB").toUpperCase(),
+          isActive: sp.isActive ?? true,
+        })),
     };
   });
 
@@ -3392,6 +4041,9 @@ function HotelEditorDialog({
       setActiveTab("rooms");
       return;
     }
+
+    const { heroImageUrl: _staleHero, images: _staleImages, ...cleanAmenityFlags } = (form.amenities || {}) as Record<string, any>;
+    const trimmedHeroUrl = (form.heroImageUrl || "").trim();
 
     const payload: HotelPayload = {
       slug: cleanSlug,
@@ -3418,10 +4070,10 @@ function HotelEditorDialog({
       ...((form.email || "").trim() ? { email: form.email.trim() } : {}),
       ...((form.website || "").trim() ? { website: form.website.trim() } : {}),
       ...((form.heroMediaId || "").trim() ? { heroMediaId: form.heroMediaId.trim() } : {}),
-      ...((form.heroImageUrl || "").trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+      ...(trimmedHeroUrl ? { heroImageUrl: trimmedHeroUrl } : {}),
       amenitiesJsonb: {
-        ...form.amenities,
-        ...((form.heroImageUrl || "").trim() ? { heroImageUrl: form.heroImageUrl.trim() } : {}),
+        ...cleanAmenityFlags,
+        ...(trimmedHeroUrl ? { heroImageUrl: trimmedHeroUrl } : {}),
       },
       policiesJsonb: {
         checkIn: form.checkIn,

@@ -9,6 +9,7 @@ import { TripEditorModal } from '@/components/trips/TripEditorModal';
 import { TransferTripModal } from '@/components/trips/TransferTripModal';
 import { useTours, useSoftDeleteTour, useClearAllTours } from '@/features/tours/hooks/useTours';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
+import { tourToTripModel } from '@/features/tours/lib/tripEditorPayload';
 import type { Tour } from '@/features/tours/types';
 import {
   resolveTourDestination,
@@ -195,12 +196,9 @@ function resolveEgyptPackageId(
 }
 
 function convertTourToTripModel(tour: Tour, currentLocale: string = 'ar'): TripModel & { landingPageSlugs: string[] } {
+  const baseModel = tourToTripModel(tour);
   const getText = (value: Record<string, any> | null | undefined, loc: string): string =>
     typeof value?.[loc] === 'string' ? value[loc] : '';
-  const getList = (value: Record<string, any> | null | undefined, loc: string): string[] =>
-    Array.isArray(value?.[loc])
-      ? value[loc].filter((item: unknown): item is string => typeof item === 'string')
-      : [];
   const canonicalLandingPage = tour.landingPages?.find((lp: any) => lp?.type === 'DESTINATION')?.slug?.toLowerCase();
   const destResolved = resolveTourDestination(tour);
   const destId =
@@ -223,7 +221,7 @@ function convertTourToTripModel(tour: Tour, currentLocale: string = 'ar'): TripM
       ? 'multi-country'
       : destResolved === 'Religious'
       ? 'religious'
-      : 'egypt');
+      : baseModel.destination || 'egypt');
 
   const landingPageSlugs = (tour.landingPages || [])
     .filter((lp: any) => lp?.type === 'DESTINATION')
@@ -231,98 +229,16 @@ function convertTourToTripModel(tour: Tour, currentLocale: string = 'ar'): TripM
 
   const arTitle = getText(tour.titleJsonb, 'ar') || getText(tour.titleJsonb, 'en') || tour.slug;
   const enTitle = getText(tour.titleJsonb, 'en') || tour.slug;
-  const localizedTitle = getText(tour.titleJsonb, currentLocale) || arTitle || enTitle || tour.slug;
-  const localizedSubtitle = getText(tour.subtitleJsonb, currentLocale) || getText(tour.subtitleJsonb, 'ar') || getText(tour.subtitleJsonb, 'en') || '';
-  const localizedOverview = getText(tour.overviewJsonb, currentLocale) || getText(tour.overviewJsonb, 'ar') || getText(tour.overviewJsonb, 'en') || 'برنامج سياحي فاخر متكامل مع إقامة وجولات مرشد سياحي.';
-  const localizedDuration = getText(tour.durationJsonb, currentLocale) || getText(tour.durationJsonb, 'ar') || getText(tour.durationJsonb, 'en') || '';
-  const price = Number(tour.basePriceUsd ?? 0);
-  const hotelInfo =
-    tour.hotelInfoJsonb && typeof tour.hotelInfoJsonb === 'object' && !Array.isArray(tour.hotelInfoJsonb)
-      ? (tour.hotelInfoJsonb as Record<string, any>)
-      : {};
-  const accommodation = Array.isArray(hotelInfo.accommodation)
-    ? hotelInfo.accommodation.filter(
-        (item: unknown): item is { destination: string; nights: number; regime: string } =>
-          Boolean(item) && typeof (item as { destination?: unknown }).destination === 'string',
-      )
-    : [];
-
-  const images =
-    tour.images && tour.images.length > 0
-      ? tour.images
-          .map((img: any) => (typeof img === 'string' ? img : img?.imageUrl || img?.url || ''))
-          .filter(Boolean)
-      : tour.heroImage
-      ? [tour.heroImage]
-      : [];
-
-  if (images.length === 0 && tour.heroImage) {
-    images.push(tour.heroImage);
-  }
-
   const tags = Array.isArray(tour.tags) ? tour.tags : [];
   const packageId = destId === 'egypt'
     ? resolveEgyptPackageId(tour, arTitle, enTitle, tour.category || '', tags)
     : undefined;
 
   return {
-    id: tour.id,
-    slug: tour.slug,
-    title: localizedTitle,
-    subtitle: localizedSubtitle,
+    ...baseModel,
     destination: destId,
     landingPageSlugs,
-    market: tour.market || 'Global',
     language: currentLocale,
-    type: (tour.category || 'Classic') as any,
-    duration: localizedDuration,
-    departures: getText(tour.departureInfoJsonb, currentLocale) || getText(tour.departureInfoJsonb, 'ar') || getText(tour.departureInfoJsonb, 'en'),
-    price,
-    hotelCategory: typeof hotelInfo.hotelCategory === 'string' ? hotelInfo.hotelCategory : '',
-    rating: 4.9,
-    reviewCount: tour.reviewCount || 0,
-    popular: !!tour.isFeatured,
-    familyFriendly: Boolean(tags.includes('family')),
-    honeymoon: Boolean(tags.includes('honeymoon') || packageId === 'egypt-honeymoon'),
-    luxury: Boolean(tags.includes('luxury') || tour.isFeatured),
-    cultural: Boolean(tags.includes('cultural') || packageId === 'egypt-classic'),
-    adventure: Boolean(tags.includes('adventure') || packageId === 'egypt-extensions'),
-    overview: localizedOverview,
-    highlights: getList(tour.highlightsJsonb, currentLocale).length ? getList(tour.highlightsJsonb, currentLocale) : (getList(tour.highlightsJsonb, 'ar').length ? getList(tour.highlightsJsonb, 'ar') : getList(tour.highlightsJsonb, 'en')),
-    included: getList(tour.includedServicesJsonb, currentLocale).length ? getList(tour.includedServicesJsonb, currentLocale) : (getList(tour.includedServicesJsonb, 'ar').length ? getList(tour.includedServicesJsonb, 'ar') : getList(tour.includedServicesJsonb, 'en')),
-    excluded: getList(tour.excludedServicesJsonb, currentLocale).length ? getList(tour.excludedServicesJsonb, currentLocale) : (getList(tour.excludedServicesJsonb, 'ar').length ? getList(tour.excludedServicesJsonb, 'ar') : getList(tour.excludedServicesJsonb, 'en')),
-    images,
-    hotels: typeof hotelInfo.notes === 'string' ? hotelInfo.notes : '',
-    accommodation: accommodation.length > 0 ? accommodation : [{ destination: tour.city || '', nights: 1, regime: '' }],
-    itinerary:
-      tour.itineraries && tour.itineraries.length > 0
-        ? tour.itineraries.map((itin, idx) => ({
-            day: idx + 1,
-            title: itin.dayLabel || `Day ${idx + 1}`,
-            description: getText(itin.descriptionJsonb, currentLocale) || (itin.descriptionJsonb?.ar as string) || (itin.descriptionJsonb?.en as string) || '',
-            meals: getText(itin.mealsJsonb, currentLocale) || (itin.mealsJsonb?.ar as string) || (itin.mealsJsonb?.en as string) || 'الإفطار',
-          }))
-        : [],
-    translations: Object.fromEntries(
-      ['ar', 'en', 'es', 'pt', 'it'].map((loc) => [
-        loc,
-        {
-          title: getText(tour.titleJsonb, loc),
-          subtitle: getText(tour.subtitleJsonb, loc),
-          overview: getText(tour.overviewJsonb, loc),
-          duration: getText(tour.durationJsonb, loc),
-          highlights: getList(tour.highlightsJsonb, loc),
-          included: getList(tour.includedServicesJsonb, loc),
-          excluded: getList(tour.excludedServicesJsonb, loc),
-          itinerary: (tour.itineraries || []).map((itin, index) => ({
-            day: index + 1,
-            title: itin.dayLabel || `Day ${index + 1}`,
-            description: getText(itin.descriptionJsonb, loc),
-            meals: getText(itin.mealsJsonb, loc),
-          })),
-        },
-      ]),
-    ),
     packageId,
   };
 }

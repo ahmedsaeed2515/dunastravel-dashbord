@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { hotelsApi } from '../api/hotelsApi';
-import { HotelPayload, HotelsQuery } from '../types';
+import { HotelPayload, HotelsQuery, SeasonPayload } from '../types';
 
 const messageFor = (error: unknown, fallback: string) => {
   const candidate = error as { message?: string } | undefined;
@@ -10,6 +10,50 @@ const messageFor = (error: unknown, fallback: string) => {
 
 export function useHotels(query: HotelsQuery) {
   return useQuery({ queryKey: ['hotels', query], queryFn: () => hotelsApi.list(query) });
+}
+
+export function useSeasons() {
+  return useQuery({ queryKey: ['hotel-seasons'], queryFn: () => hotelsApi.listSeasons() });
+}
+
+export function useCreateSeason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (payload: SeasonPayload) => hotelsApi.createSeason(payload),
+    onSuccess: () => {
+      toast.success('Season created');
+      queryClient.invalidateQueries({ queryKey: ['hotel-seasons'] });
+      queryClient.invalidateQueries({ queryKey: ['hotels'] });
+    },
+    onError: (error) => toast.error(messageFor(error, 'Could not create season')),
+  });
+}
+
+export function useUpdateSeason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: ({ id, payload }: { id: string; payload: Partial<SeasonPayload> }) =>
+      hotelsApi.updateSeason(id, payload),
+    onSuccess: () => {
+      toast.success('Season updated');
+      queryClient.invalidateQueries({ queryKey: ['hotel-seasons'] });
+      queryClient.invalidateQueries({ queryKey: ['hotels'] });
+    },
+    onError: (error) => toast.error(messageFor(error, 'Could not update season')),
+  });
+}
+
+export function useDeleteSeason() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (id: string) => hotelsApi.deleteSeason(id),
+    onSuccess: () => {
+      toast.success('Season deleted');
+      queryClient.invalidateQueries({ queryKey: ['hotel-seasons'] });
+      queryClient.invalidateQueries({ queryKey: ['hotels'] });
+    },
+    onError: (error) => toast.error(messageFor(error, 'Could not delete season')),
+  });
 }
 
 export function useCreateHotel() {
@@ -77,3 +121,4 @@ export function useHotelLifecycle() {
     onError: (error) => toast.error(messageFor(error, 'Could not update hotel lifecycle')),
   });
 }
+

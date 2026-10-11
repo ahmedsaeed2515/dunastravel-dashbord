@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, memo } from 'react';
-import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict } from '@/types/dunas-suite';
+import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
-import { buildTripEditorPayload } from '@/features/tours/lib/tripEditorPayload';
+import { useHotels, useSeasons } from '@/features/hotels/hooks/useHotels';
+import { buildTripEditorPayload, tourToTripModel } from '@/features/tours/lib/tripEditorPayload';
 import {
   ALL_LOCALES,
   TARGET_LOCALES,
@@ -138,6 +139,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const [isSaving, setIsSaving] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
 
+  const { data: hotelsCatalogData } = useHotels({ page: 1, limit: 100 });
+  const catalogHotels = useMemo(
+    () => (Array.isArray(hotelsCatalogData) ? hotelsCatalogData : (hotelsCatalogData?.data ?? [])),
+    [hotelsCatalogData]
+  );
+  const { data: globalSeasonsData } = useSeasons();
+  const globalSeasons = useMemo(
+    () => (Array.isArray(globalSeasonsData) ? globalSeasonsData : []),
+    [globalSeasonsData]
+  );
+
   useEffect(() => {
     if (trip) {
       const cloned = JSON.parse(JSON.stringify(trip));
@@ -149,65 +161,37 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       }
       setFormData(cloned);
 
-      const hasContent = (cloned.included && cloned.included.length > 0) || (cloned.highlights && cloned.highlights.length > 0);
       if (trip.slug) {
         toursApi.getTourBySlug(trip.slug).then((fullTour) => {
           if (!fullTour) return;
-
-          const heroFromApi = (Array.isArray(fullTour.images)
-            ? fullTour.images.find((img: any) => img?.isHero)?.imageUrl
-            : null) || (fullTour as any).heroImage || (fullTour as any).heroImageUrl;
-
-          const incJson = fullTour.includedServicesJsonb || fullTour.inclusionJsonb || (fullTour as any).includedServices || (fullTour as any).included;
-          const excJson = fullTour.excludedServicesJsonb || fullTour.exclusionJsonb || (fullTour as any).excludedServices || (fullTour as any).excluded;
-          const highJson = fullTour.highlightsJsonb || fullTour.highlightJsonb || (fullTour as any).highlights;
-
-          const extractList = (val: any, lang: string): string[] => {
-            if (!val) return [];
-            if (Array.isArray(val)) {
-              return val.map(item => {
-                if (typeof item === 'object' && item !== null) {
-                  return item[lang] || item.en || item.ar || Object.values(item)[0] || '';
-                }
-                return typeof item === 'string' ? item : '';
-              }).filter(Boolean);
-            }
-            if (typeof val === 'object') {
-              const list = val[lang] || val.en || val.ar || [];
-              if (Array.isArray(list)) {
-                return list.map((item: any) => typeof item === 'string' ? item : (item?.[lang] || item?.en || '')).filter(Boolean);
-              }
-            }
-            return [];
-          };
-
-          const arInc = extractList(incJson, 'ar');
-          const arExc = extractList(excJson, 'ar');
-          const arHigh = extractList(highJson, 'ar');
+          const hydrated = tourToTripModel(fullTour);
 
           setFormData(prev => {
             const trans = { ...(prev.translations || {}) };
             (['ar', 'en', 'es', 'pt', 'it'] as LanguageCode[]).forEach(loc => {
+              const hydLoc = hydrated.translations?.[loc] || {};
               if (!trans[loc]) trans[loc] = {};
-              if (!trans[loc].included || trans[loc].included.length === 0) trans[loc].included = extractList(incJson, loc);
-              if (!trans[loc].excluded || trans[loc].excluded.length === 0) trans[loc].excluded = extractList(excJson, loc);
-              if (!trans[loc].highlights || trans[loc].highlights.length === 0) trans[loc].highlights = extractList(highJson, loc);
+              trans[loc] = {
+                ...trans[loc],
+                ...hydLoc,
+                included: (hydLoc.included && hydLoc.included.length > 0) ? hydLoc.included : (trans[loc].included || []),
+                excluded: (hydLoc.excluded && hydLoc.excluded.length > 0) ? hydLoc.excluded : (trans[loc].excluded || []),
+                highlights: (hydLoc.highlights && hydLoc.highlights.length > 0) ? hydLoc.highlights : (trans[loc].highlights || []),
+                itinerary: (hydLoc.itinerary && hydLoc.itinerary.length > 0) ? hydLoc.itinerary : (trans[loc].itinerary || []),
+              };
             });
-
-            const currentImages = prev.images || [];
-            let updatedImages = [...currentImages];
-            const resolvedHero = heroFromApi || prev.heroImage || currentImages[0] || '';
-            if (resolvedHero && updatedImages.includes(resolvedHero)) {
-              updatedImages = [resolvedHero, ...updatedImages.filter(img => img !== resolvedHero)];
-            }
 
             return {
               ...prev,
-              heroImage: resolvedHero,
-              images: updatedImages,
-              included: (prev.included && prev.included.length > 0) ? prev.included : arInc,
-              excluded: (prev.excluded && prev.excluded.length > 0) ? prev.excluded : arExc,
-              highlights: (prev.highlights && prev.highlights.length > 0) ? prev.highlights : arHigh,
+              ...hydrated,
+              heroImage: hydrated.heroImage || prev.heroImage || '',
+              images: hydrated.images.length > 0 ? hydrated.images : (prev.images || []),
+              included: hydrated.included.length > 0 ? hydrated.included : (prev.included || []),
+              excluded: hydrated.excluded.length > 0 ? hydrated.excluded : (prev.excluded || []),
+              highlights: hydrated.highlights.length > 0 ? hydrated.highlights : (prev.highlights || []),
+              accommodation: hydrated.accommodation.length > 0 ? hydrated.accommodation : (prev.accommodation || []),
+              seasonPricing: (hydrated.seasonPricing && hydrated.seasonPricing.length > 0) ? hydrated.seasonPricing : (prev.seasonPricing || []),
+              itinerary: hydrated.itinerary.length > 0 ? hydrated.itinerary : (prev.itinerary || []),
               translations: trans,
             };
           });
@@ -387,7 +371,18 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   const addAccommodationRow = () => {
     const rows = [...(formData.accommodation || [])];
-    rows.push({ destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' });
+    const firstHotel = catalogHotels[0];
+    rows.push({
+      hotelId: firstHotel?.id || '',
+      roomId: firstHotel?.rooms?.[0]?.id || null,
+      destination: firstHotel?.city || 'Cairo',
+      nights: 3,
+      regime: 'BB',
+      categoryTier: '5_STAR',
+      priceSupplementUsd: 0,
+      isDefault: rows.length === 0,
+      sortOrder: rows.length,
+    });
     handleChange('accommodation', rows);
   };
 
@@ -401,6 +396,61 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     const rows = [...(formData.accommodation || [])];
     rows[index] = { ...rows[index], [field]: val };
     handleChange('accommodation', rows);
+  };
+
+  const addSeasonPricingRow = () => {
+    const rules = [...(formData.seasonPricing || [])];
+    const base = Number(formData.price) || 1000;
+    rules.push({
+      seasonCode: `SEASON_${rules.length + 1}`,
+      seasonName: 'Peak Season',
+      label: 'Peak Season',
+      startDate: '2026-10-01',
+      endDate: '2027-04-30',
+      multiplier: 1.2,
+      priceUsd: Math.round(base * 1.2),
+    });
+    handleChange('seasonPricing', rules);
+  };
+
+  const removeSeasonPricingRow = (index: number) => {
+    const rules = [...(formData.seasonPricing || [])];
+    rules.splice(index, 1);
+    handleChange('seasonPricing', rules);
+  };
+
+  const updateSeasonPricingRow = (index: number, field: keyof SeasonPricingRuleItem, val: any) => {
+    const rules = [...(formData.seasonPricing || [])];
+    rules[index] = {
+      ...rules[index],
+      [field]: val,
+      ...(field === 'label' ? { seasonName: val } : {}),
+      ...(field === 'seasonName' ? { label: val } : {}),
+    };
+    handleChange('seasonPricing', rules);
+  };
+
+  const importGlobalSeasonsToTrip = () => {
+    if (globalSeasons.length === 0) {
+      toast.info('لا توجد مواسم عامة مسجلة حالياً في إدارة الفنادق.');
+      return;
+    }
+    const base = Number(formData.price) || 1000;
+    const rules: SeasonPricingRuleItem[] = globalSeasons.map((s) => {
+      const seasonLabel = s.nameJsonb?.en || s.nameJsonb?.ar || s.code;
+      return {
+        seasonId: s.id,
+        seasonCode: s.code,
+        seasonName: seasonLabel,
+        label: seasonLabel,
+        startDate: (s.startDate || '').slice(0, 10),
+        endDate: (s.endDate || '').slice(0, 10),
+        multiplier: Number(s.multiplier) || 1.0,
+        priceUsd: Math.round(base * (Number(s.multiplier) || 1.0)),
+      };
+    });
+    handleChange('seasonPricing', rules);
+    toast.success(`تم استيراد ${rules.length} مواسم تسعير بنجاح!`);
   };
 
   const formatSlug = (input: string): string => {
@@ -1035,6 +1085,125 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   </label>
                 </div>
               </div>
+
+              {/* Seasonal Pricing Rules (seasonPricingJsonb) */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Calendar className="w-4 h-4 text-amber-500" />
+                      قواعد التسعير الموسمي للرحلة (Seasonal Pricing Tiers):
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      تحديد معاملات الأسعار أو السعر المخصص لكل موسم (ذروة، صيف، أعياد).
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {globalSeasons.length > 0 && (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="outline"
+                        onClick={importGlobalSeasonsToTrip}
+                        className="text-xs border-amber-500/40 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold rounded-xl h-8 cursor-pointer"
+                      >
+                        استيراد المواسم المعتمدة ({globalSeasons.length})
+                      </Button>
+                    )}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={addSeasonPricingRow}
+                      className="text-xs text-amber-500 gap-1 font-bold h-8 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة موسم تسعير
+                    </Button>
+                  </div>
+                </div>
+
+                {(formData.seasonPricing || []).length === 0 ? (
+                  <p className="text-xs text-muted-foreground text-center py-3">
+                    لا توجد قواعد تسعير موسمية مخصصة لهذه الرحلة (يُطبق السعر الأساسي أو المواسم العامة تلقائياً).
+                  </p>
+                ) : (
+                  <div className="space-y-2">
+                    {(formData.seasonPricing || []).map((rule, rIdx) => (
+                      <div
+                        key={rIdx}
+                        className="grid grid-cols-1 sm:grid-cols-6 gap-2.5 p-3 rounded-xl bg-muted/30 border border-border/60 items-end"
+                      >
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground block mb-1">كود الموسم</label>
+                          <Input
+                            value={rule.seasonCode || ''}
+                            onChange={e => updateSeasonPricingRow(rIdx, 'seasonCode', e.target.value.toUpperCase())}
+                            placeholder="HIGH_WINTER"
+                            className="h-8 text-xs font-mono font-bold rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground block mb-1">اسم الموسم</label>
+                          <Input
+                            value={rule.label || rule.seasonName || ''}
+                            onChange={e => updateSeasonPricingRow(rIdx, 'label', e.target.value)}
+                            placeholder="Peak Winter"
+                            className="h-8 text-xs font-semibold rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground block mb-1">من تاريخ</label>
+                          <Input
+                            type="date"
+                            value={(rule.startDate || '').slice(0, 10)}
+                            onChange={e => updateSeasonPricingRow(rIdx, 'startDate', e.target.value)}
+                            className="h-8 text-xs font-mono rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground block mb-1">إلى تاريخ</label>
+                          <Input
+                            type="date"
+                            value={(rule.endDate || '').slice(0, 10)}
+                            onChange={e => updateSeasonPricingRow(rIdx, 'endDate', e.target.value)}
+                            className="h-8 text-xs font-mono rounded-lg"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] font-bold text-muted-foreground block mb-1">المعامل (×)</label>
+                          <Input
+                            type="number"
+                            step="0.05"
+                            value={rule.multiplier ?? 1}
+                            onChange={e => updateSeasonPricingRow(rIdx, 'multiplier', Number(e.target.value))}
+                            className="h-8 text-xs font-mono font-bold rounded-lg"
+                          />
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          <div className="flex-1">
+                            <label className="text-[10px] font-bold text-muted-foreground block mb-1">السعر ($)</label>
+                            <Input
+                              type="number"
+                              value={rule.priceUsd ?? Math.round((Number(formData.price) || 0) * (Number(rule.multiplier) || 1))}
+                              onChange={e => updateSeasonPricingRow(rIdx, 'priceUsd', Number(e.target.value))}
+                              className="h-8 text-xs font-mono font-bold text-amber-500 rounded-lg"
+                            />
+                          </div>
+                          <Button
+                            type="button"
+                            size="icon-sm"
+                            variant="ghost"
+                            onClick={() => removeSeasonPricingRow(rIdx)}
+                            className="h-8 w-8 text-destructive hover:bg-destructive/10"
+                          >
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </TabsContent>
 
             {/* TAB 2: OVERVIEW & LODGING */}
@@ -1065,13 +1234,18 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 />
               </div>
 
-              {/* Accommodation Items */}
+              {/* Accommodation Items & Relational Partner Hotel/Room Assignment */}
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
                 <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                    <Hotel className="w-4 h-4 text-amber-500" />
-                    توزيع الإقامة والفنادق (Accommodation Plan):
-                  </span>
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Hotel className="w-4 h-4 text-amber-500" />
+                      توزيع الإقامة وربط الفنادق والغرف (Trip Accommodation & Partner Hotels):
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
+                      اختر الفندق والغرفة من دليل الفنادق لربطها مباشرة بالرحلة وحساب فروقات الأسعار تلقائياً.
+                    </p>
+                  </div>
                   <Button
                     size="sm"
                     variant="ghost"
@@ -1083,47 +1257,138 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 </div>
 
                 <div className="space-y-3">
-                  {(formData.accommodation || []).map((acc, idx) => (
-                    <div key={idx} className="grid grid-cols-1 sm:grid-cols-4 gap-3 p-3 rounded-xl bg-muted/30 border border-border/60 items-center">
-                      <div>
-                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
-                        <Input
-                          value={acc.destination || ''}
-                          onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
-                          placeholder="Cairo, Luxor, Aswan..."
-                          className="rounded-xl text-xs font-bold h-9"
-                        />
+                  {(formData.accommodation || []).map((acc, idx) => {
+                    const selectedHotelObj = catalogHotels.find((h) => h.id === acc.hotelId);
+                    const hotelRooms = selectedHotelObj?.rooms || [];
+
+                    return (
+                      <div key={idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          {/* Relational Hotel Picker */}
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                              الفندق المعتمد (Partner Hotel)
+                            </label>
+                            <select
+                              value={acc.hotelId || ''}
+                              onChange={e => {
+                                const hId = e.target.value;
+                                const hObj = catalogHotels.find((h) => h.id === hId);
+                                const rows = [...(formData.accommodation || [])];
+                                rows[idx] = {
+                                  ...rows[idx],
+                                  hotelId: hId || undefined,
+                                  roomId: hObj?.rooms?.[0]?.id || null,
+                                  destination: hObj?.city || rows[idx].destination || 'Cairo',
+                                  categoryTier: hObj?.stars === 5 ? '5_STAR' : hObj?.stars === 4 ? '4_STAR' : 'LUXURY',
+                                };
+                                handleChange('accommodation', rows);
+                              }}
+                              className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                            >
+                              <option value="">-- بدون فندق محدد (مدينة فقط) --</option>
+                              {catalogHotels.map((h) => (
+                                <option key={h.id} value={h.id}>
+                                  🏨 {h.nameJsonb?.en || h.nameJsonb?.ar || h.slug} ({h.city} • {h.stars}⭐)
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Relational Room Picker */}
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                              فئة الغرفة (Assigned Room Tier)
+                            </label>
+                            <select
+                              value={acc.roomId || ''}
+                              disabled={!selectedHotelObj || hotelRooms.length === 0}
+                              onChange={e => updateAccommodationRow(idx, 'roomId', e.target.value || null)}
+                              className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold disabled:opacity-50"
+                            >
+                              <option value="">-- الغرفة القياسية للفندق --</option>
+                              {hotelRooms.map((rm: { id: string; slug?: string; name?: unknown; ratePerNight?: number }) => (
+                                <option key={rm.id} value={rm.id}>
+                                  🛏️ {(rm.name as any)?.en || (rm.name as any)?.ar || (typeof rm.name === 'string' ? rm.name : rm.slug)} (${rm.ratePerNight ?? 0}/nt)
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          {/* Destination / City */}
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
+                            <Input
+                              value={acc.destination || ''}
+                              onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
+                              placeholder="Cairo, Luxor, Aswan..."
+                              className="rounded-xl text-xs font-bold h-9"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
+                            <Input
+                              type="number"
+                              min="1"
+                              value={acc.nights ?? 1}
+                              onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
+                              className="rounded-xl text-xs font-bold h-9 font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الوجبات (Regime)</label>
+                            <select
+                              value={acc.regime || 'BB'}
+                              onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
+                              className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                            >
+                              <option value="BB">BB — Bed & Breakfast</option>
+                              <option value="HB">HB — Half Board</option>
+                              <option value="FB">FB — Full Board</option>
+                              <option value="AI">AI — All Inclusive</option>
+                              <option value="RO">RO — Room Only</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">الفئة (Tier)</label>
+                            <select
+                              value={acc.categoryTier || '5_STAR'}
+                              onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
+                              className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                            >
+                              <option value="5_STAR">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
+                              <option value="4_STAR">⭐⭐⭐⭐ 4-Star Superior</option>
+                              <option value="VIP">👑 Royal VIP Tier</option>
+                              <option value="CRUISE">🚢 Deluxe Nile Cruise</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label className="text-[11px] font-bold text-muted-foreground block mb-1">فرق السعر (+$ USD)</label>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={acc.priceSupplementUsd ?? 0}
+                              onChange={e => updateAccommodationRow(idx, 'priceSupplementUsd', Number(e.target.value))}
+                              className="rounded-xl text-xs font-bold h-9 font-mono text-amber-500"
+                            />
+                          </div>
+                          <div className="flex justify-end items-center gap-2">
+                            <Button
+                              size="icon-sm"
+                              variant="ghost"
+                              onClick={() => removeAccommodationRow(idx)}
+                              className="text-destructive hover:bg-destructive/10 h-9 w-9 rounded-xl"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
-                        <Input
-                          type="number"
-                          value={acc.nights ?? 1}
-                          onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
-                          className="rounded-xl text-xs font-bold h-9 font-mono"
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الإقامة</label>
-                        <Input
-                          value={acc.regime || ''}
-                          onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
-                          placeholder="Bed & Breakfast, Full Board..."
-                          className="rounded-xl text-xs font-semibold h-9"
-                        />
-                      </div>
-                      <div className="flex justify-end items-end pt-5">
-                        <Button
-                          size="icon-sm"
-                          variant="ghost"
-                          onClick={() => removeAccommodationRow(idx)}
-                          className="text-destructive hover:bg-destructive/10"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                   {(formData.accommodation || []).length === 0 && (
                     <p className="text-xs text-muted-foreground text-center py-4">لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.</p>
                   )}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildTripEditorPayload } from './tripEditorPayload';
+import { buildTripEditorPayload, tourToTripModel } from './tripEditorPayload';
 
 describe('buildTripEditorPayload', () => {
   it('preserves existing non-Arabic content when Arabic is edited', () => {
@@ -110,4 +110,198 @@ describe('buildTripEditorPayload', () => {
     expect(payload.images![2].imageUrl).toBe('https://example.com/img3.jpg');
     expect(payload.images![2].isHero).toBe(false);
   });
+
+  it('serializes relational accommodations and seasonal pricing rules', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'royal-egypt-tour',
+      title: 'Royal Egypt',
+      destination: 'egypt',
+      price: 1800,
+      accommodation: [
+        {
+          hotelId: '11111111-1111-4111-8111-111111111111',
+          roomId: '22222222-2222-4222-8222-222222222222',
+          destination: 'Giza',
+          nights: 3,
+          regime: 'BB',
+          categoryTier: '5★ Luxury',
+          priceSupplementUsd: 150,
+          isDefault: true,
+        },
+      ],
+      seasonPricing: [
+        {
+          seasonCode: 'HIGH',
+          seasonName: 'High Season',
+          startDate: '2026-10-01',
+          endDate: '2027-04-30',
+          priceUsd: 2100,
+        },
+      ],
+    }, false);
+
+    expect(payload.accommodations).toHaveLength(1);
+    expect(payload.accommodations![0]).toMatchObject({
+      hotelId: '11111111-1111-4111-8111-111111111111',
+      roomId: '22222222-2222-4222-8222-222222222222',
+      destination: 'Giza',
+      nights: 3,
+      regime: 'BB',
+      priceSupplementUsd: 150,
+    });
+    expect(payload.seasonPricingJsonb).toEqual({
+      rules: [
+        {
+          seasonCode: 'HIGH',
+          seasonName: 'High Season',
+          startDate: '2026-10-01',
+          endDate: '2027-04-30',
+          priceUsd: 2100,
+        },
+      ],
+    });
+  });
+
+  it('always emits empty accommodations and seasonPricingJsonb.rules arrays when cleared (BUG-02)', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'cleared-tour',
+      title: 'Cleared Tour',
+      destination: 'egypt',
+      price: 1200,
+      accommodation: [],
+      seasonPricing: [],
+    }, false);
+
+    expect(payload.accommodations).toEqual([]);
+    expect(payload.seasonPricingJsonb).toEqual({ rules: [] });
+  });
+
+  it('preserves accommodations, seasonPricing, 5-locale itinerary titleJsonb, hotelCategory, and tags across a full tourToTripModel -> buildTripEditorPayload round trip (BUG-10)', () => {
+    const dbTour: any = {
+      id: 'tour-uuid-1',
+      slug: 'grand-nile-odyssey',
+      titleJsonb: { ar: 'أوديسا النيل', en: 'Grand Nile Odyssey', es: 'Odisea del Nilo', pt: 'Odisseia do Nilo', it: 'Odissea sul Nilo' },
+      subtitleJsonb: { ar: 'رحلة ملكية', en: 'Royal Journey', es: 'Viaje Real', pt: 'Jornada Real', it: 'Viaggio Reale' },
+      overviewJsonb: { ar: 'نظرة عامة', en: 'Overview EN', es: 'Resumen ES', pt: 'Resumo PT', it: 'Panoramica IT' },
+      durationJsonb: { ar: '8 أيام', en: '8 Days', es: '8 Días', pt: '8 Dias', it: '8 Giorni' },
+      departureInfoJsonb: { ar: 'يومياً', en: 'Daily', es: 'Diario', pt: 'Diário', it: 'Giornaliero' },
+      category: 'Luxury',
+      country: 'Egypt',
+      city: 'Cairo',
+      market: 'Global',
+      basePriceUsd: '2400',
+      currency: 'USD',
+      isActive: true,
+      status: 'PUBLISHED',
+      isFeatured: true,
+      tags: ['popular', 'luxury', 'honeymoon'],
+      hotelInfoJsonb: {
+        hotelCategory: '5-Star Ultra Luxury',
+        notes: 'Guaranteed Nile view suites',
+      },
+      accommodations: [
+        {
+          id: 'acc-1',
+          hotelId: '11111111-1111-4111-8111-111111111111',
+          roomId: '22222222-2222-4222-8222-222222222222',
+          destination: 'Cairo',
+          nights: 3,
+          regime: 'BB',
+          categoryTier: '5_STAR',
+          priceSupplementUsd: 180,
+          isDefault: true,
+          sortOrder: 0,
+        },
+      ],
+      seasonPricingJsonb: {
+        rules: [
+          {
+            seasonCode: 'WINTER_PEAK',
+            label: 'Winter Peak',
+            startDate: '2026-12-01',
+            endDate: '2027-02-28',
+            multiplier: 1.25,
+            priceUsd: 3000,
+          },
+        ],
+      },
+      itineraries: [
+        {
+          dayLabel: 'الوصول إلى القاهرة',
+          titleJsonb: {
+            ar: 'الوصول إلى القاهرة',
+            en: 'Arrival in Cairo',
+            es: 'Llegada a El Cairo',
+            pt: 'Chegada ao Cairo',
+            it: 'Arrivo al Cairo',
+          },
+          descriptionJsonb: {
+            ar: 'استقبال VIP',
+            en: 'VIP Meet & Assist',
+            es: 'Recepción VIP',
+            pt: 'Recepção VIP',
+            it: 'Accoglienza VIP',
+          },
+          mealsJsonb: {
+            ar: 'العشاء',
+            en: 'Dinner',
+            es: 'Cena',
+            pt: 'Jantar',
+            it: 'Cena',
+          },
+          sortOrder: 0,
+        },
+      ],
+      images: [
+        { imageUrl: 'https://example.com/hero.jpg', isHero: true, sortOrder: 0 },
+        { imageUrl: 'https://example.com/gallery-1.jpg', isHero: false, sortOrder: 1 },
+      ],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    // Hydrate into TripModel and edit only 1 field (base price)
+    const tripModel = tourToTripModel(dbTour);
+    tripModel.price = 2550;
+
+    const payload = buildTripEditorPayload(tripModel, false);
+
+    expect(payload.basePriceUsd).toBe(2550);
+    expect(payload.tags).toEqual(['popular', 'luxury', 'honeymoon']);
+    expect(payload.hotelInfoJsonb).toMatchObject({
+      hotelCategory: '5-Star Ultra Luxury',
+      notes: 'Guaranteed Nile view suites',
+    });
+    expect(payload.accommodations).toEqual([
+      {
+        hotelId: '11111111-1111-4111-8111-111111111111',
+        roomId: '22222222-2222-4222-8222-222222222222',
+        destination: 'Cairo',
+        nights: 3,
+        regime: 'BB',
+        categoryTier: '5_STAR',
+        priceSupplementUsd: 180,
+        isDefault: true,
+        sortOrder: 0,
+      },
+    ]);
+    expect(payload.seasonPricingJsonb?.rules[0]).toMatchObject({
+      seasonCode: 'WINTER_PEAK',
+      seasonName: 'Winter Peak',
+      label: 'Winter Peak',
+      startDate: '2026-12-01',
+      endDate: '2027-02-28',
+      multiplier: 1.25,
+      priceUsd: 3000,
+    });
+    expect(payload.itineraries![0].titleJsonb).toEqual({
+      ar: 'الوصول إلى القاهرة',
+      en: 'Arrival in Cairo',
+      es: 'Llegada a El Cairo',
+      pt: 'Chegada ao Cairo',
+      it: 'Arrivo al Cairo',
+    });
+  });
 });
+
+

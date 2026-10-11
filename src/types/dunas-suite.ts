@@ -18,9 +18,28 @@ export interface TranslationDict {
 }
 
 export interface AccommodationItem {
+  id?: string;
+  hotelId?: string;
+  roomId?: string | null;
   destination: string;
   nights: number;
   regime: string;
+  categoryTier?: string;
+  priceSupplementUsd?: number;
+  isDefault?: boolean;
+  sortOrder?: number;
+}
+
+export interface SeasonPricingRuleItem {
+  seasonId?: string;
+  seasonCode: string;
+  seasonName?: string;
+  label?: string;
+  startDate: string;
+  endDate: string;
+  multiplier?: number;
+  priceUsd?: number;
+  supplementUsd?: number;
 }
 
 export interface ItineraryItem {
@@ -67,8 +86,11 @@ export interface TripModel {
   images: string[];
   hotels?: string;
 
-  // Accommodation Breakdown
+  // Accommodation Breakdown & Relational Hotel/Room Assignments
   accommodation: AccommodationItem[];
+
+  // Seasonal Pricing Rules
+  seasonPricing?: SeasonPricingRuleItem[];
 
   // Day-by-Day Itinerary
   itinerary: ItineraryItem[];
