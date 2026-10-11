@@ -447,9 +447,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               translations: trans,
             };
           });
-              translations: trans,
-            };
-          });
         }).catch(() => {});
       }
     } else {
