@@ -2593,7 +2593,169 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           </div>
                         </div>
 
-                        {/* 4. Rooms & Pricing Engine */}
+                        {/* 4. Curated Amenities & Hotel Policies */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
+                          {/* Amenities Manager */}
+                          <div className="space-y-3">
+                            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                              <Sparkles className="w-4 h-4 text-amber-500" />
+                              خدمات ومرافق الفندق (Amenities & Features):
+                            </span>
+
+                            {/* Preset Quick Chips */}
+                            <div className="flex flex-wrap gap-1.5">
+                              {['Wi-Fi مجاني', 'سبا ونادي صحي', 'مسبح فاخر', 'إطلالة بانورامية', 'خدمة كونسيرج 24/7', 'مطعم فاخر'].map((preset) => {
+                                const currentFeatures = tripHotel.amenitiesJsonb?.features || [];
+                                const isSelected = currentFeatures.includes(preset);
+                                return (
+                                  <button
+                                    key={preset}
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = isSelected
+                                        ? currentFeatures.filter((f: string) => f !== preset)
+                                        : [...currentFeatures, preset];
+                                      setTripHotel(prev => prev ? {
+                                        ...prev,
+                                        amenitiesJsonb: { ...(prev.amenitiesJsonb || {}), features: updated },
+                                      } : null);
+                                    }}
+                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
+                                      isSelected
+                                        ? 'bg-amber-500 text-black font-black'
+                                        : 'bg-background hover:bg-muted text-muted-foreground border border-border/60'
+                                    }`}
+                                  >
+                                    {isSelected ? '✓ ' : '+ '}
+                                    {preset}
+                                  </button>
+                                );
+                              })}
+                            </div>
+
+                            {/* Add Custom Amenity Tag */}
+                            <div className="flex items-center gap-2">
+                              <Input
+                                value={newTripHotelAmenity}
+                                onChange={e => setNewTripHotelAmenity(e.target.value)}
+                                placeholder="إضافة ميزة مخصصة..."
+                                className="h-8 text-xs rounded-xl"
+                              />
+                              <Button
+                                type="button"
+                                size="sm"
+                                onClick={() => {
+                                  if (!newTripHotelAmenity.trim()) return;
+                                  const currentFeatures = tripHotel.amenitiesJsonb?.features || [];
+                                  if (!currentFeatures.includes(newTripHotelAmenity.trim())) {
+                                    setTripHotel(prev => prev ? {
+                                      ...prev,
+                                      amenitiesJsonb: {
+                                        ...(prev.amenitiesJsonb || {}),
+                                        features: [...currentFeatures, newTripHotelAmenity.trim()],
+                                      },
+                                    } : null);
+                                  }
+                                  setNewTripHotelAmenity('');
+                                }}
+                                className="h-8 px-3 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+
+                            {/* Active Amenities Chips */}
+                            <div className="flex flex-wrap gap-1.5 pt-1">
+                              {(tripHotel.amenitiesJsonb?.features || []).map((feat: string, fIdx: number) => (
+                                <span
+                                  key={fIdx}
+                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-amber-500/30 text-[11px] font-bold text-foreground"
+                                >
+                                  <span>{feat}</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      const updated = (tripHotel.amenitiesJsonb?.features || []).filter((_: any, idx: number) => idx !== fIdx);
+                                      setTripHotel(prev => prev ? {
+                                        ...prev,
+                                        amenitiesJsonb: { ...(prev.amenitiesJsonb || {}), features: updated },
+                                      } : null);
+                                    }}
+                                    className="text-destructive hover:scale-125 transition-transform cursor-pointer"
+                                  >
+                                    ×
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Policies Manager */}
+                          <div className="space-y-3">
+                            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                              <ShieldCheck className="w-4 h-4 text-amber-500" />
+                              سياسات الفندق (Hotel Policies):
+                            </span>
+
+                            <div className="grid grid-cols-2 gap-3">
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                                  موعد تسجيل الدخول (Check-In)
+                                </label>
+                                <Input
+                                  value={tripHotel.policiesJsonb?.checkIn || '15:00'}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setTripHotel(prev => prev ? {
+                                      ...prev,
+                                      policiesJsonb: { ...(prev.policiesJsonb || {}), checkIn: val },
+                                    } : null);
+                                  }}
+                                  placeholder="15:00"
+                                  className="h-8 text-xs font-mono rounded-xl"
+                                />
+                              </div>
+
+                              <div>
+                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                                  موعد تسجيل المغادرة (Check-Out)
+                                </label>
+                                <Input
+                                  value={tripHotel.policiesJsonb?.checkOut || '12:00'}
+                                  onChange={e => {
+                                    const val = e.target.value;
+                                    setTripHotel(prev => prev ? {
+                                      ...prev,
+                                      policiesJsonb: { ...(prev.policiesJsonb || {}), checkOut: val },
+                                    } : null);
+                                  }}
+                                  placeholder="12:00"
+                                  className="h-8 text-xs font-mono rounded-xl"
+                                />
+                              </div>
+                            </div>
+
+                            <div>
+                              <label className="text-[10px] font-bold text-muted-foreground block mb-1">
+                                سياسة الإلغاء (Cancellation Policy)
+                              </label>
+                              <Input
+                                value={tripHotel.policiesJsonb?.cancellation || 'إلغاء مجاني حتى 48 ساعة قبل موعد الوصول'}
+                                onChange={e => {
+                                  const val = e.target.value;
+                                  setTripHotel(prev => prev ? {
+                                    ...prev,
+                                    policiesJsonb: { ...(prev.policiesJsonb || {}), cancellation: val },
+                                  } : null);
+                                }}
+                                placeholder="إلغاء مجاني حتى 48 ساعة قبل الوصول..."
+                                className="h-8 text-xs rounded-xl"
+                              />
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* 5. Rooms & Pricing Engine */}
                         <div className="p-4 rounded-2xl bg-muted/20 border border-border/60 space-y-4">
                           <div className="flex items-center justify-between border-b border-border/40 pb-2">
                             <div>
@@ -2639,7 +2801,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                   )}
                                 </div>
 
-                                <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+                                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
                                   {/* Room Name */}
                                   <div className="col-span-2 sm:col-span-2">
                                     <label className="text-[10px] font-bold text-muted-foreground block mb-1">اسم الغرفة ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})</label>
@@ -2662,6 +2824,19 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                       onChange={e => handleTripHotelUpdateRoom(rIdx, 'roomType', e.target.value)}
                                       placeholder="King Bed / Twin"
                                       className="rounded-xl text-xs font-bold h-9"
+                                    />
+                                  </div>
+
+                                  {/* Max Occupancy */}
+                                  <div>
+                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">السعة (النزلاء)</label>
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      max="10"
+                                      value={room.maxOccupancy ?? 2}
+                                      onChange={e => handleTripHotelUpdateRoom(rIdx, 'maxOccupancy', Number(e.target.value))}
+                                      className="rounded-xl text-xs font-mono font-bold h-9"
                                     />
                                   </div>
 
