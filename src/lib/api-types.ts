@@ -107,16 +107,48 @@ export function normalizeApiError(value: unknown): ApiError {
   if (isRecord(value)) {
     const status = typeof value.status === 'number' ? value.status : undefined;
     const body = isRecord(value.data) ? value.data : value;
-    const message = Array.isArray(body.message)
-      ? body.message.join(', ')
-      : typeof body.message === 'string'
-        ? body.message
-        : 'An unexpected error occurred';
+
+    const parsedFieldErrors: Record<string, string> = {};
+    if (Array.isArray(body.message)) {
+      for (const item of body.message) {
+        if (typeof item === 'string') {
+          const match = item.match(/^([a-zA-Z0-9_.]+)\s+(.+)$/);
+          if (match) {
+            const rawKey = match[1];
+            // Normalize common field aliases
+            const normalizedKey = rawKey.startsWith('titleJsonb') ? 'title'
+              : rawKey === 'basePriceUsd' ? 'price'
+              : rawKey;
+            if (!parsedFieldErrors[normalizedKey]) {
+              parsedFieldErrors[normalizedKey] = item;
+            }
+          }
+        }
+      }
+    } else if (isRecord(body.errors)) {
+      for (const [k, v] of Object.entries(body.errors)) {
+        parsedFieldErrors[k] = Array.isArray(v) ? v[0] : String(v);
+      }
+    }
+
+    const hasValidationErrors = Object.keys(parsedFieldErrors).length > 0;
+    const defaultValidationSummary = hasValidationErrors
+      ? 'يرجى مراجعة وتصحيح الحقول المحددة أدناه قبل الحفظ.'
+      : 'An unexpected error occurred';
+
+    const message = typeof body.message === 'string' && body.message.trim().length > 0
+      ? body.message
+      : hasValidationErrors
+        ? defaultValidationSummary
+        : Array.isArray(body.message)
+          ? body.message.join(', ')
+          : 'An unexpected error occurred';
+
     return {
       message,
       status,
       code: typeof body.code === 'string' ? body.code : status ? `HTTP_${status}` : undefined,
-      errors: isRecord(body.errors) ? body.errors as Record<string, string[] | string> : undefined,
+      errors: hasValidationErrors ? parsedFieldErrors : undefined,
     };
   }
   return { message: value instanceof Error ? value.message : 'An unexpected error occurred' };

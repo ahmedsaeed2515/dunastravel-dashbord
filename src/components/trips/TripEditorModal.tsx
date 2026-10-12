@@ -63,6 +63,13 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
+import {
+  slugify,
+  isValidSlug,
+  generateTourSlug,
+  generateTripHotelSlug,
+  generateRoomSlug,
+} from '@/lib/slug-util';
 
 const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [number, number] }[] = [
   { dbKey: 'cairo', nameAr: 'القاهرة', nameEn: 'Cairo', coords: [30.0444, 31.2357] },
@@ -447,6 +454,21 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const [tripHotelActiveLang, setTripHotelActiveLang] = useState<LanguageCode>('ar');
   const [newTripHotelPhotoUrl, setNewTripHotelPhotoUrl] = useState('');
   const [newTripHotelAmenity, setNewTripHotelAmenity] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [isDirty, setIsDirty] = useState(false);
+
+  const handleSafeClose = () => {
+    if (isDirty) {
+      if (confirm('لديك تعديلات غير محفوظة على بيانات الرحلة. هل أنت متأكد من الإغلاق وفقدان التعديلات؟')) {
+        setIsDirty(false);
+        setFieldErrors({});
+        onClose();
+      }
+    } else {
+      setFieldErrors({});
+      onClose();
+    }
+  };
 
   const { data: hotelsCatalogData } = useHotels({ page: 1, limit: 100 });
   const catalogHotels = useMemo(
@@ -599,50 +621,66 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const queryClient = useQueryClient();
 
   const handleSaveTripHotel = async () => {
-    const slugToUse = formData.slug || trip?.slug;
-    if (!slugToUse) {
+    const rawTourSlug = formData.slug || trip?.slug;
+    const tourSlug = slugify(rawTourSlug);
+    if (!tourSlug) {
       toast.error('يرجى حفظ بيانات الرحلة الأساسية أولاً لتحديد معرف الرحلة (Slug)');
+      setActiveTab('basic');
       return;
     }
     if (!tripHotel) return;
     setIsSavingTripHotel(true);
     try {
+      const hotelSlug = tripHotel.slug && isValidSlug(tripHotel.slug)
+        ? tripHotel.slug
+        : generateTripHotelSlug(tourSlug, tripHotel.nameJsonb?.en || tripHotel.nameJsonb?.ar);
+
+      const destSlug = slugify(tripHotel.destinationSlug || formData.destination || 'cairo') || 'cairo';
+
       const payload: any = {
-        nameJsonb: tripHotel.nameJsonb,
-        descriptionJsonb: tripHotel.descriptionJsonb,
+        slug: hotelSlug,
+        destinationSlug: destSlug,
+        nameJsonb: tripHotel.nameJsonb || { en: 'Trip Hotel', ar: 'فندق الرحلة' },
+        descriptionJsonb: tripHotel.descriptionJsonb || {},
         stars: Number(tripHotel.stars || 5),
         city: tripHotel.city || (formData as any)?.city || formData.destination || 'Cairo',
-        destinationSlug: tripHotel.destinationSlug || (formData.destination || 'cairo').toLowerCase(),
         heroImageUrl: tripHotel.heroImageUrl,
         images: tripHotel.images || [],
         amenitiesJsonb: tripHotel.amenitiesJsonb || {},
         policiesJsonb: tripHotel.policiesJsonb || {},
-        rooms: (tripHotel.rooms || []).map((r, rIdx) => ({
-          ...(r.id ? { id: r.id } : {}),
-          slug: r.slug || `room-${rIdx + 1}`,
-          nameJsonb: r.nameJsonb,
-          ratePerNight: Number(r.ratePerNight || 0),
-          maxOccupancy: Number(r.maxOccupancy || 2),
-          currency: 'USD',
-          mealPlanJsonb: { en: r.mealPlan || 'BB', ar: r.mealPlan || 'BB' },
-          descriptionJsonb: { bedType: { en: r.roomType || 'Standard Room', ar: r.roomType || 'غرفة قياسية' } },
-          seasonPricings: (r.seasonPricings || []).map(sp => ({
-            seasonId: sp.seasonId,
-            ratePerNight: Number(sp.ratePerNight || 0),
-            singleSupplement: Number(sp.singleSupplement || 0),
-            boardBasis: sp.boardBasis || 'BB',
-          })),
-        })),
+        rooms: (tripHotel.rooms || []).map((r, rIdx) => {
+          const roomNameEn = (r.nameJsonb as any)?.en || (typeof r.nameJsonb === 'string' ? r.nameJsonb : '');
+          const roomSlug = r.slug && isValidSlug(r.slug)
+            ? r.slug
+            : generateRoomSlug(r.slug || roomNameEn, rIdx + 1);
+          return {
+            ...(r.id ? { id: r.id } : {}),
+            slug: roomSlug,
+            nameJsonb: r.nameJsonb || { ar: `غرفة ${rIdx + 1}`, en: `Room ${rIdx + 1}` },
+            ratePerNight: Number(r.ratePerNight || 0),
+            maxOccupancy: Number(r.maxOccupancy || 2),
+            currency: 'USD',
+            mealPlanJsonb: { en: r.mealPlan || 'BB', ar: r.mealPlan || 'BB' },
+            descriptionJsonb: { bedType: { en: r.roomType || 'Standard Room', ar: r.roomType || 'غرفة قياسية' } },
+            seasonPricings: (r.seasonPricings || []).map(sp => ({
+              seasonId: sp.seasonId,
+              ratePerNight: Number(sp.ratePerNight || 0),
+              singleSupplement: Number(sp.singleSupplement || 0),
+              boardBasis: sp.boardBasis || 'BB',
+            })),
+          };
+        }),
       };
 
-      const res = await toursApi.upsertTourTripHotel(slugToUse, payload);
+      const res = await toursApi.upsertTourTripHotel(tourSlug, payload);
       toast.success('✨ تم حفظ وتحديث فندق الرحلة المخصص بنجاح!');
       if (res && res.id) {
-        setTripHotel(prev => prev ? { ...prev, id: res.id, slug: res.slug } : null);
+        setTripHotel(prev => prev ? { ...prev, id: res.id, slug: res.slug || hotelSlug } : null);
       }
       queryClient.invalidateQueries({ queryKey: ['tours'] });
-      queryClient.invalidateQueries({ queryKey: ['tour', slugToUse] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourSlug] });
     } catch (err: any) {
+      console.error('Save trip hotel error:', err);
       toast.error(err?.message || 'فشل حفظ فندق الرحلة');
     } finally {
       setIsSavingTripHotel(false);
@@ -650,17 +688,18 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const handleDeleteTripHotel = async () => {
-    const slugToUse = formData.slug || trip?.slug;
-    if (!slugToUse) return;
+    const rawTourSlug = formData.slug || trip?.slug;
+    const tourSlug = slugify(rawTourSlug);
+    if (!tourSlug) return;
     if (!confirm('هل أنت متأكد من حذف الفندق المخصص لهذه الرحلة والعودة إلى خيار الفندق العام؟')) return;
     setIsSavingTripHotel(true);
     try {
-      await toursApi.deleteTourTripHotel(slugToUse);
-      toast.success('تم حذف فندق الرحلة المخصص');
+      await toursApi.deleteTourTripHotel(tourSlug);
+      toast.success('تم حذف فندق الرحلة المخصص والعودة للفندق العام.');
       setTripHotel(null);
       setHotelMode('GLOBAL');
       queryClient.invalidateQueries({ queryKey: ['tours'] });
-      queryClient.invalidateQueries({ queryKey: ['tour', slugToUse] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourSlug] });
     } catch (err: any) {
       toast.error(err?.message || 'فشل حذف فندق الرحلة');
     } finally {
@@ -780,6 +819,14 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const handleChange = (field: keyof TripModel, value: any) => {
+    setIsDirty(true);
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -791,6 +838,14 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const setLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures', value: string) => {
+    setIsDirty(true);
+    if (fieldErrors[field]) {
+      setFieldErrors(prev => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
     setFormData(prev => {
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
@@ -1318,17 +1373,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const formatSlug = (input: string): string => {
-    if (!input) return '';
-    return input
-      .toLowerCase()
-      .trim()
-      .replace(/^https?:\/\/[^\/]+/, '')
-      .replace(/^\/?tours\//, '')
-      .replace(/^\//, '')
-      .replace(/[^a-z0-9\s-]/g, '')
-      .replace(/[\s_]+/g, '-')
-      .replace(/-+/g, '-')
-      .replace(/^-+|-+$/g, '');
+    return slugify(input);
   };
 
   // 5-Language Completion Stats Calculation
@@ -1503,20 +1548,40 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const handleSave = async () => {
-    if (!formData.destination || (!trip && !formData.title)) {
-      toast.error('يرجى ملء كافة البيانات الأساسية المطلوبة');
-      return;
+    const validationErrors: Record<string, string> = {};
+
+    const activeTitle = (formData.title || '').trim();
+    if (!trip && !activeTitle) {
+      validationErrors.title = 'يرجى إدخال عنوان الرحلة الرئيسي.';
     }
 
-    const price = Number(formData.price);
+    const price = Number(formData.price ?? 0);
     if (!Number.isFinite(price) || price < 0) {
-      toast.error('يرجى إدخال سعر صحيح للرحلة قبل الحفظ.');
+      validationErrors.price = 'يرجى إدخال سعر صحيح (0 أو أكبر) بالدولار الأمريكي.';
+    }
+
+    if (!formData.destination) {
+      validationErrors.destination = 'يرجى اختيار الوجهة السياحية للرحلة.';
+    }
+
+    const candidateSlug = formData.slug?.trim()
+      ? slugify(formData.slug)
+      : generateTourSlug(null, formData.translations?.en?.title, formData.title, trip?.slug);
+
+    if (!isValidSlug(candidateSlug)) {
+      validationErrors.slug = 'يجب أن يتكون الرابط الفرعي (Slug) من أحرف إنجليزية صغيرة وأرقام وشرطات فقط وبطول حرفين إلى 100 حرف (مثل: cairo-express-4d).';
+    }
+
+    if (Object.keys(validationErrors).length > 0) {
+      setFieldErrors(validationErrors);
+      if (validationErrors.title || validationErrors.slug || validationErrors.price || validationErrors.destination) {
+        setActiveTab('basic');
+      }
+      toast.error('يرجى تصحيح الحقول المحددة أدناه قبل حفظ الرحلة.');
       return;
     }
 
-    const cleanSlug = formData.slug?.trim()
-      ? formatSlug(formData.slug)
-      : (trip?.slug || formatSlug(formData.title || '') || `tour-${Date.now()}`);
+    setFieldErrors({});
 
     const activeHero = formData.heroImage || formData.images?.[0] || '';
 
@@ -1524,7 +1589,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     try {
       const backendData = buildTripEditorPayload({
         ...formData,
-        slug: cleanSlug,
+        slug: candidateSlug,
         heroImage: activeHero,
       }, !trip);
 
@@ -1533,11 +1598,22 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       } else {
         await toursApi.createTour(backendData as any);
       }
-      queryClient.invalidateQueries();
+      setIsDirty(false);
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['tour', candidateSlug] });
+      if (trip && trip.slug && trip.slug !== candidateSlug) {
+        queryClient.invalidateQueries({ queryKey: ['tour', trip.slug] });
+      }
       onClose();
       toast.success(trip ? 'تم تحديث الرحلة والترجمات الـ 5 وحفظها بنجاح!' : 'تمت إضافة الرحلة والترجمات وحفظها بنجاح!');
     } catch (err: any) {
       console.error('Backend API save failed:', err);
+      if (err?.errors && Object.keys(err.errors).length > 0) {
+        setFieldErrors(err.errors);
+        if (err.errors.slug || err.errors.title || err.errors.price) {
+          setActiveTab('basic');
+        }
+      }
       toast.error(err?.message || 'تعذر حفظ الرحلة في قاعدة البيانات.');
     } finally {
       setIsSaving(false);
@@ -1545,45 +1621,45 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   return (
-    <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-6xl w-[96vw] max-h-[94vh] flex flex-col bg-card border border-border/80 rounded-3xl shadow-2xl p-0 overflow-hidden">
+    <Dialog open={isOpen} onOpenChange={open => !open && handleSafeClose()}>
+      <DialogContent className="max-w-6xl w-full sm:w-[96vw] h-[100dvh] sm:h-[94vh] sm:max-h-[94vh] flex flex-col bg-card border-0 sm:border border-border/80 rounded-none sm:rounded-3xl shadow-2xl p-0 overflow-hidden">
         {/* Top Header */}
-        <DialogHeader className="p-5 border-b border-border/60 bg-muted/20 shrink-0">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-3 rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
-                <Sparkles className="w-6 h-6 stroke-[2.2]" />
+        <DialogHeader className="p-3 sm:p-5 border-b border-border/60 bg-muted/20 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4">
+            <div className="flex items-center gap-2.5 sm:gap-3">
+              <div className="p-2 sm:p-3 rounded-xl sm:rounded-2xl bg-amber-500/10 text-amber-500 border border-amber-500/20 shrink-0">
+                <Sparkles className="w-5 h-5 sm:w-6 sm:h-6 stroke-[2.2]" />
               </div>
-              <div>
-                <DialogTitle className="text-lg sm:text-xl font-black text-foreground flex items-center gap-2">
-                  <span>{trip ? 'تعديل الرحلة والترجمات الـ 5 الفورية' : 'إضافة رحلة جديدة فاخرة'}</span>
-                  <Badge className="bg-amber-500/15 text-amber-500 border-amber-500/30 text-[11px] font-black">
-                    5 Languages AI Ready
+              <div className="min-w-0 flex-1">
+                <DialogTitle className="text-base sm:text-xl font-black text-foreground flex items-center gap-2 truncate">
+                  <span className="truncate">{trip ? 'تعديل الرحلة والترجمات الـ 5' : 'إضافة رحلة جديدة فاخرة'}</span>
+                  <Badge className="hidden sm:inline-flex bg-amber-500/15 text-amber-500 border-amber-500/30 text-[11px] font-black shrink-0">
+                    5 Languages AI
                   </Badge>
                 </DialogTitle>
-                <DialogDescription className="text-xs text-muted-foreground font-semibold mt-0.5">
+                <DialogDescription className="hidden sm:block text-xs text-muted-foreground font-semibold mt-0.5">
                   تحرير كامل الخصائص الفنية، الأيام، الفنادق، وترجمة المحتوى للغات الخمس بضغطة زر واحدة.
                 </DialogDescription>
               </div>
             </div>
 
             {/* AI Auto-Translate Header Button */}
-            <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <div className="flex items-center gap-2 shrink-0">
               <Button
                 type="button"
                 onClick={() => handleAutoTranslate(['en', 'es', 'pt', 'it'])}
                 disabled={isTranslating}
-                className="rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-2 px-5 py-2.5 shadow-md shadow-amber-500/20 cursor-pointer"
+                className="w-full sm:w-auto rounded-xl sm:rounded-2xl bg-linear-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-slate-950 font-black text-xs gap-1.5 px-3.5 py-2 sm:px-5 sm:py-2.5 shadow-md shadow-amber-500/20 cursor-pointer h-9 sm:h-10"
               >
                 {isTranslating ? (
                   <>
                     <Loader2 className="w-4 h-4 animate-spin text-slate-950" />
-                    <span>{translateStatus || 'جاري الترجمة للغات الـ 5...'}</span>
+                    <span className="text-xs">{translateStatus || 'جاري الترجمة...'}</span>
                   </>
                 ) : (
                   <>
                     <Wand2 className="w-4 h-4 stroke-[2.5]" />
-                    <span>✨ ترجمة الرحلة كاملة للـ 4 لغات من العربي</span>
+                    <span>✨ ترجمة الرحلة كاملة للغات الـ 4</span>
                   </>
                 )}
               </Button>
@@ -1591,10 +1667,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           </div>
 
           {/* Active Language Switcher Bar */}
-          <div className="flex flex-wrap items-center justify-between gap-2 mt-4 pt-3 border-t border-border/40">
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 max-w-full">
-              <span className="text-xs font-bold text-muted-foreground me-1 flex items-center gap-1">
-                <Languages className="w-3.5 h-3.5 text-amber-500" /> اللغة النشطة للتعديل:
+          <div className="flex items-center justify-between gap-2 mt-2 sm:mt-4 pt-2 sm:pt-3 border-t border-border/40 overflow-x-auto">
+            <div className="flex items-center gap-1 sm:gap-1.5 overflow-x-auto pb-1 max-w-full">
+              <span className="text-[11px] sm:text-xs font-bold text-muted-foreground me-1 shrink-0 flex items-center gap-1">
+                <Languages className="w-3.5 h-3.5 text-amber-500" /> اللغة:
               </span>
               {ALL_LOCALES.map(loc => {
                 const stat = localeStats.find(s => s.code === loc.code);
@@ -1604,15 +1680,15 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     key={loc.code}
                     type="button"
                     onClick={() => setActiveLang(loc.code)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer border ${
+                    className={`shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 rounded-lg sm:rounded-xl text-[11px] sm:text-xs font-black transition-all flex items-center gap-1 sm:gap-1.5 cursor-pointer border ${
                       isActive
-                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-sm shadow-amber-500/20 scale-102'
+                        ? 'bg-amber-500 text-slate-950 border-amber-500 shadow-xs scale-102'
                         : 'bg-card text-muted-foreground border-border hover:text-foreground hover:bg-muted/60'
                     }`}
                   >
                     <span>{loc.flag}</span>
                     <span>{loc.name}</span>
-                    <span className={`text-[10px] font-bold px-1.5 py-0.2 rounded-full ${
+                    <span className={`text-[9px] sm:text-[10px] font-bold px-1 rounded-full ${
                       isActive ? 'bg-slate-950/20 text-slate-950' : stat?.complete ? 'bg-emerald-500/20 text-emerald-500' : 'bg-muted text-muted-foreground'
                     }`}>
                       {stat?.percent}%
@@ -1623,7 +1699,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
             </div>
 
             {/* Quick Actions for Current Language */}
-            <div className="flex items-center gap-2">
+            <div className="hidden sm:flex items-center gap-2 shrink-0">
               {activeLang !== 'ar' ? (
                 <>
                   <Button
@@ -1634,7 +1710,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     disabled={isTranslating}
                     className="text-xs text-amber-500 hover:bg-amber-500/10 gap-1 font-bold h-8 rounded-xl cursor-pointer"
                   >
-                    <Wand2 className="w-3.5 h-3.5" /> ترجمة هذه اللغة ({activeLang.toUpperCase()})
+                    <Wand2 className="w-3.5 h-3.5" /> ترجمة ({activeLang.toUpperCase()})
                   </Button>
                   <Button
                     type="button"
@@ -1643,13 +1719,13 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     onClick={() => handleClearSingleLanguage(activeLang)}
                     className="text-xs text-rose-500 hover:bg-rose-500/10 hover:text-rose-600 gap-1 font-bold h-8 rounded-xl cursor-pointer"
                   >
-                    <Trash2 className="w-3.5 h-3.5" /> تفريغ محتوى ({activeLang.toUpperCase()})
+                    <Trash2 className="w-3.5 h-3.5" /> تفريغ ({activeLang.toUpperCase()})
                   </Button>
                 </>
               ) : (
                 <div className="text-[11px] font-bold text-emerald-500 flex items-center gap-1">
                   <span>🇸🇦</span>
-                  <span>اللغة المصدر الأساسية (اكتب بالعربي ثم ترجم)</span>
+                  <span>اللغة المصدر الأساسية</span>
                 </div>
               )}
             </div>
@@ -1658,7 +1734,29 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
         {/* 6 Tabs Container */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="border-b border-border/60 bg-muted/40 px-6 pt-2 overflow-x-auto shrink-0 z-20">
+          {/* Mobile Section Selector (< sm) */}
+          <div className="sm:hidden px-3 py-2 bg-muted/50 border-b border-border/60 flex items-center justify-between gap-2 shrink-0 z-20">
+            <label className="text-[11px] font-black text-muted-foreground shrink-0 flex items-center gap-1">
+              <Layers className="w-3.5 h-3.5 text-amber-500" />
+              <span>قسم التعديل:</span>
+            </label>
+            <select
+              value={activeTab}
+              onChange={e => setActiveTab(e.target.value)}
+              className="flex-1 h-9 rounded-xl bg-card border border-border/80 px-2.5 text-xs font-bold text-foreground focus:outline-hidden focus:ring-2 focus:ring-amber-500/50"
+            >
+              <option value="basic">1. الأساسية والتسعير 💰</option>
+              <option value="overview">2. الوصف والإقامة 🏨</option>
+              <option value="itinerary">3. البرنامج اليومي ({formData.itinerary?.length || 0}) 📅</option>
+              <option value="routemap">4. الخريطة والمدن ({formData.routeMap?.locations?.length || 0}) 📍</option>
+              <option value="inclusions">5. المشتملات والمميزات ✅</option>
+              <option value="gallery">6. معرض الصور ({formData.images?.length || 0}) 🖼️</option>
+              <option value="matrix">7. جدول الترجمات الـ 5 🌐</option>
+            </select>
+          </div>
+
+          {/* Desktop Tab Strip (hidden on < sm) */}
+          <div className="hidden sm:block border-b border-border/60 bg-muted/40 px-6 pt-2 overflow-x-auto shrink-0 z-20">
             <TabsList className="bg-transparent h-11 gap-1 p-0">
               <TabsTrigger value="basic" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
                 <DollarSign className="w-3.5 h-3.5 me-1.5" /> 1. الأساسية والتسعير
@@ -1684,7 +1782,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
             </TabsList>
           </div>
 
-          <div className="flex-1 overflow-y-auto p-6 space-y-6 min-h-0">
+          <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-4 sm:space-y-6 min-h-0">
             {/* TAB 1: BASIC & PRICING */}
             <TabsContent value="basic" className="space-y-5 m-0">
               <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
@@ -1712,10 +1810,22 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     </label>
                     <Input
                       value={getLocalizedText('title')}
-                      onChange={e => setLocalizedText('title', e.target.value)}
+                      onChange={e => {
+                        setLocalizedText('title', e.target.value);
+                        if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' }));
+                        if (activeLang === 'en' && !formData.slug) {
+                          handleChange('slug', slugify(e.target.value));
+                        }
+                      }}
                       placeholder={activeLang === 'ar' ? 'مثال: القاهرة السريعة والأهرامات 4 أيام' : 'e.g. Cairo Express & Pyramids 4 Days'}
-                      className="rounded-xl font-bold"
+                      className={`rounded-xl font-bold ${fieldErrors.title ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                     />
+                    {fieldErrors.title && (
+                      <p className="text-[11px] font-bold text-destructive flex items-center gap-1 mt-1">
+                        <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                        <span>{fieldErrors.title}</span>
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-1.5">
                     <label className="text-xs font-bold text-foreground flex items-center gap-1">
@@ -1735,14 +1845,36 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               {/* Core Specs Grid */}
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">الرابط الفرعي (Slug / Route Identifier)</label>
+                  <label className="text-xs font-bold text-foreground">الرابط الفرعي (Slug / Route Identifier) *</label>
                   <Input
                     value={formData.slug || ''}
-                    onChange={e => handleChange('slug', e.target.value)}
-                    onBlur={e => handleChange('slug', formatSlug(e.target.value))}
+                    onChange={e => {
+                      handleChange('slug', e.target.value);
+                      if (fieldErrors.slug) setFieldErrors(prev => ({ ...prev, slug: '' }));
+                    }}
+                    onBlur={e => {
+                      const formatted = slugify(e.target.value);
+                      handleChange('slug', formatted);
+                      if (formatted && !isValidSlug(formatted)) {
+                        setFieldErrors(prev => ({
+                          ...prev,
+                          slug: 'يجب أن يتكون الرابط من أحرف إنجليزية صغيرة وأرقام وشرطات فقط وبطول حرفين إلى 100 حرف.',
+                        }));
+                      } else {
+                        setFieldErrors(prev => ({ ...prev, slug: '' }));
+                      }
+                    }}
                     placeholder="cairo-express-4d"
-                    className="rounded-xl font-mono text-xs"
+                    className={`rounded-xl font-mono text-xs ${fieldErrors.slug ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   />
+                  {fieldErrors.slug ? (
+                    <p className="text-[11px] font-bold text-destructive flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.slug}</span>
+                    </p>
+                  ) : (
+                    <p className="text-[10px] text-muted-foreground">معرف الرابط الفرعي للرحلة بالإنجليزية (مثال: cairo-express-4d)</p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <label className="text-xs font-bold text-foreground">الوجهة السياحية (Destination) *</label>
@@ -1850,10 +1982,19 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   <Input
                     type="number"
                     value={formData.price ?? ''}
-                    onChange={e => handleChange('price', e.target.value)}
+                    onChange={e => {
+                      handleChange('price', e.target.value);
+                      if (fieldErrors.price) setFieldErrors(prev => ({ ...prev, price: '' }));
+                    }}
                     placeholder="1250"
-                    className="rounded-xl font-bold font-mono"
+                    className={`rounded-xl font-bold font-mono ${fieldErrors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   />
+                  {fieldErrors.price && (
+                    <p className="text-[11px] font-bold text-destructive flex items-center gap-1 mt-1">
+                      <AlertCircle className="w-3.5 h-3.5 shrink-0" />
+                      <span>{fieldErrors.price}</span>
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">
@@ -3869,22 +4010,22 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
         </Tabs>
 
         {/* Fixed Footer */}
-        <DialogFooter className="p-4 border-t border-border/60 bg-muted/20 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
-          <Button variant="outline" onClick={onClose} className="rounded-xl text-xs font-bold w-full sm:w-auto">
+        <DialogFooter className="p-3 sm:p-4 border-t border-border/60 bg-muted/20 flex flex-row items-center justify-between gap-2 sm:gap-3 shrink-0">
+          <Button variant="outline" onClick={handleSafeClose} className="rounded-xl text-xs font-bold shrink-0">
             إلغاء
           </Button>
 
-          <div className="flex items-center gap-2.5 w-full sm:w-auto">
+          <div className="flex items-center gap-2 flex-1 sm:flex-initial justify-end">
             <Button
               type="button"
               onClick={handleSave}
               disabled={isSaving}
-              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-7 py-2.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer w-full sm:w-auto gap-2"
+              className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-black px-4 sm:px-7 py-2.5 text-xs shadow-md shadow-amber-500/20 cursor-pointer w-full sm:w-auto gap-2"
             >
               {isSaving ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>جاري حفظ الرحلة والترجمات...</span>
+                  <span>جاري الحفظ...</span>
                 </>
               ) : (
                 <>
