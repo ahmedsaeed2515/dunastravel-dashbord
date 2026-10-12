@@ -90,4 +90,10 @@ export const toursApi = {
     apiClient.patch<{ success: boolean; count: number }, { success: boolean; count: number }>('/admin/tours/reorder', { orders }),
   toggleFeatured: (slug: string, isFeatured: boolean): Promise<{ success: boolean; slug: string; isFeatured: boolean }> =>
     apiClient.patch<{ success: boolean; slug: string; isFeatured: boolean }, { success: boolean; slug: string; isFeatured: boolean }>(`/admin/tours/${slug}/featured`, { isFeatured }),
+  getTourTripHotel: (slug: string): Promise<any> =>
+    apiClient.get<any, any>(`/admin/tours/${slug}/hotel`),
+  upsertTourTripHotel: (slug: string, data: any): Promise<any> =>
+    apiClient.put<any, any>(`/admin/tours/${slug}/hotel`, data),
+  deleteTourTripHotel: (slug: string): Promise<any> =>
+    apiClient.delete<any, any>(`/admin/tours/${slug}/hotel`),
 };
