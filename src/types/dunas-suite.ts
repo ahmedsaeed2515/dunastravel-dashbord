@@ -51,7 +51,6 @@ export interface AccommodationItem {
   roomId?: string | null;
   destination: string;
   nights: number;
-  regime: string;
   categoryTier?: string;
   /** Localized hotel name (5 locales). */
   nameJsonb?: Partial<Record<LanguageCode, string>>;

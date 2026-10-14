@@ -347,7 +347,6 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
                         <TableHead className="text-right font-bold">الفئة</TableHead>
                         <TableHead className="text-right font-bold">الفندق / المدينة</TableHead>
                         <TableHead className="text-right font-bold">ليالٍ</TableHead>
-                        <TableHead className="text-right font-bold">الإقامة</TableHead>
                         <TableHead className="text-right font-bold">غرفة مزدوجة</TableHead>
                         <TableHead className="text-right font-bold">غرفة فردية</TableHead>
                         <TableHead className="text-right font-bold">ذروة الموسم</TableHead>
@@ -359,11 +358,10 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
                         <TableRow key={row.id ?? `${row.destination}-${idx}`}>
                           <TableCell className="font-bold">{row.categoryTier || "—"}</TableCell>
                           <TableCell>
-                            <div className="font-bold">{row.displayName || "فندق غير مسمى"}</div>
+                            <div className="font-bold whitespace-pre-line">{row.displayName || "فندق غير مسمى"}</div>
                             {row.displayCity && <div className="text-xs text-muted-foreground">{row.displayCity}</div>}
                           </TableCell>
                           <TableCell className="font-mono font-bold">{row.nights}</TableCell>
-                          <TableCell className="font-bold">{row.regime || "—"}</TableCell>
                           <TableCell className="font-mono font-bold">{row.doubleRoomPriceUsd ? `$${row.doubleRoomPriceUsd}` : "—"}</TableCell>
                           <TableCell className="font-mono font-bold">{row.singleRoomPriceUsd ? `$${row.singleRoomPriceUsd}` : "—"}</TableCell>
                           <TableCell className="font-mono font-bold">{row.seasonSupplementUsd ? `+$${row.seasonSupplementUsd}` : "—"}</TableCell>

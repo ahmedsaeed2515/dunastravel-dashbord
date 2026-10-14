@@ -41,6 +41,7 @@ import {
   Layers,
   CheckCircle2,
   XCircle,
+  X,
   Star,
   Flame,
   Check,
@@ -1011,14 +1012,16 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     if (!Array.isArray(formData.accommodation)) {
       return [];
     }
-    const asLocaleMap = (value: any): Partial<Record<LanguageCode, string>> | undefined => {
+    // `preserve` keeps the raw string (including trailing newlines) so a freshly
+    // added multi-hotel slot is not trimmed away before the user types into it.
+    const asLocaleMap = (value: any, preserve = false): Partial<Record<LanguageCode, string>> | undefined => {
       if (!value) return undefined;
-      if (typeof value === 'string') return value.trim() ? { en: value } : undefined;
+      if (typeof value === 'string') return value.trim() ? { en: preserve ? value : value.trim() } : undefined;
       if (typeof value !== 'object' || Array.isArray(value)) return undefined;
       const out: Partial<Record<LanguageCode, string>> = {};
       ALL_LOCALES.forEach(loc => {
         const v = value[loc.code];
-        if (typeof v === 'string' && v.trim()) out[loc.code] = v;
+        if (typeof v === 'string' && v.trim()) out[loc.code] = preserve ? v : v.trim();
       });
       return Object.keys(out).length > 0 ? out : undefined;
     };
@@ -1028,7 +1031,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     return formData.accommodation
       .filter((item): item is AccommodationItem => Boolean(item && typeof item === 'object'))
       .map((item, idx) => {
-        const nameJsonb = asLocaleMap(item.nameJsonb);
+        const nameJsonb = asLocaleMap(item.nameJsonb, true);
         const cityJsonb = asLocaleMap(item.cityJsonb);
         const boatJsonb = asLocaleMap(item.boatJsonb);
         return {
@@ -1037,7 +1040,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
           roomId: item.roomId ?? null,
           destination: typeof item.destination === 'string' ? item.destination : (item.destination && typeof item.destination === 'object' ? ((item.destination as any).en || (item.destination as any).ar || 'Cairo') : 'Cairo'),
           nights: typeof item.nights === 'number' && !isNaN(item.nights) && item.nights > 0 ? item.nights : 1,
-          regime: item.regime || 'BB',
           categoryTier: item.categoryTier || '',
           ...(nameJsonb ? { nameJsonb } : {}),
           ...(cityJsonb ? { cityJsonb } : {}),
@@ -1181,7 +1183,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       roomId: null,
       destination: '',
       nights: 1,
-      regime: 'BB',
       categoryTier: '',
       isDefault: rows.length === 0,
       sortOrder: rows.length,
@@ -1214,6 +1215,50 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       if (baseCity) rows[idx].destination = baseCity;
     }
     handleChange('accommodation', rows);
+  };
+
+  /**
+   * Hotel names for a city are stored inside the localized `nameJsonb` value,
+   * one hotel per line (newline separated). This lets a single trip row host
+   * several hotels in the same city ("Giza" written once, 5 hotels listed).
+   */
+  const ACC_HOTEL_NAME_SEP = '\n';
+
+  const getAccHotelNames = (idx: number): string[] => {
+    const raw = getAccRowText(idx, 'nameJsonb');
+    if (!raw) return [''];
+    return raw.split(ACC_HOTEL_NAME_SEP);
+  };
+
+  const setAccHotelNames = (idx: number, names: string[]) => {
+    const rows = [...getAccommodationList()];
+    if (!rows[idx]) return;
+    const current = rows[idx].nameJsonb;
+    const map: Partial<Record<LanguageCode, string>> = current && typeof current === 'object' ? { ...current } : {};
+    const joined = names.join(ACC_HOTEL_NAME_SEP);
+    if (joined.trim()) {
+      map[activeLang] = joined;
+    } else {
+      delete map[activeLang];
+    }
+    rows[idx] = { ...rows[idx], nameJsonb: map };
+    handleChange('accommodation', rows);
+  };
+
+  const updateAccHotelName = (idx: number, nameIdx: number, value: string) => {
+    const names = [...getAccHotelNames(idx)];
+    names[nameIdx] = value;
+    setAccHotelNames(idx, names);
+  };
+
+  const addAccHotelName = (idx: number) => {
+    setAccHotelNames(idx, [...getAccHotelNames(idx), '']);
+  };
+
+  const removeAccHotelName = (idx: number, nameIdx: number) => {
+    const names = [...getAccHotelNames(idx)];
+    names.splice(nameIdx, 1);
+    setAccHotelNames(idx, names.length > 0 ? names : ['']);
   };
 
   const handleTranslateAccommodationRow = async (idx: number) => {
@@ -2636,31 +2681,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               </div>
                             </div>
 
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={acc?.nights ?? 1}
-                                  onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
-                                  className="rounded-xl text-xs font-bold h-9 font-mono"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الوجبات (Regime)</label>
-                                <select
-                                  value={acc?.regime || 'BB'}
-                                  onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
-                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
-                                >
-                                  <option value="BB">BB — Bed & Breakfast</option>
-                                  <option value="HB">HB — Half Board</option>
-                                  <option value="FB">FB — Full Board</option>
-                                  <option value="AI">AI — All Inclusive</option>
-                                  <option value="RO">RO — Room Only</option>
-                                </select>
-                              </div>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 items-end">
                               <div>
                                 <label className="text-[11px] font-bold text-muted-foreground block mb-1">الفئة (Tier)</label>
                                 <select
@@ -2816,43 +2837,47 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                     ))}
                                   </select>
 
-                                  <Input
-                                    value={getAccRowText(idx, 'nameJsonb')}
-                                    onChange={e => setAccRowText(idx, 'nameJsonb', e.target.value)}
-                                    placeholder={`اسم الفندق (${activeLangName})`}
-                                    className="rounded-xl text-xs font-bold h-9"
-                                  />
+                                  {/* Hotel names — a single city may host several hotels. */}
+                                  <div className="space-y-2">
+                                    {getAccHotelNames(idx).map((hotelName, nameIdx) => (
+                                      <div key={nameIdx} className="flex items-center gap-1.5">
+                                        <Input
+                                          value={hotelName}
+                                          onChange={e => updateAccHotelName(idx, nameIdx, e.target.value)}
+                                          placeholder={`${nameIdx === 0 ? 'اسم الفندق' : 'اسم فندق آخر'} (${activeLangName})`}
+                                          className="rounded-xl text-xs font-bold h-9"
+                                        />
+                                        {nameIdx > 0 && (
+                                          <Button
+                                            type="button"
+                                            size="icon-sm"
+                                            variant="ghost"
+                                            onClick={() => removeAccHotelName(idx, nameIdx)}
+                                            title="حذف هذا الفندق"
+                                            className="text-destructive hover:bg-destructive/10 h-8 w-8 rounded-lg shrink-0"
+                                          >
+                                            <X className="w-3.5 h-3.5" />
+                                          </Button>
+                                        )}
+                                      </div>
+                                    ))}
+                                    <Button
+                                      type="button"
+                                      size="sm"
+                                      variant="ghost"
+                                      onClick={() => addAccHotelName(idx)}
+                                      className="text-xs text-amber-500 gap-1 font-bold cursor-pointer h-7 px-2"
+                                    >
+                                      <Plus className="w-3.5 h-3.5" /> إضافة فندق آخر
+                                    </Button>
+                                  </div>
+
                                   <Input
                                     value={getAccRowText(idx, 'cityJsonb')}
                                     onChange={e => setAccRowText(idx, 'cityJsonb', e.target.value)}
                                     placeholder={`اسم المدينة (${activeLangName})`}
                                     className="rounded-xl text-xs font-bold h-9"
                                   />
-
-                                  {/* Secondary fields preserved: nights + board regime */}
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      value={acc?.nights ?? 1}
-                                      onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
-                                      placeholder="ليالٍ"
-                                      title="عدد الليالي"
-                                      className="rounded-xl text-xs font-bold h-8 font-mono"
-                                    />
-                                    <select
-                                      value={acc?.regime || 'BB'}
-                                      onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
-                                      title="نظام الوجبات"
-                                      className="w-full h-8 px-2 rounded-lg border border-input bg-background text-[11px] font-bold"
-                                    >
-                                      <option value="BB">BB</option>
-                                      <option value="HB">HB</option>
-                                      <option value="FB">FB</option>
-                                      <option value="AI">AI</option>
-                                      <option value="RO">RO</option>
-                                    </select>
-                                  </div>
                                   {selectedHotelObj && hotelRooms.length > 0 && (
                                     <select
                                       value={acc?.roomId || ''}

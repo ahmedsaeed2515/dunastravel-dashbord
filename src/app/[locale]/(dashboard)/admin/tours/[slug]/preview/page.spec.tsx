@@ -141,7 +141,6 @@ describe("Tour visitor preview", () => {
           {
             id: "acc-0",
             nights: 1,
-            regime: "BB",
             destination: "الجيزة",
             cityJsonb: { ar: "الجيزة" },
             nameJsonb: { ar: "ستاراوتيل" },
@@ -166,7 +165,7 @@ describe("Tour visitor preview", () => {
   it("hides unnamed placeholder accommodation rows", async () => {
     state.preview = {
       ...canonicalPreview,
-      hotelInfo: { accommodation: [{ id: "placeholder", nights: 3, regime: "Bed & Breakfast", destination: "Cairo" }] },
+      hotelInfo: { accommodation: [{ id: "placeholder", nights: 3, destination: "Cairo" }] },
     };
     await renderPreview();
 

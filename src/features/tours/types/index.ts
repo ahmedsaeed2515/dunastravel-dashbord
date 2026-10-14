@@ -69,8 +69,6 @@ export interface TripAccommodationRecord {
   roomId?: string | null;
   destination?: string;
   nights: number;
-  regime?: string;
-  boardBasis?: string | null;
   dayRange?: string | null;
   categoryTier?: string;
   priceSupplementUsd?: number;

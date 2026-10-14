@@ -54,6 +54,28 @@ function cleanLocaleMap(value: Partial<Record<LanguageCode, string>> | undefined
   return out;
 }
 
+/**
+ * Normalizes a localized hotel-name map where each locale value may contain
+ * several hotels separated by newlines. Empty lines are dropped so stored data
+ * always reads "Hotel A\nHotel B".
+ */
+function cleanHotelNamesMap(
+  value: Partial<Record<LanguageCode, string>> | undefined,
+): Partial<Record<LanguageCode, string>> {
+  const out: Partial<Record<LanguageCode, string>> = {};
+  if (!value) return out;
+  for (const locale of LOCALES) {
+    const raw = value[locale];
+    if (typeof raw !== 'string') continue;
+    const names = raw
+      .split('\n')
+      .map((name) => name.trim())
+      .filter(Boolean);
+    if (names.length > 0) out[locale] = names.join('\n');
+  }
+  return out;
+}
+
 /** Returns a rounded positive USD amount, or undefined when there is no value. */
 function positiveNumber(value: unknown): number | undefined {
   const parsed = Number(value);
@@ -77,7 +99,6 @@ function accommodationFromJson(acc: any, idx: number, fallbackCity: string): Acc
     ...(acc.roomId !== undefined && acc.roomId !== null ? { roomId: acc.roomId } : {}),
     destination: text(acc.destination) || text(cityJsonb) || fallbackCity,
     nights: Math.max(1, Number(acc.nights) || 1),
-    regime: text(acc.regime || acc.boardBasis) || 'BB',
     ...(acc.categoryTier ? { categoryTier: text(acc.categoryTier) } : {}),
     ...(nameJsonb ? { nameJsonb } : {}),
     ...(cityJsonb ? { cityJsonb } : {}),
@@ -500,7 +521,7 @@ export function buildTripEditorPayload(
   if (formData.familyFriendly) tags.push('family');
 
   const normalizedAccommodations = (formData.accommodation ?? []).map((acc, index) => {
-    const nameJsonb = cleanLocaleMap(acc.nameJsonb);
+    const nameJsonb = cleanHotelNamesMap(acc.nameJsonb);
     const cityJsonb = cleanLocaleMap(acc.cityJsonb);
     const boatJsonb = cleanLocaleMap(acc.boatJsonb);
     const doubleRoomPriceUsd = positiveNumber(acc.doubleRoomPriceUsd);
@@ -511,7 +532,6 @@ export function buildTripEditorPayload(
     const row: Record<string, any> = {
       destination: text(acc.destination).trim() || text(acc.cityJsonb) || 'Egypt',
       nights: Math.max(1, Number(acc.nights) || 1),
-      regime: text(acc.regime).trim() || 'BB',
     };
     if (acc.id && text(acc.id).trim()) row.id = text(acc.id).trim();
     if (acc.hotelId && text(acc.hotelId).trim()) row.hotelId = text(acc.hotelId).trim();
@@ -543,7 +563,6 @@ export function buildTripEditorPayload(
       roomId: typeof acc.roomId === 'string' && acc.roomId.trim() ? acc.roomId.trim() : null,
       destination: text(acc.destination).trim() || 'Egypt',
       nights: Math.max(1, Number(acc.nights) || 1),
-      regime: text(acc.regime).trim() || 'BB',
       categoryTier: text(acc.categoryTier).trim() || '5_STAR',
       priceSupplementUsd: Number(acc.seasonSupplementUsd) || 0,
       isDefault: acc.isDefault ?? index === 0,

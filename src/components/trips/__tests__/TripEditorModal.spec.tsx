@@ -48,7 +48,6 @@ const rateSheetTour: any = {
       {
         id: 'acc-0',
         nights: 1,
-        regime: 'BB',
         destination: 'الجيزة',
         categoryTier: '4',
         nameJsonb: { ar: 'ستاراوتيل' },
@@ -92,6 +91,39 @@ describe('TripEditorModal lodging mode', () => {
 
     // The hotel name from `hotelInfoJsonb.accommodation` is displayed.
     expect(screen.getByDisplayValue('ستاراوتيل')).toBeInTheDocument();
+  });
+
+  it('supports several hotel names for one city (adding another hotel appends an input)', async () => {
+    const multiHotelTour: any = {
+      ...rateSheetTour,
+      hotelInfoJsonb: {
+        ...rateSheetTour.hotelInfoJsonb,
+        accommodation: [
+          {
+            ...rateSheetTour.hotelInfoJsonb.accommodation[0],
+            nameJsonb: { ar: 'فندق الأهرام\nفندق النيل' },
+          },
+        ],
+      },
+    };
+    (toursApi.getTourBySlug as any).mockResolvedValue(multiHotelTour);
+
+    renderModal(tourToTripModel(multiHotelTour));
+    fireEvent.click(screen.getByRole('tab', { name: /الوصف والإقامة/ }));
+
+    // Both stored hotel names render as separate inputs in the same city column.
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('فندق الأهرام')).toBeInTheDocument();
+    });
+    expect(screen.getByDisplayValue('فندق النيل')).toBeInTheDocument();
+    expect(screen.getAllByPlaceholderText(/اسم فندق آخر/)).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /إضافة فندق آخر/ }));
+
+    // A third, empty hotel-name input is appended.
+    await waitFor(() => {
+      expect(screen.getAllByPlaceholderText(/اسم فندق آخر/)).toHaveLength(2);
+    });
   });
 
   it('keeps Option A (global catalog) when no rate-sheet data exists', async () => {

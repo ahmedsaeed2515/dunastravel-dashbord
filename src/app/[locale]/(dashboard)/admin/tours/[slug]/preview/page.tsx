@@ -25,7 +25,6 @@ type PreviewHotelRateRow = {
   name: string;
   city: string | null;
   nights: number | null;
-  regime: string | null;
   category: string | null;
   doublePrice: number | null;
   singlePrice: number | null;
@@ -61,7 +60,6 @@ function normalizeHotelRateRow(row: unknown, idx: number, lang: string): Preview
     name: name ?? (lang === "ar" ? "فندق غير مسمى" : "Unnamed hotel"),
     city: previewLocalizedText(record.cityJsonb, lang) ?? previewLocalizedText(record.city, lang) ?? previewLocalizedText(record.destination, lang),
     nights: previewNumber(record.nights),
-    regime: previewLocalizedText(record.regime, lang) ?? previewLocalizedText(record.boardBasis, lang),
     category: previewLocalizedText(record.categoryTier, lang) ?? previewLocalizedText(record.category, lang),
     doublePrice: previewNumber(record.doubleRoomPriceUsd),
     singlePrice: previewNumber(record.singleRoomPriceUsd),
@@ -200,7 +198,7 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                         <div>
                           <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
                             <Hotel className="w-4 h-4 text-amber-400 shrink-0" />
-                            {row.name}
+                            <span className="whitespace-pre-line">{row.name}</span>
                           </h4>
                           {row.city && <p className="text-xs text-slate-400 mt-0.5">{row.city}</p>}
                         </div>
@@ -212,7 +210,6 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                       </div>
                       <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-300">
                         {row.nights !== null && <Badge variant="outline" className="border-slate-600 text-slate-200">{row.nights} {previewLang === "ar" ? "ليالٍ" : "Nights"}</Badge>}
-                        {row.regime && <Badge variant="outline" className="border-amber-500/30 text-amber-300">{row.regime}</Badge>}
                         {row.boat && <Badge variant="outline" className="border-sky-500/30 text-sky-300">{row.boat}{row.boatPrice !== null ? ` · $${row.boatPrice}` : ""}</Badge>}
                       </div>
                       {(row.doublePrice !== null || row.singlePrice !== null || row.seasonSupplement !== null) && (
@@ -246,7 +243,6 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                       </div>
                       <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-300">
                         <Badge variant="outline" className="border-slate-600 text-slate-200">{acc.nights} {previewLang === "ar" ? "ليالٍ" : "Nights"}</Badge>
-                        {acc.boardBasis && <Badge variant="outline" className="border-amber-500/30 text-amber-300">{acc.boardBasis}</Badge>}
                         {acc.room && (
                           <Badge variant="outline" className="border-sky-500/30 text-sky-300 flex items-center gap-1">
                             <BedDouble className="w-3 h-3" /> {acc.room.name}

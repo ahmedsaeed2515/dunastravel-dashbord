@@ -59,8 +59,8 @@ describe('buildTripEditorPayload', () => {
       luxury: true,
       hotelCategory: '5 Stars Deluxe',
       accommodation: [
-        { destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' },
-        { destination: 'Luxor', nights: 4, regime: 'Full Board' },
+        { destination: 'Cairo', nights: 3 },
+        { destination: 'Luxor', nights: 4 },
       ],
     }, false);
 
@@ -71,8 +71,8 @@ describe('buildTripEditorPayload', () => {
       hotelCategory: '5 Stars Deluxe',
       notes: '',
       accommodation: [
-        { destination: 'Cairo', nights: 3, regime: 'Bed & Breakfast' },
-        { destination: 'Luxor', nights: 4, regime: 'Full Board' },
+        { destination: 'Cairo', nights: 3 },
+        { destination: 'Luxor', nights: 4 },
       ],
     });
   });
@@ -123,7 +123,6 @@ describe('buildTripEditorPayload', () => {
           roomId: '22222222-2222-4222-8222-222222222222',
           destination: 'Giza',
           nights: 3,
-          regime: 'BB',
           categoryTier: '5★ Luxury',
           priceSupplementUsd: 150,
           isDefault: true,
@@ -146,7 +145,6 @@ describe('buildTripEditorPayload', () => {
       roomId: '22222222-2222-4222-8222-222222222222',
       destination: 'Giza',
       nights: 3,
-      regime: 'BB',
       priceSupplementUsd: 150,
     });
     expect(payload.seasonPricingJsonb).toEqual({
@@ -206,7 +204,6 @@ describe('buildTripEditorPayload', () => {
           roomId: '22222222-2222-4222-8222-222222222222',
           destination: 'Cairo',
           nights: 3,
-          regime: 'BB',
           categoryTier: '5_STAR',
           priceSupplementUsd: 180,
           isDefault: true,
@@ -278,7 +275,6 @@ describe('buildTripEditorPayload', () => {
         roomId: '22222222-2222-4222-8222-222222222222',
         destination: 'Cairo',
         nights: 3,
-        regime: 'BB',
         categoryTier: '5_STAR',
         priceSupplementUsd: 180,
         isDefault: true,
@@ -314,7 +310,6 @@ describe('buildTripEditorPayload', () => {
         {
           destination: 'Cairo',
           nights: 3,
-          regime: 'BB',
           categoryTier: '5_STAR',
           nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
           cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
@@ -333,7 +328,6 @@ describe('buildTripEditorPayload', () => {
         {
           destination: 'Cairo',
           nights: 3,
-          regime: 'BB',
           categoryTier: '5_STAR',
           nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
           cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
@@ -361,7 +355,6 @@ describe('buildTripEditorPayload', () => {
           {
             destination: 'Cairo',
             nights: 3,
-            regime: 'BB',
             categoryTier: '5_STAR',
             nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
             cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
@@ -404,6 +397,32 @@ describe('buildTripEditorPayload', () => {
         },
       ],
     });
+  });
+
+  it('keeps several hotel names (one per line) for the same city and drops blank lines', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'multi-hotel-city',
+      title: 'Multi Hotel City',
+      destination: 'egypt',
+      price: 1500,
+      accommodation: [
+        {
+          destination: 'Giza',
+          nights: 1,
+          categoryTier: '5_STAR',
+          nameJsonb: {
+            ar: 'فندق الأهرام\nفندق النيل\n\nفندق المينا',
+            en: 'Pyramids Hotel\nNile Hotel\n\nMena House',
+          },
+          cityJsonb: { ar: 'الجيزة', en: 'Giza' },
+        },
+      ],
+    }, false);
+
+    const row = (payload.hotelInfoJsonb as any).accommodation[0];
+    expect(row.nameJsonb.ar).toBe('فندق الأهرام\nفندق النيل\nفندق المينا');
+    expect(row.nameJsonb.en).toBe('Pyramids Hotel\nNile Hotel\nMena House');
+    expect(row.cityJsonb).toEqual({ ar: 'الجيزة', en: 'Giza' });
   });
 });
 

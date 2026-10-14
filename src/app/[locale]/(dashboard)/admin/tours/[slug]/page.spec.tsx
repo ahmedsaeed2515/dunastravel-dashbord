@@ -44,7 +44,6 @@ const canonicalTour = {
       {
         id: "acc-0",
         nights: 1,
-        regime: "BB",
         destination: "الجيزة",
         cityJsonb: { ar: "الجيزة" },
         nameJsonb: { ar: "ستاراوتيل" },
