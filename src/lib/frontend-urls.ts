@@ -41,25 +41,16 @@ export function getFrontendBaseUrl(): string {
 
 /**
  * Returns the public frontend URL for a given tour by slug.
- * Routes properly to specific program pages if the tour belongs to a program.
+ *
+ * Every tour in the catalog is a first-class, addressable entity on the
+ * frontend at `/tours/{slug}`. We therefore never rewrite a real tour slug
+ * to a different program or listing page — doing so made the dashboard open
+ * the wrong trip (or a listing instead of the trip). Program/package landing
+ * pages are produced separately by `getFrontendPackageUrl`.
  */
 export function getFrontendTourUrl(slug?: string): string {
   const baseUrl = getFrontendBaseUrl();
   if (!slug || !slug.trim()) return baseUrl;
-  const s = slug.trim().toLowerCase();
-
-  if (s === 'classic-program') {
-    return `${baseUrl}/programs/classic/classic-program`;
-  }
-  if (s === 'honeymoon-egypt') {
-    return `${baseUrl}/programs/honeymooners/honeymoon-egypt`;
-  }
-  if (s === 'hurghada-4d3n' || s === 'sharm-4d3n' || s === 'siwa-oasis-alexandria') {
-    return `${baseUrl}/programs/extension/${encodeURIComponent(s)}`;
-  }
-  if (s === 'holy-family-egypt' || s === 'egypt-jordan-combined-14d') {
-    return `${baseUrl}/programs/religious`;
-  }
 
   const cleanSlug = encodeURIComponent(slug.trim());
   return `${baseUrl}/tours/${cleanSlug}`;

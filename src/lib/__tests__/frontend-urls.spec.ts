@@ -55,8 +55,22 @@ describe("frontend-urls utility", () => {
     expect(getFrontendTourUrl("cairo-express-4d")).toBe(
       "https://dunastravel-frontend.vercel.app/tours/cairo-express-4d"
     );
+    // Tours that previously hijacked to a different program/listing page must
+    // resolve to their own canonical tour page instead.
     expect(getFrontendTourUrl("siwa-oasis-alexandria")).toBe(
-      "https://dunastravel-frontend.vercel.app/programs/extension/siwa-oasis-alexandria"
+      "https://dunastravel-frontend.vercel.app/tours/siwa-oasis-alexandria"
+    );
+    expect(getFrontendTourUrl("classic-program")).toBe(
+      "https://dunastravel-frontend.vercel.app/tours/classic-program"
+    );
+    expect(getFrontendTourUrl("holy-family-egypt")).toBe(
+      "https://dunastravel-frontend.vercel.app/tours/holy-family-egypt"
+    );
+    expect(getFrontendTourUrl("honeymoon-egypt")).toBe(
+      "https://dunastravel-frontend.vercel.app/tours/honeymoon-egypt"
+    );
+    expect(getFrontendTourUrl("hurghada-4d3n")).toBe(
+      "https://dunastravel-frontend.vercel.app/tours/hurghada-4d3n"
     );
   });
 
