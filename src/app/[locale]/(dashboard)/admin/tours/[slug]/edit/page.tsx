@@ -8,6 +8,7 @@ import { Tour } from "@/features/tours/types";
 import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
 import { destinationForCountry } from "@/lib/tour-destinations";
+import { tourToTripModel as canonicalTourToTripModel } from "@/features/tours/lib/tripEditorPayload";
 import { Button } from "@/components/ui/button";
 import { Loader2, ArrowLeft } from "lucide-react";
 
@@ -31,6 +32,10 @@ function localeList(value: Record<string, unknown> | null | undefined, locale: s
 
 function tourToTripModel(tour: Tour): TripModel {
   const highlights = tour.highlightsJsonb || tour.highlightJsonb;
+  // Hotel/lodging fields come from the canonical mapper so the trip-specific
+  // rate sheet stored in `hotelInfoJsonb` (name, city, double/single rates,
+  // seasonal fee, boat) is preserved instead of showing a fabricated row.
+  const canonicalHotel = canonicalTourToTripModel(tour);
   const itinerary = (tour.itineraries || []).map((item, index) => ({
     day: index + 1,
     title: item.dayLabel || '',
@@ -70,7 +75,7 @@ function tourToTripModel(tour: Tour): TripModel {
       tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
         ? Number(tour.basePriceUsd)
         : 0,
-    hotelCategory: '',
+    hotelCategory: canonicalHotel.hotelCategory,
     rating: Number(tour.sourceRating || 0),
     reviewCount: tour.sourceReviewCount || 0,
     popular: !!tour.isFeatured,
@@ -103,8 +108,8 @@ function tourToTripModel(tour: Tour): TripModel {
       }
       return imgs;
     })(),
-    hotels: '',
-    accommodation: tour.city ? [{ destination: tour.city, nights: 0, regime: '' }] : [],
+    hotels: canonicalHotel.hotels,
+    accommodation: canonicalHotel.accommodation,
     itinerary,
     routeMap,
     translations: Object.fromEntries(

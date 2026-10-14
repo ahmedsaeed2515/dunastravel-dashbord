@@ -410,6 +410,29 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   },
 };
 
+/**
+ * True when at least one accommodation row carries dashboard rate-sheet data
+ * (hotel name / double / single room rate / seasonal fee / boat). Those rows are
+ * owned by the trip-specific "Option B" rate sheet, not the shared global hotel
+ * picker, so the editor should open directly on that mode.
+ */
+function accommodationHasRateSheet(list: AccommodationItem[] | null | undefined): boolean {
+  if (!Array.isArray(list)) return false;
+  return list.some((acc) => {
+    if (!acc || typeof acc !== 'object') return false;
+    const hasName =
+      acc.nameJsonb && Object.values(acc.nameJsonb).some((v) => typeof v === 'string' && v.trim());
+    return Boolean(
+      hasName ||
+        acc.doubleRoomPriceUsd != null ||
+        acc.singleRoomPriceUsd != null ||
+        acc.seasonSupplementUsd != null ||
+        acc.boatJsonb ||
+        acc.boatPriceUsd != null,
+    );
+  });
+}
+
 export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   trip,
   isOpen,
@@ -448,6 +471,9 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   const [isSaving, setIsSaving] = useState(false);
   const [mediaPickerOpen, setMediaPickerOpen] = useState(false);
   const [hotelMode, setHotelMode] = useState<'GLOBAL' | 'TRIP_SPECIFIC'>('GLOBAL');
+  // Tracks whether the admin picked a lodging mode manually; when true we never
+  // override their choice based on the loaded data.
+  const hotelModeTouchedRef = useRef(false);
   const [tripHotel, setTripHotel] = useState<TripSpecificHotelModel | null>(null);
   const [isSavingTripHotel, setIsSavingTripHotel] = useState(false);
   const [isLoadingTripHotel, setIsLoadingTripHotel] = useState(false);
@@ -483,6 +509,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   useEffect(() => {
     if (trip) {
+      hotelModeTouchedRef.current = false;
       const cloned = JSON.parse(JSON.stringify(trip));
       if (!cloned.translations || typeof cloned.translations !== 'object') {
         cloned.translations = { ar: {}, en: {}, es: {}, pt: {}, it: {} };
@@ -661,6 +688,17 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       setHotelMode('GLOBAL');
     }
   }, [trip, isOpen]);
+
+  // Auto-open the trip-specific rate sheet (Option B) when the loaded lodging
+  // data is a rate sheet. This makes hotels entered against a trip show up in
+  // the dashboard without the admin having to switch modes manually. A manual
+  // mode choice always wins.
+  useEffect(() => {
+    if (hotelModeTouchedRef.current) return;
+    if (accommodationHasRateSheet(formData.accommodation as AccommodationItem[])) {
+      setHotelMode('TRIP_SPECIFIC');
+    }
+  }, [formData.accommodation]);
 
   const queryClient = useQueryClient();
 
@@ -2474,7 +2512,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                   <div className="flex items-center gap-1.5 p-1 rounded-xl bg-muted/50 border border-border/60 self-start sm:self-auto">
                     <button
                       type="button"
-                      onClick={() => setHotelMode('GLOBAL')}
+                      onClick={() => { hotelModeTouchedRef.current = true; setHotelMode('GLOBAL'); }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                         hotelMode === 'GLOBAL'
                           ? 'bg-amber-500 text-black font-black shadow-xs'
@@ -2486,7 +2524,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     </button>
                     <button
                       type="button"
-                      onClick={() => setHotelMode('TRIP_SPECIFIC')}
+                      onClick={() => { hotelModeTouchedRef.current = true; setHotelMode('TRIP_SPECIFIC'); }}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                         hotelMode === 'TRIP_SPECIFIC'
                           ? 'bg-amber-500 text-black font-black shadow-xs'
