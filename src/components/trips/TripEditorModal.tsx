@@ -973,20 +973,46 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     if (!Array.isArray(formData.accommodation)) {
       return [];
     }
+    const asLocaleMap = (value: any): Partial<Record<LanguageCode, string>> | undefined => {
+      if (!value) return undefined;
+      if (typeof value === 'string') return value.trim() ? { en: value } : undefined;
+      if (typeof value !== 'object' || Array.isArray(value)) return undefined;
+      const out: Partial<Record<LanguageCode, string>> = {};
+      ALL_LOCALES.forEach(loc => {
+        const v = value[loc.code];
+        if (typeof v === 'string' && v.trim()) out[loc.code] = v;
+      });
+      return Object.keys(out).length > 0 ? out : undefined;
+    };
+    const readNumber = (value: any): number | undefined =>
+      typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+
     return formData.accommodation
       .filter((item): item is AccommodationItem => Boolean(item && typeof item === 'object'))
-      .map((item, idx) => ({
-        id: item.id || `acc-${idx}`,
-        hotelId: item.hotelId || undefined,
-        roomId: item.roomId ?? null,
-        destination: typeof item.destination === 'string' ? item.destination : (item.destination && typeof item.destination === 'object' ? ((item.destination as any).en || (item.destination as any).ar || 'Cairo') : 'Cairo'),
-        nights: typeof item.nights === 'number' && !isNaN(item.nights) && item.nights > 0 ? item.nights : 1,
-        regime: item.regime || 'BB',
-        categoryTier: item.categoryTier || '5_STAR',
-        priceSupplementUsd: typeof item.priceSupplementUsd === 'number' ? item.priceSupplementUsd : 0,
-        isDefault: item.isDefault ?? idx === 0,
-        sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : idx,
-      }));
+      .map((item, idx) => {
+        const nameJsonb = asLocaleMap(item.nameJsonb);
+        const cityJsonb = asLocaleMap(item.cityJsonb);
+        const boatJsonb = asLocaleMap(item.boatJsonb);
+        return {
+          id: item.id || `acc-${idx}`,
+          hotelId: item.hotelId || undefined,
+          roomId: item.roomId ?? null,
+          destination: typeof item.destination === 'string' ? item.destination : (item.destination && typeof item.destination === 'object' ? ((item.destination as any).en || (item.destination as any).ar || 'Cairo') : 'Cairo'),
+          nights: typeof item.nights === 'number' && !isNaN(item.nights) && item.nights > 0 ? item.nights : 1,
+          regime: item.regime || 'BB',
+          categoryTier: item.categoryTier || '',
+          ...(nameJsonb ? { nameJsonb } : {}),
+          ...(cityJsonb ? { cityJsonb } : {}),
+          doubleRoomPriceUsd: readNumber(item.doubleRoomPriceUsd),
+          singleRoomPriceUsd: readNumber(item.singleRoomPriceUsd),
+          seasonSupplementUsd: readNumber(item.seasonSupplementUsd) ?? readNumber(item.priceSupplementUsd),
+          ...(boatJsonb ? { boatJsonb } : {}),
+          boatPriceUsd: readNumber(item.boatPriceUsd),
+          priceSupplementUsd: readNumber(item.priceSupplementUsd) ?? 0,
+          isDefault: item.isDefault ?? idx === 0,
+          sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : idx,
+        };
+      });
   };
 
   const handleArrayItemChange = (field: 'highlights' | 'included' | 'excluded', index: number, value: string) => {
@@ -1112,20 +1138,84 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   const addAccommodationRow = () => {
     const rows = [...getAccommodationList()];
-    const safeHotels = Array.isArray(catalogHotels) ? catalogHotels : [];
-    const firstHotel = safeHotels[0];
     rows.push({
-      hotelId: firstHotel?.id || '',
-      roomId: firstHotel?.rooms?.[0]?.id || null,
-      destination: firstHotel?.city || 'Cairo',
-      nights: 3,
+      hotelId: '',
+      roomId: null,
+      destination: '',
+      nights: 1,
       regime: 'BB',
-      categoryTier: '5_STAR',
-      priceSupplementUsd: 0,
+      categoryTier: '',
       isDefault: rows.length === 0,
       sortOrder: rows.length,
     });
     handleChange('accommodation', rows);
+  };
+
+  const getAccRowText = (idx: number, field: 'nameJsonb' | 'cityJsonb' | 'boatJsonb'): string => {
+    const acc = getAccommodationList()[idx];
+    const map = acc?.[field];
+    if (!map) return '';
+    if (typeof map === 'string') return map;
+    return map[activeLang] || map.ar || map.en || '';
+  };
+
+  const setAccRowText = (idx: number, field: 'nameJsonb' | 'cityJsonb' | 'boatJsonb', value: string) => {
+    const rows = [...getAccommodationList()];
+    if (!rows[idx]) return;
+    const current = rows[idx][field];
+    const map: Partial<Record<LanguageCode, string>> = current && typeof current === 'object' ? { ...current } : {};
+    const clean = value.trim();
+    if (clean) {
+      map[activeLang] = clean;
+    } else {
+      delete map[activeLang];
+    }
+    rows[idx] = { ...rows[idx], [field]: map };
+    if (field === 'cityJsonb') {
+      const baseCity = map.ar || map.en || clean;
+      if (baseCity) rows[idx].destination = baseCity;
+    }
+    handleChange('accommodation', rows);
+  };
+
+  const handleTranslateAccommodationRow = async (idx: number) => {
+    const rows = [...getAccommodationList()];
+    const acc = rows[idx];
+    if (!acc) return;
+    const readField = (field: 'nameJsonb' | 'cityJsonb' | 'boatJsonb') => {
+      const map = acc[field];
+      if (!map) return '';
+      if (typeof map === 'string') return map;
+      return map[activeLang] || map.ar || map.en || '';
+    };
+    const nameSource = readField('nameJsonb');
+    const citySource = readField('cityJsonb');
+    const boatSource = readField('boatJsonb');
+    if (!nameSource && !citySource && !boatSource) return;
+
+    setIsTranslating(true);
+    setTranslateStatus('جارٍ ترجمة بيانات الفندق...');
+    try {
+      const merge = async (field: 'nameJsonb' | 'cityJsonb' | 'boatJsonb', sourceText: string) => {
+        const translated = await translateToAllLocales(sourceText, activeLang, TARGET_LOCALES);
+        const base = acc[field] && typeof acc[field] === 'object' ? { ...(acc[field] as Record<string, string>) } : {};
+        rows[idx] = { ...rows[idx], [field]: { ...base, ...translated } };
+      };
+      if (nameSource) await merge('nameJsonb', nameSource);
+      if (citySource) await merge('cityJsonb', citySource);
+      if (boatSource) await merge('boatJsonb', boatSource);
+      const cityMap = rows[idx].cityJsonb;
+      if (cityMap && typeof cityMap === 'object') {
+        rows[idx].destination = cityMap.ar || cityMap.en || rows[idx].destination;
+      }
+      handleChange('accommodation', rows);
+      setTranslateStatus('تمت ترجمة بيانات الفندق لكل اللغات ✓');
+    } catch {
+      setTranslateStatus('تعذر إكمال الترجمة، حاول مرة أخرى');
+    } finally {
+      setIsTranslating(false);
+      setTimeout(() => setTranslateStatus(''), 3000);
+    }
   };
 
   const removeAccommodationRow = (index: number) => {
@@ -2419,166 +2509,266 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 {/* ---------------------------------------------------- */}
                 {hotelMode === 'GLOBAL' && (
                   <div className="space-y-4">
-                    <div className="flex items-center justify-between">
+                    <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[11px] font-bold border-amber-500/30 text-amber-500 bg-amber-500/5">
                           <Building className="w-3 h-3 ml-1" />
-                          دليل الفنادق العامة المشتركة
+                          جدول فنادق الرحلة
                         </Badge>
                         <span className="text-[11px] text-muted-foreground">
-                          الفنادق المختارة قابلة للاستخدام في رحلات متعددة ولا ترتبط برحلة واحدة.
+                          فئة الفندق • الاسم والمدينة • سعر الغرفة المزدوجة • سعر الغرفة الفردية • رسوم الموسم • المراكب
                         </span>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={addAccommodationRow}
-                        className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
-                      >
-                        <Plus className="w-3.5 h-3.5" /> إضافة فندق / إقامة
-                      </Button>
+
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="text-[11px] font-black text-muted-foreground">لغة الإدخال:</span>
+                        {ALL_LOCALES.map(loc => (
+                          <button
+                            key={loc.code}
+                            type="button"
+                            onClick={() => setActiveLang(loc.code)}
+                            className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                              activeLang === loc.code
+                                ? 'bg-amber-500 text-black font-black shadow-xs'
+                                : 'bg-muted/40 hover:bg-muted text-muted-foreground'
+                            }`}
+                          >
+                            <span>{loc.flag}</span>
+                            <span>{loc.name}</span>
+                          </button>
+                        ))}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={addAccommodationRow}
+                          className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                        >
+                          <Plus className="w-3.5 h-3.5" /> إضافة فندق / إقامة
+                        </Button>
+                      </div>
                     </div>
 
-                    <div className="space-y-3">
-                      {getAccommodationList().map((acc, idx) => {
-                        const safeCatalog = Array.isArray(catalogHotels) ? catalogHotels : [];
-                        const selectedHotelObj = safeCatalog.find((h) => h?.id === acc?.hotelId);
-                        const hotelRooms = Array.isArray(selectedHotelObj?.rooms) ? selectedHotelObj.rooms : [];
+                    <div className="overflow-x-auto rounded-2xl border border-border/60">
+                      <table className="w-full min-w-[1000px] text-right border-collapse">
+                        <thead>
+                          <tr className="bg-muted/50 text-[11px] font-black text-muted-foreground">
+                            <th className="p-2.5 border-b border-border/60 text-right">فئة الفندق</th>
+                            <th className="p-2.5 border-b border-border/60 text-right">أسماء الأوتيلات وأسماء المدن</th>
+                            <th className="p-2.5 border-b border-border/60 text-right">سعر الغرفة المزدوجة ($)</th>
+                            <th className="p-2.5 border-b border-border/60 text-right">سعر الغرفة الفردية ($)</th>
+                            <th className="p-2.5 border-b border-border/60 text-right">رسوم / زيادة الموسم ($)</th>
+                            <th className="p-2.5 border-b border-border/60 text-right">المراكب (اسم + سعر $)</th>
+                            <th className="p-2.5 border-b border-border/60 w-20"></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {getAccommodationList().map((acc, idx) => {
+                            const safeCatalog = Array.isArray(catalogHotels) ? catalogHotels : [];
+                            const selectedHotelObj = safeCatalog.find((h) => h?.id === acc?.hotelId);
+                            const hotelRooms = Array.isArray(selectedHotelObj?.rooms) ? selectedHotelObj.rooms : [];
+                            const activeLangName = ALL_LOCALES.find(l => l.code === activeLang)?.name || '';
 
-                        return (
-                          <div key={idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 space-y-3">
-                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                              {/* Relational Hotel Picker */}
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-                                  الفندق المعتمد (Partner Hotel)
-                                </label>
-                                <select
-                                  value={acc?.hotelId || ''}
-                                  onChange={e => {
-                                    const hId = e.target.value;
-                                    const hObj = safeCatalog.find((h) => h?.id === hId);
-                                    const rows = [...getAccommodationList()];
-                                    if (rows[idx]) {
-                                      rows[idx] = {
-                                        ...rows[idx],
-                                        hotelId: hId || undefined,
-                                        roomId: hObj?.rooms?.[0]?.id || null,
-                                        destination: hObj?.city || rows[idx]?.destination || 'Cairo',
-                                        categoryTier: hObj?.stars === 5 ? '5_STAR' : hObj?.stars === 4 ? '4_STAR' : 'LUXURY',
-                                      };
-                                      handleChange('accommodation', rows);
-                                    }
-                                  }}
-                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
-                                >
-                                  <option value="">-- بدون فندق محدد (مدينة فقط) --</option>
-                                  {safeCatalog.map((h) => (
-                                    <option key={h?.id} value={h?.id}>
-                                      🏨 {h?.nameJsonb?.en || h?.nameJsonb?.ar || h?.slug || ''} ({h?.city || ''} • {h?.stars || 5}⭐)
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
+                            return (
+                              <tr key={idx} className="align-top hover:bg-muted/20">
+                                {/* 1. Hotel category */}
+                                <td className="p-2.5 border-b border-border/40">
+                                  <select
+                                    value={acc?.categoryTier || ''}
+                                    onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
+                                    className="w-full h-9 px-2 rounded-xl border border-input bg-background text-xs font-bold"
+                                  >
+                                    <option value="">-- اختر الفئة --</option>
+                                    <option value="5_STAR">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
+                                    <option value="4_STAR">⭐⭐⭐⭐ 4-Star Superior</option>
+                                    <option value="3_STAR">⭐⭐⭐ 3-Star Comfort</option>
+                                    <option value="VIP">👑 Royal VIP Tier</option>
+                                    <option value="CRUISE">🚢 Deluxe Nile Cruise</option>
+                                  </select>
+                                </td>
 
-                              {/* Relational Room Picker */}
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
-                                  فئة الغرفة (Assigned Room Tier)
-                                </label>
-                                <select
-                                  value={acc?.roomId || ''}
-                                  disabled={!selectedHotelObj || hotelRooms.length === 0}
-                                  onChange={e => updateAccommodationRow(idx, 'roomId', e.target.value || null)}
-                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold disabled:opacity-50"
-                                >
-                                  <option value="">-- الغرفة القياسية للفندق --</option>
-                                  {hotelRooms.map((rm: { id: string; slug?: string; name?: unknown; ratePerNight?: number }) => (
-                                    <option key={rm?.id} value={rm?.id}>
-                                      🛏️ {(rm?.name as any)?.en || (rm?.name as any)?.ar || (typeof rm?.name === 'string' ? rm.name : rm?.slug || '')} (${rm?.ratePerNight ?? 0}/nt)
-                                    </option>
-                                  ))}
-                                </select>
-                              </div>
+                                {/* 2. Hotel name + city names */}
+                                <td className="p-2.5 border-b border-border/40 space-y-2 min-w-[260px]">
+                                  <select
+                                    value={acc?.hotelId || ''}
+                                    onChange={e => {
+                                      const hId = e.target.value;
+                                      const hObj = safeCatalog.find((h) => h?.id === hId);
+                                      const rows = [...getAccommodationList()];
+                                      if (rows[idx]) {
+                                        const next = {
+                                          ...rows[idx],
+                                          hotelId: hId || undefined,
+                                          roomId: hObj?.rooms?.[0]?.id || null,
+                                        };
+                                        const hotelName = hObj?.nameJsonb?.[activeLang] || hObj?.nameJsonb?.ar || hObj?.nameJsonb?.en || '';
+                                        if (hotelName) next.nameJsonb = { ...(next.nameJsonb || {}), [activeLang]: hotelName };
+                                        const city = hObj?.city || '';
+                                        if (city) {
+                                          next.cityJsonb = { ...(next.cityJsonb || {}), [activeLang]: city };
+                                          next.destination = city;
+                                        }
+                                        rows[idx] = next;
+                                        handleChange('accommodation', rows);
+                                      }
+                                    }}
+                                    className="w-full h-8 px-2 rounded-lg border border-input bg-background text-[11px] font-bold"
+                                  >
+                                    <option value="">-- بدون فندق محدد (إدخال يدوي) --</option>
+                                    {safeCatalog.map((h) => (
+                                      <option key={h?.id} value={h?.id}>
+                                        🏨 {h?.nameJsonb?.en || h?.nameJsonb?.ar || h?.slug || ''} ({h?.city || ''} • {h?.stars || 5}⭐)
+                                      </option>
+                                    ))}
+                                  </select>
 
-                              {/* Destination / City */}
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
-                                <Input
-                                  value={acc?.destination || ''}
-                                  onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
-                                  placeholder="Cairo, Luxor, Aswan..."
-                                  className="rounded-xl text-xs font-bold h-9"
-                                />
-                              </div>
-                            </div>
+                                  <Input
+                                    value={getAccRowText(idx, 'nameJsonb')}
+                                    onChange={e => setAccRowText(idx, 'nameJsonb', e.target.value)}
+                                    placeholder={`اسم الفندق (${activeLangName})`}
+                                    className="rounded-xl text-xs font-bold h-9"
+                                  />
+                                  <Input
+                                    value={getAccRowText(idx, 'cityJsonb')}
+                                    onChange={e => setAccRowText(idx, 'cityJsonb', e.target.value)}
+                                    placeholder={`اسم المدينة (${activeLangName})`}
+                                    className="rounded-xl text-xs font-bold h-9"
+                                  />
 
-                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
-                                <Input
-                                  type="number"
-                                  min="1"
-                                  value={acc?.nights ?? 1}
-                                  onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
-                                  className="rounded-xl text-xs font-bold h-9 font-mono"
-                                />
-                              </div>
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الوجبات (Regime)</label>
-                                <select
-                                  value={acc?.regime || 'BB'}
-                                  onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
-                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
-                                >
-                                  <option value="BB">BB — Bed & Breakfast</option>
-                                  <option value="HB">HB — Half Board</option>
-                                  <option value="FB">FB — Full Board</option>
-                                  <option value="AI">AI — All Inclusive</option>
-                                  <option value="RO">RO — Room Only</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">الفئة (Tier)</label>
-                                <select
-                                  value={acc?.categoryTier || '5_STAR'}
-                                  onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
-                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
-                                >
-                                  <option value="5_STAR">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
-                                  <option value="4_STAR">⭐⭐⭐⭐ 4-Star Superior</option>
-                                  <option value="VIP">👑 Royal VIP Tier</option>
-                                  <option value="CRUISE">🚢 Deluxe Nile Cruise</option>
-                                </select>
-                              </div>
-                              <div>
-                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">فرق السعر (+$ USD)</label>
-                                <Input
-                                  type="number"
-                                  min="0"
-                                  value={acc?.priceSupplementUsd ?? 0}
-                                  onChange={e => updateAccommodationRow(idx, 'priceSupplementUsd', Number(e.target.value))}
-                                  className="rounded-xl text-xs font-bold h-9 font-mono text-amber-500"
-                                />
-                              </div>
-                              <div className="flex justify-end items-center gap-2">
-                                <Button
-                                  size="icon-sm"
-                                  variant="ghost"
-                                  onClick={() => removeAccommodationRow(idx)}
-                                  className="text-destructive hover:bg-destructive/10 h-9 w-9 rounded-xl"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        );
-                      })}
-                      {getAccommodationList().length === 0 && (
-                        <p className="text-xs text-muted-foreground text-center py-4">لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.</p>
-                      )}
+                                  {/* Secondary fields preserved: nights + board regime */}
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <Input
+                                      type="number"
+                                      min="1"
+                                      value={acc?.nights ?? 1}
+                                      onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
+                                      placeholder="ليالٍ"
+                                      title="عدد الليالي"
+                                      className="rounded-xl text-xs font-bold h-8 font-mono"
+                                    />
+                                    <select
+                                      value={acc?.regime || 'BB'}
+                                      onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
+                                      title="نظام الوجبات"
+                                      className="w-full h-8 px-2 rounded-lg border border-input bg-background text-[11px] font-bold"
+                                    >
+                                      <option value="BB">BB</option>
+                                      <option value="HB">HB</option>
+                                      <option value="FB">FB</option>
+                                      <option value="AI">AI</option>
+                                      <option value="RO">RO</option>
+                                    </select>
+                                  </div>
+                                  {selectedHotelObj && hotelRooms.length > 0 && (
+                                    <select
+                                      value={acc?.roomId || ''}
+                                      onChange={e => updateAccommodationRow(idx, 'roomId', e.target.value || null)}
+                                      className="w-full h-8 px-2 rounded-lg border border-input bg-background text-[11px] font-bold"
+                                      title="الغرفة القياسية المرتبطة بالفندق"
+                                    >
+                                      <option value="">-- الغرفة القياسية للفندق --</option>
+                                      {hotelRooms.map((rm: { id: string; slug?: string; name?: unknown; ratePerNight?: number }) => (
+                                        <option key={rm?.id} value={rm?.id}>
+                                          🛏️ {(rm?.name as any)?.en || (rm?.name as any)?.ar || (typeof rm?.name === 'string' ? rm.name : rm?.slug || '')} (${rm?.ratePerNight ?? 0}/nt)
+                                        </option>
+                                      ))}
+                                    </select>
+                                  )}
+                                </td>
+
+                                {/* 3. Double room price */}
+                                <td className="p-2.5 border-b border-border/40">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={acc?.doubleRoomPriceUsd ?? ''}
+                                    onChange={e => updateAccommodationRow(idx, 'doubleRoomPriceUsd', e.target.value === '' ? undefined : Number(e.target.value))}
+                                    placeholder="0"
+                                    className="rounded-xl text-xs font-bold h-9 font-mono text-emerald-600"
+                                  />
+                                </td>
+
+                                {/* 4. Single room price */}
+                                <td className="p-2.5 border-b border-border/40">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={acc?.singleRoomPriceUsd ?? ''}
+                                    onChange={e => updateAccommodationRow(idx, 'singleRoomPriceUsd', e.target.value === '' ? undefined : Number(e.target.value))}
+                                    placeholder="0"
+                                    className="rounded-xl text-xs font-bold h-9 font-mono text-emerald-600"
+                                  />
+                                </td>
+
+                                {/* 5. Seasonal fee / surcharge */}
+                                <td className="p-2.5 border-b border-border/40">
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={acc?.seasonSupplementUsd ?? ''}
+                                    onChange={e => updateAccommodationRow(idx, 'seasonSupplementUsd', e.target.value === '' ? undefined : Number(e.target.value))}
+                                    placeholder="0"
+                                    className="rounded-xl text-xs font-bold h-9 font-mono text-amber-500"
+                                  />
+                                </td>
+
+                                {/* 6. Boats (name + extra price) */}
+                                <td className="p-2.5 border-b border-border/40 space-y-2 min-w-[180px]">
+                                  <Input
+                                    value={getAccRowText(idx, 'boatJsonb')}
+                                    onChange={e => setAccRowText(idx, 'boatJsonb', e.target.value)}
+                                    placeholder={`اسم المركب (${activeLangName})`}
+                                    className="rounded-xl text-xs font-bold h-9"
+                                  />
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    value={acc?.boatPriceUsd ?? ''}
+                                    onChange={e => updateAccommodationRow(idx, 'boatPriceUsd', e.target.value === '' ? undefined : Number(e.target.value))}
+                                    placeholder="سعر المركب $"
+                                    className="rounded-xl text-xs font-bold h-8 font-mono text-sky-600"
+                                  />
+                                </td>
+
+                                {/* Row actions */}
+                                <td className="p-2.5 border-b border-border/40">
+                                  <div className="flex flex-col items-center gap-1.5">
+                                    <Button
+                                      size="icon-sm"
+                                      variant="ghost"
+                                      onClick={() => handleTranslateAccommodationRow(idx)}
+                                      disabled={isTranslating}
+                                      title="ترجمة بيانات هذا الفندق لكل اللغات"
+                                      className="text-amber-500 hover:bg-amber-500/10 h-8 w-8 rounded-lg"
+                                    >
+                                      <Languages className="w-4 h-4" />
+                                    </Button>
+                                    <Button
+                                      size="icon-sm"
+                                      variant="ghost"
+                                      onClick={() => removeAccommodationRow(idx)}
+                                      className="text-destructive hover:bg-destructive/10 h-8 w-8 rounded-lg"
+                                    >
+                                      <Trash2 className="w-4 h-4" />
+                                    </Button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                          {getAccommodationList().length === 0 && (
+                            <tr>
+                              <td colSpan={7} className="p-6 text-center text-xs text-muted-foreground">
+                                لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
                     </div>
+
+                    {translateStatus && (
+                      <p className="text-[11px] font-bold text-amber-500">{translateStatus}</p>
+                    )}
                   </div>
                 )}
 

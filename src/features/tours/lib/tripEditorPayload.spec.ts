@@ -302,6 +302,109 @@ describe('buildTripEditorPayload', () => {
       it: 'Arrivo al Cairo',
     });
   });
+
+  it('serializes the 6-column hotel rate sheet (category, names, double/single rates, season fee, boats)', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'rate-sheet-tour',
+      title: 'Rate Sheet',
+      destination: 'egypt',
+      price: 1500,
+      hotelCategory: '5 Stars Deluxe',
+      accommodation: [
+        {
+          destination: 'Cairo',
+          nights: 3,
+          regime: 'BB',
+          categoryTier: '5_STAR',
+          nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+          cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
+          doubleRoomPriceUsd: 220,
+          singleRoomPriceUsd: 160,
+          seasonSupplementUsd: 45,
+          boatJsonb: { ar: 'مركب نيلي', en: 'Nile Cruise Boat' },
+          boatPriceUsd: 75,
+        },
+      ],
+    }, false);
+
+    expect(payload.hotelInfoJsonb).toMatchObject({
+      hotelCategory: '5 Stars Deluxe',
+      accommodation: [
+        {
+          destination: 'Cairo',
+          nights: 3,
+          regime: 'BB',
+          categoryTier: '5_STAR',
+          nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+          cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
+          doubleRoomPriceUsd: 220,
+          singleRoomPriceUsd: 160,
+          seasonSupplementUsd: 45,
+          boatJsonb: { ar: 'مركب نيلي', en: 'Nile Cruise Boat' },
+          boatPriceUsd: 75,
+        },
+      ],
+    });
+  });
+
+  it('round-trips the 6-column rate sheet through tourToTripModel -> buildTripEditorPayload', () => {
+    const dbTour: any = {
+      id: 'tour-uuid-2',
+      slug: 'rate-sheet-roundtrip',
+      titleJsonb: { ar: 'Rate Sheet', en: 'Rate Sheet' },
+      city: 'Cairo',
+      basePriceUsd: '1500',
+      currency: 'USD',
+      hotelInfoJsonb: {
+        hotelCategory: '5 Stars Deluxe',
+        accommodation: [
+          {
+            destination: 'Cairo',
+            nights: 3,
+            regime: 'BB',
+            categoryTier: '5_STAR',
+            nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+            cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
+            doubleRoomPriceUsd: 220,
+            singleRoomPriceUsd: 160,
+            seasonSupplementUsd: 45,
+            boatJsonb: { ar: 'مركب نيلي', en: 'Nile Cruise Boat' },
+            boatPriceUsd: 75,
+          },
+        ],
+      },
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const model = tourToTripModel(dbTour);
+    expect(model.accommodation[0]).toMatchObject({
+      destination: 'Cairo',
+      categoryTier: '5_STAR',
+      nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+      cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
+      doubleRoomPriceUsd: 220,
+      singleRoomPriceUsd: 160,
+      seasonSupplementUsd: 45,
+      boatJsonb: { ar: 'مركب نيلي', en: 'Nile Cruise Boat' },
+      boatPriceUsd: 75,
+    });
+
+    const payload = buildTripEditorPayload(model, false);
+    expect(payload.hotelInfoJsonb).toMatchObject({
+      accommodation: [
+        {
+          nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+          cityJsonb: { ar: 'القاهرة', en: 'Cairo' },
+          doubleRoomPriceUsd: 220,
+          singleRoomPriceUsd: 160,
+          seasonSupplementUsd: 45,
+          boatJsonb: { ar: 'مركب نيلي', en: 'Nile Cruise Boat' },
+          boatPriceUsd: 75,
+        },
+      ],
+    });
+  });
 });
 
 

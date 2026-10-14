@@ -27,6 +27,73 @@ function list(value: unknown): string[] {
   return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string' && Boolean(item.trim())) : [];
 }
 
+/** Normalizes any localized value (object, string) into a 5-locale map. */
+function localeMap(value: unknown): Partial<Record<LanguageCode, string>> | undefined {
+  if (!value) return undefined;
+  if (typeof value === 'string') {
+    const clean = value.trim();
+    return clean ? { en: clean } : undefined;
+  }
+  if (typeof value !== 'object' || Array.isArray(value)) return undefined;
+  const out: Partial<Record<LanguageCode, string>> = {};
+  for (const locale of LOCALES) {
+    const raw = (value as Record<string, unknown>)[locale];
+    if (typeof raw === 'string' && raw.trim()) out[locale] = raw.trim();
+  }
+  return Object.keys(out).length > 0 ? out : undefined;
+}
+
+/** Drops empty entries from a localized map (used when building payloads). */
+function cleanLocaleMap(value: Partial<Record<LanguageCode, string>> | undefined): Partial<Record<LanguageCode, string>> {
+  const out: Partial<Record<LanguageCode, string>> = {};
+  if (!value) return out;
+  for (const locale of LOCALES) {
+    const raw = value[locale];
+    if (typeof raw === 'string' && raw.trim()) out[locale] = raw.trim();
+  }
+  return out;
+}
+
+/** Returns a rounded positive USD amount, or undefined when there is no value. */
+function positiveNumber(value: unknown): number | undefined {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return undefined;
+  return Math.round(parsed * 100) / 100;
+}
+
+/** Maps a raw hotelInfoJsonb accommodation row into the canonical TripModel shape. */
+function accommodationFromJson(acc: any, idx: number, fallbackCity: string): AccommodationItem {
+  const nameJsonb = localeMap(acc.nameJsonb ?? acc.hotelName ?? acc.name);
+  const cityJsonb = localeMap(acc.cityJsonb ?? acc.city);
+  const doubleRoomPriceUsd = positiveNumber(acc.doubleRoomPriceUsd);
+  const singleRoomPriceUsd = positiveNumber(acc.singleRoomPriceUsd);
+  const seasonSupplementUsd = positiveNumber(acc.seasonSupplementUsd ?? acc.priceSupplementUsd);
+  const boatJsonb = localeMap(acc.boatJsonb ?? acc.boatName);
+  const boatPriceUsd = positiveNumber(acc.boatPriceUsd);
+
+  return {
+    ...(acc.id ? { id: String(acc.id) } : {}),
+    ...(acc.hotelId ? { hotelId: String(acc.hotelId) } : {}),
+    ...(acc.roomId !== undefined && acc.roomId !== null ? { roomId: acc.roomId } : {}),
+    destination: text(acc.destination) || text(cityJsonb) || fallbackCity,
+    nights: Math.max(1, Number(acc.nights) || 1),
+    regime: text(acc.regime || acc.boardBasis) || 'BB',
+    ...(acc.categoryTier ? { categoryTier: text(acc.categoryTier) } : {}),
+    ...(nameJsonb ? { nameJsonb } : {}),
+    ...(cityJsonb ? { cityJsonb } : {}),
+    ...(doubleRoomPriceUsd !== undefined ? { doubleRoomPriceUsd } : {}),
+    ...(singleRoomPriceUsd !== undefined ? { singleRoomPriceUsd } : {}),
+    ...(seasonSupplementUsd !== undefined ? { seasonSupplementUsd } : {}),
+    ...(boatJsonb ? { boatJsonb } : {}),
+    ...(boatPriceUsd !== undefined ? { boatPriceUsd } : {}),
+    ...(acc.priceSupplementUsd !== undefined && acc.priceSupplementUsd !== null
+      ? { priceSupplementUsd: Number(acc.priceSupplementUsd) || 0 }
+      : {}),
+    ...(acc.isDefault !== undefined ? { isDefault: Boolean(acc.isDefault) } : { isDefault: idx === 0 }),
+    ...(acc.sortOrder !== undefined ? { sortOrder: Number(acc.sortOrder) } : { sortOrder: idx }),
+  };
+}
+
 function countryForDestination(destination: string): string | null {
   const canonical = destination.trim().toLowerCase();
   return {
@@ -236,32 +303,12 @@ export function tourToTripModel(
 
   const accommodation: AccommodationItem[] =
     Array.isArray(tour.accommodations) && tour.accommodations.length > 0
-      ? tour.accommodations.map((acc: any, idx: number) => ({
-          id: acc.id,
-          hotelId: acc.hotelId,
-          roomId: acc.roomId ?? null,
-          destination: acc.destination || acc.hotel?.city || tour.city || 'Egypt',
-          nights: Math.max(1, Number(acc.nights) || 1),
-          regime: acc.regime || acc.boardBasis || 'BB',
-          categoryTier: acc.categoryTier || '5_STAR',
-          priceSupplementUsd: Number(acc.priceSupplementUsd ?? acc.priceSupplement ?? 0) || 0,
-          isDefault: acc.isDefault ?? idx === 0,
-          sortOrder: acc.sortOrder ?? idx,
-        }))
-      : jsonbAccommodations.map((acc: any, idx: number) => ({
-          ...(acc.id ? { id: acc.id } : {}),
-          ...(acc.hotelId ? { hotelId: acc.hotelId } : {}),
-          ...(acc.roomId !== undefined ? { roomId: acc.roomId } : {}),
-          destination: text(acc.destination) || tour.city || 'Egypt',
-          nights: Math.max(1, Number(acc.nights) || 1),
-          regime: text(acc.regime || acc.boardBasis) || 'BB',
-          ...(acc.categoryTier ? { categoryTier: text(acc.categoryTier) } : {}),
-          ...(acc.priceSupplementUsd !== undefined
-            ? { priceSupplementUsd: Number(acc.priceSupplementUsd) || 0 }
-            : {}),
-          ...(acc.isDefault !== undefined ? { isDefault: Boolean(acc.isDefault) } : { isDefault: idx === 0 }),
-          ...(acc.sortOrder !== undefined ? { sortOrder: Number(acc.sortOrder) } : { sortOrder: idx }),
-        }));
+      ? tour.accommodations.map((acc: any, idx: number) =>
+          accommodationFromJson(acc, idx, tour.city || 'Egypt'),
+        )
+      : jsonbAccommodations.map((acc: any, idx: number) =>
+          accommodationFromJson(acc, idx, tour.city || 'Egypt'),
+        );
 
   const seasonJson = tour.seasonPricingJsonb as any;
   const rawSeasonRules = Array.isArray(seasonJson)
@@ -452,24 +499,53 @@ export function buildTripEditorPayload(
   if (formData.adventure) tags.push('adventure');
   if (formData.familyFriendly) tags.push('family');
 
-  const hotelInfoJsonb = (formData.accommodation && formData.accommodation.length > 0) || formData.hotelCategory || formData.hotels
+  const normalizedAccommodations = (formData.accommodation ?? []).map((acc, index) => {
+    const nameJsonb = cleanLocaleMap(acc.nameJsonb);
+    const cityJsonb = cleanLocaleMap(acc.cityJsonb);
+    const boatJsonb = cleanLocaleMap(acc.boatJsonb);
+    const doubleRoomPriceUsd = positiveNumber(acc.doubleRoomPriceUsd);
+    const singleRoomPriceUsd = positiveNumber(acc.singleRoomPriceUsd);
+    const seasonSupplementUsd = positiveNumber(acc.seasonSupplementUsd ?? acc.priceSupplementUsd);
+    const boatPriceUsd = positiveNumber(acc.boatPriceUsd);
+
+    const row: Record<string, any> = {
+      destination: text(acc.destination).trim() || text(acc.cityJsonb) || 'Egypt',
+      nights: Math.max(1, Number(acc.nights) || 1),
+      regime: text(acc.regime).trim() || 'BB',
+    };
+    if (acc.id && text(acc.id).trim()) row.id = text(acc.id).trim();
+    if (acc.hotelId && text(acc.hotelId).trim()) row.hotelId = text(acc.hotelId).trim();
+    if (acc.roomId && text(acc.roomId).trim()) row.roomId = text(acc.roomId).trim();
+    if (text(acc.categoryTier).trim()) row.categoryTier = text(acc.categoryTier).trim();
+    if (Object.keys(nameJsonb).length > 0) row.nameJsonb = nameJsonb;
+    if (Object.keys(cityJsonb).length > 0) row.cityJsonb = cityJsonb;
+    if (doubleRoomPriceUsd !== undefined) row.doubleRoomPriceUsd = doubleRoomPriceUsd;
+    if (singleRoomPriceUsd !== undefined) row.singleRoomPriceUsd = singleRoomPriceUsd;
+    if (seasonSupplementUsd !== undefined) row.seasonSupplementUsd = seasonSupplementUsd;
+    if (Object.keys(boatJsonb).length > 0) row.boatJsonb = boatJsonb;
+    if (boatPriceUsd !== undefined) row.boatPriceUsd = boatPriceUsd;
+    if (acc.isDefault !== undefined) row.isDefault = Boolean(acc.isDefault);
+    return row;
+  });
+
+  const hotelInfoJsonb = normalizedAccommodations.length > 0 || formData.hotelCategory || formData.hotels
     ? {
         hotelCategory: text(formData.hotelCategory),
         notes: text(formData.hotels),
-        accommodation: formData.accommodation ?? [],
+        accommodation: normalizedAccommodations,
       }
     : null;
 
-  const relationalAccommodations = (formData.accommodation ?? [])
+  const relationalAccommodations = normalizedAccommodations
     .filter((acc) => typeof acc.hotelId === 'string' && Boolean(acc.hotelId.trim()))
     .map((acc, index) => ({
-      hotelId: acc.hotelId!.trim(),
-      roomId: acc.roomId && acc.roomId.trim() ? acc.roomId.trim() : null,
+      hotelId: acc.hotelId.trim(),
+      roomId: typeof acc.roomId === 'string' && acc.roomId.trim() ? acc.roomId.trim() : null,
       destination: text(acc.destination).trim() || 'Egypt',
       nights: Math.max(1, Number(acc.nights) || 1),
       regime: text(acc.regime).trim() || 'BB',
       categoryTier: text(acc.categoryTier).trim() || '5_STAR',
-      priceSupplementUsd: Number(acc.priceSupplementUsd) || 0,
+      priceSupplementUsd: Number(acc.seasonSupplementUsd) || 0,
       isDefault: acc.isDefault ?? index === 0,
       sortOrder: index,
     }));

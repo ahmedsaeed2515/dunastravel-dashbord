@@ -53,6 +53,21 @@ export interface AccommodationItem {
   nights: number;
   regime: string;
   categoryTier?: string;
+  /** Localized hotel name (5 locales). */
+  nameJsonb?: Partial<Record<LanguageCode, string>>;
+  /** Localized city name (5 locales). */
+  cityJsonb?: Partial<Record<LanguageCode, string>>;
+  /** Double room price in USD (hotel rate sheet column 3). */
+  doubleRoomPriceUsd?: number;
+  /** Single room price in USD (hotel rate sheet column 4). */
+  singleRoomPriceUsd?: number;
+  /** Seasonal fee / surcharge in USD (hotel rate sheet column 5). */
+  seasonSupplementUsd?: number;
+  /** Localized boat / cruise name (hotel rate sheet column 6). */
+  boatJsonb?: Partial<Record<LanguageCode, string>>;
+  /** Extra boat / cruise price in USD (hotel rate sheet column 6). */
+  boatPriceUsd?: number;
+  /** @deprecated legacy price supplement, maps to seasonSupplementUsd. */
   priceSupplementUsd?: number;
   isDefault?: boolean;
   sortOrder?: number;
