@@ -2466,7 +2466,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                       إدارة وخطة الإقامة الفندقية (Tour Lodging & Accommodation):
                     </span>
                     <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
-                      اختر بين ربط فندق عام معتمد من دليل الفنادق، أو إنشاء فندق حصري خاص بهذه الرحلة فقط.
+                      اختر بين ربط فنادق عامة معتمدة من دليل الفنادق، أو تسجيل جدول فنادق خاص بهذه الرحلة فقط (لا يظهر في أي رحلة أخرى).
                     </p>
                   </div>
 
@@ -2486,12 +2486,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     </button>
                     <button
                       type="button"
-                      onClick={() => {
-                        setHotelMode('TRIP_SPECIFIC');
-                        if (!tripHotel) {
-                          setTripHotel(createDefaultTripHotel((formData as any)?.city || formData.destination || 'Cairo'));
-                        }
-                      }}
+                      onClick={() => setHotelMode('TRIP_SPECIFIC')}
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer ${
                         hotelMode === 'TRIP_SPECIFIC'
                           ? 'bg-amber-500 text-black font-black shadow-xs'
@@ -2509,11 +2504,179 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                 {/* ---------------------------------------------------- */}
                 {hotelMode === 'GLOBAL' && (
                   <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-[11px] font-bold border-amber-500/30 text-amber-500 bg-amber-500/5">
+                          <Building className="w-3 h-3 ml-1" />
+                          دليل الفنادق العامة المشتركة
+                        </Badge>
+                        <span className="text-[11px] text-muted-foreground">
+                          الفنادق المختارة قابلة للاستخدام في رحلات متعددة ولا ترتبط برحلة واحدة.
+                        </span>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={addAccommodationRow}
+                        className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> إضافة فندق / إقامة
+                      </Button>
+                    </div>
+
+                    <div className="space-y-3">
+                      {getAccommodationList().map((acc, idx) => {
+                        const safeCatalog = Array.isArray(catalogHotels) ? catalogHotels : [];
+                        const selectedHotelObj = safeCatalog.find((h) => h?.id === acc?.hotelId);
+                        const hotelRooms = Array.isArray(selectedHotelObj?.rooms) ? selectedHotelObj.rooms : [];
+
+                        return (
+                          <div key={idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 space-y-3">
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              {/* Relational Hotel Picker */}
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                                  الفندق المعتمد (Partner Hotel)
+                                </label>
+                                <select
+                                  value={acc?.hotelId || ''}
+                                  onChange={e => {
+                                    const hId = e.target.value;
+                                    const hObj = safeCatalog.find((h) => h?.id === hId);
+                                    const rows = [...getAccommodationList()];
+                                    if (rows[idx]) {
+                                      rows[idx] = {
+                                        ...rows[idx],
+                                        hotelId: hId || undefined,
+                                        roomId: hObj?.rooms?.[0]?.id || null,
+                                        destination: hObj?.city || rows[idx]?.destination || 'Cairo',
+                                        categoryTier: hObj?.stars === 5 ? '5_STAR' : hObj?.stars === 4 ? '4_STAR' : 'LUXURY',
+                                      };
+                                      handleChange('accommodation', rows);
+                                    }
+                                  }}
+                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                                >
+                                  <option value="">-- بدون فندق محدد (مدينة فقط) --</option>
+                                  {safeCatalog.map((h) => (
+                                    <option key={h?.id} value={h?.id}>
+                                      🏨 {h?.nameJsonb?.en || h?.nameJsonb?.ar || h?.slug || ''} ({h?.city || ''} • {h?.stars || 5}⭐)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Relational Room Picker */}
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">
+                                  فئة الغرفة (Assigned Room Tier)
+                                </label>
+                                <select
+                                  value={acc?.roomId || ''}
+                                  disabled={!selectedHotelObj || hotelRooms.length === 0}
+                                  onChange={e => updateAccommodationRow(idx, 'roomId', e.target.value || null)}
+                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold disabled:opacity-50"
+                                >
+                                  <option value="">-- الغرفة القياسية للفندق --</option>
+                                  {hotelRooms.map((rm: { id: string; slug?: string; name?: unknown; ratePerNight?: number }) => (
+                                    <option key={rm?.id} value={rm?.id}>
+                                      🛏️ {(rm?.name as any)?.en || (rm?.name as any)?.ar || (typeof rm?.name === 'string' ? rm.name : rm?.slug || '')} (${rm?.ratePerNight ?? 0}/nt)
+                                    </option>
+                                  ))}
+                                </select>
+                              </div>
+
+                              {/* Destination / City */}
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
+                                <Input
+                                  value={acc?.destination || ''}
+                                  onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
+                                  placeholder="Cairo, Luxor, Aswan..."
+                                  className="rounded-xl text-xs font-bold h-9"
+                                />
+                              </div>
+                            </div>
+
+                            <div className="grid grid-cols-2 sm:grid-cols-5 gap-3 items-end">
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">عدد الليالي</label>
+                                <Input
+                                  type="number"
+                                  min="1"
+                                  value={acc?.nights ?? 1}
+                                  onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
+                                  className="rounded-xl text-xs font-bold h-9 font-mono"
+                                />
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الوجبات (Regime)</label>
+                                <select
+                                  value={acc?.regime || 'BB'}
+                                  onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
+                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                                >
+                                  <option value="BB">BB — Bed & Breakfast</option>
+                                  <option value="HB">HB — Half Board</option>
+                                  <option value="FB">FB — Full Board</option>
+                                  <option value="AI">AI — All Inclusive</option>
+                                  <option value="RO">RO — Room Only</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">الفئة (Tier)</label>
+                                <select
+                                  value={acc?.categoryTier || '5_STAR'}
+                                  onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
+                                  className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
+                                >
+                                  <option value="5_STAR">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
+                                  <option value="4_STAR">⭐⭐⭐⭐ 4-Star Superior</option>
+                                  <option value="VIP">👑 Royal VIP Tier</option>
+                                  <option value="CRUISE">🚢 Deluxe Nile Cruise</option>
+                                </select>
+                              </div>
+                              <div>
+                                <label className="text-[11px] font-bold text-muted-foreground block mb-1">فرق السعر (+$ USD)</label>
+                                <Input
+                                  type="number"
+                                  min="0"
+                                  value={acc?.priceSupplementUsd ?? 0}
+                                  onChange={e => updateAccommodationRow(idx, 'priceSupplementUsd', Number(e.target.value))}
+                                  className="rounded-xl text-xs font-bold h-9 font-mono text-amber-500"
+                                />
+                              </div>
+                              <div className="flex justify-end items-center gap-2">
+                                <Button
+                                  size="icon-sm"
+                                  variant="ghost"
+                                  onClick={() => removeAccommodationRow(idx)}
+                                  className="text-destructive hover:bg-destructive/10 h-9 w-9 rounded-xl"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                      {getAccommodationList().length === 0 && (
+                        <p className="text-xs text-muted-foreground text-center py-4">لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ---------------------------------------------------- */}
+                {/* MODE B: TRIP-SPECIFIC HOTEL RATE SHEET */}
+                {/* ---------------------------------------------------- */}
+                {hotelMode === 'TRIP_SPECIFIC' && (
+                  <div className="space-y-4">
                     <div className="flex flex-wrap items-center justify-between gap-3">
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className="text-[11px] font-bold border-amber-500/30 text-amber-500 bg-amber-500/5">
                           <Building className="w-3 h-3 ml-1" />
-                          جدول فنادق الرحلة
+                          فنادق هذه الرحلة (خاص بالرحلة)
                         </Badge>
                         <span className="text-[11px] text-muted-foreground">
                           فئة الفندق • الاسم والمدينة • سعر الغرفة المزدوجة • سعر الغرفة الفردية • رسوم الموسم • المراكب
@@ -2572,18 +2735,12 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               <tr key={idx} className="align-top hover:bg-muted/20">
                                 {/* 1. Hotel category */}
                                 <td className="p-2.5 border-b border-border/40">
-                                  <select
+                                  <Input
                                     value={acc?.categoryTier || ''}
                                     onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
-                                    className="w-full h-9 px-2 rounded-xl border border-input bg-background text-xs font-bold"
-                                  >
-                                    <option value="">-- اختر الفئة --</option>
-                                    <option value="5_STAR">⭐⭐⭐⭐⭐ 5-Star Luxury</option>
-                                    <option value="4_STAR">⭐⭐⭐⭐ 4-Star Superior</option>
-                                    <option value="3_STAR">⭐⭐⭐ 3-Star Comfort</option>
-                                    <option value="VIP">👑 Royal VIP Tier</option>
-                                    <option value="CRUISE">🚢 Deluxe Nile Cruise</option>
-                                  </select>
+                                    placeholder="اكتب الفئة يدويًا (مثال: 5 نجوم / فاخرة / نيلية)"
+                                    className="rounded-xl text-xs font-bold h-9"
+                                  />
                                 </td>
 
                                 {/* 2. Hotel name + city names */}
@@ -2768,681 +2925,6 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
                     {translateStatus && (
                       <p className="text-[11px] font-bold text-amber-500">{translateStatus}</p>
-                    )}
-                  </div>
-                )}
-
-                {/* ---------------------------------------------------- */}
-                {/* MODE B: TRIP-SPECIFIC DEDICATED HOTEL */}
-                {/* ---------------------------------------------------- */}
-                {hotelMode === 'TRIP_SPECIFIC' && (
-                  <div className="space-y-5">
-                    {/* Isolation Guarantee Banner */}
-                    <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-start justify-between gap-3 shadow-xs">
-                      <div className="flex items-start gap-3">
-                        <Lock className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" />
-                        <div>
-                          <div className="text-xs font-black text-amber-500 flex items-center gap-2">
-                            <span>فندق حصري وخاص بهذه الرحلة فقط (Trip-Specific Hotel)</span>
-                            {tripHotel?.id && (
-                              <Badge variant="outline" className="text-[10px] bg-green-500/10 text-green-500 border-green-500/30 font-bold">
-                                مفعّل ومربوط بقاعدة البيانات
-                              </Badge>
-                            )}
-                          </div>
-                          <p className="text-[11px] text-muted-foreground font-medium mt-1 leading-relaxed">
-                            🔒 هذا الفندق ملكية خاصة ومحصورة برحلة <strong className="text-foreground">"{formData.title || formData.slug || 'الحالية'}"</strong>. لن يظهر مطلقاً في إدارة الفنادق العامة، ولا في كتالوج الفنادق العام، ولا في أي رحلة أخرى.
-                          </p>
-                        </div>
-                      </div>
-
-                      {/* Top Action Buttons */}
-                      <div className="flex items-center gap-2 shrink-0">
-                        {tripHotel?.id && (
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={handleDeleteTripHotel}
-                            disabled={isSavingTripHotel}
-                            className="text-xs text-destructive hover:bg-destructive/10 font-bold cursor-pointer h-9 px-3"
-                          >
-                            <Trash2 className="w-3.5 h-3.5 ml-1" /> حذف فندق الرحلة
-                          </Button>
-                        )}
-                        <Button
-                          size="sm"
-                          onClick={handleSaveTripHotel}
-                          disabled={isSavingTripHotel}
-                          className="text-xs bg-amber-500 hover:bg-amber-600 text-black font-black cursor-pointer h-9 px-4 shadow-sm"
-                        >
-                          {isSavingTripHotel ? (
-                            <>
-                              <Loader2 className="w-3.5 h-3.5 ml-1.5 animate-spin" /> جاري الحفظ...
-                            </>
-                          ) : (
-                            <>
-                              <Check className="w-3.5 h-3.5 ml-1.5" /> حفظ فندق الرحلة
-                            </>
-                          )}
-                        </Button>
-                      </div>
-                    </div>
-
-                    {isLoadingTripHotel ? (
-                      <div className="py-12 flex flex-col items-center justify-center gap-2 text-muted-foreground">
-                        <Loader2 className="w-6 h-6 animate-spin text-amber-500" />
-                        <span className="text-xs font-bold">جاري تحميل بيانات فندق الرحلة...</span>
-                      </div>
-                    ) : tripHotel ? (
-                      <div className="space-y-5">
-                        {/* 1. Language selector for Hotel */}
-                        <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                          <div className="flex items-center gap-1.5 overflow-x-auto">
-                            <span className="text-[11px] font-black text-muted-foreground ml-2">لغة إدخال بيانات الفندق:</span>
-                            {ALL_LOCALES.map(loc => (
-                              <button
-                                key={loc.code}
-                                type="button"
-                                onClick={() => setTripHotelActiveLang(loc.code)}
-                                className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-all flex items-center gap-1 cursor-pointer ${
-                                  tripHotelActiveLang === loc.code
-                                    ? 'bg-amber-500 text-black font-black shadow-xs'
-                                    : 'bg-muted/40 hover:bg-muted text-muted-foreground'
-                                }`}
-                              >
-                                <span>{loc.flag}</span>
-                                <span>{loc.name}</span>
-                              </button>
-                            ))}
-                          </div>
-
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleTranslateTripHotelName}
-                              disabled={isTranslating}
-                              className="text-[11px] text-amber-500 hover:bg-amber-500/10 gap-1 font-bold h-8 cursor-pointer"
-                            >
-                              <Wand2 className="w-3 h-3" /> ترجمة اسم الفندق
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleTranslateTripHotelDesc}
-                              disabled={isTranslating}
-                              className="text-[11px] text-amber-500 hover:bg-amber-500/10 gap-1 font-bold h-8 cursor-pointer"
-                            >
-                              <Wand2 className="w-3 h-3" /> ترجمة وصف الفندق
-                            </Button>
-                          </div>
-                        </div>
-
-                        {/* 2. Hotel Basic Fields */}
-                        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                          {/* Hotel Name */}
-                          <div className="sm:col-span-2 space-y-1.5">
-                            <label className="text-[11px] font-black text-foreground block">
-                              اسم الفندق ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})
-                            </label>
-                            <Input
-                              value={(tripHotel?.nameJsonb && typeof tripHotel.nameJsonb === 'object' ? tripHotel.nameJsonb[tripHotelActiveLang] : '') || ''}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setTripHotel(prev => prev ? {
-                                  ...prev,
-                                  nameJsonb: { ...(prev.nameJsonb || {}), [tripHotelActiveLang]: val },
-                                } : null);
-                              }}
-                              placeholder="مثال: Nile Ritz Luxury Cruise & Resort"
-                              className="rounded-xl text-xs font-bold h-9"
-                            />
-                          </div>
-
-                          {/* Star Rating */}
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-black text-foreground block">
-                              تصنيف النجوم (Stars)
-                            </label>
-                            <div className="flex items-center gap-1 h-9 px-2.5 rounded-xl border border-input bg-background">
-                              {[1, 2, 3, 4, 5].map((star) => (
-                                <button
-                                  key={star}
-                                  type="button"
-                                  onClick={() => setTripHotel(prev => prev ? { ...prev, stars: star } : null)}
-                                  className="text-amber-500 hover:scale-125 transition-transform cursor-pointer"
-                                >
-                                  <Star className={`w-4 h-4 ${star <= (tripHotel.stars || 5) ? 'fill-amber-500' : 'text-muted-foreground/40'}`} />
-                                </button>
-                              ))}
-                              <span className="text-xs font-mono font-bold text-foreground mr-1.5">
-                                ({tripHotel.stars || 5} نجوم)
-                              </span>
-                            </div>
-                          </div>
-
-                          {/* City */}
-                          <div className="space-y-1.5">
-                            <label className="text-[11px] font-black text-foreground block">المدينة / الموقع</label>
-                            <Input
-                              value={tripHotel.city || ''}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setTripHotel(prev => prev ? {
-                                  ...prev,
-                                  city: val,
-                                  destinationSlug: val.toLowerCase().replace(/\s+/g, '-'),
-                                } : null);
-                              }}
-                              placeholder="Cairo, Luxor, Aswan..."
-                              className="rounded-xl text-xs font-bold h-9"
-                            />
-                          </div>
-
-                          {/* Hotel Description */}
-                          <div className="sm:col-span-4 space-y-1.5">
-                            <label className="text-[11px] font-black text-foreground block">
-                              وصف ونبذة الفندق باللغة ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})
-                            </label>
-                            <Textarea
-                              rows={3}
-                              value={tripHotel.descriptionJsonb?.[tripHotelActiveLang] || ''}
-                              onChange={e => {
-                                const val = e.target.value;
-                                setTripHotel(prev => prev ? {
-                                  ...prev,
-                                  descriptionJsonb: { ...(prev.descriptionJsonb || {}), [tripHotelActiveLang]: val },
-                                } : null);
-                              }}
-                              placeholder="اكتب نبذة عن الفندق، موقعه المميز، الخدمات والمرافق الملكية..."
-                              className="rounded-xl text-xs font-medium leading-relaxed"
-                            />
-                          </div>
-                        </div>
-
-                        {/* 3. Media: Hero Image & Gallery */}
-                        <div className="p-4 rounded-2xl bg-muted/20 border border-border/60 space-y-3">
-                          <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                            <ImageIcon className="w-4 h-4 text-amber-500" />
-                            صور ومعرض الفندق (Hotel Media & Photos):
-                          </span>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            {/* Hero Image */}
-                            <div className="space-y-2">
-                              <label className="text-[11px] font-bold text-muted-foreground block">رابط الصورة الرئيسية للفندق (Hero Image URL)</label>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  value={tripHotel.heroImageUrl || ''}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setTripHotel(prev => prev ? { ...prev, heroImageUrl: val } : null);
-                                  }}
-                                  placeholder="https://images.unsplash.com/..."
-                                  className="rounded-xl text-xs font-mono h-9 flex-1"
-                                />
-                              </div>
-                              {tripHotel.heroImageUrl && (
-                                <div className="relative w-full h-28 rounded-xl overflow-hidden border border-border/80 mt-1">
-                                  <img
-                                    src={tripHotel.heroImageUrl}
-                                    alt="Hotel Hero"
-                                    className="w-full h-full object-cover"
-                                    onError={e => { (e.target as any).style.display = 'none'; }}
-                                  />
-                                </div>
-                              )}
-                            </div>
-
-                            {/* Gallery Photos */}
-                            <div className="space-y-2">
-                              <label className="text-[11px] font-bold text-muted-foreground block">معرض صور الفندق الإضافية (Gallery)</label>
-                              <div className="flex items-center gap-2">
-                                <Input
-                                  value={newTripHotelPhotoUrl}
-                                  onChange={e => setNewTripHotelPhotoUrl(e.target.value)}
-                                  placeholder="رابط صورة جديدة..."
-                                  className="rounded-xl text-xs font-mono h-9 flex-1"
-                                />
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  onClick={() => {
-                                    if (!newTripHotelPhotoUrl.trim()) return;
-                                    setTripHotel(prev => {
-                                      if (!prev) return null;
-                                      const images = [...(prev.images || [])];
-                                      images.push({
-                                        id: `img-${Date.now()}`,
-                                        url: newTripHotelPhotoUrl.trim(),
-                                        isHero: false,
-                                        sortOrder: images.length,
-                                      });
-                                      return { ...prev, images };
-                                    });
-                                    setNewTripHotelPhotoUrl('');
-                                  }}
-                                  className="text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold h-9 px-3"
-                                >
-                                  <Plus className="w-3.5 h-3.5" /> إضافة
-                                </Button>
-                              </div>
-
-                              <div className="flex items-center gap-2 overflow-x-auto py-1">
-                                {(tripHotel.images || []).map((img, iIdx) => (
-                                  <div key={img.id || iIdx} className="relative w-20 h-16 rounded-lg overflow-hidden border border-border/80 shrink-0 group">
-                                    <img src={img.url} alt="" className="w-full h-full object-cover" />
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        setTripHotel(prev => prev ? {
-                                          ...prev,
-                                          images: (prev.images || []).filter((_, idx) => idx !== iIdx),
-                                        } : null);
-                                      }}
-                                      className="absolute inset-0 bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                                    >
-                                      <Trash2 className="w-4 h-4 text-red-400" />
-                                    </button>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 4. Curated Amenities & Hotel Policies */}
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-4 rounded-2xl bg-muted/20 border border-border/60">
-                          {/* Amenities Manager */}
-                          <div className="space-y-3">
-                            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                              <Sparkles className="w-4 h-4 text-amber-500" />
-                              خدمات ومرافق الفندق (Amenities & Features):
-                            </span>
-
-                            {/* Preset Quick Chips */}
-                            <div className="flex flex-wrap gap-1.5">
-                              {['Wi-Fi مجاني', 'سبا ونادي صحي', 'مسبح فاخر', 'إطلالة بانورامية', 'خدمة كونسيرج 24/7', 'مطعم فاخر'].map((preset) => {
-                                const currentFeatures = tripHotel.amenitiesJsonb?.features || [];
-                                const isSelected = currentFeatures.includes(preset);
-                                return (
-                                  <button
-                                    key={preset}
-                                    type="button"
-                                    onClick={() => {
-                                      const updated = isSelected
-                                        ? currentFeatures.filter((f: string) => f !== preset)
-                                        : [...currentFeatures, preset];
-                                      setTripHotel(prev => prev ? {
-                                        ...prev,
-                                        amenitiesJsonb: { ...(prev.amenitiesJsonb || {}), features: updated },
-                                      } : null);
-                                    }}
-                                    className={`px-2 py-0.5 rounded-lg text-[10px] font-bold transition-all cursor-pointer ${
-                                      isSelected
-                                        ? 'bg-amber-500 text-black font-black'
-                                        : 'bg-background hover:bg-muted text-muted-foreground border border-border/60'
-                                    }`}
-                                  >
-                                    {isSelected ? '✓ ' : '+ '}
-                                    {preset}
-                                  </button>
-                                );
-                              })}
-                            </div>
-
-                            {/* Add Custom Amenity Tag */}
-                            <div className="flex items-center gap-2">
-                              <Input
-                                value={newTripHotelAmenity}
-                                onChange={e => setNewTripHotelAmenity(e.target.value)}
-                                placeholder="إضافة ميزة مخصصة..."
-                                className="h-8 text-xs rounded-xl"
-                              />
-                              <Button
-                                type="button"
-                                size="sm"
-                                onClick={() => {
-                                  if (!newTripHotelAmenity.trim()) return;
-                                  const currentFeatures = tripHotel.amenitiesJsonb?.features || [];
-                                  if (!currentFeatures.includes(newTripHotelAmenity.trim())) {
-                                    setTripHotel(prev => prev ? {
-                                      ...prev,
-                                      amenitiesJsonb: {
-                                        ...(prev.amenitiesJsonb || {}),
-                                        features: [...currentFeatures, newTripHotelAmenity.trim()],
-                                      },
-                                    } : null);
-                                  }
-                                  setNewTripHotelAmenity('');
-                                }}
-                                className="h-8 px-3 text-xs bg-amber-500 hover:bg-amber-600 text-black font-bold"
-                              >
-                                <Plus className="w-3.5 h-3.5" />
-                              </Button>
-                            </div>
-
-                            {/* Active Amenities Chips */}
-                            <div className="flex flex-wrap gap-1.5 pt-1">
-                              {(tripHotel.amenitiesJsonb?.features || []).map((feat: string, fIdx: number) => (
-                                <span
-                                  key={fIdx}
-                                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-background border border-amber-500/30 text-[11px] font-bold text-foreground"
-                                >
-                                  <span>{feat}</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => {
-                                      const updated = (tripHotel.amenitiesJsonb?.features || []).filter((_: any, idx: number) => idx !== fIdx);
-                                      setTripHotel(prev => prev ? {
-                                        ...prev,
-                                        amenitiesJsonb: { ...(prev.amenitiesJsonb || {}), features: updated },
-                                      } : null);
-                                    }}
-                                    className="text-destructive hover:scale-125 transition-transform cursor-pointer"
-                                  >
-                                    ×
-                                  </button>
-                                </span>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Policies Manager */}
-                          <div className="space-y-3">
-                            <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                              <ShieldCheck className="w-4 h-4 text-amber-500" />
-                              سياسات الفندق (Hotel Policies):
-                            </span>
-
-                            <div className="grid grid-cols-2 gap-3">
-                              <div>
-                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">
-                                  موعد تسجيل الدخول (Check-In)
-                                </label>
-                                <Input
-                                  value={tripHotel.policiesJsonb?.checkIn || '15:00'}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setTripHotel(prev => prev ? {
-                                      ...prev,
-                                      policiesJsonb: { ...(prev.policiesJsonb || {}), checkIn: val },
-                                    } : null);
-                                  }}
-                                  placeholder="15:00"
-                                  className="h-8 text-xs font-mono rounded-xl"
-                                />
-                              </div>
-
-                              <div>
-                                <label className="text-[10px] font-bold text-muted-foreground block mb-1">
-                                  موعد تسجيل المغادرة (Check-Out)
-                                </label>
-                                <Input
-                                  value={tripHotel.policiesJsonb?.checkOut || '12:00'}
-                                  onChange={e => {
-                                    const val = e.target.value;
-                                    setTripHotel(prev => prev ? {
-                                      ...prev,
-                                      policiesJsonb: { ...(prev.policiesJsonb || {}), checkOut: val },
-                                    } : null);
-                                  }}
-                                  placeholder="12:00"
-                                  className="h-8 text-xs font-mono rounded-xl"
-                                />
-                              </div>
-                            </div>
-
-                            <div>
-                              <label className="text-[10px] font-bold text-muted-foreground block mb-1">
-                                سياسة الإلغاء (Cancellation Policy)
-                              </label>
-                              <Input
-                                value={tripHotel.policiesJsonb?.cancellation || 'إلغاء مجاني حتى 48 ساعة قبل موعد الوصول'}
-                                onChange={e => {
-                                  const val = e.target.value;
-                                  setTripHotel(prev => prev ? {
-                                    ...prev,
-                                    policiesJsonb: { ...(prev.policiesJsonb || {}), cancellation: val },
-                                  } : null);
-                                }}
-                                placeholder="إلغاء مجاني حتى 48 ساعة قبل الوصول..."
-                                className="h-8 text-xs rounded-xl"
-                              />
-                            </div>
-                          </div>
-                        </div>
-
-                        {/* 5. Rooms & Pricing Engine */}
-                        <div className="p-4 rounded-2xl bg-muted/20 border border-border/60 space-y-4">
-                          <div className="flex items-center justify-between border-b border-border/40 pb-2">
-                            <div>
-                              <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                                <BedDouble className="w-4 h-4 text-amber-500" />
-                                غرف وأجنحة فندق الرحلة والأسعار (Rooms, Suites & Pricing):
-                              </span>
-                              <p className="text-[11px] text-muted-foreground font-semibold mt-0.5">
-                                حدد فئات الغرف وسعر الليلة والوجبات والقواعد الموسمية الخاصة بكل غرفة.
-                              </p>
-                            </div>
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="ghost"
-                              onClick={handleTripHotelAddRoom}
-                              className="text-xs text-amber-500 gap-1 font-bold cursor-pointer"
-                            >
-                              <Plus className="w-3.5 h-3.5" /> إضافة فئة غرفة جديدة
-                            </Button>
-                          </div>
-
-                          <div className="space-y-4">
-                            {(Array.isArray(tripHotel.rooms) ? tripHotel.rooms : []).map((room, rIdx) => (
-                              <div key={room?.id || rIdx} className="p-4 rounded-2xl bg-background border border-border/80 space-y-3 shadow-xs">
-                                <div className="flex items-center justify-between border-b border-border/30 pb-2">
-                                  <span className="text-xs font-black text-foreground flex items-center gap-1.5">
-                                    <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-black flex items-center justify-center">
-                                      {rIdx + 1}
-                                    </span>
-                                    {room?.nameJsonb?.[tripHotelActiveLang] || room?.nameJsonb?.ar || room?.nameJsonb?.en || `غرفة ${rIdx + 1}`}
-                                  </span>
-                                  {Array.isArray(tripHotel.rooms) && tripHotel.rooms.length > 1 && (
-                                    <Button
-                                      type="button"
-                                      size="icon-sm"
-                                      variant="ghost"
-                                      onClick={() => handleTripHotelRemoveRoom(rIdx)}
-                                      className="text-destructive hover:bg-destructive/10 h-7 w-7 rounded-lg"
-                                    >
-                                      <Trash2 className="w-3.5 h-3.5" />
-                                    </Button>
-                                  )}
-                                </div>
-
-                                <div className="grid grid-cols-2 sm:grid-cols-6 gap-3">
-                                  {/* Room Name */}
-                                  <div className="col-span-2 sm:col-span-2">
-                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">اسم الغرفة ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})</label>
-                                    <Input
-                                      value={(room?.nameJsonb && typeof room.nameJsonb === 'object' ? room.nameJsonb[tripHotelActiveLang] : '') || ''}
-                                      onChange={e => {
-                                        const val = e.target.value;
-                                        handleTripHotelUpdateRoom(rIdx, 'nameJsonb', { ...(room?.nameJsonb || {}), [tripHotelActiveLang]: val });
-                                      }}
-                                      placeholder="مثال: Deluxe Sea View Suite"
-                                      className="rounded-xl text-xs font-bold h-9"
-                                    />
-                                  </div>
-
-                                  {/* Bed / Room Type */}
-                                  <div>
-                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">نوع السرير (Bed Type)</label>
-                                    <Input
-                                      value={room.roomType || ''}
-                                      onChange={e => handleTripHotelUpdateRoom(rIdx, 'roomType', e.target.value)}
-                                      placeholder="King Bed / Twin"
-                                      className="rounded-xl text-xs font-bold h-9"
-                                    />
-                                  </div>
-
-                                  {/* Max Occupancy */}
-                                  <div>
-                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">السعة (النزلاء)</label>
-                                    <Input
-                                      type="number"
-                                      min="1"
-                                      max="10"
-                                      value={room.maxOccupancy ?? 2}
-                                      onChange={e => handleTripHotelUpdateRoom(rIdx, 'maxOccupancy', Number(e.target.value))}
-                                      className="rounded-xl text-xs font-mono font-bold h-9"
-                                    />
-                                  </div>
-
-                                  {/* Base Rate Per Night */}
-                                  <div>
-                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">سعر الليلة ($ USD)</label>
-                                    <Input
-                                      type="number"
-                                      min="0"
-                                      value={room.ratePerNight ?? 0}
-                                      onChange={e => handleTripHotelUpdateRoom(rIdx, 'ratePerNight', Number(e.target.value))}
-                                      className="rounded-xl text-xs font-mono font-bold text-amber-500 h-9"
-                                    />
-                                  </div>
-
-                                  {/* Meal Plan */}
-                                  <div>
-                                    <label className="text-[10px] font-bold text-muted-foreground block mb-1">الوجبات (Regime)</label>
-                                    <select
-                                      value={room.mealPlan || 'BB'}
-                                      onChange={e => handleTripHotelUpdateRoom(rIdx, 'mealPlan', e.target.value)}
-                                      className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
-                                    >
-                                      <option value="BB">BB — Bed & Breakfast</option>
-                                      <option value="HB">HB — Half Board</option>
-                                      <option value="FB">FB — Full Board</option>
-                                      <option value="AI">AI — All Inclusive</option>
-                                      <option value="RO">RO — Room Only</option>
-                                    </select>
-                                  </div>
-                                </div>
-
-                                {/* Room Seasonal Pricing Overrides */}
-                                <div className="p-3 rounded-xl bg-muted/40 border border-border/50 space-y-2">
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-[11px] font-black text-muted-foreground flex items-center gap-1">
-                                      <Calendar className="w-3.5 h-3.5 text-amber-500" />
-                                      الأسعار الموسمية لهذه الغرفة (Seasonal Pricing):
-                                    </span>
-                                    <button
-                                      type="button"
-                                      onClick={() => handleTripHotelAddSeasonPricing(rIdx)}
-                                      className="text-[10px] font-bold text-amber-500 hover:underline flex items-center gap-1 cursor-pointer"
-                                    >
-                                      <Plus className="w-3 h-3" /> إضافة تسعير موسمي
-                                    </button>
-                                  </div>
-
-                                  {(room.seasonPricings || []).map((sp, spIdx) => (
-                                    <div key={spIdx} className="grid grid-cols-1 sm:grid-cols-4 gap-2 items-center bg-background/60 p-2 rounded-lg border border-border/40">
-                                      <div>
-                                        <label className="text-[9px] font-bold text-muted-foreground block mb-0.5">الموسم</label>
-                                        <select
-                                          value={sp.seasonId}
-                                          onChange={e => {
-                                            const updatedSp = [...(room.seasonPricings || [])];
-                                            updatedSp[spIdx] = { ...updatedSp[spIdx], seasonId: e.target.value };
-                                            handleTripHotelUpdateRoom(rIdx, 'seasonPricings', updatedSp);
-                                          }}
-                                          className="w-full h-7 px-2 rounded-md border border-input bg-background text-[11px] font-bold"
-                                        >
-                                          {globalSeasons.map(s => (
-                                            <option key={s.id} value={s.id}>
-                                              {s.code || s.id} ({s.multiplier}x)
-                                            </option>
-                                          ))}
-                                        </select>
-                                      </div>
-                                      <div>
-                                        <label className="text-[9px] font-bold text-muted-foreground block mb-0.5">سعر الليلة ($)</label>
-                                        <Input
-                                          type="number"
-                                          value={sp.ratePerNight}
-                                          onChange={e => {
-                                            const updatedSp = [...(room.seasonPricings || [])];
-                                            updatedSp[spIdx] = { ...updatedSp[spIdx], ratePerNight: Number(e.target.value) };
-                                            handleTripHotelUpdateRoom(rIdx, 'seasonPricings', updatedSp);
-                                          }}
-                                          className="h-7 text-xs font-mono font-bold text-amber-500 rounded-md"
-                                        />
-                                      </div>
-                                      <div>
-                                        <label className="text-[9px] font-bold text-muted-foreground block mb-0.5">ملحق الغرفة المفردة ($)</label>
-                                        <Input
-                                          type="number"
-                                          value={sp.singleSupplement || 0}
-                                          onChange={e => {
-                                            const updatedSp = [...(room.seasonPricings || [])];
-                                            updatedSp[spIdx] = { ...updatedSp[spIdx], singleSupplement: Number(e.target.value) };
-                                            handleTripHotelUpdateRoom(rIdx, 'seasonPricings', updatedSp);
-                                          }}
-                                          className="h-7 text-xs font-mono font-bold rounded-md"
-                                        />
-                                      </div>
-                                      <div className="flex justify-end items-center pt-3">
-                                        <Button
-                                          type="button"
-                                          size="icon-sm"
-                                          variant="ghost"
-                                          onClick={() => handleTripHotelRemoveSeasonPricing(rIdx, spIdx)}
-                                          className="h-6 w-6 text-destructive hover:bg-destructive/10"
-                                        >
-                                          <Trash2 className="w-3 h-3" />
-                                        </Button>
-                                      </div>
-                                    </div>
-                                  ))}
-
-                                  {(room.seasonPricings || []).length === 0 && (
-                                    <p className="text-[10px] text-muted-foreground/80 py-1">لا توجد مواسم خاصة محددة لهذه الغرفة (يطبق السعر القياسي).</p>
-                                  )}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-
-                        {/* Bottom Save Bar for Trip Hotel */}
-                        <div className="flex items-center justify-end gap-2 pt-2 border-t border-border/40">
-                          <Button
-                            size="sm"
-                            onClick={handleSaveTripHotel}
-                            disabled={isSavingTripHotel}
-                            className="bg-amber-500 hover:bg-amber-600 text-black font-black text-xs cursor-pointer h-9 px-5 shadow-sm"
-                          >
-                            {isSavingTripHotel ? (
-                              <>
-                                <Loader2 className="w-3.5 h-3.5 ml-1.5 animate-spin" /> جاري الحفظ...
-                              </>
-                            ) : (
-                              <>
-                                <Check className="w-3.5 h-3.5 ml-1.5" /> حفظ فندق الرحلة المخصص
-                              </>
-                            )}
-                          </Button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-6 text-center space-y-3">
-                        <p className="text-xs text-muted-foreground font-semibold">لم يتم إنشاء فندق مخصص لهذه الرحلة بعد.</p>
-                        <Button
-                          size="sm"
-                          onClick={() => setTripHotel(createDefaultTripHotel((formData as any)?.city || formData.destination || 'Cairo'))}
-                          className="bg-amber-500 hover:bg-amber-600 text-black font-black text-xs cursor-pointer h-9 px-4"
-                        >
-                          <Sparkles className="w-3.5 h-3.5 ml-1.5" /> إنشاء فندق خاص بالرحلة الآن
-                        </Button>
-                      </div>
                     )}
                   </div>
                 )}
