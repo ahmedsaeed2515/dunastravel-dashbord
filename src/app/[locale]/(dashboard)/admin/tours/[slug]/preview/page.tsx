@@ -19,6 +19,58 @@ export const TOUR_PREVIEW_LOCALES = [
 type PreviewLanguage = (typeof TOUR_PREVIEW_LOCALES)[number]["code"];
 const previewLanguageFor = (locale: string): PreviewLanguage => TOUR_PREVIEW_LOCALES.some((language) => language.code === locale) ? locale as PreviewLanguage : "en";
 
+type PreviewHotelRateRow = {
+  key: string;
+  isNamed: boolean;
+  name: string;
+  city: string | null;
+  nights: number | null;
+  regime: string | null;
+  category: string | null;
+  doublePrice: number | null;
+  singlePrice: number | null;
+  seasonSupplement: number | null;
+  boat: string | null;
+  boatPrice: number | null;
+};
+
+function previewLocalizedText(value: unknown, lang: string): string | null {
+  if (typeof value === "string") return value.trim().length > 0 ? value.trim() : null;
+  if (value && typeof value === "object" && !Array.isArray(value)) {
+    const record = value as Record<string, unknown>;
+    const candidate = record[lang] ?? record.en ?? record.ar ?? Object.values(record)[0];
+    return typeof candidate === "string" && candidate.trim().length > 0 ? candidate.trim() : null;
+  }
+  return null;
+}
+
+function previewNumber(value: unknown): number | null {
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  if (typeof value === "string" && value.trim() !== "" && Number.isFinite(Number(value))) return Number(value);
+  return null;
+}
+
+// The admin preview endpoint returns the storefront's `hotelInfo` shape, where
+// `accommodation` is an array of rate-sheet rows (JSONB), not a plain string.
+function normalizeHotelRateRow(row: unknown, idx: number, lang: string): PreviewHotelRateRow {
+  const record = (row && typeof row === "object" && !Array.isArray(row) ? row : {}) as Record<string, unknown>;
+  const name = previewLocalizedText(record.nameJsonb, lang) ?? previewLocalizedText(record.name, lang);
+  return {
+    key: String((record.id as string | number | undefined) ?? `hotel-${idx}`),
+    isNamed: Boolean(name),
+    name: name ?? (lang === "ar" ? "فندق غير مسمى" : "Unnamed hotel"),
+    city: previewLocalizedText(record.cityJsonb, lang) ?? previewLocalizedText(record.city, lang) ?? previewLocalizedText(record.destination, lang),
+    nights: previewNumber(record.nights),
+    regime: previewLocalizedText(record.regime, lang) ?? previewLocalizedText(record.boardBasis, lang),
+    category: previewLocalizedText(record.categoryTier, lang) ?? previewLocalizedText(record.category, lang),
+    doublePrice: previewNumber(record.doubleRoomPriceUsd),
+    singlePrice: previewNumber(record.singleRoomPriceUsd),
+    seasonSupplement: previewNumber(record.seasonSupplementUsd),
+    boat: previewLocalizedText(record.boatJsonb, lang) ?? previewLocalizedText(record.boat, lang),
+    boatPrice: previewNumber(record.boatPriceUsd),
+  };
+}
+
 export default function VisitorTourPreviewPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = use(params);
   const [previewLang, setPreviewLang] = useState<PreviewLanguage>(() => previewLanguageFor(locale));
@@ -35,9 +87,13 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
   const soldOutDepartures = departures?.filter((departure) => departure.status === "SOLD_OUT").length ?? 0;
   const numericPrice = Number(tour.basePriceUsd);
   const price = Number.isFinite(numericPrice) ? new Intl.NumberFormat(activeLanguage.code, { style: "currency", currency: tour.currency, minimumFractionDigits: 2 }).format(numericPrice) : "Price not recorded";
-  const accommodationSummary = tour.hotelInfo?.accommodation ?? "";
+  const hotelInfoRecord = (tour.hotelInfo ?? {}) as Record<string, unknown>;
+  const accommodationSummary = typeof hotelInfoRecord.accommodation === "string" ? hotelInfoRecord.accommodation : "";
+  const hotelRateRows = (Array.isArray(hotelInfoRecord.accommodation) ? hotelInfoRecord.accommodation : [])
+    .map((row, idx) => normalizeHotelRateRow(row, idx, previewLang))
+    .filter((row) => row.isNamed || row.doublePrice !== null || row.singlePrice !== null || row.seasonSupplement !== null);
   const assignedAccommodations = tour.accommodations && tour.accommodations.length > 0 ? tour.accommodations : [];
-  const legacyHotels: Array<{ name: string; city?: string; category?: string; nights?: number }> = Array.isArray(tour.hotelInfo?.hotels) ? tour.hotelInfo.hotels : [];
+  const legacyHotels: Array<{ name: string; city?: string; category?: string; nights?: number }> = Array.isArray(hotelInfoRecord.hotels) ? hotelInfoRecord.hotels : [];
   const seasonRules: Array<{ season?: string; seasonName?: string; seasonCode?: string; startDate?: string; endDate?: string; priceUsd: number }> = Array.isArray(tour.seasonPricing?.rules) ? tour.seasonPricing.rules : [];
 
   return <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans">
@@ -129,14 +185,48 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
             )}
           </PreviewSection>
 
-          {(accommodationSummary || assignedAccommodations.length > 0 || legacyHotels.length > 0) && (
+          {(accommodationSummary || hotelRateRows.length > 0 || assignedAccommodations.length > 0 || legacyHotels.length > 0) && (
             <PreviewSection title={previewLang === "ar" ? "الإقامة والفنادق المعتمدة" : "Accommodation & Partner Hotels"}>
               {accommodationSummary && (
                 <p className="text-slate-300 leading-relaxed text-sm mb-4 bg-slate-800/50 p-4 rounded-xl border border-slate-700/50">
                   {accommodationSummary}
                 </p>
               )}
-              {assignedAccommodations.length > 0 ? (
+              {hotelRateRows.length > 0 && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {hotelRateRows.map((row) => (
+                    <div key={row.key} className="p-4 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-2">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <h4 className="font-bold text-white text-sm flex items-center gap-1.5">
+                            <Hotel className="w-4 h-4 text-amber-400 shrink-0" />
+                            {row.name}
+                          </h4>
+                          {row.city && <p className="text-xs text-slate-400 mt-0.5">{row.city}</p>}
+                        </div>
+                        {row.category && (
+                          <span className="inline-flex items-center gap-1 text-xs font-bold text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                            <Star className="w-3 h-3 fill-amber-400" /> {row.category}
+                          </span>
+                        )}
+                      </div>
+                      <div className="flex flex-wrap gap-2 pt-1 text-xs text-slate-300">
+                        {row.nights !== null && <Badge variant="outline" className="border-slate-600 text-slate-200">{row.nights} {previewLang === "ar" ? "ليالٍ" : "Nights"}</Badge>}
+                        {row.regime && <Badge variant="outline" className="border-amber-500/30 text-amber-300">{row.regime}</Badge>}
+                        {row.boat && <Badge variant="outline" className="border-sky-500/30 text-sky-300">{row.boat}{row.boatPrice !== null ? ` · $${row.boatPrice}` : ""}</Badge>}
+                      </div>
+                      {(row.doublePrice !== null || row.singlePrice !== null || row.seasonSupplement !== null) && (
+                        <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                          <RateCell label={previewLang === "ar" ? "مزدوجة" : "Double"} value={row.doublePrice} />
+                          <RateCell label={previewLang === "ar" ? "فردية" : "Single"} value={row.singlePrice} />
+                          <RateCell label={previewLang === "ar" ? "ذروة الموسم" : "Season +"} value={row.seasonSupplement} />
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {hotelRateRows.length === 0 && assignedAccommodations.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {assignedAccommodations.map((acc, idx) => (
                     <div key={acc.id ?? `${acc.hotelId}-${idx}`} className="p-4 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-2">
@@ -166,7 +256,7 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                     </div>
                   ))}
                 </div>
-              ) : legacyHotels.length > 0 ? (
+              ) : hotelRateRows.length === 0 && legacyHotels.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {legacyHotels.map((h, idx) => (
                     <div key={`${h.name}-${idx}`} className="p-4 rounded-xl bg-slate-800/70 border border-slate-700/60 space-y-1">
@@ -227,6 +317,7 @@ function PreviewLoading() { return <div className="flex flex-col items-center ju
 function PreviewUnavailable({ locale }: { locale: string }) { return <div className="p-8 text-center max-w-lg mx-auto space-y-4"><ShieldAlert className="w-12 h-12 text-destructive mx-auto" /><h2 className="text-xl font-bold">معاينة الرحلة غير متاحة</h2><p className="text-sm text-muted-foreground">ربما تم حذف الرحلة أو لا يمكن استرجاع بياناتها حالياً.</p><Link href={`/${locale}/admin/tours`}><Button variant="outline" className="font-bold"><ArrowLeft className="w-4 h-4 mr-2" /> العودة لكتالوج الرحلات</Button></Link></div>; }
 function ViewportButton({ active, label, onClick, children }: { active: boolean; label: string; onClick: () => void; children: ReactNode }) { return <button type="button" onClick={onClick} title={label} aria-label={label} aria-pressed={active} className={`p-1 rounded-lg text-slate-400 hover:text-white cursor-pointer ${active ? "bg-slate-700 text-amber-400" : ""}`}>{children}</button>; }
 function InfoCell({ icon, label, value }: { icon: ReactNode; label: string; value: string }) { return <div className="space-y-1"><div className="text-amber-400 flex items-center justify-center gap-1.5 text-xs font-bold uppercase">{icon}{label}</div><div className="text-sm font-bold text-white">{value}</div></div>; }
+function RateCell({ label, value }: { label: string; value: number | null }) { return <div className="rounded-lg bg-slate-900/60 border border-slate-700/50 px-2 py-1.5"><div className="text-[10px] uppercase tracking-wide text-slate-400 font-bold">{label}</div><div className="text-sm font-black text-amber-300">{value !== null ? `$${value}` : "—"}</div></div>; }
 function PreviewSection({ title, children }: { title: string; children: ReactNode }) { return <section className="space-y-4"><h2 className="text-2xl font-serif font-bold text-amber-400 border-b border-amber-500/20 pb-2">{title}</h2>{children}</section>; }
 function EmptyContent({ label }: { label: string }) { return <p className="rounded-xl border border-dashed border-slate-600 p-4 text-sm text-slate-300">{label}</p>; }
 function ServiceList({ title, icon, items, empty, tone }: { title: string; icon: ReactNode; items: string[]; empty: string; tone: "included" | "excluded" }) { const style = tone === "included" ? { box: "bg-emerald-950/20 border-emerald-500/20", heading: "text-emerald-400" } : { box: "bg-rose-950/20 border-rose-500/20", heading: "text-rose-400" }; return <section className={`p-5 rounded-2xl border space-y-3 ${style.box}`}><h3 className={`font-bold text-sm flex items-center gap-2 ${style.heading}`}>{icon}{title}</h3>{items.length ? <ul className="text-xs text-slate-300 space-y-2">{items.map((item, index) => <li key={`${item}-${index}`} className="flex gap-2"><span aria-hidden>*</span><span>{item}</span></li>)}</ul> : <EmptyContent label={empty} />}</section>; }

@@ -132,4 +132,45 @@ describe("Tour visitor preview", () => {
       expect(screen.getByText(`${status.toLowerCase()} - not public`)).toBeInTheDocument();
     }
   });
+
+  it("renders the JSONB hotel rate sheet from hotelInfo.accommodation", async () => {
+    state.preview = {
+      ...canonicalPreview,
+      hotelInfo: {
+        accommodation: [
+          {
+            id: "acc-0",
+            nights: 1,
+            regime: "BB",
+            destination: "الجيزة",
+            cityJsonb: { ar: "الجيزة" },
+            nameJsonb: { ar: "ستاراوتيل" },
+            categoryTier: "4",
+            doubleRoomPriceUsd: 100,
+            singleRoomPriceUsd: 50,
+            seasonSupplementUsd: 25,
+          },
+        ],
+      },
+    };
+    await renderPreview();
+
+    await screen.findByText("Nile Journey");
+    expect(screen.getByText("ستاراوتيل")).toBeInTheDocument();
+    expect(screen.getByText("الجيزة")).toBeInTheDocument();
+    expect(screen.getByText("$100")).toBeInTheDocument();
+    expect(screen.getByText("$50")).toBeInTheDocument();
+    expect(screen.getByText("$25")).toBeInTheDocument();
+  });
+
+  it("hides unnamed placeholder accommodation rows", async () => {
+    state.preview = {
+      ...canonicalPreview,
+      hotelInfo: { accommodation: [{ id: "placeholder", nights: 3, regime: "Bed & Breakfast", destination: "Cairo" }] },
+    };
+    await renderPreview();
+
+    await screen.findByText("Nile Journey");
+    expect(screen.queryByText("Unnamed hotel")).not.toBeInTheDocument();
+  });
 });
