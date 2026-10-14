@@ -10,7 +10,17 @@ import type { CreateTourPayload, Tour } from '../types';
 const LOCALES: LanguageCode[] = ['ar', 'en', 'es', 'pt', 'it'];
 
 function text(value: unknown): string {
-  return typeof value === 'string' ? value : '';
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') return String(value);
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    const obj = value as Record<string, any>;
+    if (typeof obj.ar === 'string') return obj.ar;
+    if (typeof obj.en === 'string') return obj.en;
+    for (const v of Object.values(obj)) {
+      if (typeof v === 'string') return v;
+    }
+  }
+  return '';
 }
 
 function list(value: unknown): string[] {
@@ -63,10 +73,18 @@ function localizedText(
   field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures',
   arabicValue: unknown,
 ): Record<LanguageCode, string> {
-  return Object.fromEntries(LOCALES.map((locale) => [
-    locale,
-    locale === 'ar' ? text(arabicValue) : text(translation(translations, locale)[field]),
-  ])) as Record<LanguageCode, string>;
+  return Object.fromEntries(LOCALES.map((locale) => {
+    let val = '';
+    if (locale === 'ar') {
+      val = text(arabicValue) || text(translation(translations, 'ar')[field]);
+    } else {
+      val = text(translation(translations, locale)[field]);
+      if (!val && arabicValue && typeof arabicValue === 'object') {
+        val = text((arabicValue as any)[locale]);
+      }
+    }
+    return [locale, val];
+  })) as Record<LanguageCode, string>;
 }
 
 function localizedList(
@@ -81,7 +99,11 @@ function localizedList(
 }
 
 function extractLocaleText(value: Record<string, any> | null | undefined, locale: string): string {
-  return typeof value?.[locale] === 'string' ? (value[locale] as string) : '';
+  if (typeof value === 'string') return value;
+  if (typeof value?.[locale] === 'string') return value[locale];
+  if (typeof value?.ar === 'string' && locale === 'ar') return value.ar;
+  if (typeof value?.en === 'string' && locale === 'en') return value.en;
+  return '';
 }
 
 function extractLocaleList(value: Record<string, any> | any[] | null | undefined, locale: string): string[] {

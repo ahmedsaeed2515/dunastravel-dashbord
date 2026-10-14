@@ -484,10 +484,54 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   useEffect(() => {
     if (trip) {
       const cloned = JSON.parse(JSON.stringify(trip));
-      if (!cloned.translations) {
+      if (!cloned.translations || typeof cloned.translations !== 'object') {
         cloned.translations = { ar: {}, en: {}, es: {}, pt: {}, it: {} };
       }
-      if (!cloned.heroImage && Array.isArray(cloned.images) && cloned.images.length > 0) {
+      (['ar', 'en', 'es', 'pt', 'it'] as LanguageCode[]).forEach(l => {
+        if (!cloned.translations[l] || typeof cloned.translations[l] !== 'object') {
+          cloned.translations[l] = {};
+        }
+      });
+
+      // Defensive normalizer: extract string if any text field was stored as an object
+      const textFields: ('title' | 'subtitle' | 'overview' | 'duration' | 'departures')[] = [
+        'title', 'subtitle', 'overview', 'duration', 'departures'
+      ];
+      textFields.forEach(f => {
+        const val = cloned[f];
+        if (val && typeof val === 'object' && !Array.isArray(val)) {
+          (['ar', 'en', 'es', 'pt', 'it'] as LanguageCode[]).forEach(l => {
+            if (val[l] && typeof val[l] === 'string' && !cloned.translations[l][f]) {
+              cloned.translations[l][f] = val[l];
+            }
+          });
+          cloned[f] = val.ar || val.en || Object.values(val)[0] || '';
+        } else if (typeof val !== 'string') {
+          cloned[f] = val ? String(val) : '';
+        }
+      });
+
+      // Guarantee array fields are real arrays
+      if (!Array.isArray(cloned.accommodation)) {
+        cloned.accommodation = [];
+      }
+      if (!Array.isArray(cloned.itinerary)) {
+        cloned.itinerary = [];
+      }
+      if (!Array.isArray(cloned.included)) {
+        cloned.included = [];
+      }
+      if (!Array.isArray(cloned.excluded)) {
+        cloned.excluded = [];
+      }
+      if (!Array.isArray(cloned.highlights)) {
+        cloned.highlights = [];
+      }
+      if (!Array.isArray(cloned.images)) {
+        cloned.images = [];
+      }
+
+      if (!cloned.heroImage && cloned.images.length > 0) {
         cloned.heroImage = cloned.images[0];
       }
       setFormData(cloned);
@@ -549,13 +593,13 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
               ...prev,
               ...hydrated,
               heroImage: hydrated.heroImage || prev.heroImage || '',
-              images: hydrated.images.length > 0 ? hydrated.images : (prev.images || []),
-              included: hydrated.included.length > 0 ? hydrated.included : (prev.included || []),
-              excluded: hydrated.excluded.length > 0 ? hydrated.excluded : (prev.excluded || []),
-              highlights: hydrated.highlights.length > 0 ? hydrated.highlights : (prev.highlights || []),
-              accommodation: hydrated.accommodation.length > 0 ? hydrated.accommodation : (prev.accommodation || []),
-              seasonPricing: (hydrated.seasonPricing && hydrated.seasonPricing.length > 0) ? hydrated.seasonPricing : (prev.seasonPricing || []),
-              itinerary: hydrated.itinerary.length > 0 ? hydrated.itinerary : (prev.itinerary || []),
+              images: (Array.isArray(hydrated.images) && hydrated.images.length > 0) ? hydrated.images : (prev.images || []),
+              included: (Array.isArray(hydrated.included) && hydrated.included.length > 0) ? hydrated.included : (prev.included || []),
+              excluded: (Array.isArray(hydrated.excluded) && hydrated.excluded.length > 0) ? hydrated.excluded : (prev.excluded || []),
+              highlights: (Array.isArray(hydrated.highlights) && hydrated.highlights.length > 0) ? hydrated.highlights : (prev.highlights || []),
+              accommodation: (Array.isArray(hydrated.accommodation) && hydrated.accommodation.length > 0) ? hydrated.accommodation : (prev.accommodation || []),
+              seasonPricing: (Array.isArray(hydrated.seasonPricing) && hydrated.seasonPricing.length > 0) ? hydrated.seasonPricing : (prev.seasonPricing || []),
+              itinerary: (Array.isArray(hydrated.itinerary) && hydrated.itinerary.length > 0) ? hydrated.itinerary : (prev.itinerary || []),
               routeMap: (prev.routeMap && prev.routeMap.locations && prev.routeMap.locations.length > 0) ? prev.routeMap : apiRouteMap,
               translations: trans,
             };
@@ -830,11 +874,35 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
+  const extractSafeText = (val: any, lang: LanguageCode): string => {
+    if (typeof val === 'string') return val;
+    if (typeof val === 'number') return String(val);
+    if (val && typeof val === 'object' && !Array.isArray(val)) {
+      const direct = val[lang];
+      if (typeof direct === 'string') return direct;
+      const fallback = val.ar ?? val.en ?? val.es ?? val.pt ?? val.it;
+      if (typeof fallback === 'string') return fallback;
+      for (const v of Object.values(val)) {
+        if (typeof v === 'string') return v;
+      }
+    }
+    return '';
+  };
+
   const getLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures'): string => {
     if (activeLang === 'ar') {
-      return (formData[field] as string) || (formData.translations?.ar?.[field] as string) || '';
+      const baseVal = extractSafeText(formData[field], 'ar');
+      if (baseVal) return baseVal;
+      const transAr = extractSafeText(formData.translations?.ar?.[field], 'ar');
+      if (transAr) return transAr;
+      return '';
     }
-    return (formData.translations?.[activeLang]?.[field] as string) || '';
+    const transVal = extractSafeText(formData.translations?.[activeLang]?.[field], activeLang);
+    if (transVal) return transVal;
+    if (formData[field] && typeof formData[field] === 'object') {
+      return extractSafeText(formData[field], activeLang);
+    }
+    return '';
   };
 
   const setLocalizedText = (field: 'title' | 'subtitle' | 'overview' | 'duration' | 'departures', value: string) => {
@@ -858,11 +926,34 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
     });
   };
 
+  const extractSafeList = (val: any, lang: LanguageCode): string[] => {
+    if (Array.isArray(val)) {
+      return val.filter(i => typeof i === 'string' || typeof i === 'number').map(String);
+    }
+    if (val && typeof val === 'object') {
+      const loc = val[lang] ?? val.ar ?? val.en;
+      if (Array.isArray(loc)) {
+        return loc.filter(i => typeof i === 'string' || typeof i === 'number').map(String);
+      }
+      if (typeof loc === 'string') return [loc];
+    }
+    return [];
+  };
+
   const getLocalizedList = (field: 'highlights' | 'included' | 'excluded'): string[] => {
     if (activeLang === 'ar') {
-      return (formData[field] as string[]) || (formData.translations?.ar?.[field] as string[]) || [];
+      const base = extractSafeList(formData[field], 'ar');
+      if (base.length > 0) return base;
+      const transAr = extractSafeList(formData.translations?.ar?.[field], 'ar');
+      if (transAr.length > 0) return transAr;
+      return [];
     }
-    return (formData.translations?.[activeLang]?.[field] as string[]) || [];
+    const trans = extractSafeList(formData.translations?.[activeLang]?.[field], activeLang);
+    if (trans.length > 0) return trans;
+    if (formData[field] && typeof formData[field] === 'object') {
+      return extractSafeList(formData[field], activeLang);
+    }
+    return [];
   };
 
   const setLocalizedList = (field: 'highlights' | 'included' | 'excluded', items: string[]) => {
@@ -876,6 +967,26 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
       }
       return { ...prev, translations: trans };
     });
+  };
+
+  const getAccommodationList = (): AccommodationItem[] => {
+    if (!Array.isArray(formData.accommodation)) {
+      return [];
+    }
+    return formData.accommodation
+      .filter((item): item is AccommodationItem => Boolean(item && typeof item === 'object'))
+      .map((item, idx) => ({
+        id: item.id || `acc-${idx}`,
+        hotelId: item.hotelId || undefined,
+        roomId: item.roomId ?? null,
+        destination: typeof item.destination === 'string' ? item.destination : (item.destination && typeof item.destination === 'object' ? ((item.destination as any).en || (item.destination as any).ar || 'Cairo') : 'Cairo'),
+        nights: typeof item.nights === 'number' && !isNaN(item.nights) && item.nights > 0 ? item.nights : 1,
+        regime: item.regime || 'BB',
+        categoryTier: item.categoryTier || '5_STAR',
+        priceSupplementUsd: typeof item.priceSupplementUsd === 'number' ? item.priceSupplementUsd : 0,
+        isDefault: item.isDefault ?? idx === 0,
+        sortOrder: typeof item.sortOrder === 'number' ? item.sortOrder : idx,
+      }));
   };
 
   const handleArrayItemChange = (field: 'highlights' | 'included' | 'excluded', index: number, value: string) => {
@@ -1000,8 +1111,9 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const addAccommodationRow = () => {
-    const rows = [...(formData.accommodation || [])];
-    const firstHotel = catalogHotels[0];
+    const rows = [...getAccommodationList()];
+    const safeHotels = Array.isArray(catalogHotels) ? catalogHotels : [];
+    const firstHotel = safeHotels[0];
     rows.push({
       hotelId: firstHotel?.id || '',
       roomId: firstHotel?.rooms?.[0]?.id || null,
@@ -1017,13 +1129,16 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
   };
 
   const removeAccommodationRow = (index: number) => {
-    const rows = [...(formData.accommodation || [])];
-    rows.splice(index, 1);
-    handleChange('accommodation', rows);
+    const rows = [...getAccommodationList()];
+    if (index >= 0 && index < rows.length) {
+      rows.splice(index, 1);
+      handleChange('accommodation', rows);
+    }
   };
 
   const updateAccommodationRow = (index: number, field: keyof AccommodationItem, val: any) => {
-    const rows = [...(formData.accommodation || [])];
+    const rows = [...getAccommodationList()];
+    if (!rows[index]) return;
     rows[index] = { ...rows[index], [field]: val };
     handleChange('accommodation', rows);
   };
@@ -1378,23 +1493,32 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
 
   // 5-Language Completion Stats Calculation
   const localeStats = useMemo(() => {
+    const hasText = (val: any): boolean => {
+      if (typeof val === 'string') return val.trim().length > 0;
+      if (typeof val === 'number') return true;
+      if (val && typeof val === 'object') {
+        return Object.values(val).some(v => typeof v === 'string' && v.trim().length > 0);
+      }
+      return false;
+    };
+
     return ALL_LOCALES.map(loc => {
       let filled = 0;
       const total = 5; // title, overview, duration, itinerary, included
 
       if (loc.code === 'ar') {
-        if (formData.title?.trim()) filled++;
-        if (formData.overview?.trim()) filled++;
-        if (formData.duration?.trim()) filled++;
-        if ((formData.itinerary || []).length > 0) filled++;
-        if ((formData.included || []).length > 0) filled++;
+        if (hasText(formData.title)) filled++;
+        if (hasText(formData.overview)) filled++;
+        if (hasText(formData.duration)) filled++;
+        if ((Array.isArray(formData.itinerary) ? formData.itinerary : []).length > 0) filled++;
+        if ((Array.isArray(formData.included) ? formData.included : []).length > 0) filled++;
       } else {
         const trans = formData.translations?.[loc.code] || {};
-        if (trans.title?.trim()) filled++;
-        if (trans.overview?.trim()) filled++;
-        if (trans.duration?.trim()) filled++;
-        if ((trans.itinerary || []).length > 0) filled++;
-        if ((trans.included || []).length > 0) filled++;
+        if (hasText(trans.title)) filled++;
+        if (hasText(trans.overview)) filled++;
+        if (hasText(trans.duration)) filled++;
+        if ((Array.isArray(trans.itinerary) ? trans.itinerary : []).length > 0) filled++;
+        if ((Array.isArray(trans.included) ? trans.included : []).length > 0) filled++;
       }
 
       const percent = Math.round((filled / total) * 100);
@@ -2316,9 +2440,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                     </div>
 
                     <div className="space-y-3">
-                      {(formData.accommodation || []).map((acc, idx) => {
-                        const selectedHotelObj = catalogHotels.find((h) => h.id === acc.hotelId);
-                        const hotelRooms = selectedHotelObj?.rooms || [];
+                      {getAccommodationList().map((acc, idx) => {
+                        const safeCatalog = Array.isArray(catalogHotels) ? catalogHotels : [];
+                        const selectedHotelObj = safeCatalog.find((h) => h?.id === acc?.hotelId);
+                        const hotelRooms = Array.isArray(selectedHotelObj?.rooms) ? selectedHotelObj.rooms : [];
 
                         return (
                           <div key={idx} className="p-3.5 rounded-2xl bg-muted/30 border border-border/60 space-y-3">
@@ -2329,26 +2454,28 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                   الفندق المعتمد (Partner Hotel)
                                 </label>
                                 <select
-                                  value={acc.hotelId || ''}
+                                  value={acc?.hotelId || ''}
                                   onChange={e => {
                                     const hId = e.target.value;
-                                    const hObj = catalogHotels.find((h) => h.id === hId);
-                                    const rows = [...(formData.accommodation || [])];
-                                    rows[idx] = {
-                                      ...rows[idx],
-                                      hotelId: hId || undefined,
-                                      roomId: hObj?.rooms?.[0]?.id || null,
-                                      destination: hObj?.city || rows[idx].destination || 'Cairo',
-                                      categoryTier: hObj?.stars === 5 ? '5_STAR' : hObj?.stars === 4 ? '4_STAR' : 'LUXURY',
-                                    };
-                                    handleChange('accommodation', rows);
+                                    const hObj = safeCatalog.find((h) => h?.id === hId);
+                                    const rows = [...getAccommodationList()];
+                                    if (rows[idx]) {
+                                      rows[idx] = {
+                                        ...rows[idx],
+                                        hotelId: hId || undefined,
+                                        roomId: hObj?.rooms?.[0]?.id || null,
+                                        destination: hObj?.city || rows[idx]?.destination || 'Cairo',
+                                        categoryTier: hObj?.stars === 5 ? '5_STAR' : hObj?.stars === 4 ? '4_STAR' : 'LUXURY',
+                                      };
+                                      handleChange('accommodation', rows);
+                                    }
                                   }}
                                   className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
                                 >
                                   <option value="">-- بدون فندق محدد (مدينة فقط) --</option>
-                                  {catalogHotels.map((h) => (
-                                    <option key={h.id} value={h.id}>
-                                      🏨 {h.nameJsonb?.en || h.nameJsonb?.ar || h.slug} ({h.city} • {h.stars}⭐)
+                                  {safeCatalog.map((h) => (
+                                    <option key={h?.id} value={h?.id}>
+                                      🏨 {h?.nameJsonb?.en || h?.nameJsonb?.ar || h?.slug || ''} ({h?.city || ''} • {h?.stars || 5}⭐)
                                     </option>
                                   ))}
                                 </select>
@@ -2360,15 +2487,15 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                   فئة الغرفة (Assigned Room Tier)
                                 </label>
                                 <select
-                                  value={acc.roomId || ''}
+                                  value={acc?.roomId || ''}
                                   disabled={!selectedHotelObj || hotelRooms.length === 0}
                                   onChange={e => updateAccommodationRow(idx, 'roomId', e.target.value || null)}
                                   className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold disabled:opacity-50"
                                 >
                                   <option value="">-- الغرفة القياسية للفندق --</option>
                                   {hotelRooms.map((rm: { id: string; slug?: string; name?: unknown; ratePerNight?: number }) => (
-                                    <option key={rm.id} value={rm.id}>
-                                      🛏️ {(rm.name as any)?.en || (rm.name as any)?.ar || (typeof rm.name === 'string' ? rm.name : rm.slug)} (${rm.ratePerNight ?? 0}/nt)
+                                    <option key={rm?.id} value={rm?.id}>
+                                      🛏️ {(rm?.name as any)?.en || (rm?.name as any)?.ar || (typeof rm?.name === 'string' ? rm.name : rm?.slug || '')} (${rm?.ratePerNight ?? 0}/nt)
                                     </option>
                                   ))}
                                 </select>
@@ -2378,7 +2505,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               <div>
                                 <label className="text-[11px] font-bold text-muted-foreground block mb-1">المدينة / الوجهة</label>
                                 <Input
-                                  value={acc.destination || ''}
+                                  value={acc?.destination || ''}
                                   onChange={e => updateAccommodationRow(idx, 'destination', e.target.value)}
                                   placeholder="Cairo, Luxor, Aswan..."
                                   className="rounded-xl text-xs font-bold h-9"
@@ -2392,7 +2519,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                 <Input
                                   type="number"
                                   min="1"
-                                  value={acc.nights ?? 1}
+                                  value={acc?.nights ?? 1}
                                   onChange={e => updateAccommodationRow(idx, 'nights', Number(e.target.value))}
                                   className="rounded-xl text-xs font-bold h-9 font-mono"
                                 />
@@ -2400,7 +2527,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               <div>
                                 <label className="text-[11px] font-bold text-muted-foreground block mb-1">نظام الوجبات (Regime)</label>
                                 <select
-                                  value={acc.regime || 'BB'}
+                                  value={acc?.regime || 'BB'}
                                   onChange={e => updateAccommodationRow(idx, 'regime', e.target.value)}
                                   className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
                                 >
@@ -2414,7 +2541,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               <div>
                                 <label className="text-[11px] font-bold text-muted-foreground block mb-1">الفئة (Tier)</label>
                                 <select
-                                  value={acc.categoryTier || '5_STAR'}
+                                  value={acc?.categoryTier || '5_STAR'}
                                   onChange={e => updateAccommodationRow(idx, 'categoryTier', e.target.value)}
                                   className="w-full h-9 px-2.5 rounded-xl border border-input bg-background text-xs font-bold"
                                 >
@@ -2429,7 +2556,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                 <Input
                                   type="number"
                                   min="0"
-                                  value={acc.priceSupplementUsd ?? 0}
+                                  value={acc?.priceSupplementUsd ?? 0}
                                   onChange={e => updateAccommodationRow(idx, 'priceSupplementUsd', Number(e.target.value))}
                                   className="rounded-xl text-xs font-bold h-9 font-mono text-amber-500"
                                 />
@@ -2448,7 +2575,7 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           </div>
                         );
                       })}
-                      {(formData.accommodation || []).length === 0 && (
+                      {getAccommodationList().length === 0 && (
                         <p className="text-xs text-muted-foreground text-center py-4">لا توجد خطة إقامة مضافة حتى الآن. اضغط "إضافة فندق / إقامة" بالأعلى.</p>
                       )}
                     </div>
@@ -2569,12 +2696,12 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                               اسم الفندق ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})
                             </label>
                             <Input
-                              value={tripHotel.nameJsonb[tripHotelActiveLang] || ''}
+                              value={(tripHotel?.nameJsonb && typeof tripHotel.nameJsonb === 'object' ? tripHotel.nameJsonb[tripHotelActiveLang] : '') || ''}
                               onChange={e => {
                                 const val = e.target.value;
                                 setTripHotel(prev => prev ? {
                                   ...prev,
-                                  nameJsonb: { ...prev.nameJsonb, [tripHotelActiveLang]: val },
+                                  nameJsonb: { ...(prev.nameJsonb || {}), [tripHotelActiveLang]: val },
                                 } : null);
                               }}
                               placeholder="مثال: Nile Ritz Luxury Cruise & Resort"
@@ -2920,16 +3047,16 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           </div>
 
                           <div className="space-y-4">
-                            {tripHotel.rooms.map((room, rIdx) => (
-                              <div key={room.id || rIdx} className="p-4 rounded-2xl bg-background border border-border/80 space-y-3 shadow-xs">
+                            {(Array.isArray(tripHotel.rooms) ? tripHotel.rooms : []).map((room, rIdx) => (
+                              <div key={room?.id || rIdx} className="p-4 rounded-2xl bg-background border border-border/80 space-y-3 shadow-xs">
                                 <div className="flex items-center justify-between border-b border-border/30 pb-2">
                                   <span className="text-xs font-black text-foreground flex items-center gap-1.5">
                                     <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-500 text-[10px] font-black flex items-center justify-center">
                                       {rIdx + 1}
                                     </span>
-                                    {room.nameJsonb[tripHotelActiveLang] || room.nameJsonb.ar || room.nameJsonb.en || `غرفة ${rIdx + 1}`}
+                                    {room?.nameJsonb?.[tripHotelActiveLang] || room?.nameJsonb?.ar || room?.nameJsonb?.en || `غرفة ${rIdx + 1}`}
                                   </span>
-                                  {tripHotel.rooms.length > 1 && (
+                                  {Array.isArray(tripHotel.rooms) && tripHotel.rooms.length > 1 && (
                                     <Button
                                       type="button"
                                       size="icon-sm"
@@ -2947,10 +3074,10 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                                   <div className="col-span-2 sm:col-span-2">
                                     <label className="text-[10px] font-bold text-muted-foreground block mb-1">اسم الغرفة ({ALL_LOCALES.find(l => l.code === tripHotelActiveLang)?.name})</label>
                                     <Input
-                                      value={room.nameJsonb[tripHotelActiveLang] || ''}
+                                      value={(room?.nameJsonb && typeof room.nameJsonb === 'object' ? room.nameJsonb[tripHotelActiveLang] : '') || ''}
                                       onChange={e => {
                                         const val = e.target.value;
-                                        handleTripHotelUpdateRoom(rIdx, 'nameJsonb', { ...room.nameJsonb, [tripHotelActiveLang]: val });
+                                        handleTripHotelUpdateRoom(rIdx, 'nameJsonb', { ...(room?.nameJsonb || {}), [tripHotelActiveLang]: val });
                                       }}
                                       placeholder="مثال: Deluxe Sea View Suite"
                                       className="rounded-xl text-xs font-bold h-9"
@@ -3953,15 +4080,27 @@ export const TripEditorModal: React.FC<TripEditorModalProps> = memo(({
                           <div className="space-y-1.5 text-xs">
                             <div>
                               <span className="text-[10px] font-bold text-muted-foreground block">العنوان:</span>
-                              <p className="font-bold text-foreground line-clamp-1">{trans.title || '— بدون عنوان'}</p>
+                              <p className="font-bold text-foreground line-clamp-1">
+                                {typeof trans.title === 'string' && trans.title.trim()
+                                  ? trans.title
+                                  : (trans.title && typeof trans.title === 'object'
+                                      ? ((trans.title as any)[loc.code] || (trans.title as any).ar || (trans.title as any).en || '— بدون عنوان')
+                                      : '— بدون عنوان')}
+                              </p>
                             </div>
                             <div>
                               <span className="text-[10px] font-bold text-muted-foreground block">الوصف:</span>
-                              <p className="text-muted-foreground text-[11px] line-clamp-2">{trans.overview || '— بدون وصف'}</p>
+                              <p className="text-muted-foreground text-[11px] line-clamp-2">
+                                {typeof trans.overview === 'string' && trans.overview.trim()
+                                  ? trans.overview
+                                  : (trans.overview && typeof trans.overview === 'object'
+                                      ? ((trans.overview as any)[loc.code] || (trans.overview as any).ar || (trans.overview as any).en || '— بدون وصف')
+                                      : '— بدون وصف')}
+                              </p>
                             </div>
                             <div className="flex items-center justify-between text-[10px] font-bold text-muted-foreground pt-1 border-t border-border/40">
-                              <span>الأيام: {trans.itinerary?.length || 0}</span>
-                              <span>المميزات: {trans.highlights?.length || 0}</span>
+                              <span>الأيام: {Array.isArray(trans.itinerary) ? trans.itinerary.length : 0}</span>
+                              <span>المميزات: {Array.isArray(trans.highlights) ? trans.highlights.length : 0}</span>
                             </div>
                           </div>
                         </div>
