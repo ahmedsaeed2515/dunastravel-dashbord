@@ -126,6 +126,21 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
     return tourToTripModel(tour);
   }, [tour]);
 
+  // Trip-specific hotel rate sheet (from `hotelInfoJsonb.accommodation`) shown in
+  // the tour detail overview so the hotel that appears on the storefront is also
+  // visible here without opening the editor.
+  const hotelRateSheet = useMemo(() => {
+    const rows = tripModel?.accommodation ?? [];
+    return rows
+      .map((row) => ({
+        ...row,
+        displayName: localeText(row.nameJsonb as Record<string, unknown> | undefined, "ar") || localeText(row.nameJsonb as Record<string, unknown> | undefined, "en"),
+        displayCity: localeText(row.cityJsonb as Record<string, unknown> | undefined, "ar") || localeText(row.cityJsonb as Record<string, unknown> | undefined, "en") || row.destination,
+        displayBoat: localeText(row.boatJsonb as Record<string, unknown> | undefined, "ar") || localeText(row.boatJsonb as Record<string, unknown> | undefined, "en"),
+      }))
+      .filter((row) => Boolean(row.displayName || row.doubleRoomPriceUsd || row.singleRoomPriceUsd));
+  }, [tripModel]);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
@@ -318,6 +333,54 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
               </CardContent>
             </Card>
           </div>
+
+          {hotelRateSheet.length > 0 && (
+            <Card className="rounded-2xl">
+              <CardHeader>
+                <CardTitle className="text-base font-bold">الإقامة والفنادق المعتمدة 🏨</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="overflow-x-auto">
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead className="text-right font-bold">الفئة</TableHead>
+                        <TableHead className="text-right font-bold">الفندق / المدينة</TableHead>
+                        <TableHead className="text-right font-bold">ليالٍ</TableHead>
+                        <TableHead className="text-right font-bold">الإقامة</TableHead>
+                        <TableHead className="text-right font-bold">غرفة مزدوجة</TableHead>
+                        <TableHead className="text-right font-bold">غرفة فردية</TableHead>
+                        <TableHead className="text-right font-bold">ذروة الموسم</TableHead>
+                        <TableHead className="text-right font-bold">مركب / نيل</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {hotelRateSheet.map((row, idx) => (
+                        <TableRow key={row.id ?? `${row.destination}-${idx}`}>
+                          <TableCell className="font-bold">{row.categoryTier || "—"}</TableCell>
+                          <TableCell>
+                            <div className="font-bold">{row.displayName || "فندق غير مسمى"}</div>
+                            {row.displayCity && <div className="text-xs text-muted-foreground">{row.displayCity}</div>}
+                          </TableCell>
+                          <TableCell className="font-mono font-bold">{row.nights}</TableCell>
+                          <TableCell className="font-bold">{row.regime || "—"}</TableCell>
+                          <TableCell className="font-mono font-bold">{row.doubleRoomPriceUsd ? `$${row.doubleRoomPriceUsd}` : "—"}</TableCell>
+                          <TableCell className="font-mono font-bold">{row.singleRoomPriceUsd ? `$${row.singleRoomPriceUsd}` : "—"}</TableCell>
+                          <TableCell className="font-mono font-bold">{row.seasonSupplementUsd ? `+$${row.seasonSupplementUsd}` : "—"}</TableCell>
+                          <TableCell className="font-bold">
+                            {row.displayBoat ? `${row.displayBoat}${row.boatPriceUsd ? ` · $${row.boatPriceUsd}` : ""}` : "—"}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {tripModel?.hotelCategory && (
+                  <p className="text-xs text-muted-foreground font-bold mt-3">فئة الفنادق: {tripModel.hotelCategory}</p>
+                )}
+              </CardContent>
+            </Card>
+          )}
         </TabsContent>
 
         {/* 2. TRANSLATIONS */}
