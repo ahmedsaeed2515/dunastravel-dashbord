@@ -10,7 +10,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Loader2, ArrowLeft, Edit, Eye, Star, ShieldAlert, Layers, Sparkles, Globe, ExternalLink } from "lucide-react";
 import { toast } from "sonner";
-import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
 import { destinationForCountry } from "@/lib/tour-destinations";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
@@ -119,7 +118,6 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
   const updateMutation = useUpdateTour();
 
   const [activeLocale, setActiveLocale] = useState("en");
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
   const tripModel = useMemo(() => {
     if (!tour) return null;
@@ -232,14 +230,15 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
               <ExternalLink className="w-4 h-4" /> معاينة الرحلة
             </Button>
           </Link>
-          <Button 
-            size="sm" 
-            variant="default"
-            className="gap-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-black cursor-pointer"
-            onClick={() => setIsEditModalOpen(true)}
-          >
-            <Sparkles className="w-4 h-4" /> تعديل الرحلة (5 لغات)
-          </Button>
+          <Link href={`/${locale}/admin/tours/${tour.slug}/edit`}>
+            <Button
+              size="sm"
+              variant="default"
+              className="gap-1.5 font-bold rounded-xl bg-amber-500 hover:bg-amber-600 text-black cursor-pointer"
+            >
+              <Sparkles className="w-4 h-4" /> تعديل الرحلة (5 لغات)
+            </Button>
+          </Link>
           <Button size="sm" variant={tour.status === "PUBLISHED" ? "secondary" : "default"} onClick={togglePublishStatus} disabled={updateMutation.isPending} className="font-bold rounded-xl cursor-pointer">
             {tour.status === "PUBLISHED" ? "إلغاء النشر" : "نشر الرحلة"}
           </Button>
@@ -527,12 +526,6 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
           </Card>
         </TabsContent>
       </Tabs>
-
-      <TripEditorModal
-        trip={tripModel}
-        isOpen={isEditModalOpen}
-        onClose={() => setIsEditModalOpen(false)}
-      />
     </div>
   );
 }

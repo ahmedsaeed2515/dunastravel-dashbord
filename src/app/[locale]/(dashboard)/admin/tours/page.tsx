@@ -32,7 +32,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateTourWizard } from "@/features/tours/components/CreateTourWizard/CreateTourWizard";
 import { EditTourDrawer } from "@/features/tours/components/Drawers/EditTourDrawer";
 import { MoveTourDialog } from "@/features/tours/components/Drawers/MoveTourDialog";
-import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import type { TripModel } from "@/types/dunas-suite";
 import type { Tour } from "@/features/tours/types";
 import { ToursTable } from "@/features/tours/components/ToursTable/ToursTable";
@@ -41,7 +40,6 @@ import { DestinationsManager } from "@/components/destinations/DestinationsManag
 import { Switch } from "@/components/ui/switch";
 import { useSoftDeleteTour, useTourCatalogOverview, useTours, useTourStats, useTourLifecycleAction } from "@/features/tours/hooks/useTours";
 import { useLandingPages } from "@/features/tours/hooks/useLandingPages";
-import { toursApi } from "@/features/tours/api/toursApi";
 import Link from "next/link";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import {
@@ -125,8 +123,6 @@ export default function ToursPage() {
   const [catalogScope, setCatalogScope] = useState<"ADMIN" | "PUBLIC" | "HIDDEN" | "UNLINKED" | "UNPUBLISHED">("ADMIN");
   const [search, setSearch] = useState("");
   const [activeMainTab, setActiveMainTab] = useState<string>("grid");
-  const [selectedTripForModal, setSelectedTripForModal] = useState<TripModel | null>(null);
-  const [isTripModalOpen, setIsTripModalOpen] = useState(false);
 
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveOpen, setIsMoveOpen] = useState(false);
@@ -198,25 +194,13 @@ export default function ToursPage() {
             ? (catalogOverview?.unpublished ?? tours.filter((tour) => tour.status !== "PUBLISHED" || !tour.isActive).length)
             : (catalogOverview?.totalTours ?? stats?.totalTours ?? tours.length);
 
-  const handleOpenEditTrip = async (tour: Tour) => {
-    setSelectedTripForModal(tourToTripModel(tour));
-    setIsTripModalOpen(true);
-
-    if (tour.slug) {
-      try {
-        const fullTour = await toursApi.getTourBySlug(tour.slug);
-        if (fullTour) {
-          setSelectedTripForModal(tourToTripModel(fullTour));
-        }
-      } catch {
-        // Fallback model already loaded
-      }
-    }
+  const handleOpenEditTrip = (tour: Tour) => {
+    if (!tour.slug) return;
+    router.push(`/${locale}/admin/tours/${tour.slug}/edit`);
   };
 
   const handleOpenAddTrip = () => {
-    setSelectedTripForModal(null);
-    setIsTripModalOpen(true);
+    router.push(`/${locale}/admin/tours/new`);
   };
 
   const destinationInterfaces = useMemo(() => {
@@ -772,16 +756,6 @@ export default function ToursPage() {
           </div>
         </TabsContent>
       </Tabs>
-
-      {/* Complete Trip & 5-Lang Editor Modal */}
-      <TripEditorModal
-        trip={selectedTripForModal}
-        isOpen={isTripModalOpen}
-        onClose={() => {
-          setIsTripModalOpen(false);
-          setSelectedTripForModal(null);
-        }}
-      />
 
       {/* Move Tour Dialog */}
       <MoveTourDialog

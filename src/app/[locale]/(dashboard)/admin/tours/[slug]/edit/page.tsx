@@ -4,13 +4,11 @@ import { use, useMemo } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTour } from "@/features/tours/hooks/useTours";
-import { Tour } from "@/features/tours/types";
-import { TripEditorModal } from "@/components/trips/TripEditorModal";
-import type { TripModel } from "@/types/dunas-suite";
-import { destinationForCountry } from "@/lib/tour-destinations";
-import { tourToTripModel as canonicalTourToTripModel } from "@/features/tours/lib/tripEditorPayload";
+import { TripEditForm } from "@/components/trips/TripEditForm";
+import { tourToTripModel } from "@/features/tours/lib/tripEditorPayload";
 import { Button } from "@/components/ui/button";
-import { Loader2, ArrowLeft } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { ArrowRight, Loader2, Pencil, Sparkles } from "lucide-react";
 
 export const TOUR_EDITOR_LOCALES = [
   { code: "en", name: "English", dir: "ltr" },
@@ -20,150 +18,27 @@ export const TOUR_EDITOR_LOCALES = [
   { code: "it", name: "Italiano (Italian)", dir: "ltr" },
 ];
 
-const LOCALES = ["ar", "en", "es", "pt", "it"] as const;
-
-function localeText(value: Record<string, unknown> | null | undefined, locale: string): string {
-  return typeof value?.[locale] === "string" ? (value[locale] as string) : "";
-}
-
-function localeList(value: Record<string, unknown> | null | undefined, locale: string): string[] {
-  return Array.isArray(value?.[locale]) ? value[locale].filter((item): item is string => typeof item === "string") : [];
-}
-
-function tourToTripModel(tour: Tour): TripModel {
-  const highlights = tour.highlightsJsonb || tour.highlightJsonb;
-  // Hotel/lodging fields come from the canonical mapper so the trip-specific
-  // rate sheet stored in `hotelInfoJsonb` (name, city, double/single rates,
-  // seasonal fee, boat) is preserved instead of showing a fabricated row.
-  const canonicalHotel = canonicalTourToTripModel(tour);
-  const itinerary = (tour.itineraries || []).map((item, index) => ({
-    day: index + 1,
-    title: item.dayLabel || '',
-    description: localeText(item.descriptionJsonb, 'ar'),
-    meals: localeText(item.mealsJsonb, 'ar'),
-  }));
-
-  const routeMapFromTour = tour.routeMapJsonb || (tour as any).routeMap;
-  const routeMap = routeMapFromTour ? {
-    title: localeText(routeMapFromTour.titleJsonb, 'ar') || 'Interactive Itinerary Journey Map',
-    subtitle: localeText(routeMapFromTour.subtitleJsonb, 'ar') || 'Explore your day-by-day path across premier luxury landmarks',
-    locations: Array.isArray(routeMapFromTour.locations)
-      ? routeMapFromTour.locations.map((loc: any, index: number) => ({
-          id: loc.id || `loc-${index + 1}`,
-          dbKey: loc.dbKey || 'cairo',
-          lat: typeof loc.lat === 'number' ? loc.lat : 0,
-          lng: typeof loc.lng === 'number' ? loc.lng : 0,
-          daysVisited: Array.isArray(loc.daysVisited) ? loc.daysVisited : [],
-          name: localeText(loc.nameJsonb, 'ar') || loc.name || '',
-          description: localeText(loc.descriptionJsonb, 'ar') || loc.description || '',
-        }))
-      : [],
-  } : undefined;
-
-  return {
-    id: tour.id,
-    slug: tour.slug,
-    title: localeText(tour.titleJsonb, 'ar') || localeText(tour.titleJsonb, 'en') || tour.slug,
-    subtitle: localeText(tour.subtitleJsonb, 'ar'),
-    destination: destinationForCountry(tour.country),
-    market: tour.market || '',
-    language: 'ar',
-    type: tour.category || '',
-    duration: localeText(tour.durationJsonb, 'ar'),
-    departures: localeText(tour.departureInfoJsonb, 'ar'),
-    price:
-      tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
-        ? Number(tour.basePriceUsd)
-        : 0,
-    hotelCategory: canonicalHotel.hotelCategory,
-    rating: Number(tour.sourceRating || 0),
-    reviewCount: tour.sourceReviewCount || 0,
-    popular: !!tour.isFeatured,
-    familyFriendly: false,
-    honeymoon: false,
-    luxury: false,
-    cultural: false,
-    adventure: false,
-    overview: localeText(tour.overviewJsonb, 'ar'),
-    highlights: localeList(highlights, 'ar'),
-    included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, 'ar'),
-    excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, 'ar'),
-    heroImage: (() => {
-      const heroFromImages = Array.isArray(tour.images)
-        ? tour.images.find((img: any) => img?.isHero)?.imageUrl
-        : undefined;
-      return heroFromImages || (typeof tour.heroImage === 'string' ? tour.heroImage : '') || (typeof (tour as any).heroImageUrl === 'string' ? (tour as any).heroImageUrl : '') || (tour.images?.[0]?.imageUrl || '');
-    })(),
-    images: (() => {
-      const rawImages = tour.images?.map((image) => image.imageUrl) || (tour.heroImage ? [tour.heroImage] : []);
-      const heroFromImages = Array.isArray(tour.images)
-        ? tour.images.find((img: any) => img?.isHero)?.imageUrl
-        : undefined;
-      const resolvedHero = heroFromImages || (typeof tour.heroImage === 'string' ? tour.heroImage : '') || (typeof (tour as any).heroImageUrl === 'string' ? (tour as any).heroImageUrl : '') || rawImages[0] || '';
-      let imgs = [...rawImages];
-      if (resolvedHero && imgs.includes(resolvedHero)) {
-        imgs = [resolvedHero, ...imgs.filter((img) => img !== resolvedHero)];
-      } else if (resolvedHero && !imgs.includes(resolvedHero)) {
-        imgs = [resolvedHero, ...imgs];
-      }
-      return imgs;
-    })(),
-    hotels: canonicalHotel.hotels,
-    accommodation: canonicalHotel.accommodation,
-    itinerary,
-    routeMap,
-    translations: Object.fromEntries(
-      LOCALES.map((locale) => [
-        locale,
-        {
-          title: localeText(tour.titleJsonb, locale),
-          subtitle: localeText(tour.subtitleJsonb, locale),
-          overview: localeText(tour.overviewJsonb, locale),
-          duration: localeText(tour.durationJsonb, locale),
-          highlights: localeList(highlights, locale),
-          included: localeList(tour.includedServicesJsonb || tour.inclusionJsonb, locale),
-          excluded: localeList(tour.excludedServicesJsonb || tour.exclusionJsonb, locale),
-          itinerary: (tour.itineraries || []).map((item, index) => ({
-            day: index + 1,
-            title: item.dayLabel || '',
-            description: localeText(item.descriptionJsonb, locale),
-            meals: localeText(item.mealsJsonb, locale),
-          })),
-          routeMap: routeMapFromTour ? {
-            title: localeText(routeMapFromTour.titleJsonb, locale),
-            subtitle: localeText(routeMapFromTour.subtitleJsonb, locale),
-            locations: Array.isArray(routeMapFromTour.locations)
-              ? routeMapFromTour.locations.map((loc: any) => ({
-                  dbKey: loc.dbKey || 'cairo',
-                  lat: loc.lat,
-                  lng: loc.lng,
-                  daysVisited: loc.daysVisited,
-                  name: localeText(loc.nameJsonb, locale) || loc.name || '',
-                  description: localeText(loc.descriptionJsonb, locale) || loc.description || '',
-                }))
-              : [],
-          } : undefined,
-        },
-      ])
-    ) as TripModel['translations'],
-  };
-}
-
 export default function EditTourPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = use(params);
   const router = useRouter();
   const { data: tour, isLoading, error } = useTour(slug);
+
+  const isAr = locale === "ar";
 
   const tripModel = useMemo(() => {
     if (!tour) return null;
     return tourToTripModel(tour);
   }, [tour]);
 
+  const goBack = () => router.push(`/${locale}/admin/tours`);
+
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[60vh]">
         <Loader2 className="w-8 h-8 animate-spin text-amber-500 mb-2" />
-        <p className="text-sm text-muted-foreground font-semibold">جاري فتح محرر الرحلة الفاخر والترجمات الـ 5...</p>
+        <p className="text-sm text-muted-foreground font-semibold">
+          {isAr ? "جاري فتح محرر الرحلة الفاخر والترجمات الـ 5..." : "Opening the luxury trip editor..."}
+        </p>
       </div>
     );
   }
@@ -171,31 +46,77 @@ export default function EditTourPage({ params }: { params: Promise<{ slug: strin
   if (error || !tour) {
     return (
       <div className="p-8 text-center max-w-lg mx-auto space-y-4">
-        <h2 className="text-xl font-bold text-destructive">لم يتم العثور على الرحلة</h2>
+        <h2 className="text-xl font-bold text-destructive">
+          {isAr ? "لم يتم العثور على الرحلة" : "Tour not found"}
+        </h2>
         <Link href={`/${locale}/admin/tours`}>
-          <Button variant="outline"><ArrowLeft className="w-4 h-4 mr-2" /> العودة لقائمة الرحلات</Button>
+          <Button variant="outline">
+            <ArrowRight className="w-4 h-4 me-2" />
+            {isAr ? "العودة لقائمة الرحلات" : "Back to tours"}
+          </Button>
         </Link>
       </div>
     );
   }
 
+  const statusLabel =
+    tour.status === "PUBLISHED"
+      ? (isAr ? "منشورة" : "Published")
+      : tour.status === "ARCHIVED"
+        ? (isAr ? "مؤرشفة" : "Archived")
+        : (isAr ? "مسودة" : "Draft");
+
   return (
-    <div className="space-y-6 py-6">
-      <div className="flex items-center justify-between">
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => router.push(`/${locale}/admin/tours`)}
-          className="rounded-xl text-xs gap-1.5"
-        >
-          <ArrowLeft className="w-4 h-4" /> العودة للرحلات
-        </Button>
+    <div className="space-y-4">
+      {/* Page header — pinned flush to the top of the scroll area (negative top cancels the
+          dashboard scroll container's p-3/sm:p-6/lg:p-8 padding so it stays truly fixed) */}
+      <div className="sticky -top-3 sm:-top-6 lg:-top-8 z-30 -mx-3 sm:-mx-6 lg:-mx-8 px-3 sm:px-6 lg:px-8 py-3 bg-[#0d1117]/95 backdrop-blur border-b border-border/60">
+        <div className="max-w-7xl mx-auto flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3 min-w-0">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={goBack}
+              className="rounded-xl text-xs gap-1.5 shrink-0"
+            >
+              <ArrowRight className="w-4 h-4" />
+              <span className="hidden sm:inline">{isAr ? "العودة للرحلات" : "Back to tours"}</span>
+            </Button>
+            <div className="min-w-0">
+              <h1 className="text-sm sm:text-base font-black text-foreground flex items-center gap-2 truncate">
+                <Pencil className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="truncate">
+                  {isAr ? "تعديل الرحلة:" : "Edit trip:"} {tripModel?.title || tour.slug}
+                </span>
+              </h1>
+              <p className="hidden sm:block text-[11px] text-muted-foreground font-semibold truncate">
+                {isAr
+                  ? "عدّل كل التفاصيل، الأيام، الفنادق والصور في صفحة واحدة مريحة."
+                  : "Edit every detail, day, hotel and image on one comfortable page."}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0">
+            <Badge
+              variant="outline"
+              className="hidden sm:inline-flex rounded-xl border-amber-500/30 bg-amber-500/10 text-amber-500 text-[11px] font-black gap-1"
+            >
+              <Sparkles className="w-3 h-3" /> {isAr ? "5 لغات" : "5 Languages"}
+            </Badge>
+            <Badge variant="outline" className="rounded-xl text-[11px] font-black">
+              {statusLabel}
+            </Badge>
+          </div>
+        </div>
       </div>
 
-      <TripEditorModal
+      {/* Full-page trip editor */}
+      <TripEditForm
         trip={tripModel}
-        isOpen={true}
-        onClose={() => router.push(`/${locale}/admin/tours`)}
+        mode="page"
+        onClose={goBack}
+        onSuccess={goBack}
       />
     </div>
   );

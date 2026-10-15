@@ -14,7 +14,6 @@ import { Tour, TourStatus } from "../../types";
 import { TourDetailsDrawer } from "../Drawers/TourDetailsDrawer";
 import { MoveTourDialog } from "../Drawers/MoveTourDialog";
 import { BulkMoveToursDialog } from "../Drawers/BulkMoveToursDialog";
-import { TripEditorModal } from "@/components/trips/TripEditorModal";
 import { CreateTourWizard } from "../CreateTourWizard/CreateTourWizard";
 import type { TripModel } from "@/types/dunas-suite";
 import { TourCardGrid } from "../TourCardGrid/TourCardGrid";
@@ -59,6 +58,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { useTranslations, useLocale } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import canonicalDb from "@/data/database/unified_52_tours.json";
 
 const canonicalToursList = (canonicalDb as any).tours || [];
@@ -95,6 +95,7 @@ export function ToursTable() {
   const tStatus = useTranslations("status");
   const tDashboard = useTranslations("dashboard");
   const currentLocale = useLocale();
+  const router = useRouter();
 
   // View mode state (cards/grid vs table)
   const [viewMode, setViewMode] = useState<"grid" | "table" | "priority">("grid");
@@ -135,9 +136,7 @@ export function ToursTable() {
   const deleteTour = useSoftDeleteTour();
   const bulkUpdate = useBulkUpdateTours();
   const [selectedTour, setSelectedTour] = useState<Tour | null>(null);
-  const [selectedTripModel, setSelectedTripModel] = useState<TripModel | null>(null);
   const [isViewDrawerOpen, setViewDrawerOpen] = useState(false);
-  const [isTripModalOpen, setTripModalOpen] = useState(false);
   const [tourToMove, setTourToMove] = useState<Tour | null>(null);
   const [isMoveDialogOpen, setIsMoveDialogOpen] = useState(false);
   const [bulkMoveSlugs, setBulkMoveSlugs] = useState<string[]>([]);
@@ -150,9 +149,8 @@ export function ToursTable() {
   };
 
   const handleEdit = (tour: Tour) => {
-    setSelectedTour(tour);
-    setSelectedTripModel(tourToTripModel(tour));
-    setTripModalOpen(true);
+    if (!tour.slug) return;
+    router.push(`/${currentLocale}/admin/tours/${tour.slug}/edit`);
   };
 
   const handleMove = (tour: Tour) => {
@@ -588,15 +586,6 @@ export function ToursTable() {
         tour={selectedTour}
         open={isViewDrawerOpen}
         onOpenChange={setViewDrawerOpen}
-      />
-
-      <TripEditorModal
-        trip={selectedTripModel}
-        isOpen={isTripModalOpen}
-        onClose={() => {
-          setTripModalOpen(false);
-          setSelectedTripModel(null);
-        }}
       />
 
       <MoveTourDialog
