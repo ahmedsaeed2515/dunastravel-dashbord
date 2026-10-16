@@ -399,6 +399,107 @@ describe('buildTripEditorPayload', () => {
     });
   });
 
+  it('resolves the hotel name for catalog-linked relational accommodations from the nested hotel (BUG: hotel missing in dashboard)', () => {
+    const dbTour: any = {
+      id: 'tour-uuid-3',
+      slug: 'catalog-hotel-tour',
+      titleJsonb: { ar: 'رحلة بفندق من الدليل', en: 'Catalog Hotel Tour' },
+      city: 'Cairo',
+      basePriceUsd: '1200',
+      currency: 'USD',
+      // The JSONB summary written by the backend carries the name under `hotelNameJsonb`.
+      hotelInfoJsonb: {
+        hotels: { Cairo: ['Nile Palace'] },
+        accommodations: [
+          {
+            hotelId: '11111111-1111-4111-8111-111111111111',
+            hotelSlug: 'nile-palace',
+            hotelNameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+            roomId: '22222222-2222-4222-8222-222222222222',
+            destination: 'Cairo',
+            city: 'Cairo',
+            nights: 3,
+            isDefault: true,
+            sortOrder: 0,
+          },
+        ],
+      },
+      // The admin API returns relational rows with a nested hotel/room and no top-level name.
+      accommodations: [
+        {
+          id: 'acc-1',
+          hotelId: '11111111-1111-4111-8111-111111111111',
+          roomId: '22222222-2222-4222-8222-222222222222',
+          destination: 'Cairo',
+          nights: 3,
+          hotel: {
+            id: '11111111-1111-4111-8111-111111111111',
+            slug: 'nile-palace',
+            nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+            city: 'Cairo',
+            stars: 5,
+          },
+          room: {
+            id: '22222222-2222-4222-8222-222222222222',
+            slug: 'deluxe-double',
+            nameJsonb: { ar: 'غرفة ديلوكس', en: 'Deluxe Double' },
+            ratePerNight: '180.00',
+          },
+        },
+      ],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const model = tourToTripModel(dbTour);
+
+    expect(model.accommodation).toHaveLength(1);
+    expect(model.accommodation[0]).toMatchObject({
+      hotelId: '11111111-1111-4111-8111-111111111111',
+      roomId: '22222222-2222-4222-8222-222222222222',
+      nameJsonb: { ar: 'فندق النيل', en: 'Nile Palace' },
+      destination: 'Cairo',
+      nights: 3,
+    });
+  });
+
+  it('falls back to the singular hotelInfoJsonb.accommodation when the plural summary is empty (manual trip hotel)', () => {
+    const dbTour: any = {
+      id: 'tour-uuid-4',
+      slug: 'manual-hotel-tour',
+      titleJsonb: { ar: 'رحلة بفندق يدوي', en: 'Manual Hotel Tour' },
+      city: 'Luxor',
+      basePriceUsd: '900',
+      currency: 'USD',
+      // The backend sync writes an empty plural summary when no catalog hotel is linked.
+      hotelInfoJsonb: {
+        hotels: {},
+        accommodations: [],
+        accommodation: [
+          {
+            destination: 'Luxor',
+            nights: 2,
+            nameJsonb: { ar: 'فندق الكرنك', en: 'Karnak Hotel' },
+            doubleRoomPriceUsd: 140,
+          },
+        ],
+      },
+      accommodations: [],
+      createdAt: '2026-01-01T00:00:00.000Z',
+      updatedAt: '2026-01-01T00:00:00.000Z',
+    };
+
+    const model = tourToTripModel(dbTour);
+
+    expect(model.accommodation).toHaveLength(1);
+    expect(model.accommodation[0]).toMatchObject({
+      destination: 'Luxor',
+      nights: 2,
+      nameJsonb: { ar: 'فندق الكرنك', en: 'Karnak Hotel' },
+      doubleRoomPriceUsd: 140,
+    });
+  });
+
   it('keeps several hotel names (one per line) for the same city and drops blank lines', () => {
     const payload = buildTripEditorPayload({
       slug: 'multi-hotel-city',

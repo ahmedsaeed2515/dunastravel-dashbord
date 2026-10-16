@@ -86,8 +86,27 @@ function positiveNumber(value: unknown): number | undefined {
 
 /** Maps a raw hotelInfoJsonb accommodation row into the canonical TripModel shape. */
 function accommodationFromJson(acc: any, idx: number, fallbackCity: string): AccommodationItem {
-  const nameJsonb = localeMap(acc.nameJsonb ?? acc.hotelName ?? acc.name);
-  const cityJsonb = localeMap(acc.cityJsonb ?? acc.city);
+  // Rows can arrive from three different sources that expose the same logical
+  // hotel under different keys:
+  //  - the rich JSONB rate sheet (`hotelInfoJsonb.accommodation`): top-level nameJsonb/cityJsonb/prices
+  //  - the JSONB summary (`hotelInfoJsonb.accommodations`): hotelNameJsonb/hotelSlug/city
+  //  - the relational `tour.accommodations` rows: nested `hotel` (nameJsonb/city) + `room` (ratePerNight)
+  // Resolve all of them so catalog-linked hotels, which only carry a nested
+  // `hotel`/`room`, are not rendered as nameless/valueless rows (and dropped).
+  const hotelObj = acc.hotel && typeof acc.hotel === 'object' ? acc.hotel : null;
+
+  const nameJsonb = localeMap(
+    acc.nameJsonb ??
+      acc.hotelNameJsonb ??
+      acc.hotelName ??
+      hotelObj?.nameJsonb ??
+      hotelObj?.name ??
+      acc.hotelSlug ??
+      acc.name,
+  );
+  const cityJsonb = localeMap(
+    acc.cityJsonb ?? acc.city ?? hotelObj?.city ?? hotelObj?.destinationSlug ?? acc.destination,
+  );
   const doubleRoomPriceUsd = positiveNumber(acc.doubleRoomPriceUsd);
   const singleRoomPriceUsd = positiveNumber(acc.singleRoomPriceUsd);
   const seasonSupplementUsd = positiveNumber(acc.seasonSupplementUsd ?? acc.priceSupplementUsd);
@@ -317,11 +336,18 @@ export function tourToTripModel(
       ? (tour.hotelInfoJsonb as Record<string, any>)
       : {};
 
-  const jsonbAccommodations = Array.isArray(hotelInfo.accommodations)
-    ? hotelInfo.accommodations
-    : Array.isArray(hotelInfo.accommodation)
-      ? hotelInfo.accommodation
-      : [];
+  // The backend sync writes an empty `accommodations` (plural) summary array
+  // whenever no catalog hotel is linked, while the rich, manually-entered rows
+  // live in the singular `accommodation`. Treat empty arrays as absent and fall
+  // back exactly like the storefront (tour.accommodations -> accommodation ->
+  // hotelInfo.accommodations -> hotelInfo.accommodation), so manually-added
+  // hotels are not hidden from the dashboard.
+  const jsonbAccommodations =
+    Array.isArray(hotelInfo.accommodations) && hotelInfo.accommodations.length > 0
+      ? hotelInfo.accommodations
+      : Array.isArray(hotelInfo.accommodation) && hotelInfo.accommodation.length > 0
+        ? hotelInfo.accommodation
+        : [];
 
   const accommodation: AccommodationItem[] =
     Array.isArray(tour.accommodations) && tour.accommodations.length > 0

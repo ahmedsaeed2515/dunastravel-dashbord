@@ -136,7 +136,15 @@ export default function TourDetailsPage({ params }: { params: Promise<{ slug: st
         displayCity: localeText(row.cityJsonb as Record<string, unknown> | undefined, "ar") || localeText(row.cityJsonb as Record<string, unknown> | undefined, "en") || row.destination,
         displayBoat: localeText(row.boatJsonb as Record<string, unknown> | undefined, "ar") || localeText(row.boatJsonb as Record<string, unknown> | undefined, "en"),
       }))
-      .filter((row) => Boolean(row.displayName || row.doubleRoomPriceUsd || row.singleRoomPriceUsd));
+      .filter((row) =>
+        Boolean(
+          row.displayName ||
+            row.doubleRoomPriceUsd ||
+            row.singleRoomPriceUsd ||
+            row.hotelId ||
+            row.roomId,
+        ),
+      );
   }, [tripModel]);
 
   if (isLoading) {
