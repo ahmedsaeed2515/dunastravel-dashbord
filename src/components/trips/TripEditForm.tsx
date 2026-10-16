@@ -1326,6 +1326,11 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const removeAccHotelName = (idx: number, nameIdx: number) => {
     const names = [...getAccHotelNames(idx)];
+    const target = names[nameIdx];
+    const label = target && target.trim() ? `"${target.trim()}"` : 'هذا الفندق';
+    if (!window.confirm(`هل أنت متأكد من حذف ${label} من الرحلة؟ لا يمكن التراجع عن هذه الخطوة.`)) {
+      return;
+    }
     names.splice(nameIdx, 1);
     setAccHotelNames(idx, names.length > 0 ? names : ['']);
   };
@@ -1372,10 +1377,21 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const removeAccommodationRow = (index: number) => {
     const rows = [...getAccommodationList()];
-    if (index >= 0 && index < rows.length) {
-      rows.splice(index, 1);
-      handleChange('accommodation', rows);
-    }
+    if (index < 0 || index >= rows.length) return;
+    const row = rows[index];
+    const nameMap = row?.nameJsonb;
+    const hotelName =
+      (nameMap && typeof nameMap === 'object'
+        ? nameMap[activeLang] || nameMap.ar || nameMap.en
+        : '') ||
+      row?.destination ||
+      '';
+    const message = hotelName
+      ? `هل أنت متأكد من حذف الفندق "${hotelName}" من الرحلة؟ لا يمكن التراجع عن هذه الخطوة.`
+      : 'هل أنت متأكد من حذف هذا الفندق من الرحلة؟ لا يمكن التراجع عن هذه الخطوة.';
+    if (!window.confirm(message)) return;
+    rows.splice(index, 1);
+    handleChange('accommodation', rows);
   };
 
   const updateAccommodationRow = (index: number, field: keyof AccommodationItem, val: any) => {
@@ -3112,6 +3128,8 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                                   size="icon-sm"
                                   variant="ghost"
                                   onClick={() => removeAccommodationRow(idx)}
+                                  title="حذف الفندق"
+                                  aria-label="حذف الفندق"
                                   className="text-destructive hover:bg-destructive/10 h-9 w-9 rounded-xl"
                                 >
                                   <Trash2 className="w-4 h-4" />
@@ -3368,6 +3386,8 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                                       size="icon-sm"
                                       variant="ghost"
                                       onClick={() => removeAccommodationRow(idx)}
+                                      title="حذف الفندق"
+                                      aria-label="حذف الفندق"
                                       className="text-destructive hover:bg-destructive/10 h-8 w-8 rounded-lg"
                                     >
                                       <Trash2 className="w-4 h-4" />

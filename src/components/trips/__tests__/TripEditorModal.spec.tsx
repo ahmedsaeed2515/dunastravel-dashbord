@@ -126,6 +126,31 @@ describe('TripEditorModal lodging mode', () => {
     });
   });
 
+  it('asks for confirmation before deleting a hotel row and keeps it when declined', async () => {
+    renderModal(tourToTripModel(rateSheetTour));
+    fireEvent.click(screen.getByRole('tab', { name: /الوصف والإقامة/ }));
+
+    await waitFor(() => {
+      expect(screen.getByDisplayValue('ستاراوتيل')).toBeInTheDocument();
+    });
+
+    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+    fireEvent.click(screen.getByRole('button', { name: 'حذف الفندق' }));
+
+    // The confirmation was requested and the hotel is kept when declined.
+    expect(confirmSpy).toHaveBeenCalledTimes(1);
+    expect(screen.getByDisplayValue('ستاراوتيل')).toBeInTheDocument();
+
+    // Confirming actually removes the row.
+    confirmSpy.mockReturnValue(true);
+    fireEvent.click(screen.getByRole('button', { name: 'حذف الفندق' }));
+    await waitFor(() => {
+      expect(screen.queryByDisplayValue('ستاراوتيل')).not.toBeInTheDocument();
+    });
+
+    confirmSpy.mockRestore();
+  });
+
   it('keeps Option A (global catalog) when no rate-sheet data exists', async () => {
     const plainTour: any = {
       id: 'tour-plain',
