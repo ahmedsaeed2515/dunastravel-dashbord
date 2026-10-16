@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, memo, forwardRef, useImperativeHandle } from 'react';
-import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem } from '@/types/dunas-suite';
+import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem, BookingRulesModel, BookingBlockedRange } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
@@ -54,6 +54,7 @@ import {
   Lock,
   Info,
   AlertCircle,
+  Clock,
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { MediaPickerModal } from '@/components/media/MediaPickerModal';
@@ -65,6 +66,17 @@ import {
   generateRoomSlug,
 } from '@/lib/slug-util';
 import { cn } from '@/lib/utils';
+
+/** Weekday labels for the recurring booking-rules editor (0 = Sunday). */
+const WEEKDAY_OPTIONS: { value: number; label: string }[] = [
+  { value: 0, label: 'الأحد' },
+  { value: 1, label: 'الإثنين' },
+  { value: 2, label: 'الثلاثاء' },
+  { value: 3, label: 'الأربعاء' },
+  { value: 4, label: 'الخميس' },
+  { value: 5, label: 'الجمعة' },
+  { value: 6, label: 'السبت' },
+];
 
 const PRESET_CITIES: { dbKey: string; nameAr: string; nameEn: string; coords: [number, number] }[] = [
   { dbKey: 'cairo', nameAr: 'القاهرة', nameEn: 'Cairo', coords: [30.0444, 31.2357] },
@@ -924,6 +936,49 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       });
     }
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  /** Recurring booking rules (bookingRulesJsonb) with safe defaults for the editor. */
+  const bookingRules = useMemo<BookingRulesModel>(
+    () => ({
+      enabled: formData.bookingRules?.enabled ?? false,
+      dailyCutoffTime: formData.bookingRules?.dailyCutoffTime ?? '',
+      cutoffTimezone: formData.bookingRules?.cutoffTimezone ?? 'Africa/Cairo',
+      blockedWeekdays: formData.bookingRules?.blockedWeekdays ?? [],
+      blockedRanges: formData.bookingRules?.blockedRanges ?? [],
+    }),
+    [formData.bookingRules],
+  );
+
+  const updateBookingRules = (patch: Partial<BookingRulesModel>) => {
+    handleChange('bookingRules', { ...bookingRules, ...patch });
+  };
+
+  const toggleBlockedWeekday = (day: number) => {
+    const current = bookingRules.blockedWeekdays ?? [];
+    const next = current.includes(day)
+      ? current.filter(d => d !== day)
+      : [...current, day].sort((a, b) => a - b);
+    updateBookingRules({ blockedWeekdays: next });
+  };
+
+  const addBlockedRange = () => {
+    updateBookingRules({
+      blockedRanges: [...(bookingRules.blockedRanges ?? []), { start: '', end: '', reason: '' }],
+    });
+  };
+
+  const updateBlockedRange = (index: number, patch: Partial<BookingBlockedRange>) => {
+    const next = (bookingRules.blockedRanges ?? []).map((range, idx) =>
+      idx === index ? { ...range, ...patch } : range,
+    );
+    updateBookingRules({ blockedRanges: next });
+  };
+
+  const removeBlockedRange = (index: number) => {
+    updateBookingRules({
+      blockedRanges: (bookingRules.blockedRanges ?? []).filter((_, idx) => idx !== index),
+    });
   };
 
   const extractSafeText = (val: any, lang: LanguageCode): string => {
@@ -2452,6 +2507,12 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                       handleChange('price', e.target.value);
                       if (fieldErrors.price) setFieldErrors(prev => ({ ...prev, price: '' }));
                     }}
+                    onBlur={e => {
+                      const num = Number(e.target.value);
+                      if (e.target.value !== '' && Number.isFinite(num)) {
+                        handleChange('price', Math.max(0, num));
+                      }
+                    }}
                     placeholder="1250"
                     className={`rounded-xl font-bold font-mono ${fieldErrors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
                   />
@@ -2506,6 +2567,178 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                     placeholder="5-Star Luxury"
                     className="rounded-xl"
                   />
+                </div>
+              </div>
+
+              {/* Price Display Mode & Custom Label */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-3 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      عرض السعر على الموقع (Price Display Settings)
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      تحكم في كيفية عرض سعر الرحلة للزوار على الموقع.
+                    </p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-1.5">
+                    <label className="text-xs font-bold text-foreground">طريقة عرض السعر</label>
+                    <select
+                      className="w-full h-9 rounded-xl border border-input bg-background px-2.5 text-xs font-semibold"
+                      value={formData.priceDisplayMode || 'PRICE'}
+                      onChange={(e) => handleChange('priceDisplayMode', e.target.value)}
+                    >
+                      <option value="PRICE">إظهار السعر الرقمي (Show Price)</option>
+                      <option value="HIDDEN">إخفاء السعر (Hide Price)</option>
+                      <option value="CUSTOM_LABEL">نص مخصص (Custom Text)</option>
+                    </select>
+                  </div>
+                  {(formData.priceDisplayMode === 'CUSTOM_LABEL') && (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">نص السعر المخصص ({activeLang.toUpperCase()})</label>
+                      <Input
+                        value={formData.priceLabel?.[activeLang] || ''}
+                        onChange={(e) => {
+                          const current = formData.priceLabel || {};
+                          handleChange('priceLabel', { ...current, [activeLang]: e.target.value });
+                        }}
+                        placeholder={activeLang === 'ar' ? 'على طلب' : 'Price on request'}
+                        className="rounded-xl"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        يتم حفظ النص لكل لغة (بدّل لغة التحرير بالأعلى لكتابة نص كل لغة). أمثلة: "مجاني"، "سعر عند الطلب".
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Recurring Booking Rules (bookingRulesJsonb) */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <Clock className="w-4 h-4 text-amber-500" />
+                      قواعد إيقاف الحجز (Booking Stop Rules)
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      أوقف استقبال الحجوزات في وقت محدد يوميًا أو أيام معينة من الأسبوع أو فترة زمنية كاملة — بتوقيت القاهرة.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer shrink-0">
+                    <Checkbox
+                      checked={bookingRules.enabled}
+                      onCheckedChange={v => updateBookingRules({ enabled: !!v })}
+                    />
+                    <span className={bookingRules.enabled ? 'text-emerald-500' : 'text-muted-foreground'}>
+                      {bookingRules.enabled ? 'مُفعّلة' : 'معطّلة'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className={bookingRules.enabled ? 'space-y-4' : 'space-y-4 opacity-50 pointer-events-none select-none'}>
+                  {/* Daily cutoff time + timezone */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">إيقاف حجوزات نفس اليوم بعد الساعة (اختياري)</label>
+                      <Input
+                        type="time"
+                        value={bookingRules.dailyCutoffTime || ''}
+                        onChange={e => updateBookingRules({ dailyCutoffTime: e.target.value })}
+                        className="rounded-xl"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        الحجوزات التي تاريخ مغادرتها اليوم تُرفض بعد هذه الساعة بتوقيت {bookingRules.cutoffTimezone || 'Africa/Cairo'}.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">المنطقة الزمنية (Timezone)</label>
+                      <Input
+                        value={bookingRules.cutoffTimezone || ''}
+                        onChange={e => updateBookingRules({ cutoffTimezone: e.target.value })}
+                        placeholder="Africa/Cairo"
+                        className="rounded-xl font-mono"
+                      />
+                      <p className="text-[11px] text-muted-foreground">الافتراضي: Africa/Cairo.</p>
+                    </div>
+                  </div>
+
+                  {/* Blocked weekdays */}
+                  <div className="space-y-2">
+                    <label className="text-xs font-bold text-foreground block">أيام الأسبوع الموقوفة (لا حجوزات في هذه الأيام)</label>
+                    <div className="flex flex-wrap gap-2">
+                      {WEEKDAY_OPTIONS.map(day => {
+                        const active = (bookingRules.blockedWeekdays ?? []).includes(day.value);
+                        return (
+                          <button
+                            key={day.value}
+                            type="button"
+                            onClick={() => toggleBlockedWeekday(day.value)}
+                            className={`px-3 py-1.5 rounded-lg text-[11px] font-bold border transition-all cursor-pointer ${
+                              active
+                                ? 'bg-rose-500/15 border-rose-500/50 text-rose-500'
+                                : 'bg-muted/40 border-border/60 text-muted-foreground hover:border-amber-500/40'
+                            }`}
+                          >
+                            {day.label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Fully blocked date ranges */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-foreground">فترات موقوفة بالكامل (اختياري)</label>
+                      <button
+                        type="button"
+                        onClick={addBlockedRange}
+                        className="text-[11px] font-bold text-amber-500 hover:underline cursor-pointer flex items-center gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> إضافة فترة
+                      </button>
+                    </div>
+                    {(bookingRules.blockedRanges ?? []).length === 0 ? (
+                      <p className="text-[11px] text-muted-foreground">لا توجد فترات موقوفة حاليًا.</p>
+                    ) : (
+                      <div className="space-y-2">
+                        {(bookingRules.blockedRanges ?? []).map((range, idx) => (
+                          <div key={idx} className="grid grid-cols-1 sm:grid-cols-[1fr_1fr_1fr_auto] gap-2 items-center">
+                            <Input
+                              type="date"
+                              value={range.start || ''}
+                              onChange={e => updateBlockedRange(idx, { start: e.target.value })}
+                              className="rounded-xl"
+                            />
+                            <Input
+                              type="date"
+                              value={range.end || ''}
+                              min={range.start || undefined}
+                              onChange={e => updateBlockedRange(idx, { end: e.target.value })}
+                              className="rounded-xl"
+                            />
+                            <Input
+                              value={range.reason || ''}
+                              onChange={e => updateBlockedRange(idx, { reason: e.target.value })}
+                              placeholder="السبب (اختياري)"
+                              className="rounded-xl"
+                            />
+                            <button
+                              type="button"
+                              onClick={() => removeBlockedRange(idx)}
+                              className="p-2 rounded-lg text-destructive hover:bg-destructive/10 cursor-pointer justify-self-start"
+                              aria-label="حذف الفترة"
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
 

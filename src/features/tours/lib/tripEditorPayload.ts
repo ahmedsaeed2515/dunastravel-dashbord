@@ -1,5 +1,6 @@
 import type {
   AccommodationItem,
+  BookingRulesModel,
   LanguageCode,
   SeasonPricingRuleItem,
   TranslationDict,
@@ -388,6 +389,18 @@ export function tourToTripModel(
       tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
         ? Number(tour.basePriceUsd)
         : Number(canon?.price ?? 0),
+    priceDisplayMode:
+      ((tour as any).priceDisplayMode as TripModel['priceDisplayMode']) || 'PRICE',
+    priceLabel: LOCALES.reduce<Partial<Record<LanguageCode, string>>>((acc, locale) => {
+      const raw = (tour as any).priceLabelJsonb;
+      const value = raw && typeof raw === 'object' ? raw[locale] : '';
+      if (typeof value === 'string' && value.trim()) acc[locale] = value;
+      return acc;
+    }, {}),
+    bookingRules:
+      (tour as any).bookingRulesJsonb && typeof (tour as any).bookingRulesJsonb === 'object'
+        ? ((tour as any).bookingRulesJsonb as BookingRulesModel)
+        : undefined,
     hotelCategory: typeof hotelInfo.hotelCategory === 'string' ? hotelInfo.hotelCategory : '',
     rating: Number(tour.sourceRating || 4.9),
     reviewCount: Number(tour.sourceReviewCount ?? tour.reviewCount ?? 0),
@@ -628,6 +641,48 @@ export function buildTripEditorPayload(
       }
     : null;
 
+  const rawPriceMode = text(formData.priceDisplayMode).toUpperCase();
+  const priceDisplayMode: 'PRICE' | 'HIDDEN' | 'CUSTOM_LABEL' =
+    rawPriceMode === 'HIDDEN' || rawPriceMode === 'CUSTOM_LABEL' ? rawPriceMode : 'PRICE';
+
+  const priceLabelSource = (formData.priceLabel ?? {}) as Partial<Record<LanguageCode, string>>;
+  const priceLabelJsonb = Object.fromEntries(
+    LOCALES.map((locale) => [locale, text(priceLabelSource[locale]).trim()]).filter(([, value]) => Boolean(value)),
+  );
+
+  const bookingRulesInput = formData.bookingRules;
+  const normalizedBlockedRanges = (bookingRulesInput?.blockedRanges ?? [])
+    .filter((range) => Boolean(text(range?.start).trim() && text(range?.end).trim()))
+    .map((range) => ({
+      start: text(range.start).trim(),
+      end: text(range.end).trim(),
+      ...(text(range.reason).trim() ? { reason: text(range.reason).trim() } : {}),
+    }));
+  const normalizedBlockedWeekdays = Array.from(
+    new Set(
+      (bookingRulesInput?.blockedWeekdays ?? [])
+        .map((day) => Number(day))
+        .filter((day) => Number.isInteger(day) && day >= 0 && day <= 6),
+    ),
+  ).sort((a, b) => a - b);
+  const normalizedCutoffTime = text(bookingRulesInput?.dailyCutoffTime).trim();
+  const normalizedCutoffTimezone = text(bookingRulesInput?.cutoffTimezone).trim() || 'Africa/Cairo';
+  const bookingRulesEnabled = Boolean(bookingRulesInput?.enabled);
+  const hasBookingRules =
+    bookingRulesEnabled ||
+    Boolean(normalizedCutoffTime) ||
+    normalizedBlockedWeekdays.length > 0 ||
+    normalizedBlockedRanges.length > 0;
+  const bookingRulesJsonb = hasBookingRules
+    ? {
+        enabled: bookingRulesEnabled,
+        ...(normalizedCutoffTime ? { dailyCutoffTime: normalizedCutoffTime } : {}),
+        cutoffTimezone: normalizedCutoffTimezone,
+        ...(normalizedBlockedWeekdays.length > 0 ? { blockedWeekdays: normalizedBlockedWeekdays } : {}),
+        ...(normalizedBlockedRanges.length > 0 ? { blockedRanges: normalizedBlockedRanges } : {}),
+      }
+    : null;
+
   return {
     slug: text(formData.slug),
     titleJsonb: localizedText(translations, 'title', formData.title),
@@ -652,6 +707,9 @@ export function buildTripEditorPayload(
     excludedServicesJsonb: localizedList(translations, 'excluded', formData.excluded),
     highlightsJsonb: localizedList(translations, 'highlights', formData.highlights),
     routeMapJsonb,
+    priceDisplayMode,
+    priceLabelJsonb: Object.keys(priceLabelJsonb).length > 0 ? priceLabelJsonb : null,
+    bookingRulesJsonb,
     itineraries: itinerary,
     images,
   };

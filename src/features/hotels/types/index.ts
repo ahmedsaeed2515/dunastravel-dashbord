@@ -145,6 +145,7 @@ export interface HotelBooking {
   guestName: string;
   guestEmail: string;
   guestPhone: string;
+  guestNationality?: string | null;
   checkInDate: string;
   checkOutDate: string;
   nights: number;

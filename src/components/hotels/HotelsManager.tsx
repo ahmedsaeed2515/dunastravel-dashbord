@@ -1948,6 +1948,10 @@ export function HotelsManager() {
                   <span className="font-bold font-mono text-foreground">{selectedBookingForDetails.guestPhone}</span>
                 </div>
                 <div className="flex justify-between">
+                  <span className="text-muted-foreground">{isAr ? "الجنسية:" : "Nationality:"}</span>
+                  <span className="font-bold text-foreground">{selectedBookingForDetails.guestNationality || "—"}</span>
+                </div>
+                <div className="flex justify-between">
                   <span className="text-muted-foreground">{isAr ? "فترة الإقامة:" : "Stay Dates:"}</span>
                   <span className="font-bold font-mono text-foreground">
                     {selectedBookingForDetails.checkInDate ? format(new Date(selectedBookingForDetails.checkInDate), "dd/MM/yyyy") : ""} ➔ {selectedBookingForDetails.checkOutDate ? format(new Date(selectedBookingForDetails.checkOutDate), "dd/MM/yyyy") : ""} ({selectedBookingForDetails.nights} {isAr ? "ليالٍ" : "nights"})

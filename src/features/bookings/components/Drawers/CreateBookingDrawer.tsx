@@ -27,6 +27,7 @@ export function CreateBookingDrawer() {
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [nationality, setNationality] = useState("");
   const [arrivalDate, setArrivalDate] = useState("");
   const [departureDate, setDepartureDate] = useState("");
   const [adults, setAdults] = useState(1);
@@ -54,12 +55,18 @@ export function CreateBookingDrawer() {
       return;
     }
 
+    if (!nationality.trim()) {
+      toast.error("يرجى إدخال جنسية العميل لإتمام الحجز");
+      return;
+    }
+
     createBooking(
       {
         tourId: selectedTour?.id || tourId,
         fullName,
         email,
         phone,
+        nationality: nationality.trim(),
         arrivalDate,
         departureDate: departureDate || undefined,
         adults,
@@ -75,6 +82,7 @@ export function CreateBookingDrawer() {
           setFullName("");
           setEmail("");
           setPhone("");
+          setNationality("");
           setArrivalDate("");
           setDepartureDate("");
           setAdults(1);
@@ -205,6 +213,18 @@ export function CreateBookingDrawer() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+
+          <div className="space-y-1.5">
+            <Label htmlFor="nationality" className="text-xs font-bold">جنسية العميل *</Label>
+            <Input
+              id="nationality"
+              required
+              value={nationality}
+              onChange={(e) => setNationality(e.target.value)}
+              placeholder="مثال: مصري، سعودي، أمريكي..."
+              className="rounded-xl text-xs"
+            />
           </div>
 
           {/* Dates */}

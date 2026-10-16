@@ -186,6 +186,7 @@ export interface ManualBookingPayload {
   fullName: string;
   email: string;
   phone: string;
+  nationality?: string;
   adults: number;
   children?: number;
   infants?: number;

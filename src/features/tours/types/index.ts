@@ -124,6 +124,9 @@ export interface Tour {
   termsJsonb?: Record<string, any> | null;
   cancellationPolicyJsonb?: Record<string, any> | null;
   routeMapJsonb?: Record<string, any> | null;
+  priceDisplayMode?: string | null;
+  priceLabelJsonb?: Record<string, any> | null;
+  bookingRulesJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: string;
   currency: string;
@@ -246,6 +249,9 @@ export interface CreateTourPayload {
   termsJsonb?: Record<string, any> | null;
   cancellationPolicyJsonb?: Record<string, any> | null;
   routeMapJsonb?: Record<string, any> | null;
+  priceDisplayMode?: string | null;
+  priceLabelJsonb?: Record<string, any> | null;
+  bookingRulesJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: number;
   currency?: string;

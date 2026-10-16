@@ -91,6 +91,29 @@ export interface ItineraryItem {
   meals: string;
 }
 
+/** A single inclusive date range during which bookings are blocked. */
+export interface BookingBlockedRange {
+  start: string; // YYYY-MM-DD (inclusive)
+  end: string; // YYYY-MM-DD (inclusive)
+  reason?: string;
+}
+
+/**
+ * Recurring rules that stop bookings for a tour.
+ * All fields are optional; `enabled` toggles the whole ruleset.
+ */
+export interface BookingRulesModel {
+  enabled: boolean;
+  /** Daily cutoff time in 24h "HH:mm" format — same-day departures are blocked after this time. */
+  dailyCutoffTime?: string;
+  /** IANA timezone used to evaluate the cutoff/blocked days. Defaults to Africa/Cairo on the server. */
+  cutoffTimezone?: string;
+  /** Days of the week with no departures. 0 = Sunday … 6 = Saturday. */
+  blockedWeekdays?: number[];
+  /** Explicit inclusive date ranges that are fully blocked. */
+  blockedRanges?: BookingBlockedRange[];
+}
+
 export interface TripModel {
   // Identifiers & Basic Specs
   id: string;
@@ -127,6 +150,15 @@ export interface TripModel {
   heroImage?: string;
   images: string[];
   hotels?: string;
+
+  // Price Display Configuration (dashboard-controlled)
+  /** PRICE = show numeric price, HIDDEN = hide price, CUSTOM_LABEL = show custom localized text. */
+  priceDisplayMode?: 'PRICE' | 'HIDDEN' | 'CUSTOM_LABEL';
+  /** Localized custom price label used when priceDisplayMode === 'CUSTOM_LABEL'. */
+  priceLabel?: Partial<Record<LanguageCode, string>>;
+
+  // Recurring Booking Rules (dashboard-controlled)
+  bookingRules?: BookingRulesModel;
 
   // Accommodation Breakdown & Relational Hotel/Room Assignments
   accommodation: AccommodationItem[];
