@@ -412,9 +412,18 @@ export function tourToTripModel(
       extractLocaleText(tour.departureInfoJsonb, 'en') ||
       'Daily / Diário',
     price:
-      tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
-        ? Number(tour.basePriceUsd)
-        : Number(canon?.price ?? 0),
+      (tour as any).originalPrice !== undefined && (tour as any).originalPrice !== null && !isNaN(Number((tour as any).originalPrice))
+        ? Number((tour as any).originalPrice)
+        : tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+          ? Number(tour.basePriceUsd)
+          : Number(canon?.price ?? 0),
+    currency: (tour.currency === 'EUR' || tour.currency === 'USD') ? tour.currency : 'USD',
+    originalPrice:
+      (tour as any).originalPrice !== undefined && (tour as any).originalPrice !== null && !isNaN(Number((tour as any).originalPrice))
+        ? Number((tour as any).originalPrice)
+        : tour.basePriceUsd !== undefined && tour.basePriceUsd !== null && !isNaN(Number(tour.basePriceUsd))
+          ? Number(tour.basePriceUsd)
+          : undefined,
     priceDisplayMode:
       ((tour as any).priceDisplayMode as TripModel['priceDisplayMode']) || 'PRICE',
     priceLabel: LOCALES.reduce<Partial<Record<LanguageCode, string>>>((acc, locale) => {
@@ -722,7 +731,8 @@ export function buildTripEditorPayload(
     // An empty array clears stale tags when the final checkbox is unchecked.
     tags,
     basePriceUsd: price,
-    currency: 'USD',
+    originalPrice: price,
+    currency: (formData.currency === 'EUR' || formData.currency === 'USD') ? formData.currency : 'USD',
     isFeatured: Boolean(formData.popular),
     ...(isNew ? { status: 'DRAFT' as const, isActive: false } : {}),
     hotelInfoJsonb,

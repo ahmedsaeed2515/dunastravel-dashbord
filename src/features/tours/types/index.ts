@@ -129,7 +129,9 @@ export interface Tour {
   bookingRulesJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: string;
+  originalPrice?: string | number | null;
   currency: string;
+  originalCurrency?: string | null;
   isActive: boolean;
   status: TourStatus;
   isFeatured: boolean;
@@ -254,6 +256,7 @@ export interface CreateTourPayload {
   bookingRulesJsonb?: Record<string, any> | null;
   category?: string | null;
   basePriceUsd: number;
+  originalPrice?: number;
   currency?: string;
   isActive?: boolean;
   status?: TourStatus;

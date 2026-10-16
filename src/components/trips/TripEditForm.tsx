@@ -7,6 +7,7 @@ import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import { useHotels, useSeasons } from '@/features/hotels/hooks/useHotels';
+import { useExchangeRates } from '@/features/currency/hooks/useCurrency';
 import { buildTripEditorPayload, tourToTripModel } from '@/features/tours/lib/tripEditorPayload';
 import {
   ALL_LOCALES,
@@ -426,6 +427,8 @@ const DEFAULT_TRIP: Partial<TripModel> = {
     pt: {},
     it: {},
   },
+  currency: 'USD',
+  price: 0,
 };
 
 /**
@@ -485,6 +488,31 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       { id: 'multi-country', nameAr: 'رحلات متعددة الوجهات', nameEn: 'Multi-Country Tours', flag: '🌍' },
     ];
   }, [destinationData]);
+
+  const { data: exchangeRatesData } = useExchangeRates();
+  const ecbEurUsdRate = useMemo(() => {
+    if (exchangeRatesData?.meta?.ecbEurUsdRate) {
+      const val = Number(exchangeRatesData.meta.ecbEurUsdRate);
+      if (Number.isFinite(val) && val > 0) return val;
+    }
+    const rawEur = Number(exchangeRatesData?.rates?.EUR);
+    if (rawEur && rawEur > 0) {
+      return Math.round((1 / rawEur) * 1000000) / 1000000;
+    }
+    return 1.1253; // Static safe ECB fallback
+  }, [exchangeRatesData]);
+
+  const ecbUsdEurRate = useMemo(() => {
+    if (exchangeRatesData?.meta?.ecbUsdEurRate) {
+      const val = Number(exchangeRatesData.meta.ecbUsdEurRate);
+      if (Number.isFinite(val) && val > 0) return val;
+    }
+    const rawEur = Number(exchangeRatesData?.rates?.EUR);
+    if (rawEur && rawEur > 0) {
+      return rawEur;
+    }
+    return 0.888652; // Static safe ECB fallback
+  }, [exchangeRatesData]);
 
   const [formData, setFormData] = useState<Partial<TripModel>>(DEFAULT_TRIP);
   const [activeTab, setActiveTab] = useState<string>('basic');
@@ -2135,7 +2163,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
     const price = Number(formData.price ?? 0);
     if (!Number.isFinite(price) || price < 0) {
-      validationErrors.price = 'يرجى إدخال سعر صحيح (0 أو أكبر) بالدولار الأمريكي.';
+      validationErrors.price = 'يرجى إدخال سعر صحيح (0 أو أكبر).';
     }
 
     if (!formData.destination) {
@@ -2564,30 +2592,94 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
               {/* Pricing, Duration & Category */}
               <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-foreground">السعر الأساسي بالدولار ($) *</label>
-                  <Input
-                    type="number"
-                    value={formData.price ?? ''}
-                    onChange={e => {
-                      handleChange('price', e.target.value);
-                      if (fieldErrors.price) setFieldErrors(prev => ({ ...prev, price: '' }));
-                    }}
-                    onBlur={e => {
-                      const num = Number(e.target.value);
-                      if (e.target.value !== '' && Number.isFinite(num)) {
-                        handleChange('price', Math.max(0, num));
-                      }
-                    }}
-                    placeholder="1250"
-                    className={`rounded-xl font-bold font-mono ${fieldErrors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
-                  />
+                <div className="space-y-1.5 p-3 rounded-2xl bg-card border border-border/80 shadow-2xs">
+                  <div className="flex items-center justify-between gap-1 mb-1">
+                    <label className="text-xs font-black text-foreground">
+                      السعر الأساسي *
+                    </label>
+                    <div className="flex items-center gap-1 bg-muted/60 p-0.5 rounded-lg border border-border/60">
+                      <button
+                        type="button"
+                        onClick={() => handleChange('currency', 'USD')}
+                        className={cn(
+                          "px-2 py-0.5 text-[10px] font-black rounded-md transition-all",
+                          (formData.currency || 'USD') === 'USD'
+                            ? "bg-amber-500 text-black shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        USD ($)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleChange('currency', 'EUR')}
+                        className={cn(
+                          "px-2 py-0.5 text-[10px] font-black rounded-md transition-all",
+                          formData.currency === 'EUR'
+                            ? "bg-amber-500 text-black shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                        )}
+                      >
+                        EUR (€)
+                      </button>
+                    </div>
+                  </div>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      step="any"
+                      min="0"
+                      value={formData.price ?? ''}
+                      onChange={e => {
+                        handleChange('price', e.target.value);
+                        if (fieldErrors.price) setFieldErrors(prev => ({ ...prev, price: '' }));
+                      }}
+                      onBlur={e => {
+                        const num = Number(e.target.value);
+                        if (e.target.value !== '' && Number.isFinite(num)) {
+                          handleChange('price', Math.max(0, num));
+                        }
+                      }}
+                      placeholder="600"
+                      className={`rounded-xl font-bold font-mono pl-8 ${fieldErrors.price ? 'border-destructive focus-visible:ring-destructive' : ''}`}
+                    />
+                    <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-xs font-black text-amber-500 pointer-events-none">
+                      {formData.currency === 'EUR' ? '€' : '$'}
+                    </span>
+                  </div>
                   {fieldErrors.price && (
                     <p className="text-[11px] font-bold text-destructive flex items-center gap-1 mt-1">
                       <AlertCircle className="w-3.5 h-3.5 shrink-0" />
                       <span>{fieldErrors.price}</span>
                     </p>
                   )}
+                  {/* Dynamic Authoritative Live Calculated Equivalent Preview */}
+                  <div className="mt-2 pt-2 border-t border-border/50 text-[11px]">
+                    {Number(formData.price) > 0 ? (
+                      <div className="space-y-1">
+                        <div className="flex items-center justify-between font-mono font-bold">
+                          <span className="text-muted-foreground text-[10px]">المعادل المحسوب:</span>
+                          <span className="text-amber-500 font-black">
+                            ≈ {formData.currency === 'EUR'
+                              ? `${(Number(formData.price) * ecbEurUsdRate).toFixed(2)} USD`
+                              : `${(Number(formData.price) * ecbUsdEurRate).toFixed(2)} EUR`}
+                          </span>
+                        </div>
+                        <div className="text-[9px] text-muted-foreground/80 flex items-center justify-between">
+                          <span>سعر الصرف (ECB):</span>
+                          <span className="font-mono">
+                            {formData.currency === 'EUR'
+                              ? `1 EUR = ${ecbEurUsdRate.toFixed(4)} USD`
+                              : `1 USD = ${ecbUsdEurRate.toFixed(4)} EUR`}
+                          </span>
+                        </div>
+                      </div>
+                    ) : (
+                      <p className="text-[10px] text-muted-foreground text-center">
+                        أدخل السعر لمعاينة التحويل الفوري
+                      </p>
+                    )}
+                  </div>
                 </div>
                 <div className="space-y-1.5">
                   <div className="flex items-center justify-between">

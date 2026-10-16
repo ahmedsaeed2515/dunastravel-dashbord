@@ -127,6 +127,8 @@ export interface TripModel {
   duration: string;
   departures: string;
   price: number;
+  currency?: 'USD' | 'EUR' | string;
+  originalPrice?: number;
   hotelCategory: string;
   rating: number;
   reviewCount: number;
