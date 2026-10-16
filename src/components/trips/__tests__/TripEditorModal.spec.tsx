@@ -1,9 +1,17 @@
-import { render, screen, waitFor, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, fireEvent, act } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { vi, describe, it, expect, beforeEach } from 'vitest';
 import { TripEditorModal } from '../TripEditorModal';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { tourToTripModel } from '@/features/tours/lib/tripEditorPayload';
+
+function deferred<T>() {
+  let resolve!: (value: T) => void;
+  const promise = new Promise<T>((res) => {
+    resolve = res;
+  });
+  return { promise, resolve };
+}
 
 vi.mock('@/context/DataContext', () => ({
   useDataContext: () => ({ egyptPackages: [] }),
@@ -173,5 +181,60 @@ describe('TripEditorModal lodging mode', () => {
       expect(screen.getByText('دليل الفنادق العامة المشتركة')).toBeInTheDocument();
     });
     expect(screen.queryByText('أسماء الأوتيلات وأسماء المدن')).not.toBeInTheDocument();
+  });
+});
+
+describe('TripEditForm gallery hydration (regression)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (toursApi.getTourTripHotel as any).mockResolvedValue(null);
+    (toursApi.updateTour as any).mockResolvedValue({ success: true });
+  });
+
+  it('never discards gallery images the admin adds before the slow hydration resolves', async () => {
+    const hero = 'https://cdn.example.com/hero.jpg';
+    const second = 'https://cdn.example.com/second.jpg';
+    const added = 'https://cdn.example.com/added.jpg';
+
+    // The list/trip only carries the hero image, but the server actually has 2.
+    const partialTour: any = {
+      ...rateSheetTour,
+      images: [{ imageUrl: hero, isHero: true, sortOrder: 0 }],
+    };
+
+    const pendingHydration = deferred<any>();
+    (toursApi.getTourBySlug as any).mockReturnValue(pendingHydration.promise);
+
+    renderModal(tourToTripModel(partialTour));
+
+    // Open the gallery tab and add one image while hydration is still in flight.
+    fireEvent.click(await screen.findByRole('tab', { name: /معرض الصور/ }));
+
+    const initialInputs = screen.getAllByPlaceholderText('https://images.unsplash.com/...');
+    expect(initialInputs).toHaveLength(1);
+
+    fireEvent.click(screen.getByRole('button', { name: /إضافة رابط يدوي/ }));
+    const inputsAfterAdd = screen.getAllByPlaceholderText('https://images.unsplash.com/...');
+    expect(inputsAfterAdd).toHaveLength(2);
+    fireEvent.change(inputsAfterAdd[1], { target: { value: added } });
+    expect(inputsAfterAdd[1]).toHaveValue(added);
+
+    // The late hydration now resolves with the full server gallery.
+    await act(async () => {
+      pendingHydration.resolve({
+        ...rateSheetTour,
+        images: [
+          { imageUrl: hero, isHero: true, sortOrder: 0 },
+          { imageUrl: second, isHero: false, sortOrder: 1 },
+        ],
+      });
+    });
+
+    // The admin's added image must survive, and the server's extra image must load too.
+    await waitFor(() => {
+      expect(screen.getByDisplayValue(added)).toBeInTheDocument();
+    });
+    expect(screen.getByDisplayValue(second)).toBeInTheDocument();
+    expect(screen.getByDisplayValue(hero)).toBeInTheDocument();
   });
 });

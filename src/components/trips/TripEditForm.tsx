@@ -498,6 +498,12 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
   // Tracks whether the admin picked a lodging mode manually; when true we never
   // override their choice based on the loaded data.
   const hotelModeTouchedRef = useRef(false);
+  // Snapshot of the gallery exactly as it was loaded from the server. The form
+  // fires a second, slower hydration request right after mounting; if the admin
+  // adds/removes/reorders gallery images before that request resolves, we must
+  // never let the late hydration overwrite their edits (this was dropping newly
+  // added photos so only the hero image was ever saved).
+  const initialGallerySnapshotRef = useRef<{ images: string; hero: string } | null>(null);
   const [tripHotel, setTripHotel] = useState<TripSpecificHotelModel | null>(null);
   const [isSavingTripHotel, setIsSavingTripHotel] = useState(false);
   const [isLoadingTripHotel, setIsLoadingTripHotel] = useState(false);
@@ -586,6 +592,10 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       if (!cloned.heroImage && cloned.images.length > 0) {
         cloned.heroImage = cloned.images[0];
       }
+      initialGallerySnapshotRef.current = {
+        images: JSON.stringify(Array.isArray(cloned.images) ? cloned.images : []),
+        hero: String(cloned.heroImage || ''),
+      };
       setFormData(cloned);
 
       if (trip.slug) {
@@ -611,6 +621,14 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
           } : undefined;
 
           setFormData(prev => {
+            // The gallery may have been edited by the admin while this slow
+            // hydration request was in flight. Compute the user's delta and
+            // re-apply it on top of the authoritative server list so newly
+            // added photos are never dropped (the old code replaced the gallery
+            // wholesale, silently discarding additions and saving only the hero).
+            const prevImages = Array.isArray(prev.images) ? prev.images : [];
+            const gallerySnapshot = initialGallerySnapshotRef.current;
+            const snapshotImages: string[] = gallerySnapshot ? JSON.parse(gallerySnapshot.images) : [];
             const trans = { ...(prev.translations || {}) };
             (['ar', 'en', 'es', 'pt', 'it'] as LanguageCode[]).forEach(loc => {
               const hydLoc = hydrated.translations?.[loc] || {};
@@ -641,11 +659,39 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
               }
             });
 
+            const serverImages = Array.isArray(hydrated.images) && hydrated.images.length > 0
+              ? (hydrated.images as string[])
+              : null;
+            let nextImages = prevImages;
+            if (serverImages) {
+              if (gallerySnapshot) {
+                const userAdded = prevImages.filter((img) => !snapshotImages.includes(img));
+                const userRemoved = new Set(snapshotImages.filter((img) => !prevImages.includes(img)));
+                nextImages = serverImages.filter((img) => !userRemoved.has(img));
+                for (const img of userAdded) {
+                  if (!nextImages.includes(img)) nextImages.push(img);
+                }
+              } else {
+                nextImages = serverImages;
+              }
+            }
+            const userChangedHero = gallerySnapshot
+              ? gallerySnapshot.hero !== String(prev.heroImage || '')
+              : false;
+            let nextHero = userChangedHero
+              ? (prev.heroImage || '')
+              : (hydrated.heroImage || prev.heroImage || '');
+            if (nextHero && nextImages.includes(nextHero)) {
+              nextImages = [nextHero, ...nextImages.filter((img) => img !== nextHero)];
+            } else {
+              nextHero = nextImages[0] || '';
+            }
+
             return {
               ...prev,
               ...hydrated,
-              heroImage: hydrated.heroImage || prev.heroImage || '',
-              images: (Array.isArray(hydrated.images) && hydrated.images.length > 0) ? hydrated.images : (prev.images || []),
+              heroImage: nextHero,
+              images: nextImages,
               included: (Array.isArray(hydrated.included) && hydrated.included.length > 0) ? hydrated.included : (prev.included || []),
               excluded: (Array.isArray(hydrated.excluded) && hydrated.excluded.length > 0) ? hydrated.excluded : (prev.excluded || []),
               highlights: (Array.isArray(hydrated.highlights) && hydrated.highlights.length > 0) ? hydrated.highlights : (prev.highlights || []),
@@ -708,6 +754,10 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
         setHotelMode('GLOBAL');
       }
     } else {
+      initialGallerySnapshotRef.current = {
+        images: JSON.stringify(Array.isArray(DEFAULT_TRIP.images) ? DEFAULT_TRIP.images : []),
+        hero: String(DEFAULT_TRIP.heroImage || ''),
+      };
       setFormData(DEFAULT_TRIP);
       setTripHotel(null);
       setHotelMode('GLOBAL');
@@ -4373,26 +4423,33 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
         onClose={() => setMediaPickerOpen(false)}
         multiple
         onSelectMultiple={(urls) => {
-          const existing = formData.images || [];
-          const newImgs = [...existing, ...urls.filter(u => !existing.includes(u))];
-          setFormData(prev => ({
-            ...prev,
-            images: newImgs,
-            heroImage: prev.heroImage || newImgs[0] || '',
-          }));
-          toast.success(`تمت إضافة ${urls.length} صور من المكتبة بنجاح!`);
-        }}
-        onSelect={(url) => {
-          const existing = formData.images || [];
-          if (!existing.includes(url)) {
-            const newImgs = [...existing, url];
-            setFormData(prev => ({
+          setFormData(prev => {
+            const existing = Array.isArray(prev.images) ? prev.images : [];
+            const newImgs = [...existing, ...urls.filter(u => !existing.includes(u))];
+            return {
               ...prev,
               images: newImgs,
               heroImage: prev.heroImage || newImgs[0] || '',
-            }));
-            toast.success('تمت إضافة الصورة بنجاح!');
-          }
+            };
+          });
+          setIsDirty(true);
+          onDirtyChange?.(true);
+          toast.success(`تمت إضافة ${urls.length} صور من المكتبة بنجاح!`);
+        }}
+        onSelect={(url) => {
+          setFormData(prev => {
+            const existing = Array.isArray(prev.images) ? prev.images : [];
+            if (existing.includes(url)) return prev;
+            const newImgs = [...existing, url];
+            return {
+              ...prev,
+              images: newImgs,
+              heroImage: prev.heroImage || newImgs[0] || '',
+            };
+          });
+          setIsDirty(true);
+          onDirtyChange?.(true);
+          toast.success('تمت إضافة الصورة بنجاح!');
         }}
       />
     </div>
