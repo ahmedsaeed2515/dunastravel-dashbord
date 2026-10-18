@@ -7,6 +7,7 @@ import type {
   TripModel,
 } from '@/types/dunas-suite';
 import type { CreateTourPayload, Tour } from '../types';
+import { isBareDayLabel, localizeDayLabel } from '@/lib/dayLabels';
 
 const LOCALES: LanguageCode[] = ['ar', 'en', 'es', 'pt', 'it'];
 
@@ -285,23 +286,29 @@ export function tourToTripModel(
           ? canon.itinerary
           : [];
 
-  const itinerary = rawItinerary.map((item: any, index: number) => ({
-    day: item.day || (item.sortOrder !== undefined ? item.sortOrder + 1 : index + 1),
-    title:
-      extractLocaleText(item.titleJsonb, 'ar') ||
-      item.dayLabel ||
-      extractLocaleText(item.titleJsonb, 'en') ||
-      (typeof item.title === 'object' ? item.title?.ar || item.title?.en : item.title) ||
-      `اليوم ${index + 1}`,
-    description:
-      extractLocaleText(item.descriptionJsonb, 'ar') ||
-      (typeof item.description === 'object' ? item.description?.ar || item.description?.en : item.description) ||
-      '',
-    meals:
-      extractLocaleText(item.mealsJsonb, 'ar') ||
-      (typeof item.meals === 'object' ? item.meals?.ar || item.meals?.en : item.meals) ||
-      '',
-  }));
+  const itinerary = rawItinerary.map((item: any, index: number) => {
+    const dayNumber = item.day || (item.sortOrder !== undefined ? item.sortOrder + 1 : index + 1);
+    const arTitle = extractLocaleText(item.titleJsonb, 'ar');
+    const enTitle = extractLocaleText(item.titleJsonb, 'en');
+    const plainTitle = typeof item.title === 'object' ? item.title?.ar || item.title?.en : item.title;
+    return {
+      day: dayNumber,
+      title:
+        (arTitle && !isBareDayLabel(arTitle) ? arTitle : '') ||
+        (item.dayLabel && !isBareDayLabel(item.dayLabel) ? item.dayLabel : '') ||
+        (enTitle && !isBareDayLabel(enTitle) ? enTitle : '') ||
+        (plainTitle && !isBareDayLabel(plainTitle) ? plainTitle : '') ||
+        localizeDayLabel('ar', dayNumber),
+      description:
+        extractLocaleText(item.descriptionJsonb, 'ar') ||
+        (typeof item.description === 'object' ? item.description?.ar || item.description?.en : item.description) ||
+        '',
+      meals:
+        extractLocaleText(item.mealsJsonb, 'ar') ||
+        (typeof item.meals === 'object' ? item.meals?.ar || item.meals?.en : item.meals) ||
+        '',
+    };
+  });
 
   const rawImages =
     Array.isArray(tour.images) && tour.images.length > 0
@@ -529,15 +536,24 @@ export function buildTripEditorPayload(
   const itinerary = (formData.itinerary ?? [])
     .filter((day) => Boolean(text(day.title).trim() || text(day.description).trim() || text(day.meals).trim()))
     .map((day, index) => {
-      const arDayTitle = text(day.title).trim() || `Day ${day.day || index + 1}`;
+      const dayNumber = day.day || index + 1;
+      const baseTitle = text(day.title).trim();
+      // When the base (Arabic) title is itself just a day label, keep it localized.
+      const arDayTitle = baseTitle && !isBareDayLabel(baseTitle)
+        ? baseTitle
+        : localizeDayLabel('ar', dayNumber);
+      const isRealTitle = !isBareDayLabel(arDayTitle);
       return {
         dayLabel: arDayTitle,
-        titleJsonb: Object.fromEntries(LOCALES.map((locale) => [
-          locale,
-          locale === 'ar'
-            ? arDayTitle
-            : (text(translation(translations, locale).itinerary?.[index]?.title).trim() || arDayTitle),
-        ])),
+        titleJsonb: Object.fromEntries(LOCALES.map((locale) => {
+          if (locale === 'ar') return [locale, arDayTitle];
+          const translatedTitle = text(translation(translations, locale).itinerary?.[index]?.title).trim();
+          if (translatedTitle && !isBareDayLabel(translatedTitle)) return [locale, translatedTitle];
+          // A translated title is missing or is a bare label: emit either the
+          // real source title or a day label written in this locale.
+          return [locale, isRealTitle ? arDayTitle : localizeDayLabel(locale, dayNumber)];
+        })),
+
         descriptionJsonb: Object.fromEntries(LOCALES.map((locale) => [
           locale,
           locale === 'ar'

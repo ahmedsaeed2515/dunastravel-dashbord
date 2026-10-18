@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, BedDouble, CalendarRange, Check, Clock, Edit, Globe, Hotel, Loader2, MapPin, Monitor, ShieldAlert, Smartphone, Star, Tablet, Tag, Users, X, ExternalLink } from "lucide-react";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
+import { isBareDayLabel, localizeDayLabel } from "@/lib/dayLabels";
 
 export const TOUR_PREVIEW_LOCALES = [
   { code: "en", name: "English", dir: "ltr" },
@@ -171,7 +172,15 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                 {tour.itinerary.map((day) => (
                   <div key={day.id} className="p-4 rounded-xl bg-slate-800/60 border border-slate-700/50 space-y-2">
                     <div className="flex justify-between items-center gap-3">
-                      <span className="font-bold text-amber-400 text-sm">{day.dayLabel || (previewLang === "ar" ? `اليوم ${day.sortOrder + 1}` : `Day ${day.sortOrder + 1}`)}</span>
+                      <span className="font-bold text-amber-400 text-sm">{
+                        (() => {
+                          const raw = day.title ?? day.dayLabel ?? day.label ?? '';
+                          if (raw && !isBareDayLabel(raw)) return String(raw);
+                          if (day.dayLabel && !isBareDayLabel(day.dayLabel)) return day.dayLabel;
+                          const n = day.sortOrder !== undefined && day.sortOrder !== null ? Number(day.sortOrder) + 1 : (day.day ?? 1);
+                          return localizeDayLabel(previewLang, n);
+                        })()
+                      }</span>
                       {day.meals && <Badge variant="outline" className="text-[10px] text-slate-300 border-slate-600 font-bold">{day.meals}</Badge>}
                     </div>
                     <p className="text-slate-300 text-xs md:text-sm leading-relaxed">{day.description || (previewLang === "ar" ? `لم يتم تسجيل تفاصيل اليوم للغة ${previewLang.toUpperCase()}.` : "No day description recorded.")}</p>

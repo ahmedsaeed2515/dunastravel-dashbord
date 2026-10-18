@@ -1,4 +1,5 @@
 import type { LanguageCode, TripModel, ItineraryItem, TranslationDict } from '@/types/dunas-suite';
+import { isBareDayLabel, localizeDayLabel } from '@/lib/dayLabels';
 
 export const ALL_LOCALES: { code: LanguageCode; name: string; flag: string }[] = [
   { code: 'ar', name: 'العربية', flag: '🇸🇦' },
@@ -163,7 +164,7 @@ export function clearLocaleContent(
       cloned.excluded = [];
       cloned.itinerary = (cloned.itinerary || []).map((day, idx) => ({
         day: idx + 1,
-        title: `اليوم ${idx + 1}`,
+        title: localizeDayLabel('ar', idx + 1),
         description: '',
         meals: '',
       }));
@@ -190,7 +191,7 @@ export function clearLocaleContent(
         excluded: [],
         itinerary: (cloned.itinerary || []).map((day, idx) => ({
           day: idx + 1,
-          title: `Day ${idx + 1}`,
+          title: localizeDayLabel(loc, idx + 1),
           description: '',
           meals: '',
         })),
@@ -279,9 +280,16 @@ export async function autoTranslateFullTrip(
             translateText(day.description || '', lang, sourceLang),
             translateText(day.meals || '', lang, sourceLang),
           ]);
+          const dayNumber = day.day || idx + 1;
+          let resolvedTitle = title || day.title || '';
+          if (!resolvedTitle?.trim() || isBareDayLabel(resolvedTitle)) {
+            resolvedTitle = localizeDayLabel(lang, dayNumber);
+          }
           return {
-            day: day.day || idx + 1,
-            title: title || day.title,
+            day: dayNumber,
+            // The machine translator is unreliable for bare labels ("Day 1"),
+            // so rebuild them from the target locale instead.
+            title: resolvedTitle,
             description: description || day.description,
             meals: meals || day.meals,
           };

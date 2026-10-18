@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Plus, Trash, Edit2, X, Save, Sparkles, Globe } from "lucide-react";
 import { toast } from "sonner";
+import { isBareDayLabel, localizeDayLabel } from "@/lib/dayLabels";
 
 interface ItineraryManagerProps {
   tour: Tour;
@@ -103,14 +104,15 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
 
   const handleAddSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || `Day ${sortOrder}`;
+    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || localizeDayLabel("ar", sortOrder);
+    const hasRealTitle = Boolean(primaryTitle && !isBareDayLabel(primaryTitle));
     const primaryDesc = descriptions.ar || descriptions.en || descriptions.es || descriptions.pt || descriptions.it || "";
 
     // Ensure all 5 languages have at least the primary fallback
     const titleJsonb: Record<string, string> = {};
     const descriptionJsonb: Record<string, string> = {};
     LANGUAGES.forEach((l) => {
-      titleJsonb[l.code] = titles[l.code]?.trim() || primaryTitle;
+      titleJsonb[l.code] = titles[l.code]?.trim() || (hasRealTitle ? primaryTitle : localizeDayLabel(l.code, sortOrder));
       descriptionJsonb[l.code] = descriptions[l.code]?.trim() || primaryDesc;
     });
 
@@ -132,13 +134,14 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
 
   const handleEditSubmit = (e: React.FormEvent, dayId: string) => {
     e.preventDefault();
-    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || `Day ${sortOrder}`;
+    const primaryTitle = titles.ar || titles.en || titles.es || titles.pt || titles.it || localizeDayLabel("ar", sortOrder);
+    const hasRealTitle = Boolean(primaryTitle && !isBareDayLabel(primaryTitle));
     const primaryDesc = descriptions.ar || descriptions.en || descriptions.es || descriptions.pt || descriptions.it || "";
 
     const titleJsonb: Record<string, string> = {};
     const descriptionJsonb: Record<string, string> = {};
     LANGUAGES.forEach((l) => {
-      titleJsonb[l.code] = titles[l.code]?.trim() || primaryTitle;
+      titleJsonb[l.code] = titles[l.code]?.trim() || (hasRealTitle ? primaryTitle : localizeDayLabel(l.code, sortOrder));
       descriptionJsonb[l.code] = descriptions[l.code]?.trim() || primaryDesc;
     });
 
@@ -382,7 +385,7 @@ export function ItineraryManager({ tour }: ItineraryManagerProps) {
         {sortedItineraries.length > 0 ? (
           sortedItineraries.map((it, i) => {
             const titleObj = (it as any).titleJsonb;
-            const currentTitle = titleObj?.ar || titleObj?.en || it.dayLabel || `Day ${it.sortOrder}`;
+            const currentTitle = titleObj?.ar || titleObj?.en || (it.dayLabel && !isBareDayLabel(it.dayLabel) ? it.dayLabel : "") || localizeDayLabel("ar", it.sortOrder);
             const currentDesc = (it.descriptionJsonb as any)?.ar || (it.descriptionJsonb as any)?.en || Object.values(it.descriptionJsonb || {})[0] || "لا يوجد وصف مسجل.";
             const availableLangs = Object.keys(titleObj || it.descriptionJsonb || {}).filter((k) => ["ar", "en", "es", "pt", "it"].includes(k));
 

@@ -17,6 +17,7 @@ import {
   translateText,
   clearLocaleContent,
 } from '@/lib/translationService';
+import { localizeDayLabel } from '@/lib/dayLabels';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1269,7 +1270,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
     const newDayNum = baseItin.length + 1;
     const newDay: ItineraryItem = {
       day: newDayNum,
-      title: activeLang === 'ar' ? `اليوم ${newDayNum}` : `Day ${newDayNum}`,
+      title: localizeDayLabel('ar', newDayNum),
       description: '',
       meals: activeLang === 'ar' ? 'الإفطار' : 'Breakfast',
     };
@@ -1282,7 +1283,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
         const it = [...(trans[loc.code]?.itinerary || [])];
         it.push({
           day: newDayNum,
-          title: loc.code === 'ar' ? `اليوم ${newDayNum}` : `Day ${newDayNum}`,
+          title: localizeDayLabel(loc.code, newDayNum),
           description: '',
           meals: loc.code === 'ar' ? 'الإفطار' : 'Breakfast',
         });
@@ -1807,8 +1808,8 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
     if (autoLocations.length === 0) {
       autoLocations.push(
-        { dbKey: 'cairo', lat: 30.0444, lng: 31.2357, daysVisited: [1, 2], name: 'القاهرة والأهرامات', description: 'اليوم 1-2: استكشاف القاهرة وأهرامات الجيزة' },
-        { dbKey: 'luxor', lat: 25.6872, lng: 32.6396, daysVisited: [3, 4], name: 'الأقصر والكرنك', description: 'اليوم 3-4: زيارة وادي الملوك ومعابد الأقصر' }
+        { dbKey: 'cairo', lat: 30.0444, lng: 31.2357, daysVisited: [1, 2], name: 'القاهرة والأهرامات', description: `${localizeDayLabel('ar', 1)}-${localizeDayLabel('ar', 2)}: استكشاف القاهرة وأهرامات الجيزة` },
+        { dbKey: 'luxor', lat: 25.6872, lng: 32.6396, daysVisited: [3, 4], name: 'الأقصر والكرنك', description: `${localizeDayLabel('ar', 3)}-${localizeDayLabel('ar', 4)}: زيارة وادي الملوك ومعابد الأقصر` }
       );
     }
 
