@@ -91,6 +91,13 @@ export interface AdminHotel {
   policiesJsonb?: Record<string, any> | null;
   heroMediaId: string | null;
   heroImageUrl: string | null;
+  images?: Array<{
+    id?: string;
+    url: string;
+    altText?: string | null;
+    isHero?: boolean;
+    sortOrder?: number;
+  }> | string[];
   status: HotelStatus;
   isActive: boolean;
   sortOrder: number;

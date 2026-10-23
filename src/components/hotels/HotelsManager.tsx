@@ -55,6 +55,8 @@ import {
   RotateCcw,
   Wand2,
   Calendar,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -392,6 +394,7 @@ interface HotelFormData {
   website: string;
   heroMediaId: string;
   heroImageUrl: string;
+  images: string[];
   amenities: Record<string, boolean>;
   checkIn: string;
   checkOut: string;
@@ -423,6 +426,7 @@ const defaultFormData = (): HotelFormData => ({
   website: "",
   heroMediaId: "",
   heroImageUrl: "",
+  images: [],
   amenities: {
     pool: true,
     spa: true,
@@ -688,6 +692,12 @@ export function HotelsManager() {
 
   const handleArchive = (hotel: AdminHotel) => {
     const name = hotel.nameJsonb?.[locale] || hotel.nameJsonb?.en || hotel.slug;
+    const confirmed = window.confirm(
+      isAr
+        ? `هل أنت متأكد من أرشفة فندق "${name}"؟\nسيتم إخفاؤه من الموقع العام وستظهر صفحته كغير موجودة.`
+        : `Archive hotel "${name}"?\nIt will be hidden from the public site and its page will show as not found.`
+    );
+    if (!confirmed) return;
     lifecycleMutation.mutate(
       { id: hotel.id, action: "archive" },
       {
@@ -3609,6 +3619,13 @@ function HotelEditorDialog({
   const [showCustomUrlInput, setShowCustomUrlInput] = useState(false);
   const heroFileInputRef = useRef<HTMLInputElement | null>(null);
 
+  // Hotel Photo Gallery State (multiple images managed from the dashboard)
+  const [isGalleryPickerOpen, setIsGalleryPickerOpen] = useState(false);
+  const [isUploadingGallery, setIsUploadingGallery] = useState(false);
+  const [showGalleryUrlInput, setShowGalleryUrlInput] = useState(false);
+  const [galleryUrlInput, setGalleryUrlInput] = useState("");
+  const galleryFileInputRef = useRef<HTMLInputElement | null>(null);
+
   // Dedicated Room Editor Modal State
   const [isRoomEditorOpen, setIsRoomEditorOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<FormRoomItem | null>(null);
@@ -3684,6 +3701,108 @@ function HotelEditorDialog({
     toast.info(isAr ? "تمت إزالة صورة الفندق." : "Hotel image removed.");
   };
 
+  // ----------------------------------------------------
+  // Hotel Photo Gallery Actions
+  // ----------------------------------------------------
+  const addGalleryImages = (urls: string[]) => {
+    setForm((prev) => {
+      const existing = new Set(prev.images);
+      const next = [...prev.images];
+      for (const raw of urls) {
+        const url = (raw || "").trim();
+        if (url && !existing.has(url)) {
+          existing.add(url);
+          next.push(url);
+        }
+      }
+      return { ...prev, images: next };
+    });
+  };
+
+  const handleGalleryFilesUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    if (files.some((file) => file.size > 10 * 1024 * 1024)) {
+      toast.error(isAr ? "حجم كل صورة يجب ألا يتجاوز 10 ميغابايت." : "Each image must not exceed 10MB.");
+      if (galleryFileInputRef.current) galleryFileInputRef.current.value = "";
+      return;
+    }
+
+    setIsUploadingGallery(true);
+    try {
+      // Gallery photos are stored as GENERAL assets under the "hotels" category so
+      // they stay reusable in the media library and can be removed from the hotel
+      // gallery without leaving a permanently linked HOTEL asset behind.
+      const uploadedUrls: string[] = [];
+      for (const file of files) {
+        const res = await uploadHeroMutation.mutateAsync({
+          file,
+          entityType: "GENERAL" as MediaEntityType,
+          categorySlug: "hotels",
+        });
+        const url = res.secureUrl || res.url;
+        if (url) uploadedUrls.push(url);
+      }
+      addGalleryImages(uploadedUrls);
+      toast.success(
+        isAr
+          ? `تم رفع ${uploadedUrls.length} صورة وإضافتها إلى معرض الفندق 📸`
+          : `${uploadedUrls.length} photo(s) uploaded to the hotel gallery 📸`
+      );
+    } catch {
+      toast.error(isAr ? "تعذر رفع الصور، يرجى المحاولة مرة أخرى." : "Failed to upload the photos.");
+    } finally {
+      setIsUploadingGallery(false);
+      if (galleryFileInputRef.current) galleryFileInputRef.current.value = "";
+    }
+  };
+
+  const handleSelectGalleryFromPicker = (asset: { id: string; url: string; altText?: string }) => {
+    addGalleryImages([asset.url]);
+    setIsGalleryPickerOpen(false);
+    toast.success(isAr ? "تمت إضافة الصورة إلى معرض الفندق 🖼️" : "Photo added to the hotel gallery 🖼️");
+  };
+
+  const handleAddGalleryUrl = () => {
+    const url = galleryUrlInput.trim();
+    if (!/^https?:\/\/[^\s]+$/i.test(url)) {
+      toast.error(isAr ? "يرجى إدخال رابط صورة صحيح يبدأ بـ http أو https." : "Please enter a valid image URL starting with http or https.");
+      return;
+    }
+    if (form.images.includes(url)) {
+      toast.info(isAr ? "هذه الصورة موجودة بالفعل في المعرض." : "This photo is already in the gallery.");
+      return;
+    }
+    addGalleryImages([url]);
+    setGalleryUrlInput("");
+    setShowGalleryUrlInput(false);
+    toast.success(isAr ? "تمت إضافة رابط الصورة إلى المعرض 🔗" : "Image URL added to the gallery 🔗");
+  };
+
+  const handleRemoveGalleryImage = (index: number) => {
+    setForm((prev) => ({ ...prev, images: prev.images.filter((_, i) => i !== index) }));
+    toast.info(isAr ? "تمت إزالة الصورة من المعرض." : "Photo removed from the gallery.");
+  };
+
+  const handleMoveGalleryImage = (index: number, direction: -1 | 1) => {
+    setForm((prev) => {
+      const target = index + direction;
+      if (target < 0 || target >= prev.images.length) return prev;
+      const images = [...prev.images];
+      [images[index], images[target]] = [images[target], images[index]];
+      return { ...prev, images };
+    });
+  };
+
+  const handleSetGalleryAsHero = (url: string) => {
+    // A direct hero URL wins over a previously linked media asset, so clear the
+    // media id to make the chosen gallery photo the actual cover.
+    setForm((prev) => ({ ...prev, heroImageUrl: url, heroMediaId: "" }));
+    setPendingHeroMediaId(null);
+    toast.success(isAr ? "تم تعيين الصورة كغلاف رئيسي للفندق ⭐" : "Photo set as the hotel cover ⭐");
+  };
+
   useEffect(() => {
     if (open) {
       if (hotel) {
@@ -3709,6 +3828,11 @@ function HotelEditorDialog({
           website: hotel.website || "",
           heroMediaId: hotel.heroMediaId || "",
           heroImageUrl: hotel.heroImageUrl || "",
+          images: Array.isArray(hotel.images)
+            ? hotel.images
+                .map((img: any) => (typeof img === "string" ? img : img?.url))
+                .filter((url: any): url is string => typeof url === "string" && url.trim().length > 0)
+            : [],
           amenities: (() => {
             if (hotel.amenitiesJsonb && typeof hotel.amenitiesJsonb === "object" && !Array.isArray(hotel.amenitiesJsonb)) {
               const { heroImageUrl: _h, images: _i, ...rest } = hotel.amenitiesJsonb as Record<string, any>;
@@ -3779,6 +3903,9 @@ function HotelEditorDialog({
       setActiveTab("basic");
       setIsRoomEditorOpen(false);
       setPendingHeroMediaId(null);
+      setIsGalleryPickerOpen(false);
+      setShowGalleryUrlInput(false);
+      setGalleryUrlInput("");
     }
   }, [hotel, open]);
 
@@ -4104,8 +4231,13 @@ function HotelEditorDialog({
       ...((form.phone || "").trim() ? { phone: form.phone.trim() } : {}),
       ...((form.email || "").trim() ? { email: form.email.trim() } : {}),
       ...((form.website || "").trim() ? { website: form.website.trim() } : {}),
-      ...((form.heroMediaId || "").trim() ? { heroMediaId: form.heroMediaId.trim() } : {}),
-      ...(trimmedHeroUrl ? { heroImageUrl: trimmedHeroUrl } : {}),
+      // Always send hero fields (even when empty) so removing a hero or replacing
+      // it with a gallery URL actually clears the previously linked media asset.
+      heroMediaId: (form.heroMediaId || "").trim(),
+      heroImageUrl: trimmedHeroUrl,
+      images: form.images
+        .map((url, index) => ({ url: (url || "").trim(), sortOrder: index }))
+        .filter((image) => Boolean(image.url)),
       amenitiesJsonb: {
         ...cleanAmenityFlags,
         ...(trimmedHeroUrl ? { heroImageUrl: trimmedHeroUrl } : {}),
@@ -4415,6 +4547,221 @@ function HotelEditorDialog({
                 )}
               </div>
 
+              {/* HOTEL PHOTO GALLERY */}
+              <div className="p-4 sm:p-5 rounded-3xl bg-muted/30 border border-border/80 space-y-4">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                  <div>
+                    <h4 className="text-xs font-black text-foreground flex items-center gap-2">
+                      <ImageIcon className="w-4 h-4 text-amber-500" />
+                      <span>{isAr ? "معرض صور الفندق" : "Hotel Photo Gallery"}</span>
+                    </h4>
+                    <p className="text-[11px] text-muted-foreground mt-0.5 font-medium">
+                      {isAr
+                        ? "أضف الصور التي تريد ظهورها في معرض صفحة الفندق بالموقع العام، ورتّبها كما تحب."
+                        : "Add the photos shown in the hotel gallery on the public site, then arrange their order."}
+                    </p>
+                  </div>
+
+                  <Badge variant="outline" className="w-fit border-amber-500/40 text-amber-500 text-[10px] font-bold">
+                    {isAr ? `${form.images.length} صورة` : `${form.images.length} photos`}
+                  </Badge>
+                </div>
+
+                <input
+                  ref={galleryFileInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  multiple
+                  className="hidden"
+                  onChange={handleGalleryFilesUpload}
+                />
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() => galleryFileInputRef.current?.click()}
+                    disabled={isUploadingGallery}
+                    className="rounded-xl bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs gap-1.5 shadow-xs cursor-pointer"
+                  >
+                    {isUploadingGallery ? (
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    ) : (
+                      <UploadCloud className="w-3.5 h-3.5" />
+                    )}
+                    <span>
+                      {isUploadingGallery
+                        ? (isAr ? "جاري رفع الصور..." : "Uploading...")
+                        : (isAr ? "رفع صور من الجهاز 📸" : "Upload Photos 📸")}
+                    </span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsGalleryPickerOpen(true)}
+                    className="rounded-xl border-amber-500/30 text-amber-500 hover:bg-amber-500 hover:text-slate-950 font-bold text-xs gap-1.5 cursor-pointer"
+                  >
+                    <FolderOpen className="w-3.5 h-3.5" />
+                    <span>{isAr ? "إضافة من مكتبة الوسائط 🖼️" : "Add from Library 🖼️"}</span>
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowGalleryUrlInput(!showGalleryUrlInput)}
+                    className="rounded-xl text-xs font-bold gap-1.5 text-muted-foreground hover:text-foreground cursor-pointer"
+                  >
+                    <LinkIcon className="w-3.5 h-3.5" />
+                    <span>{isAr ? "إضافة برابط مباشر 🔗" : "Add by URL 🔗"}</span>
+                  </Button>
+                </div>
+
+                {showGalleryUrlInput && (
+                  <div className="p-3.5 rounded-2xl bg-card border border-amber-500/30 space-y-2 animate-in fade-in duration-200">
+                    <div className="flex items-center justify-between">
+                      <label className="text-[11px] font-extrabold text-foreground flex items-center gap-1.5">
+                        <LinkIcon className="w-3.5 h-3.5 text-amber-500" />
+                        <span>{isAr ? "رابط الصورة المباشر (URL)" : "Direct Image URL"}</span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setShowGalleryUrlInput(false)}
+                        className="text-muted-foreground hover:text-foreground cursor-pointer text-xs"
+                      >
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        placeholder="https://res.cloudinary.com/... or https://images.unsplash.com/..."
+                        value={galleryUrlInput}
+                        onChange={(e) => setGalleryUrlInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") {
+                            e.preventDefault();
+                            handleAddGalleryUrl();
+                          }
+                        }}
+                        className="h-9 text-xs font-mono"
+                      />
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={handleAddGalleryUrl}
+                        disabled={!galleryUrlInput.trim()}
+                        className="bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold text-xs h-9 px-3 rounded-xl cursor-pointer gap-1"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>{isAr ? "إضافة" : "Add"}</span>
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {form.images.length === 0 ? (
+                  <div className="p-6 border-2 border-dashed border-border rounded-2xl bg-card flex flex-col items-center justify-center text-center gap-2">
+                    <div className="p-3 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20">
+                      <ImageIcon className="w-6 h-6 stroke-[2]" />
+                    </div>
+                    <h5 className="text-xs font-black text-foreground">
+                      {isAr ? "معرض الصور فارغ" : "The gallery is empty"}
+                    </h5>
+                    <p className="text-[11px] text-muted-foreground font-medium leading-relaxed max-w-sm">
+                      {isAr
+                        ? "ارفع صوراً من جهازك أو اختر صوراً من مكتبة الوسائط أو أضف رابطاً مباشراً لتبدأ بناء المعرض."
+                        : "Upload photos from your device, pick from the media library, or paste a direct URL to start building the gallery."}
+                    </p>
+                  </div>
+                ) : (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+                    {form.images.map((url, index) => {
+                      const isCover = url === form.heroImageUrl;
+                      return (
+                        <div
+                          key={`${url}-${index}`}
+                          className={`relative group aspect-4/3 rounded-2xl overflow-hidden border bg-slate-950 shadow-sm ${
+                            isCover ? "border-amber-500 ring-2 ring-amber-500/30" : "border-border/80"
+                          }`}
+                        >
+                          <img
+                            src={url}
+                            alt={isAr ? `صورة المعرض ${index + 1}` : `Gallery photo ${index + 1}`}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                            onError={(e) => {
+                              e.currentTarget.src = "https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=1200";
+                            }}
+                          />
+                          <div className="absolute inset-0 bg-linear-to-t from-slate-950/85 via-slate-950/5 to-transparent opacity-80 group-hover:opacity-100 transition-opacity" />
+
+                          <span className="absolute top-1.5 right-1.5 rtl:right-1.5 ltr:left-1.5 min-w-5 h-5 px-1.5 inline-flex items-center justify-center rounded-lg bg-slate-950/80 backdrop-blur-md text-[10px] font-black text-slate-200 border border-white/10">
+                            {index + 1}
+                          </span>
+
+                          {isCover && (
+                            <span className="absolute top-1.5 left-1.5 rtl:left-1.5 ltr:right-1.5 inline-flex items-center gap-1 rounded-lg bg-amber-500 text-slate-950 px-1.5 py-1 text-[9px] font-black shadow-md">
+                              <Star className="w-2.5 h-2.5 fill-slate-950" />
+                              <span>{isAr ? "الغلاف" : "Cover"}</span>
+                            </span>
+                          )}
+
+                          <div className="absolute inset-x-1.5 bottom-1.5 flex items-center justify-between gap-1">
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleMoveGalleryImage(index, -1)}
+                                disabled={index === 0}
+                                title={isAr ? "تحريك لليمين" : "Move earlier"}
+                                className="p-1.5 rounded-lg bg-slate-950/75 hover:bg-slate-950 text-slate-100 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                              >
+                                <ChevronLeft className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleMoveGalleryImage(index, 1)}
+                                disabled={index === form.images.length - 1}
+                                title={isAr ? "تحريك لليسار" : "Move later"}
+                                className="p-1.5 rounded-lg bg-slate-950/75 hover:bg-slate-950 text-slate-100 border border-white/10 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                              >
+                                <ChevronRight className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+
+                            <div className="flex items-center gap-1">
+                              <button
+                                type="button"
+                                onClick={() => handleSetGalleryAsHero(url)}
+                                disabled={isCover}
+                                title={isAr ? "تعيين كغلاف" : "Set as cover"}
+                                className="p-1.5 rounded-lg bg-amber-500/90 hover:bg-amber-500 text-slate-950 border border-amber-300/30 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors"
+                              >
+                                <Star className={`w-3.5 h-3.5 ${isCover ? "fill-slate-950" : ""}`} />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveGalleryImage(index)}
+                                title={isAr ? "حذف الصورة" : "Remove photo"}
+                                className="p-1.5 rounded-lg bg-destructive/90 hover:bg-destructive text-white border border-white/10 cursor-pointer transition-colors"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+
+                <p className="text-[10px] font-medium text-muted-foreground">
+                  {isAr
+                    ? "💡 لا تنسَ الضغط على «حفظ التعديلات» لتطبيق تغييرات المعرض على الموقع العام."
+                    : "💡 Don't forget to click Save Changes to publish the gallery updates to the public site."}
+                </p>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Hotel Name EN */}
                 <div className="space-y-1.5">
@@ -4578,7 +4925,7 @@ function HotelEditorDialog({
                 <div className="space-y-1.5 max-w-sm">
                   <label className="text-xs font-extrabold text-foreground">{isAr ? "حالة الفندق في النظام" : "Hotel System Status"}</label>
                   <select
-                    value={form.status === "ARCHIVED" || !form.isActive ? "ARCHIVED" : "PUBLISHED"}
+                    value={form.status === "ARCHIVED" ? "ARCHIVED" : "PUBLISHED"}
                     onChange={(e) => {
                       const isArchived = e.target.value === "ARCHIVED";
                       setForm((prev) => ({
@@ -4592,6 +4939,13 @@ function HotelEditorDialog({
                     <option value="PUBLISHED">{isAr ? "نشط ومتاح للحجز ✨ (Active)" : "Active & Bookable ✨"}</option>
                     <option value="ARCHIVED">{isAr ? "مؤرشف ومخفي 📦 (Archived)" : "Archived & Hidden 📦"}</option>
                   </select>
+                  {form.status !== "ARCHIVED" && !form.isActive && (
+                    <p className="text-[10px] font-semibold text-amber-500 leading-snug">
+                      {isAr
+                        ? "ملاحظة: هذا الفندق غير مفعّل حالياً في الموقع. اختر «نشط ومتاح للحجز» ثم احفظ لنشره."
+                        : "Note: this hotel is currently hidden. Choose \"Active & Bookable\" and save to publish it."}
+                    </p>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -5318,6 +5672,17 @@ function HotelEditorDialog({
         onSelect={handleSelectMediaFromPicker}
         selectedAssetId={form.heroMediaId}
         selectedAssetUrl={form.heroImageUrl}
+        entityId={hotel?.id}
+        locale={locale}
+      />
+
+      {/* Media Library Picker Modal for Hotel Gallery */}
+      <MediaLibraryPickerModal
+        open={isGalleryPickerOpen}
+        onClose={() => setIsGalleryPickerOpen(false)}
+        onSelect={handleSelectGalleryFromPicker}
+        selectedAssetId=""
+        selectedAssetUrl=""
         entityId={hotel?.id}
         locale={locale}
       />
