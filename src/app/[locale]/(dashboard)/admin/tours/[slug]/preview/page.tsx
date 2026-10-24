@@ -174,10 +174,15 @@ export default function VisitorTourPreviewPage({ params }: { params: Promise<{ s
                     <div className="flex justify-between items-center gap-3">
                       <span className="font-bold text-amber-400 text-sm">{
                         (() => {
-                          const raw = day.title ?? day.dayLabel ?? day.label ?? '';
+                          const legacyDay = day as typeof day & {
+                            title?: string | null;
+                            label?: string | null;
+                            day?: number | null;
+                          };
+                          const raw = legacyDay.title ?? day.dayLabel ?? legacyDay.label ?? '';
                           if (raw && !isBareDayLabel(raw)) return String(raw);
                           if (day.dayLabel && !isBareDayLabel(day.dayLabel)) return day.dayLabel;
-                          const n = day.sortOrder !== undefined && day.sortOrder !== null ? Number(day.sortOrder) + 1 : (day.day ?? 1);
+                          const n = day.sortOrder !== undefined && day.sortOrder !== null ? Number(day.sortOrder) + 1 : (legacyDay.day ?? 1);
                           return localizeDayLabel(previewLang, n);
                         })()
                       }</span>

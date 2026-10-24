@@ -354,6 +354,12 @@ export interface FormRoomItem {
   inventory: number;
   mealPlan: string;
   isActive: boolean;
+  priceDisplayMode?: 'PRICE' | 'HIDDEN' | 'CUSTOM_LABEL';
+  priceLabelEn?: string;
+  priceLabelAr?: string;
+  priceLabelEs?: string;
+  priceLabelPt?: string;
+  priceLabelIt?: string;
   bedTypeEn?: string;
   bedTypeAr?: string;
   bedTypeEs?: string;
@@ -2501,6 +2507,12 @@ function RoomEditorModal({
     inventory: 10,
     mealPlan: "bb",
     isActive: true,
+    priceDisplayMode: "PRICE",
+    priceLabelEn: "",
+    priceLabelAr: "",
+    priceLabelEs: "",
+    priceLabelPt: "",
+    priceLabelIt: "",
     bedTypeEn: "1 King Bed",
     bedTypeAr: "1 سرير كينج ملكي",
     bedTypeEs: "1 Cama King Size",
@@ -2543,6 +2555,12 @@ function RoomEditorModal({
           inventory: Number(room.inventory) >= 0 ? Number(room.inventory) : 10,
           mealPlan: room.mealPlan || "bb",
           isActive: room.isActive ?? true,
+          priceDisplayMode: room.priceDisplayMode || "PRICE",
+          priceLabelEn: room.priceLabelEn || "",
+          priceLabelAr: room.priceLabelAr || "",
+          priceLabelEs: room.priceLabelEs || "",
+          priceLabelPt: room.priceLabelPt || "",
+          priceLabelIt: room.priceLabelIt || "",
           bedTypeEn: room.bedTypeEn || "Double / Twin Beds",
           bedTypeAr: room.bedTypeAr || "مزدوجة / توأم",
           bedTypeEs: room.bedTypeEs || "Doble / Twin",
@@ -2578,6 +2596,12 @@ function RoomEditorModal({
           inventory: 10,
           mealPlan: "bb",
           isActive: true,
+          priceDisplayMode: "PRICE",
+          priceLabelEn: "",
+          priceLabelAr: "",
+          priceLabelEs: "",
+          priceLabelPt: "",
+          priceLabelIt: "",
           bedTypeEn: "1 King Bed",
           bedTypeAr: "1 سرير كينج ملكي",
           bedTypeEs: "1 Cama King Size",
@@ -2731,6 +2755,13 @@ function RoomEditorModal({
     onSave(finalRoom, roomIndex);
     onClose();
   };
+
+  const priceLabelKey = `priceLabel${langTab.charAt(0).toUpperCase()}${langTab.slice(1)}` as
+    | "priceLabelEn"
+    | "priceLabelAr"
+    | "priceLabelEs"
+    | "priceLabelPt"
+    | "priceLabelIt";
 
   return (
     <Dialog open={open} onOpenChange={(val) => !val && onClose()}>
@@ -3139,6 +3170,79 @@ function RoomEditorModal({
                   ))}
                 </select>
               </div>
+            </div>
+          </div>
+
+          {/* Price Display Settings */}
+          <div className="p-4 rounded-2xl bg-muted/30 border border-border/80 space-y-3">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+              <div>
+                <h5 className="text-xs font-black text-foreground flex items-center gap-1.5">
+                  <Globe2 className="w-4 h-4 text-amber-500" />
+                  <span>
+                    {isAr
+                      ? "عرض السعر على الموقع (Price Display Settings)"
+                      : "Price Display Settings"}
+                  </span>
+                </h5>
+                <p className="text-[11px] text-muted-foreground font-medium">
+                  {isAr
+                    ? "تحكم في كيفية عرض سعر الغرفة للزوار على الموقع."
+                    : "Control how the room rate is shown to visitors on the public site."}
+                </p>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="space-y-1">
+                <label className="text-[11px] font-extrabold text-foreground">
+                  {isAr ? "طريقة عرض السعر" : "Price display mode"}
+                </label>
+                <select
+                  value={roomData.priceDisplayMode || "PRICE"}
+                  onChange={(e) =>
+                    setRoomData((prev) => ({
+                      ...prev,
+                      priceDisplayMode: e.target.value as FormRoomItem["priceDisplayMode"],
+                    }))
+                  }
+                  className="w-full h-10 px-3 rounded-xl border bg-background text-xs font-bold cursor-pointer"
+                >
+                  <option value="PRICE">
+                    {isAr ? "إظهار السعر الرقمي" : "Show numeric price"}
+                  </option>
+                  <option value="HIDDEN">
+                    {isAr ? "إخفاء السعر" : "Hide price"}
+                  </option>
+                  <option value="CUSTOM_LABEL">
+                    {isAr ? "نص مخصص" : "Custom text"}
+                  </option>
+                </select>
+              </div>
+              {roomData.priceDisplayMode === "CUSTOM_LABEL" && (
+                <div className="space-y-1">
+                  <label className="text-[11px] font-extrabold text-foreground">
+                    {isAr
+                      ? `نص السعر المخصص (${langTab.toUpperCase()})`
+                      : `Custom price text (${langTab.toUpperCase()})`}
+                  </label>
+                  <Input
+                    value={roomData[priceLabelKey] || ""}
+                    onChange={(e) =>
+                      setRoomData((prev) => ({
+                        ...prev,
+                        [priceLabelKey]: e.target.value,
+                      }))
+                    }
+                    placeholder={langTab === "ar" ? "على الطلب" : "Price on request"}
+                    className="h-10 text-xs"
+                  />
+                  <p className="text-[10px] text-muted-foreground">
+                    {isAr
+                      ? "بدّل لغة التحرير بالأعلى لكتابة نص كل لغة. أمثلة: «على الطلب»، «مجاني»."
+                      : "Switch the editing language above to enter text for each locale. Examples: “Price on request”, “Included”."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
@@ -3803,6 +3907,13 @@ function HotelEditorDialog({
     toast.success(isAr ? "تم تعيين الصورة كغلاف رئيسي للفندق ⭐" : "Photo set as the hotel cover ⭐");
   };
 
+  const handleHeroUrlInputChange = (value: string) => {
+    // Typing a direct URL must override any media asset that was picked before,
+    // otherwise the backend keeps resolving the stale asset as the hero.
+    setForm((prev) => ({ ...prev, heroImageUrl: value, heroMediaId: "" }));
+    setPendingHeroMediaId(null);
+  };
+
   useEffect(() => {
     if (open) {
       if (hotel) {
@@ -3871,6 +3982,12 @@ function HotelEditorDialog({
                 inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,
                 mealPlan: typeof (r.mealPlan) === 'string' ? r.mealPlan : (r.mealPlan?.en || "bb"),
                 isActive: r.isActive ?? true,
+                priceDisplayMode: r.priceDisplayMode || "PRICE",
+                priceLabelEn: r.priceLabelJsonb?.en || (typeof r.priceLabel === 'string' ? r.priceLabel : '') || '',
+                priceLabelAr: r.priceLabelJsonb?.ar || (typeof r.priceLabel === 'string' ? r.priceLabel : '') || '',
+                priceLabelEs: r.priceLabelJsonb?.es || (typeof r.priceLabel === 'string' ? r.priceLabel : '') || '',
+                priceLabelPt: r.priceLabelJsonb?.pt || (typeof r.priceLabel === 'string' ? r.priceLabel : '') || '',
+                priceLabelIt: r.priceLabelJsonb?.it || (typeof r.priceLabel === 'string' ? r.priceLabel : '') || '',
                 bedTypeEn: r.bedType?.en || (typeof r.bedType === 'string' ? r.bedType : "Double / Twin Beds"),
                 bedTypeAr: r.bedType?.ar || (typeof r.bedType === 'string' ? r.bedType : "مزدوجة / توأم"),
                 bedTypeEs: r.bedType?.es || (typeof r.bedType === 'string' ? r.bedType : "Doble / Twin"),
@@ -4172,6 +4289,21 @@ function HotelEditorDialog({
           ? Number(r.ratePerNight)
           : 100,
       currency: form.currency.toUpperCase() || "USD",
+      priceDisplayMode: r.priceDisplayMode || "PRICE",
+      priceLabelJsonb: (() => {
+        const entries = (
+          [
+            ["en", r.priceLabelEn],
+            ["ar", r.priceLabelAr],
+            ["es", r.priceLabelEs],
+            ["pt", r.priceLabelPt],
+            ["it", r.priceLabelIt],
+          ] as Array<[string, string | undefined]>
+        )
+          .map(([locale, value]) => [locale, (value || "").trim()] as const)
+          .filter(([, value]) => Boolean(value));
+        return entries.length > 0 ? Object.fromEntries(entries) : null;
+      })(),
       maxOccupancy: Number(r.maxOccupancy) || 2,
       inventory: Number(r.inventory) >= 0 ? Number(r.inventory) : 10,
       mealPlanJsonb: {
@@ -4526,7 +4658,7 @@ function HotelEditorDialog({
                       <Input
                         placeholder="https://res.cloudinary.com/... or https://images.unsplash.com/..."
                         value={form.heroImageUrl}
-                        onChange={(e) => setForm((prev) => ({ ...prev, heroImageUrl: e.target.value }))}
+                        onChange={(e) => handleHeroUrlInputChange(e.target.value)}
                         className="h-9 text-xs font-mono"
                       />
                       {form.heroImageUrl && (
@@ -5122,6 +5254,16 @@ function HotelEditorDialog({
                                   ${room.ratePerNight}
                                   <span className="text-xs text-muted-foreground font-medium font-sans"> / {isAr ? "ليلة" : "night"}</span>
                                 </div>
+                                {room.priceDisplayMode === "HIDDEN" && (
+                                  <span className="mt-1 inline-flex items-center rounded-md border border-rose-500/30 bg-rose-500/10 px-1.5 py-0.5 text-[10px] font-bold text-rose-600 dark:text-rose-400">
+                                    {isAr ? "السعر مخفي" : "Price hidden"}
+                                  </span>
+                                )}
+                                {room.priceDisplayMode === "CUSTOM_LABEL" && (
+                                  <span className="mt-1 inline-flex items-center rounded-md border border-sky-500/30 bg-sky-500/10 px-1.5 py-0.5 text-[10px] font-bold text-sky-600 dark:text-sky-400">
+                                    {isAr ? "نص مخصص" : "Custom label"}
+                                  </span>
+                                )}
                               </div>
                             </div>
 
@@ -5519,7 +5661,7 @@ function HotelEditorDialog({
                   <Input
                     placeholder="https://res.cloudinary.com/... or https://images.unsplash.com/..."
                     value={form.heroImageUrl}
-                    onChange={(e) => setForm((prev) => ({ ...prev, heroImageUrl: e.target.value }))}
+                    onChange={(e) => handleHeroUrlInputChange(e.target.value)}
                     className="h-10 text-xs font-mono"
                   />
                 </div>

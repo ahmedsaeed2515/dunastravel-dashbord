@@ -44,6 +44,9 @@ export interface HotelRoomRecord {
   description?: Record<string, any> | null;
   ratePerNight: number;
   currency: string;
+  priceDisplayMode?: 'PRICE' | 'HIDDEN' | 'CUSTOM_LABEL';
+  priceLabel?: string | null;
+  priceLabelJsonb?: Record<string, string> | null;
   mealPlan?: Record<string, string> | string | null;
   maxOccupancy: number;
   inventory: number;
@@ -65,6 +68,8 @@ export interface HotelRoomPayload {
   descriptionJsonb?: Record<string, any>;
   ratePerNight: number;
   currency?: string;
+  priceDisplayMode?: 'PRICE' | 'HIDDEN' | 'CUSTOM_LABEL';
+  priceLabelJsonb?: Record<string, string> | null;
   mealPlanJsonb?: Record<string, string>;
   maxOccupancy: number;
   inventory: number;
