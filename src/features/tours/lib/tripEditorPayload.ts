@@ -8,6 +8,7 @@ import type {
 } from '@/types/dunas-suite';
 import type { CreateTourPayload, Tour } from '../types';
 import { isBareDayLabel, localizeDayLabel } from '@/lib/dayLabels';
+import { getRouteMapDefault, isRouteMapDefaultText } from '@/lib/routeMapDefaults';
 
 const LOCALES: LanguageCode[] = ['ar', 'en', 'es', 'pt', 'it'];
 
@@ -676,18 +677,28 @@ export function buildTripEditorPayload(
 
   const routeMapJsonb = routeMapLocations.length > 0
     ? {
-        titleJsonb: Object.fromEntries(LOCALES.map((locale) => [
-          locale,
-          locale === 'ar'
-            ? text(formData.routeMap?.title) || 'Interactive Itinerary Journey Map'
-            : text(translation(translations, locale).routeMap?.title) || 'Interactive Itinerary Journey Map',
-        ])),
-        subtitleJsonb: Object.fromEntries(LOCALES.map((locale) => [
-          locale,
-          locale === 'ar'
-            ? text(formData.routeMap?.subtitle) || 'Explore your day-by-day path across premier luxury landmarks'
-            : text(translation(translations, locale).routeMap?.subtitle) || 'Explore your day-by-day path across premier luxury landmarks',
-        ])),
+        titleJsonb: Object.fromEntries(LOCALES.map((locale) => {
+          const stored = locale === 'ar'
+            ? text(formData.routeMap?.title)
+            : text(translation(translations, locale).routeMap?.title);
+          return [
+            locale,
+            stored && !isRouteMapDefaultText(stored, 'title')
+              ? stored
+              : getRouteMapDefault(locale, 'title'),
+          ];
+        })),
+        subtitleJsonb: Object.fromEntries(LOCALES.map((locale) => {
+          const stored = locale === 'ar'
+            ? text(formData.routeMap?.subtitle)
+            : text(translation(translations, locale).routeMap?.subtitle);
+          return [
+            locale,
+            stored && !isRouteMapDefaultText(stored, 'subtitle')
+              ? stored
+              : getRouteMapDefault(locale, 'subtitle'),
+          ];
+        })),
         locations: routeMapLocations,
       }
     : null;

@@ -525,6 +525,44 @@ describe('buildTripEditorPayload', () => {
     expect(row.nameJsonb.en).toBe('Pyramids Hotel\nNile Hotel\nMena House');
     expect(row.cityJsonb).toEqual({ ar: 'الجيزة', en: 'Giza' });
   });
+
+  it('seeds every route-map locale with its own default title and subtitle', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'route-map-localized',
+      title: 'Route Map Localized',
+      destination: 'egypt',
+      price: 1200,
+      routeMap: {
+        title: '',
+        subtitle: '',
+        locations: [
+          {
+            dbKey: 'cairo',
+            lat: 30.0444,
+            lng: 31.2357,
+            daysVisited: [1],
+            name: 'القاهرة',
+            description: 'زيارة القاهرة',
+          },
+        ],
+      },
+    }, false);
+
+    expect(payload.routeMapJsonb?.titleJsonb).toEqual({
+      ar: 'خريطة خط سير الرحلة التفاعلية',
+      en: 'Interactive Itinerary Journey Map',
+      es: 'Mapa Interactivo del Itinerario de Viaje',
+      it: "Mappa Interattiva dell'Itinerario",
+      pt: 'Mapa Interativo do Roteiro de Viagem',
+    });
+    expect(payload.routeMapJsonb?.subtitleJsonb).toEqual({
+      ar: 'استكشف مسار رحلتك يوماً بيوم عبر أهم المعالم والمحطات الفاخرة',
+      en: 'Explore your day-by-day path across premier luxury landmarks',
+      es: 'Explore su ruta día a día a través de destacados lugares de lujo',
+      it: 'Esplora il tuo percorso giorno per giorno attraverso i luoghi di lusso',
+      pt: 'Explore seu trajeto dia a dia pelos principais pontos turísticos de luxo',
+    });
+  });
 });
 
 

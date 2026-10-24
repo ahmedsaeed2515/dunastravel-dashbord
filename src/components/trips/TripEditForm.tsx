@@ -18,6 +18,7 @@ import {
   clearLocaleContent,
 } from '@/lib/translationService';
 import { localizeDayLabel } from '@/lib/dayLabels';
+import { getRouteMapDefault, isRouteMapDefaultText } from '@/lib/routeMapDefaults';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -417,8 +418,8 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   accommodation: [],
   itinerary: [],
   routeMap: {
-    title: 'Interactive Itinerary Journey Map',
-    subtitle: 'Explore your day-by-day path across premier luxury landmarks',
+    title: getRouteMapDefault('ar', 'title'),
+    subtitle: getRouteMapDefault('ar', 'subtitle'),
     locations: [],
   },
   translations: {
@@ -632,10 +633,20 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
           if (!fullTour) return;
           const hydrated = tourToTripModel(fullTour);
           const routeMapFromApi = fullTour.routeMapJsonb || (fullTour as any).routeMap;
+          const apiRouteMapTitle = typeof routeMapFromApi?.titleJsonb === 'string'
+            ? routeMapFromApi.titleJsonb
+            : routeMapFromApi?.titleJsonb?.ar || routeMapFromApi?.title;
+          const apiRouteMapSubtitle = typeof routeMapFromApi?.subtitleJsonb === 'string'
+            ? routeMapFromApi.subtitleJsonb
+            : routeMapFromApi?.subtitleJsonb?.ar || routeMapFromApi?.subtitle;
 
           const apiRouteMap = routeMapFromApi ? {
-            title: routeMapFromApi.titleJsonb?.ar || routeMapFromApi.title || 'Interactive Itinerary Journey Map',
-            subtitle: routeMapFromApi.subtitleJsonb?.ar || routeMapFromApi.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+            title: apiRouteMapTitle && !isRouteMapDefaultText(apiRouteMapTitle, 'title')
+              ? apiRouteMapTitle
+              : getRouteMapDefault('ar', 'title'),
+            subtitle: apiRouteMapSubtitle && !isRouteMapDefaultText(apiRouteMapSubtitle, 'subtitle')
+              ? apiRouteMapSubtitle
+              : getRouteMapDefault('ar', 'subtitle'),
             locations: Array.isArray(routeMapFromApi.locations)
               ? routeMapFromApi.locations.map((l: any, idx: number) => ({
                   id: l.id || `loc-${idx + 1}`,
@@ -671,9 +682,19 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                 itinerary: (hydLoc.itinerary && hydLoc.itinerary.length > 0) ? hydLoc.itinerary : (trans[loc].itinerary || []),
               };
               if (routeMapFromApi && (!trans[loc].routeMap || !trans[loc].routeMap.locations || trans[loc].routeMap.locations.length === 0)) {
+                const localizedRouteTitle = typeof routeMapFromApi.titleJsonb === 'string'
+                  ? routeMapFromApi.titleJsonb
+                  : routeMapFromApi.titleJsonb?.[loc] || routeMapFromApi.title;
+                const localizedRouteSubtitle = typeof routeMapFromApi.subtitleJsonb === 'string'
+                  ? routeMapFromApi.subtitleJsonb
+                  : routeMapFromApi.subtitleJsonb?.[loc] || routeMapFromApi.subtitle;
                 trans[loc].routeMap = {
-                  title: routeMapFromApi.titleJsonb?.[loc] || routeMapFromApi.title || 'Interactive Itinerary Journey Map',
-                  subtitle: routeMapFromApi.subtitleJsonb?.[loc] || routeMapFromApi.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+                  title: localizedRouteTitle && !isRouteMapDefaultText(localizedRouteTitle, 'title')
+                    ? localizedRouteTitle
+                    : getRouteMapDefault(loc, 'title'),
+                  subtitle: localizedRouteSubtitle && !isRouteMapDefaultText(localizedRouteSubtitle, 'subtitle')
+                    ? localizedRouteSubtitle
+                    : getRouteMapDefault(loc, 'subtitle'),
                   locations: Array.isArray(routeMapFromApi.locations)
                     ? routeMapFromApi.locations.map((l: any) => ({
                         dbKey: l.dbKey || 'cairo',
@@ -1536,18 +1557,24 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
   };
 
   const getLocalizedRouteMapTitle = (): string => {
-    if (activeLang === 'ar') return formData.routeMap?.title || 'Interactive Itinerary Journey Map';
-    return formData.translations?.[activeLang]?.routeMap?.title || formData.routeMap?.title || 'Interactive Itinerary Journey Map';
+    const value = activeLang === 'ar'
+      ? formData.routeMap?.title
+      : formData.translations?.[activeLang]?.routeMap?.title;
+    if (value && !isRouteMapDefaultText(value, 'title')) return value;
+    return getRouteMapDefault(activeLang, 'title');
   };
 
   const getLocalizedRouteMapSubtitle = (): string => {
-    if (activeLang === 'ar') return formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
-    return formData.translations?.[activeLang]?.routeMap?.subtitle || formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+    const value = activeLang === 'ar'
+      ? formData.routeMap?.subtitle
+      : formData.translations?.[activeLang]?.routeMap?.subtitle;
+    if (value && !isRouteMapDefaultText(value, 'subtitle')) return value;
+    return getRouteMapDefault(activeLang, 'subtitle');
   };
 
   const updateRouteMapTitle = (val: string) => {
     setFormData(prev => {
-      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const currentRoute = prev.routeMap || { title: getRouteMapDefault('ar', 'title'), subtitle: getRouteMapDefault('ar', 'subtitle'), locations: [] };
       const updatedRoute = { ...currentRoute, title: activeLang === 'ar' ? val : currentRoute.title };
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
@@ -1559,7 +1586,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const updateRouteMapSubtitle = (val: string) => {
     setFormData(prev => {
-      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const currentRoute = prev.routeMap || { title: getRouteMapDefault('ar', 'title'), subtitle: getRouteMapDefault('ar', 'subtitle'), locations: [] };
       const updatedRoute = { ...currentRoute, subtitle: activeLang === 'ar' ? val : currentRoute.subtitle };
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
@@ -1587,7 +1614,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const updateRouteLocationField = (idx: number, field: 'dbKey' | 'lat' | 'lng' | 'daysVisited' | 'name' | 'description', value: any) => {
     setFormData(prev => {
-      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const currentRoute = prev.routeMap || { title: getRouteMapDefault('ar', 'title'), subtitle: getRouteMapDefault('ar', 'subtitle'), locations: [] };
       const baseLocations = [...(currentRoute.locations || [])];
 
       if (!baseLocations[idx]) {
@@ -1675,7 +1702,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const selectGeoLocation = (idx: number, name: string, lat: number, lng: number) => {
     setFormData(prev => {
-      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const currentRoute = prev.routeMap || { title: getRouteMapDefault('ar', 'title'), subtitle: getRouteMapDefault('ar', 'subtitle'), locations: [] };
       const baseLocations = [...(currentRoute.locations || [])];
 
       const cleanLat = parseFloat(lat.toFixed(6));
@@ -1728,7 +1755,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
 
   const addRouteLocation = () => {
     setFormData(prev => {
-      const currentRoute = prev.routeMap || { title: 'Interactive Itinerary Journey Map', subtitle: 'Explore your day-by-day path across premier luxury landmarks', locations: [] };
+      const currentRoute = prev.routeMap || { title: getRouteMapDefault('ar', 'title'), subtitle: getRouteMapDefault('ar', 'subtitle'), locations: [] };
       const baseLocations = [...(currentRoute.locations || [])];
       const newIdx = baseLocations.length + 1;
       const defaultPreset = PRESET_CITIES[newIdx % PRESET_CITIES.length] || PRESET_CITIES[0];
@@ -1816,8 +1843,8 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
     setFormData(prev => ({
       ...prev,
       routeMap: {
-        title: 'Interactive Itinerary Journey Map',
-        subtitle: 'Explore your day-by-day path across premier luxury landmarks',
+        title: getRouteMapDefault('ar', 'title'),
+        subtitle: getRouteMapDefault('ar', 'subtitle'),
         locations: autoLocations,
       },
     }));
@@ -1831,8 +1858,14 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
   // for the requested target languages, based on the current Arabic/base map.
   const buildRouteMapTranslations = async (targets: LanguageCode[]) => {
     const baseLocations = formData.routeMap?.locations || [];
-    const baseTitle = formData.routeMap?.title || 'Interactive Itinerary Journey Map';
-    const baseSubtitle = formData.routeMap?.subtitle || 'Explore your day-by-day path across premier luxury landmarks';
+    const storedBaseTitle = formData.routeMap?.title;
+    const storedBaseSubtitle = formData.routeMap?.subtitle;
+    const baseTitle = storedBaseTitle && !isRouteMapDefaultText(storedBaseTitle, 'title')
+      ? storedBaseTitle
+      : getRouteMapDefault('ar', 'title');
+    const baseSubtitle = storedBaseSubtitle && !isRouteMapDefaultText(storedBaseSubtitle, 'subtitle')
+      ? storedBaseSubtitle
+      : getRouteMapDefault('ar', 'subtitle');
 
     return Promise.all(
       targets.map(async (lang) => {
@@ -3646,10 +3679,10 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                 <div>
                   <h3 className="text-sm font-black text-foreground flex items-center gap-2">
                     <MapPin className="w-4 h-4 text-amber-500" />
-                    خريطة مسار الرحلة التفاعلية (Interactive Itinerary Journey Map)
+                    {getRouteMapDefault('ar', 'title')}
                   </h3>
                   <p className="text-xs text-muted-foreground mt-0.5 font-medium">
-                    Explore Your Day-By-Day Path Across Premier Luxury Landmarks — حدد المدن والمعالم التي تزورها الرحلة بالتفصيل مع الإحداثيات وأيام الزيارة.
+                    {getRouteMapDefault('ar', 'subtitle')} — حدد المدن والمعالم التي تزورها الرحلة بالتفصيل مع الإحداثيات وأيام الزيارة.
                   </p>
                   {isTranslating && translateStatus && (
                     <p className="text-[11px] font-bold text-sky-600 mt-1.5 flex items-center gap-1.5">
@@ -3704,7 +3737,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                   <Input
                     value={getLocalizedRouteMapTitle()}
                     onChange={e => updateRouteMapTitle(e.target.value)}
-                    placeholder="Interactive Itinerary Journey Map"
+                    placeholder={getRouteMapDefault(activeLang, 'title')}
                     className="rounded-xl text-xs font-bold"
                   />
                 </div>
@@ -3713,7 +3746,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                   <Input
                     value={getLocalizedRouteMapSubtitle()}
                     onChange={e => updateRouteMapSubtitle(e.target.value)}
-                    placeholder="Explore your day-by-day path across premier luxury landmarks"
+                    placeholder={getRouteMapDefault(activeLang, 'subtitle')}
                     className="rounded-xl text-xs font-medium"
                   />
                 </div>

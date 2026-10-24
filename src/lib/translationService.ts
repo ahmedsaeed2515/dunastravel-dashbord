@@ -1,5 +1,6 @@
 import type { LanguageCode, TripModel, ItineraryItem, TranslationDict } from '@/types/dunas-suite';
 import { isBareDayLabel, localizeDayLabel } from '@/lib/dayLabels';
+import { getRouteMapDefault, isRouteMapDefaultText } from '@/lib/routeMapDefaults';
 
 export const ALL_LOCALES: { code: LanguageCode; name: string; flag: string }[] = [
   { code: 'ar', name: 'العربية', flag: '🇸🇦' },
@@ -203,6 +204,23 @@ export function clearLocaleContent(
 }
 
 /**
+ * Route-map headings are generic section copy, so prefer the canonical
+ * translation for the target language when the source is still a default.
+ */
+async function resolveRouteMapHeading(
+  value: string | undefined,
+  field: 'title' | 'subtitle',
+  targetLang: LanguageCode,
+  sourceLang: LanguageCode
+): Promise<string> {
+  if (!value || isRouteMapDefaultText(value, field)) {
+    return getRouteMapDefault(targetLang, field);
+  }
+  const translated = await translateText(value, targetLang, sourceLang);
+  return translated || getRouteMapDefault(targetLang, field);
+}
+
+/**
  * Full auto-translate for a TripModel from Arabic (or sourceLang) into selected or all target languages.
  * Populates trip.translations[en|es|pt|it] with complete structure.
  */
@@ -323,9 +341,13 @@ export async function autoTranslateFullTrip(
             };
           })
         );
+        const [title, subtitle] = await Promise.all([
+          resolveRouteMapHeading(sourceRouteMap.title, 'title', lang, sourceLang),
+          resolveRouteMapHeading(sourceRouteMap.subtitle, 'subtitle', lang, sourceLang),
+        ]);
         trans.routeMap = {
-          title: sourceRouteMap.title || 'Interactive Itinerary Journey Map',
-          subtitle: sourceRouteMap.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+          title,
+          subtitle,
           locations: translatedLocations,
         };
         cloned.translations[lang] = trans;
@@ -346,8 +368,12 @@ export async function autoTranslateFullTrip(
       excluded: [...sourceExcluded],
       itinerary: sourceItinerary.map(d => ({ ...d })),
       routeMap: sourceRouteMap ? {
-        title: sourceRouteMap.title || 'Interactive Itinerary Journey Map',
-        subtitle: sourceRouteMap.subtitle || 'Explore your day-by-day path across premier luxury landmarks',
+        title: sourceRouteMap.title && !isRouteMapDefaultText(sourceRouteMap.title, 'title')
+          ? sourceRouteMap.title
+          : getRouteMapDefault(sourceLang, 'title'),
+        subtitle: sourceRouteMap.subtitle && !isRouteMapDefaultText(sourceRouteMap.subtitle, 'subtitle')
+          ? sourceRouteMap.subtitle
+          : getRouteMapDefault(sourceLang, 'subtitle'),
         locations: sourceRouteMap.locations.map(loc => ({ ...loc })),
       } : undefined,
     };
