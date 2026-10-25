@@ -112,7 +112,14 @@ export function normalizeApiError(value: unknown): ApiError {
     if (Array.isArray(body.message)) {
       for (const item of body.message) {
         if (typeof item === 'string') {
-          const match = item.match(/^([a-zA-Z0-9_.]+)\s+(.+)$/);
+          // Nest's ValidationPipe reports unknown payload keys as
+          // "property <name> should not exist". Without this branch the field
+          // would be parsed as "property", hiding the real culprit behind the
+          // generic validation summary.
+          const unknownProperty = item.match(
+            /^property\s+([a-zA-Z0-9_.]+)\s+should not exist$/i,
+          );
+          const match = unknownProperty ?? item.match(/^([a-zA-Z0-9_.]+)\s+(.+)$/);
           if (match) {
             const rawKey = match[1];
             // Normalize common field aliases
@@ -132,8 +139,16 @@ export function normalizeApiError(value: unknown): ApiError {
     }
 
     const hasValidationErrors = Object.keys(parsedFieldErrors).length > 0;
+    // Keep the human-friendly Arabic summary, but append the server's actual
+    // messages so the offending field is never hidden behind a generic text.
+    const validationDetails = Array.from(
+      new Set(Object.values(parsedFieldErrors)),
+    ).slice(0, 3);
     const defaultValidationSummary = hasValidationErrors
-      ? 'يرجى مراجعة وتصحيح الحقول المحددة أدناه قبل الحفظ.'
+      ? [
+          'يرجى مراجعة وتصحيح الحقول المحددة أدناه قبل الحفظ.',
+          ...validationDetails.map((detail) => `• ${detail}`),
+        ].join('\n')
       : 'An unexpected error occurred';
 
     const message = typeof body.message === 'string' && body.message.trim().length > 0
