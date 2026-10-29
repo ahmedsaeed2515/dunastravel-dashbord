@@ -1,4 +1,5 @@
-FROM node:20-alpine AS base
+FROM node:22-alpine AS base
+RUN apk add --no-cache libc6-compat
 
 # Install dependencies only when needed
 FROM base AS deps
@@ -12,8 +13,13 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Environment variables must be present at build time
-ENV NEXT_PUBLIC_API_URL=/api
+# NEXT_PUBLIC_* variables are inlined at BUILD time, so they must be
+# passed as build args (Coolify: mark them "Buildtime" + set the value).
+# NOTE: use an absolute URL - server-side (SSR) requests need it.
+ARG NEXT_PUBLIC_API_URL=https://dunastravel-backend-seven.vercel.app/api
+ARG NEXT_PUBLIC_FRONTEND_URL
+ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
+ENV NEXT_PUBLIC_FRONTEND_URL=$NEXT_PUBLIC_FRONTEND_URL
 RUN npm run build
 
 # Production image, copy all the files and run next

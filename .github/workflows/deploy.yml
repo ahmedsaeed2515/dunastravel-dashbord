@@ -1,0 +1,84 @@
+name: CI / Deploy
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ─────────────────────────────────────────────────────────────
+  # 1) Verification - must be green before anything is deployed
+  # ─────────────────────────────────────────────────────────────
+  verify:
+    name: Verify (lint + i18n + tests)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint
+        run: npm run lint
+
+      - name: i18n parity check
+        run: npm run check:i18n
+
+      - name: Unit tests
+        run: npm test
+        env:
+          NEXT_PUBLIC_API_URL: https://dunastravel-backend-seven.vercel.app/api
+          NEXT_PUBLIC_FRONTEND_URL: https://localhost:3000
+
+  # ─────────────────────────────────────────────────────────────
+  # 2) Deploy - triggers the Coolify deployment webhook
+  #
+  # Required repository secrets:
+  #   COOLIFY_DEPLOY_WEBHOOK -> https://<coolify-host>/api/v1/deploy?uuid=<resource-uuid>&force=false
+  #   COOLIFY_API_TOKEN      -> Coolify > Keys & Tokens > API tokens
+  #
+  # If Coolify already has "Auto deploy" (GitHub App webhook) enabled,
+  # turn it OFF to avoid building twice, or delete this job.
+  # ─────────────────────────────────────────────────────────────
+  deploy:
+    name: Deploy to Coolify
+    needs: verify
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Trigger Coolify deployment
+        env:
+          COOLIFY_DEPLOY_WEBHOOK: ${{ secrets.COOLIFY_DEPLOY_WEBHOOK }}
+          COOLIFY_API_TOKEN: ${{ secrets.COOLIFY_API_TOKEN }}
+        run: |
+          if [ -z "$COOLIFY_DEPLOY_WEBHOOK" ]; then
+            echo "::warning::COOLIFY_DEPLOY_WEBHOOK is not set - skipping deploy."
+            echo "Add it in Settings > Secrets and variables > Actions."
+            exit 0
+          fi
+
+          echo "Triggering Coolify deployment for $GITHUB_SHA ..."
+          curl -fsS -X GET "$COOLIFY_DEPLOY_WEBHOOK" \
+            -H "Authorization: Bearer $COOLIFY_API_TOKEN" \
+            -H "Accept: application/json" \
+            -o /tmp/coolify-response.json
+
+          echo "Coolify response:"
+          cat /tmp/coolify-response.json

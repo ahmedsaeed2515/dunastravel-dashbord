@@ -1,0 +1,47 @@
+# ==========================================
+# Build context exclusions (docker build / Coolify)
+# Keeps the image build small and fast
+# ==========================================
+
+# dependencies (installed fresh inside the image)
+node_modules
+.npm
+.pnp
+.pnp.*
+
+# next.js build output (rebuilt inside the image)
+.next
+out
+build
+coverage
+
+# env & secrets (public vars are passed as build args)
+.env
+.env.*
+!.env.example
+
+# git & editors
+.git
+.gitignore
+.github
+.vscode
+.idea
+
+# misc / docs / logs
+docs
+*.log
+*.tsbuildinfo
+next-env.d.ts
+README.md
+CLAUDE.md
+AGENTS.md
+components.json
+vitest.config.ts
+vitest.setup.ts
+scripts
+
+# docker files themselves
+Dockerfile
+Dockerfile.*
+.dockerignore
+docker-compose*.yml
