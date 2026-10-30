@@ -13,13 +13,16 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# NEXT_PUBLIC_* variables are inlined at BUILD time, so they must be
-# passed as build args (Coolify: mark them "Buildtime" + set the value).
-# NOTE: use an absolute URL - server-side (SSR) requests need it.
-ARG NEXT_PUBLIC_API_URL=https://dunastravel-backend-seven.vercel.app/api
-ARG NEXT_PUBLIC_FRONTEND_URL
-ENV NEXT_PUBLIC_API_URL=$NEXT_PUBLIC_API_URL
-ENV NEXT_PUBLIC_FRONTEND_URL=$NEXT_PUBLIC_FRONTEND_URL
+# NEXT_PUBLIC_* variables are inlined at BUILD time, so they must be passed as
+# build args. Use an absolute URL - server-side (SSR) requests need it.
+ARG NEXT_PUBLIC_API_URL=https://api.dunas-travel.com/api
+ARG NEXT_PUBLIC_FRONTEND_URL=https://dunas-travel.com
+ARG NEXT_PUBLIC_SITE_URL=https://dashboard.dunas-travel.com
+
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
 RUN npm run build
 
 # Production image, copy all the files and run next
