@@ -4,7 +4,7 @@ import path from 'path';
 
 const withNextIntl = createNextIntlPlugin();
 
-const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://dunastravel-backend-seven.vercel.app/api').replace(/\/$/, '');
+const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.dunas-travel.com/api').replace(/\/$/, '');
 const destinationApiUrl = rawApiUrl.endsWith('/api') ? `${rawApiUrl}/:path*` : `${rawApiUrl}/api/:path*`;
 
 const nextConfig: NextConfig = {
@@ -18,7 +18,7 @@ const nextConfig: NextConfig = {
   images: {
     remotePatterns: [
       { protocol: 'https', hostname: 'res.cloudinary.com' },
-      { protocol: 'https', hostname: 'dunastravel-backend-seven.vercel.app' }
+      { protocol: 'https', hostname: 'api.dunas-travel.com' }
     ]
   },
   async rewrites() {

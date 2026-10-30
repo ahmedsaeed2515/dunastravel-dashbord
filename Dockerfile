@@ -12,8 +12,15 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Environment variables must be present at build time
-ENV NEXT_PUBLIC_API_URL=/api
+# Accept build-time args so Next.js bakes the correct URLs into the bundle
+ARG NEXT_PUBLIC_API_URL=https://api.dunas-travel.com/api
+ARG NEXT_PUBLIC_FRONTEND_URL=https://dunas-travel.com
+ARG NEXT_PUBLIC_SITE_URL=https://dashboard.dunas-travel.com
+
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ENV NEXT_PUBLIC_FRONTEND_URL=${NEXT_PUBLIC_FRONTEND_URL}
+ENV NEXT_PUBLIC_SITE_URL=${NEXT_PUBLIC_SITE_URL}
+
 RUN npm run build
 
 # Production image, copy all the files and run next
