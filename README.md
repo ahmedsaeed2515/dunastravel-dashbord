@@ -29,7 +29,7 @@ Deploy this project with Plesk's native Next.js hosting:
 - **Application type:** Server-side (Next.js)
 - **Application mode:** Production
 - **Package manager:** npm
-- **Startup:** Plesk-managed Next.js startup
+- **Startup file:** `.next/standalone/server.js`
 - **Node.js:** Node 22
 
 Set these production environment variables in Plesk:
@@ -40,6 +40,7 @@ INTERNAL_API_URL=https://api.dunas-travel.com/api
 NEXT_PUBLIC_FRONTEND_URL=https://dunas-travel.com
 ```
 
-Install dependencies and build from the application root. Start the app with
-`npm run start`; do not configure `.next/standalone/server.js`, PM2, Docker,
-or a custom Passenger server.
+Install dependencies and build from the application root. The build copies
+`public` and `.next/static` into the standalone bundle. Configure Plesk's
+startup file as `.next/standalone/server.js`, or use `npm run start`. Do not
+configure `next start`, PM2, Docker, or a custom Passenger server.

@@ -7,6 +7,7 @@ const rawApiUrl = (process.env.NEXT_PUBLIC_API_URL || 'https://api.dunas-travel.
 const destinationApiUrl = rawApiUrl.endsWith('/api') ? `${rawApiUrl}/:path*` : `${rawApiUrl}/api/:path*`;
 
 const nextConfig: NextConfig = {
+  output: 'standalone',
   turbopack: {
     root: __dirname,
   },
