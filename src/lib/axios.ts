@@ -240,7 +240,7 @@ export async function getServerApiClient() {
     .join('; ');
 
   return axios.create({
-    baseURL: process.env.INTERNAL_API_URL || process.env.NEXT_PUBLIC_API_URL,
+    baseURL: env.INTERNAL_API_URL,
     headers: {
       'Content-Type': 'application/json',
       Cookie: cookieHeader,

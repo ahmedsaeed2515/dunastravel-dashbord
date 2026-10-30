@@ -1,36 +1,45 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Dunas Concierge Suite
 
-## Getting Started
+The admin dashboard is a Next.js application using `next-intl` and the Dunas
+Travel API.
 
-First, run the development server: 
+## Local development
 
-```bash 
+```bash
+npm ci
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Copy `.env.example` to `.env.local` and set local API values when needed.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+## Verification
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run typecheck
+npm run lint
+npm run check:i18n
+npm test
+npm run build
+```
 
-## Learn More
+## Plesk deployment
 
-To learn more about Next.js, take a look at the following resources:
+Deploy this project with Plesk's native Next.js hosting:
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+- **Application type:** Server-side (Next.js)
+- **Application mode:** Production
+- **Package manager:** npm
+- **Startup:** Plesk-managed Next.js startup
+- **Node.js:** Node 22
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+Set these production environment variables in Plesk:
 
-## Deploy on Vercel
+```text
+NEXT_PUBLIC_API_URL=https://api.dunas-travel.com/api
+INTERNAL_API_URL=https://api.dunas-travel.com/api
+NEXT_PUBLIC_FRONTEND_URL=https://dunas-travel.com
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Install dependencies and build from the application root. Start the app with
+`npm run start`; do not configure `.next/standalone/server.js`, PM2, Docker,
+or a custom Passenger server.
