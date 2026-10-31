@@ -697,6 +697,7 @@ export default function BookingDetailPage({
         referenceCode={booking.referenceCode}
         totalAmount={booking.totalAmount}
         paidAmount={booking.paidAmount}
+        currency={booking.currency}
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
       />

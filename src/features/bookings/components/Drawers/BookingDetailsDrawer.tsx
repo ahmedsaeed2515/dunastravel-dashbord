@@ -1087,6 +1087,7 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
         referenceCode={booking.referenceCode}
         totalAmount={booking.totalAmountUsd ?? booking.totalAmount}
         paidAmount={booking.paidAmountUsd ?? booking.paidAmount}
+        currency={booking.currency}
         isOpen={paymentOpen}
         onClose={() => setPaymentOpen(false)}
         mode="payment"
@@ -1095,6 +1096,7 @@ export function BookingDetailsDrawer({ booking: initialBooking, open, onOpenChan
         referenceCode={booking.referenceCode}
         totalAmount={booking.totalAmountUsd ?? booking.totalAmount}
         paidAmount={booking.paidAmountUsd ?? booking.paidAmount}
+        currency={booking.currency}
         isOpen={refundOpen}
         onClose={() => setRefundOpen(false)}
         mode="refund"

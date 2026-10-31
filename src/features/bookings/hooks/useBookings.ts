@@ -208,7 +208,7 @@ export function useRecordManualPayment() {
       data,
     }: {
       referenceCode: string;
-      data: { amount: number; method?: string; transactionId?: string; notes?: string };
+      data: { amount: number; currency?: string; method?: string; transactionId?: string; notes?: string };
     }) => bookingsApi.recordManualPayment(referenceCode, data),
     onSuccess: (_, variables) => {
       toast.success("تم تسجيل الدفعة وتحديث حالة الحجز بنجاح");

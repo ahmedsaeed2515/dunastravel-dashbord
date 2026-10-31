@@ -42,7 +42,7 @@ export function KPIGrid({ data, isLoading }: KPIGridProps) {
 
   const bookingsGrowth = bookings?.changePercent ?? 0;
   const revenueGrowth = revenue?.revenueChangePercent ?? 0;
-  const totalCatalogTours = operational?.totalToursCount || 72;
+  const totalCatalogTours = operational?.totalToursCount ?? 0;
   const seatsSold = capacity?.seatsSold ?? 0;
   const totalSeats = capacity?.totalCapacity ?? 0;
   const unreadMessages = operational?.unreadContactsCount ?? 0;

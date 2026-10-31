@@ -28,6 +28,7 @@ interface RecordPaymentDialogProps {
   referenceCode: string;
   totalAmount?: number | string;
   paidAmount?: number | string;
+  currency?: string;
   isOpen: boolean;
   onClose: () => void;
   mode?: "payment" | "refund";
@@ -37,10 +38,13 @@ export function RecordPaymentDialog({
   referenceCode,
   totalAmount = 0,
   paidAmount = 0,
+  currency = "USD",
   isOpen,
   onClose,
   mode = "payment",
 }: RecordPaymentDialogProps) {
+  const normCurrency = (currency || "USD").toUpperCase();
+  const currencySymbol = normCurrency === "EUR" ? "€" : normCurrency === "EGP" ? "EGP " : "$";
   const isRefundMode = mode === "refund";
   const total = Number(totalAmount) || 0;
   const paid = Number(paidAmount) || 0;
@@ -86,7 +90,7 @@ export function RecordPaymentDialog({
     }
 
     if (parsedAmount > balanceDue + 0.01 && balanceDue > 0) {
-      toast.error(`المبلغ المدخل ($${parsedAmount}) يتجاوز الرصيد المستحق ($${balanceDue})`);
+      toast.error(`المبلغ المدخل (${currencySymbol}${parsedAmount}) يتجاوز الرصيد المستحق (${currencySymbol}${balanceDue})`);
       return;
     }
 
@@ -94,6 +98,7 @@ export function RecordPaymentDialog({
       referenceCode,
       data: {
         amount: parsedAmount,
+        currency: normCurrency,
         method,
         transactionId: transactionId.trim() || undefined,
         notes: notes.trim() || undefined,
@@ -129,11 +134,11 @@ export function RecordPaymentDialog({
         <div className="bg-muted/30 border border-border/60 rounded-xl p-3.5 my-2 flex justify-between items-center text-xs">
           <div>
             <span className="text-muted-foreground block text-[11px]">إجمالي الحجز:</span>
-            <span className="font-bold text-sm font-mono">${total.toFixed(2)}</span>
+            <span className="font-bold text-sm font-mono">{currencySymbol}{total.toFixed(2)}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px]">المدفوع حالياً:</span>
-            <span className="font-bold text-sm font-mono text-emerald-600 dark:text-emerald-400">${paid.toFixed(2)}</span>
+            <span className="font-bold text-sm font-mono text-emerald-600 dark:text-emerald-400">{currencySymbol}{paid.toFixed(2)}</span>
           </div>
           <div>
             <span className="text-muted-foreground block text-[11px]">
@@ -142,7 +147,7 @@ export function RecordPaymentDialog({
             <span className={`font-bold text-sm font-mono ${
               isRefundMode ? "text-rose-600 dark:text-rose-400" : "text-amber-600 dark:text-amber-400"
             }`}>
-              ${isRefundMode ? paid.toFixed(2) : balanceDue.toFixed(2)}
+              {currencySymbol}{isRefundMode ? paid.toFixed(2) : balanceDue.toFixed(2)}
             </span>
           </div>
         </div>
@@ -150,7 +155,7 @@ export function RecordPaymentDialog({
         {isRefundMode && (
           <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/20 text-rose-700 dark:text-rose-300 text-xs flex items-start gap-2">
             <AlertTriangle className="w-4 h-4 shrink-0 mt-0.5" />
-            <span>سيتم تحويل حالة الحجز إلى ملغي (CANCELLED) وتسجيل حركة استرداد مالي بقيمة ${paid.toFixed(2)} وعكس العمولات تلقائياً.</span>
+            <span>سيتم تحويل حالة الحجز إلى ملغي (CANCELLED) وتسجيل حركة استرداد مالي بقيمة {currencySymbol}{paid.toFixed(2)} وعكس العمولات تلقائياً.</span>
           </div>
         )}
 
@@ -159,10 +164,10 @@ export function RecordPaymentDialog({
             <>
               <div className="space-y-1.5">
                 <Label htmlFor="payment-amount" className="text-xs font-bold">
-                  المبلغ المراد تحصيله (USD) *
+                  المبلغ المراد تحصيله ({normCurrency}) *
                 </Label>
                 <div className="relative">
-                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">$</span>
+                  <span className="absolute start-3 top-1/2 -translate-y-1/2 text-muted-foreground text-xs font-bold">{currencySymbol}</span>
                   <Input
                     id="payment-amount"
                     type="number"
