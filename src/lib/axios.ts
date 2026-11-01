@@ -146,11 +146,20 @@ apiClient.interceptors.response.use(
       code: error.code,
     });
 
-    // If 403 Invalid CSRF token, auto-heal by fetching fresh token and retrying once
+    // If 403 Forbidden on mutative request (CSRF token desync or IIS interception), auto-heal by fetching fresh token and retrying once
+    const requestMethod = (originalRequest.method || '').toLowerCase();
+    const isMutative = ['post', 'put', 'patch', 'delete'].includes(requestMethod);
     const isCsrfError =
       error.response?.status === 403 &&
-      typeof error.response?.data?.message === 'string' &&
-      error.response.data.message.toLowerCase().includes('csrf');
+      isMutative &&
+      (
+        !error.response?.data?.message ||
+        typeof error.response.data === 'string' ||
+        (typeof error.response?.data?.message === 'string' &&
+          (error.response.data.message.toLowerCase().includes('csrf') ||
+           error.response.data.message.toLowerCase().includes('origin') ||
+           error.response.data.message.toLowerCase().includes('forbidden')))
+      );
 
     if (isCsrfError && !originalRequest._csrfRetry) {
       originalRequest._csrfRetry = true;
