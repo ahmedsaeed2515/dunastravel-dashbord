@@ -43,7 +43,19 @@ export default function LoginPage() {
     setError("");
 
     try {
-      await authApi.login({ email, password });
+      const session = await authApi.login({ email, password });
+      
+      const allowedRoles = ["SUPER_ADMIN", "ADMIN"];
+      if (!session?.role || !allowedRoles.includes(session.role)) {
+        await authApi.logout();
+        setError(
+          isRtl
+            ? "غير مصرح بالدخول: هذه المنظومة مخصصة حصراً لإدارة النظام (Super Admin / Admin). تم رفض الوصول وتأمين الحساب."
+            : "Access Denied: This portal is strictly restricted to System Administrators (Super Admin / Admin)."
+        );
+        return;
+      }
+
       router.push("/dashboard");
     } catch (err: any) {
       setError(err.message || tAuth("loginError"));
