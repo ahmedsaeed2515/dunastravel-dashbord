@@ -112,6 +112,13 @@ export interface BookingRulesModel {
   blockedWeekdays?: number[];
   /** Explicit inclusive date ranges that are fully blocked. */
   blockedRanges?: BookingBlockedRange[];
+  /** Single traveler supplement configuration.
+   *  When enabled and the booking is for exactly 1 adult + 0 children (and the tour's minimum pax is 2+),
+   *  a percentage supplement is added to the per-person price.
+   */
+  singleSupplementEnabled?: boolean;
+  /** Percentage increase added per traveler when single supplement applies (default 70%). */
+  singleSupplementPercent?: number;
 }
 
 export interface TripModel {
