@@ -47,7 +47,8 @@ import {
   Wand2,
   Languages,
   RotateCcw,
-  RefreshCw,
+  Refr,
+  UserRoundCheckeshCw,
   Crown,
   ArrowUp,
   ArrowDown,
@@ -1046,6 +1047,8 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       cutoffTimezone: formData.bookingRules?.cutoffTimezone ?? 'Africa/Cairo',
       blockedWeekdays: formData.bookingRules?.blockedWeekdays ?? [],
       blockedRanges: formData.bookingRules?.blockedRanges ?? [],
+      singleSupplementEnabled: formData.bookingRules?.singleSupplementEnabled ?? false,
+      singleSupplementPercent: formData.bookingRules?.singleSupplementPercent ?? 70,
     }),
     [formData.bookingRules],
   );
@@ -2931,6 +2934,65 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                       </div>
                     )}
                   </div>
+                </div>
+              </div>
+
+              {/* Single Traveler Supplement Policy */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/40 pb-2.5">
+                  <div>
+                    <span className="text-xs font-black text-foreground flex items-center gap-1.5">
+                      <CheckCircle2 className="w-4 h-4 text-amber-500" />
+                      سياسة السفر الفردي (Single Traveler Policy)
+                    </span>
+                    <p className="text-[11px] text-muted-foreground font-semibold">
+                      تمكين حجز فرد واحد مع إضافة نسبة مئوية إلى السعر، والمسافرون الأدنى المطلوب فوق أو يساوي 2.
+                    </p>
+                  </div>
+                  <label className="flex items-center gap-2 text-xs font-bold cursor-pointer shrink-0">
+                    <Checkbox
+                      checked={bookingRules.singleSupplementEnabled}
+                      onCheckedChange={v => updateBookingRules({ singleSupplementEnabled: !!v })}
+                    />
+                    <span className={bookingRules.singleSupplementEnabled ? 'text-emerald-500' : 'text-muted-foreground'}>
+                      {bookingRules.singleSupplementEnabled ? 'مُفعّلة' : 'معطّلة'}
+                    </span>
+                  </label>
+                </div>
+
+                <div className={bookingRules.singleSupplementEnabled ? 'space-y-4' : 'space-y-4 opacity-50 pointer-events-none select-none'}>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">النسبة المئوية للزيادة (Percentage Increase)</label>
+                      <Input
+                        type="number"
+                        value={bookingRules.singleSupplementPercent || ''}
+                        onChange={e => updateBookingRules({ singleSupplementPercent: Math.max(0, Math.min(200, Number(e.target.value) || 70)) })}
+                        className="rounded-xl"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        مثال: 70% من سعر الرحلة تصبح $170 بدلاً من $100 للمسافر الفرد.
+                      </p>
+                    </div>
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-bold text-foreground">الحد الأدنى للمسافرين (Min Travelers)</label>
+                      <Input
+                        type="number"
+                        value={''}
+                        onChange={e => {/* min travelers is derived from tour's minPaxJsonb; stored separately if needed */}
+                        }
+                        className="rounded-xl"
+                        readOnly
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        يُستخرج من إعدادات الرحلة (minPaxJsonb). إذا كان 2+, يتم تطبيق السياسة.
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground font-semibold">
+                    عندما تكون السياسة مُفعّلة وحجز فرد واحد (بالغ واحد + 0 أطفال)، يُضاف {bookingRules.singleSupplementPercent}% إلى السعر.
+                    مثال: رحلة بسعر $100 تصبح $170 للمسافر الفرد.
+                  </p>
                 </div>
               </div>
 
