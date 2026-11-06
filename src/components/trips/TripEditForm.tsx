@@ -1,12 +1,13 @@
 "use client";
 
 import React, { useState, useEffect, useMemo, useRef, memo, forwardRef, useImperativeHandle } from 'react';
-import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem, BookingRulesModel, BookingBlockedRange } from '@/types/dunas-suite';
+import { TripModel, LanguageCode, AccommodationItem, ItineraryItem, TranslationDict, SeasonPricingRuleItem, BookingRulesModel, BookingBlockedRange, TransportPricingModel } from '@/types/dunas-suite';
 import { useDataContext } from '@/context/DataContext';
 import { useQueryClient } from '@tanstack/react-query';
 import { toursApi } from '@/features/tours/api/toursApi';
 import { useLandingPages } from '@/features/tours/hooks/useLandingPages';
 import { useHotels, useSeasons } from '@/features/hotels/hooks/useHotels';
+import { useCreateTransportPricing, useDeleteTransportPricing, useTourTransportPricing } from '@/features/tours/hooks/useTransportPricing';
 import { useExchangeRates } from '@/features/currency/hooks/useCurrency';
 import { buildTripEditorPayload, tourToTripModel } from '@/features/tours/lib/tripEditorPayload';
 import {
@@ -47,8 +48,6 @@ import {
   Wand2,
   Languages,
   RotateCcw,
-  Refr,
-  UserRoundCheckeshCw,
   Crown,
   ArrowUp,
   ArrowDown,
@@ -413,6 +412,7 @@ const DEFAULT_TRIP: Partial<TripModel> = {
   highlights: [],
   included: [],
   excluded: [],
+  notes: [],
   heroImage: '',
   images: [],
   hotels: '5-Star Luxury Hotels',
@@ -543,6 +543,11 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
   const [newTripHotelAmenity, setNewTripHotelAmenity] = useState('');
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
+  // Grouped transport pricing: each vehicle has a free-text name + multiple pricing tiers
+  const [vehicleGroups, setVehicleGroups] = useState<{ transportType: string; tiers: { passengerRange: string; pricePerPerson: number; currency: string }[] }[]>([]);
+  // Keep flat list in sync for save/delete handlers
+  const [tripTransportPricing, setTripTransportPricing] = useState<TransportPricingModel[]>([]);
+  const [isSavingTransportPricing, setIsSavingTransportPricing] = useState(false);
 
   const handleSafeClose = () => {
     if (isDirty) {
@@ -568,6 +573,31 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
     () => (Array.isArray(globalSeasonsData) ? globalSeasonsData : []),
     [globalSeasonsData]
   );
+  const { data: transportPricingData } = useTourTransportPricing(trip?.slug || '');
+  const transportPricing = useMemo(
+    () => (Array.isArray(transportPricingData) ? transportPricingData : []),
+    [transportPricingData]
+  );
+
+  // Sync transport pricing from API into local editable grouped state
+  useEffect(() => {
+    if (transportPricing.length > 0) {
+      setTripTransportPricing(transportPricing);
+      // Group flat list by transportType / category
+      const grouped: Record<string, { passengerRange: string; pricePerPerson: number; currency: string }[]> = {};
+      for (const tp of transportPricing) {
+        const key = (tp as any).transportType || (tp as any).category || '';
+        if (!key) continue;
+        if (!grouped[key]) grouped[key] = [];
+        grouped[key].push({
+          passengerRange: tp.passengerRange || '',
+          pricePerPerson: Number(tp.pricePerPerson ?? (tp as any).priceUsd ?? 0),
+          currency: tp.currency || 'USD',
+        });
+      }
+      setVehicleGroups(Object.entries(grouped).map(([transportType, tiers]) => ({ transportType, tiers })));
+    }
+  }, [transportPricing]);
 
   useEffect(() => {
     if (trip) {
@@ -613,6 +643,9 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       if (!Array.isArray(cloned.excluded)) {
         cloned.excluded = [];
       }
+      if (!Array.isArray(cloned.notes)) {
+        cloned.notes = [];
+      }
       if (!Array.isArray(cloned.highlights)) {
         cloned.highlights = [];
       }
@@ -623,6 +656,35 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       if (!cloned.heroImage && cloned.images.length > 0) {
         cloned.heroImage = cloned.images[0];
       }
+
+      // Populate transport pricing & vehicle groups from tour if present
+      const initTransJson = (cloned as any).transportationJsonb || (cloned as any).transportation;
+      const initPricingList = (initTransJson?.pricing && Array.isArray(initTransJson.pricing) && initTransJson.pricing.length > 0)
+        ? initTransJson.pricing
+        : (Array.isArray((cloned as any).transportPricing) && (cloned as any).transportPricing.length > 0)
+          ? (cloned as any).transportPricing
+          : [];
+
+      if (initPricingList.length > 0) {
+        setTripTransportPricing(initPricingList);
+        if (initTransJson?.vehicleGroups && Array.isArray(initTransJson.vehicleGroups) && initTransJson.vehicleGroups.length > 0) {
+          setVehicleGroups(initTransJson.vehicleGroups);
+        } else {
+          const grouped: Record<string, { passengerRange: string; pricePerPerson: number; currency: string }[]> = {};
+          for (const tp of initPricingList) {
+            const key = tp.transportType || tp.category || '';
+            if (!key) continue;
+            if (!grouped[key]) grouped[key] = [];
+            grouped[key].push({
+              passengerRange: tp.passengerRange || '',
+              pricePerPerson: Number(tp.pricePerPerson ?? tp.priceUsd ?? 0),
+              currency: tp.currency || 'USD',
+            });
+          }
+          setVehicleGroups(Object.entries(grouped).map(([transportType, tiers]) => ({ transportType, tiers })));
+        }
+      }
+
       initialGallerySnapshotRef.current = {
         images: JSON.stringify(Array.isArray(cloned.images) ? cloned.images : []),
         hero: String(cloned.heroImage || ''),
@@ -679,6 +741,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                 ...hydLoc,
                 included: (hydLoc.included && hydLoc.included.length > 0) ? hydLoc.included : (trans[loc].included || []),
                 excluded: (hydLoc.excluded && hydLoc.excluded.length > 0) ? hydLoc.excluded : (trans[loc].excluded || []),
+                notes: (hydLoc.notes && hydLoc.notes.length > 0) ? hydLoc.notes : (trans[loc].notes || []),
                 highlights: (hydLoc.highlights && hydLoc.highlights.length > 0) ? hydLoc.highlights : (trans[loc].highlights || []),
                 itinerary: (hydLoc.itinerary && hydLoc.itinerary.length > 0) ? hydLoc.itinerary : (trans[loc].itinerary || []),
               };
@@ -745,6 +808,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
               images: nextImages,
               included: (Array.isArray(hydrated.included) && hydrated.included.length > 0) ? hydrated.included : (prev.included || []),
               excluded: (Array.isArray(hydrated.excluded) && hydrated.excluded.length > 0) ? hydrated.excluded : (prev.excluded || []),
+              notes: (Array.isArray(hydrated.notes) && hydrated.notes.length > 0) ? hydrated.notes : (prev.notes || []),
               highlights: (Array.isArray(hydrated.highlights) && hydrated.highlights.length > 0) ? hydrated.highlights : (prev.highlights || []),
               accommodation: (Array.isArray(hydrated.accommodation) && hydrated.accommodation.length > 0) ? hydrated.accommodation : (prev.accommodation || []),
               seasonPricing: (Array.isArray(hydrated.seasonPricing) && hydrated.seasonPricing.length > 0) ? hydrated.seasonPricing : (prev.seasonPricing || []),
@@ -753,6 +817,28 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
               translations: trans,
             };
           });
+
+          // Populate transport pricing if found on server tour object
+          const serverTransJson = (fullTour as any).transportationJsonb || (fullTour as any).transportation;
+          if (serverTransJson?.pricing && Array.isArray(serverTransJson.pricing) && serverTransJson.pricing.length > 0) {
+            setTripTransportPricing(serverTransJson.pricing);
+            if (serverTransJson.vehicleGroups && Array.isArray(serverTransJson.vehicleGroups) && serverTransJson.vehicleGroups.length > 0) {
+              setVehicleGroups(serverTransJson.vehicleGroups);
+            } else {
+              const grouped: Record<string, { passengerRange: string; pricePerPerson: number; currency: string }[]> = {};
+              for (const tp of serverTransJson.pricing) {
+                const key = tp.transportType || tp.category || '';
+                if (!key) continue;
+                if (!grouped[key]) grouped[key] = [];
+                grouped[key].push({
+                  passengerRange: tp.passengerRange || '',
+                  pricePerPerson: Number(tp.pricePerPerson ?? tp.priceUsd ?? 0),
+                  currency: tp.currency || 'USD',
+                });
+              }
+              setVehicleGroups(Object.entries(grouped).map(([transportType, tiers]) => ({ transportType, tiers })));
+            }
+          }
         }).catch(() => {});
 
         setIsLoadingTripHotel(true);
@@ -912,6 +998,113 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       toast.error(err?.message || 'فشل حذف فندق الرحلة');
     } finally {
       setIsSavingTripHotel(false);
+    }
+  };
+
+  const handleSaveTripTransport = async () => {
+    const rawTourSlug = formData.slug || trip?.slug;
+    const tourSlug = slugify(rawTourSlug);
+    if (!tourSlug) return;
+    setIsSavingTransportPricing(true);
+    try {
+      // Flatten vehicleGroups into TransportPricingModel[]
+      const payload = vehicleGroups
+        .filter(g => g.transportType.trim())
+        .flatMap(g =>
+          g.tiers
+            .filter(t => t.passengerRange.trim() && t.pricePerPerson >= 0)
+            .map(t => ({
+              transportType: g.transportType.trim(),
+              passengerRange: t.passengerRange.trim(),
+              pricePerPerson: t.pricePerPerson,
+              currency: t.currency || 'USD',
+            }))
+        );
+
+      const transData = {
+        pricing: payload,
+        vehicleGroups,
+      };
+
+      let saved = false;
+      // 1. Primary persistence: Save directly into tour via PATCH /admin/tours/:slug (supported on both live & local servers)
+      try {
+        await toursApi.updateTour(tourSlug, {
+          transportationJsonb: transData,
+        } as any);
+        saved = true;
+      } catch (patchErr) {
+        console.warn('Direct tour PATCH for transportationJsonb failed, fallback to transport-pricing endpoint...', patchErr);
+      }
+
+      // 2. Also try dedicated relational endpoint if backend supports it
+      try {
+        await toursApi.upsertTourTransportPricing(tourSlug, payload);
+        saved = true;
+      } catch (endpointErr) {
+        if (!saved) throw endpointErr;
+      }
+
+      setTripTransportPricing(payload);
+      setFormData(prev => ({
+        ...prev,
+        transportPricing: payload,
+        transportationJsonb: transData,
+      }));
+      setIsDirty(true);
+      onDirtyChange?.(true);
+      toast.success('تم حفظ أسعار المركبات بنجاح!');
+      queryClient.invalidateQueries({ queryKey: ['tour-transport-pricing'] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourSlug] });
+    } catch (err: any) {
+      toast.error(err?.message || 'فشل حفظ أسعار المركبات');
+    } finally {
+      setIsSavingTransportPricing(false);
+    }
+  };
+
+  const handleDeleteTripTransport = async () => {
+    const rawTourSlug = formData.slug || trip?.slug;
+    const tourSlug = slugify(rawTourSlug);
+    if (!tourSlug) return;
+    if (!confirm('هل أنت متأكد من حذف بيانات أسعار المركبات هذه؟')) return;
+    setIsSavingTransportPricing(true);
+    try {
+      let deleted = false;
+      try {
+        await toursApi.updateTour(tourSlug, {
+          transportationJsonb: null,
+        } as any);
+        deleted = true;
+      } catch (patchErr) {
+        console.warn('Direct tour PATCH to clear transportationJsonb failed', patchErr);
+      }
+
+      try {
+        await toursApi.deleteTourTransportPricing(tourSlug);
+        deleted = true;
+      } catch (endpointErr) {
+        if (!deleted) throw endpointErr;
+      }
+
+      toast.success('تم حذف بيانات أسعار المركبات بنجاح');
+      setTripTransportPricing([]);
+      setVehicleGroups([]);
+      setFormData(prev => ({
+        ...prev,
+        transportPricing: [],
+        transportationJsonb: null,
+      }));
+      setIsDirty(true);
+      onDirtyChange?.(true);
+      queryClient.invalidateQueries({ queryKey: ['tour-transport-pricing'] });
+      queryClient.invalidateQueries({ queryKey: ['tours'] });
+      queryClient.invalidateQueries({ queryKey: ['tour', tourSlug] });
+    } catch (err: any) {
+      toast.error(err?.message || 'فشل حذف أسعار المركبات');
+    } finally {
+      setIsSavingTransportPricing(false);
     }
   };
 
@@ -1151,7 +1344,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
     return [];
   };
 
-  const getLocalizedList = (field: 'highlights' | 'included' | 'excluded'): string[] => {
+  const getLocalizedList = (field: 'highlights' | 'included' | 'excluded' | 'notes'): string[] => {
     if (activeLang === 'ar') {
       const base = extractSafeList(formData[field], 'ar');
       if (base.length > 0) return base;
@@ -1167,7 +1360,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
     return [];
   };
 
-  const setLocalizedList = (field: 'highlights' | 'included' | 'excluded', items: string[]) => {
+  const setLocalizedList = (field: 'highlights' | 'included' | 'excluded' | 'notes', items: string[]) => {
     setFormData(prev => {
       const trans = { ...(prev.translations || {}) };
       if (!trans[activeLang]) trans[activeLang] = {};
@@ -1227,18 +1420,18 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
       });
   };
 
-  const handleArrayItemChange = (field: 'highlights' | 'included' | 'excluded', index: number, value: string) => {
+  const handleArrayItemChange = (field: 'highlights' | 'included' | 'excluded' | 'notes', index: number, value: string) => {
     const list = [...getLocalizedList(field)];
     list[index] = value;
     setLocalizedList(field, list);
   };
 
-  const addArrayItem = (field: 'highlights' | 'included' | 'excluded') => {
+  const addArrayItem = (field: 'highlights' | 'included' | 'excluded' | 'notes') => {
     const list = [...getLocalizedList(field), ''];
     setLocalizedList(field, list);
   };
 
-  const removeArrayItem = (field: 'highlights' | 'included' | 'excluded', index: number) => {
+  const removeArrayItem = (field: 'highlights' | 'included' | 'excluded' | 'notes', index: number) => {
     const list = [...getLocalizedList(field)];
     list.splice(index, 1);
     setLocalizedList(field, list);
@@ -2404,6 +2597,7 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
               <option value="inclusions">5. المشتملات والمميزات ✅</option>
               <option value="gallery">6. معرض الصور ({formData.images?.length || 0}) 🖼️</option>
               <option value="matrix">7. جدول الترجمات الـ 5 🌐</option>
+              <option value="transport">8. pricing النقل والمركبات 🚐</option>
             </select>
           </div>
 
@@ -2430,6 +2624,9 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
               </TabsTrigger>
               <TabsTrigger value="matrix" className="rounded-xl px-3.5 py-2 text-xs font-black data-[state=active]:bg-amber-500 data-[state=active]:text-slate-950 data-[state=active]:shadow-xs cursor-pointer">
                 <Globe2 className="w-3.5 h-3.5 me-1.5" /> 7. جدول الترجمات الـ 5 🌐
+              </TabsTrigger>
+              <TabsTrigger value="transport" className="rounded-xl px-3.5 py-2 text-xs font-bold data-[state=active]:bg-card data-[state=active]:text-amber-500 data-[state=active]:shadow-xs cursor-pointer">
+                🚐 8. أسعار المركبات ({tripTransportPricing.length})
               </TabsTrigger>
             </TabsList>
           </div>
@@ -4118,6 +4315,48 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                   )}
                 </div>
               </div>
+
+              {/* Tour Notes / Important Notes */}
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                <div className="flex items-center justify-between border-b border-border/40 pb-2">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    <AlertCircle className="w-4 h-4 text-amber-500" />
+                    ملاحظات الرحلة الهامة (Important Notes in {ALL_LOCALES.find(l => l.code === activeLang)?.name}):
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => addArrayItem('notes')}
+                    className="text-xs text-amber-500 gap-1 font-bold cursor-pointer hover:bg-amber-500/10"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> إضافة ملاحظة
+                  </Button>
+                </div>
+
+                <div className="space-y-2">
+                  {getLocalizedList('notes').map((note, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <Input
+                        value={note}
+                        onChange={e => handleArrayItemChange('notes', idx, e.target.value)}
+                        placeholder={activeLang === 'ar' ? `ملاحظة هامة (يرجى إحضار جواز سفر ساري المفعول، ترتيبات خاصة...)` : `Important note #${idx + 1}...`}
+                        className="rounded-xl text-xs font-semibold border-amber-500/30"
+                      />
+                      <Button
+                        size="icon-sm"
+                        variant="ghost"
+                        onClick={() => removeArrayItem('notes', idx)}
+                        className="text-destructive hover:bg-destructive/10 shrink-0"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  {getLocalizedList('notes').length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-2">لا توجد ملاحظات مضافة للرحلة. اضغط "إضافة ملاحظة" بالأعلى لإضافة ملاحظات تظهر في صفحة الرحلة أسفل المشمول والغير مشمول.</p>
+                  )}
+                </div>
+              </div>
             </TabsContent>
 
             {/* TAB 5: PHOTO GALLERY & HERO IMAGE */}
@@ -4573,6 +4812,198 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                     );
                   })}
                 </div>
+              </div>
+            </TabsContent>
+
+            {/* TAB 8: TRANSPORT PRICING */}
+            <TabsContent value="transport" className="space-y-5 m-0">
+              <div className="p-4 rounded-2xl bg-card border border-border/80 space-y-4 shadow-xs">
+                {/* Header */}
+                <div className="flex items-center justify-between border-b border-border/40 pb-2.5">
+                  <span className="text-xs font-black text-amber-500 uppercase tracking-wide flex items-center gap-1.5">
+                    🚐 أسعار النقل والمركبات — كل مركبة بنطاقات أسعار متعددة
+                  </span>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        setVehicleGroups(prev => [
+                          ...prev,
+                          { transportType: '', tiers: [{ passengerRange: '', pricePerPerson: 0, currency: 'USD' }] },
+                        ]);
+                      }}
+                      className="text-xs rounded-xl gap-1 font-bold border-amber-500/40 text-amber-600 hover:bg-amber-500/10 cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" /> إضافة مركبة
+                    </Button>
+                    {vehicleGroups.length > 0 && (
+                      <Button
+                        size="sm"
+                        onClick={handleSaveTripTransport}
+                        disabled={isSavingTransportPricing}
+                        className="text-xs rounded-xl gap-1 font-bold bg-amber-500 hover:bg-amber-600 text-slate-950 cursor-pointer"
+                      >
+                        {isSavingTransportPricing ? (
+                          <><Loader2 className="w-3.5 h-3.5 animate-spin" /> جاري الحفظ...</>
+                        ) : (
+                          <>💾 حفظ أسعار المركبات</>
+                        )}
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {vehicleGroups.length === 0 ? (
+                  <div className="text-center py-10 text-muted-foreground">
+                    <div className="text-4xl mb-3">🚐</div>
+                    <p className="text-sm font-bold">لا توجد أسعار مركبات مضافة بعد</p>
+                    <p className="text-xs mt-1 text-muted-foreground/70">
+                      اضغط "إضافة مركبة" لإضافة مركبة مع نطاقات أسعار متعددة
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {vehicleGroups.map((group, gIdx) => (
+                      <div key={gIdx} className="rounded-2xl border border-border/60 bg-muted/20 overflow-hidden">
+                        {/* Vehicle Row Header */}
+                        <div className="flex items-center gap-3 p-3 bg-muted/40 border-b border-border/40">
+                          {/* Vehicle Type - free text */}
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <span className="text-[10px] font-black text-muted-foreground uppercase whitespace-nowrap">🚐 نوع المركبة:</span>
+                            <Input
+                              value={group.transportType}
+                              onChange={e => {
+                                const updated = [...vehicleGroups];
+                                updated[gIdx] = { ...updated[gIdx], transportType: e.target.value };
+                                setVehicleGroups(updated);
+                              }}
+                              placeholder="مثال: Van, باص, سيارة, مينى باص..."
+                              className="h-8 w-52 text-xs font-bold rounded-lg bg-background border-amber-500/30 focus:border-amber-500"
+                            />
+                          </div>
+                          <div className="flex-1" />
+                          {/* Delete vehicle group */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => setVehicleGroups(prev => prev.filter((_, i) => i !== gIdx))}
+                            className="h-7 px-2 text-red-500 hover:bg-red-500/10 hover:text-red-600 rounded-lg cursor-pointer gap-1 text-[10px] font-bold"
+                          >
+                            <Trash2 className="w-3 h-3" /> حذف المركبة
+                          </Button>
+                        </div>
+
+                        {/* Tiers */}
+                        <div className="p-3 space-y-2">
+                          {/* Column headers */}
+                          <div className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 px-1">
+                            <span className="text-[10px] font-black text-muted-foreground uppercase">نطاق الأشخاص</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase">السعر / شخص</span>
+                            <span className="text-[10px] font-black text-muted-foreground uppercase">العملة</span>
+                            <span />
+                          </div>
+
+                          {group.tiers.map((tier, tIdx) => (
+                            <div key={tIdx} className="grid grid-cols-[1fr_1fr_auto_auto] gap-2 items-center">
+                              {/* Passenger Range */}
+                              <Input
+                                value={tier.passengerRange}
+                                onChange={e => {
+                                  const updated = [...vehicleGroups];
+                                  updated[gIdx].tiers[tIdx] = { ...updated[gIdx].tiers[tIdx], passengerRange: e.target.value };
+                                  setVehicleGroups(updated);
+                                }}
+                                placeholder="مثال: 2-3, 4-6, 7-10..."
+                                className="h-8 text-xs font-bold rounded-lg bg-background border-border/80 focus:border-amber-500"
+                              />
+
+                              {/* Price Per Person */}
+                              <Input
+                                type="number"
+                                min={0}
+                                value={tier.pricePerPerson || ''}
+                                onChange={e => {
+                                  const updated = [...vehicleGroups];
+                                  updated[gIdx].tiers[tIdx] = { ...updated[gIdx].tiers[tIdx], pricePerPerson: Number(e.target.value) };
+                                  setVehicleGroups(updated);
+                                }}
+                                placeholder="0"
+                                className="h-8 text-xs font-bold rounded-lg bg-background border-border/80 focus:border-amber-500"
+                              />
+
+                              {/* Currency */}
+                              <select
+                                value={tier.currency || 'USD'}
+                                onChange={e => {
+                                  const updated = [...vehicleGroups];
+                                  updated[gIdx].tiers[tIdx] = { ...updated[gIdx].tiers[tIdx], currency: e.target.value };
+                                  setVehicleGroups(updated);
+                                }}
+                                className="h-8 rounded-lg bg-background border border-border/80 px-2 text-xs font-bold text-foreground focus:outline-none focus:ring-2 focus:ring-amber-500/50"
+                              >
+                                <option value="USD">USD</option>
+                                <option value="EUR">EUR</option>
+                                <option value="EGP">EGP</option>
+                              </select>
+
+                              {/* Delete tier */}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                onClick={() => {
+                                  const updated = [...vehicleGroups];
+                                  updated[gIdx].tiers = updated[gIdx].tiers.filter((_, i) => i !== tIdx);
+                                  setVehicleGroups(updated);
+                                }}
+                                disabled={group.tiers.length === 1}
+                                className="h-8 w-8 p-0 text-red-500 hover:bg-red-500/10 hover:text-red-600 rounded-lg cursor-pointer disabled:opacity-30"
+                              >
+                                <X className="w-3.5 h-3.5" />
+                              </Button>
+                            </div>
+                          ))}
+
+                          {/* Add tier button */}
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => {
+                              const updated = [...vehicleGroups];
+                              const lastCurrency = updated[gIdx].tiers.at(-1)?.currency || 'USD';
+                              updated[gIdx].tiers = [
+                                ...updated[gIdx].tiers,
+                                { passengerRange: '', pricePerPerson: 0, currency: lastCurrency },
+                              ];
+                              setVehicleGroups(updated);
+                            }}
+                            className="h-7 text-[10px] font-bold text-amber-600 hover:bg-amber-500/10 rounded-lg cursor-pointer gap-1 mt-1"
+                          >
+                            <Plus className="w-3 h-3" /> إضافة نطاق أشخاص آخر
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Footer summary */}
+                    <div className="p-3 rounded-xl bg-amber-500/5 border border-amber-500/20 flex items-center justify-between">
+                      <span className="text-xs text-muted-foreground font-bold">
+                        إجمالي المركبات: <span className="text-amber-500 font-black">{vehicleGroups.length}</span>
+                        {' · '}
+                        إجمالي نطاقات الأسعار: <span className="text-amber-500 font-black">{vehicleGroups.reduce((s, g) => s + g.tiers.length, 0)}</span>
+                      </span>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={handleDeleteTripTransport}
+                        disabled={isSavingTransportPricing}
+                        className="text-[10px] text-red-500 hover:bg-red-500/10 hover:text-red-600 rounded-lg cursor-pointer gap-1"
+                      >
+                        <Trash2 className="w-3 h-3" /> حذف الكل
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </div>
             </TabsContent>
           </div>

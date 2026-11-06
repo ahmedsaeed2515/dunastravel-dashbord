@@ -25,6 +25,7 @@ export interface TranslationDict {
   highlights?: string[];
   included?: string[];
   excluded?: string[];
+  notes?: string[];
   itinerary?: {
     day: number;
     title: string;
@@ -121,6 +122,21 @@ export interface BookingRulesModel {
   singleSupplementPercent?: number;
 }
 
+/**
+ * Transport/vehicle pricing configuration for a tour.
+ * Defines pricing based on number of passengers.
+ */
+export interface TransportPricingModel {
+  /** Type of transportation (e.g., "Bus", "Van", "Car", "Boat") */
+  transportType: string;
+  /** Number of passengers for this pricing tier (e.g., "2-4", "5-7", "8-14") */
+  passengerRange: string;
+  /** Price per person for this range */
+  pricePerPerson: number;
+  /** Currency code (USD, EUR, etc.) */
+  currency?: 'USD' | 'EUR' | string;
+}
+
 export interface TripModel {
   // Identifiers & Basic Specs
   id: string;
@@ -156,6 +172,7 @@ export interface TripModel {
   highlights: string[];
   included: string[];
   excluded: string[];
+  notes?: string[];
   heroImage?: string;
   images: string[];
   hotels?: string;
@@ -180,6 +197,10 @@ export interface TripModel {
 
   // Interactive Route Map
   routeMap?: RouteMapData;
+
+  // Transport & Vehicle Pricing
+  transportPricing?: TransportPricingModel[];
+  transportationJsonb?: Record<string, any> | null;
 
   // 5-Language Translations Dictionary
   translations: {

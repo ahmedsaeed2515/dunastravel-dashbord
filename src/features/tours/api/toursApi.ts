@@ -96,4 +96,12 @@ export const toursApi = {
     apiClient.put<any, any>(`/admin/tours/${slug}/hotel`, data),
   deleteTourTripHotel: (slug: string): Promise<any> =>
     apiClient.delete<any, any>(`/admin/tours/${slug}/hotel`),
+
+  // Transport/Vehicle pricing APIs
+  getTourTransportPricing: (slug: string): Promise<any> =>
+    apiClient.get<any, any>(`/admin/tours/${slug}/transport-pricing`),
+  upsertTourTransportPricing: (slug: string, data: any): Promise<any> =>
+    apiClient.post<any, any>(`/admin/tours/${slug}/transport-pricing`, data),
+  deleteTourTransportPricing: (slug: string): Promise<any> =>
+    apiClient.delete<any, any>(`/admin/tours/${slug}/transport-pricing`),
 };

@@ -1,5 +1,7 @@
 export type VehicleCategory = 'bus' | 'coaster' | 'private' | 'transfer' | 'luxury_van' | 'sedan' | 'suv' | string;
 
+export type { TransportPricing, CreateTransportPricingDto, UpdateTransportPricingDto, TransportPricingFilters } from './transport-pricing';
+
 export interface LocalizedDictionary {
   ar?: string;
   en?: string;

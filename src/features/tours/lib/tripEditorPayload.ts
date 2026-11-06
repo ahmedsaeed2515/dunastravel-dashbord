@@ -199,7 +199,7 @@ function localizedText(
 
 function localizedList(
   translations: TripModel['translations'] | undefined,
-  field: 'highlights' | 'included' | 'excluded',
+  field: 'highlights' | 'included' | 'excluded' | 'notes',
   arabicValue: unknown,
 ): Record<LanguageCode, string[]> {
   return Object.fromEntries(LOCALES.map((locale) => [
@@ -277,6 +277,14 @@ export function tourToTripModel(
         : hasItems((tour as any).excluded)
           ? (tour as any).excluded
           : canon?.excluded || canon?.excludes;
+
+  const rawNotes = hasItems((tour as any).notesJsonb)
+    ? (tour as any).notesJsonb
+    : hasItems((tour as any).notes)
+      ? (tour as any).notes
+      : hasItems((tour as any).importantNotesJsonb)
+        ? (tour as any).importantNotesJsonb
+        : canon?.notes;
 
   const rawItinerary =
     Array.isArray(tour.itineraries) && tour.itineraries.length > 0
@@ -461,12 +469,19 @@ export function tourToTripModel(
     highlights: extractLocaleList(rawHighlights, 'ar'),
     included: extractLocaleList(rawIncluded, 'ar'),
     excluded: extractLocaleList(rawExcluded, 'ar'),
+    notes: extractLocaleList(rawNotes, 'ar'),
     heroImage: resolvedHero,
     images,
     hotels: typeof hotelInfo.notes === 'string' ? hotelInfo.notes : '',
     accommodation,
     seasonPricing,
     itinerary,
+    transportationJsonb: (tour as any).transportationJsonb || undefined,
+    transportPricing: Array.isArray((tour as any).transportationJsonb?.pricing)
+      ? (tour as any).transportationJsonb.pricing
+      : Array.isArray((tour as any).transportPricings)
+        ? (tour as any).transportPricings
+        : undefined,
     translations: Object.fromEntries(
       LOCALES.map((locale) => [
         locale,
@@ -488,6 +503,7 @@ export function tourToTripModel(
           highlights: extractLocaleList(rawHighlights, locale),
           included: extractLocaleList(rawIncluded, locale),
           excluded: extractLocaleList(rawExcluded, locale),
+          notes: extractLocaleList(rawNotes, locale),
           itinerary: rawItinerary.map((item: any, index: number) => ({
             day: item.day || (item.sortOrder !== undefined ? item.sortOrder + 1 : index + 1),
             title:
@@ -768,11 +784,13 @@ export function buildTripEditorPayload(
     departureInfoJsonb: formData.departures ? localizedText(translations, 'departures', formData.departures) : undefined,
     includedServicesJsonb: localizedList(translations, 'included', formData.included),
     excludedServicesJsonb: localizedList(translations, 'excluded', formData.excluded),
+    notesJsonb: localizedList(translations, 'notes', formData.notes),
     highlightsJsonb: localizedList(translations, 'highlights', formData.highlights),
     routeMapJsonb,
     priceDisplayMode,
     priceLabelJsonb: Object.keys(priceLabelJsonb).length > 0 ? priceLabelJsonb : null,
     bookingRulesJsonb,
+    transportationJsonb: formData.transportationJsonb ?? (formData.transportPricing && formData.transportPricing.length > 0 ? { pricing: formData.transportPricing } : null),
     itineraries: itinerary,
     images,
   };

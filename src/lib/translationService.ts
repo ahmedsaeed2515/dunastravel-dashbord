@@ -163,6 +163,7 @@ export function clearLocaleContent(
       cloned.highlights = [];
       cloned.included = [];
       cloned.excluded = [];
+      cloned.notes = [];
       cloned.itinerary = (cloned.itinerary || []).map((day, idx) => ({
         day: idx + 1,
         title: localizeDayLabel('ar', idx + 1),
@@ -178,6 +179,7 @@ export function clearLocaleContent(
         highlights: [],
         included: [],
         excluded: [],
+        notes: [],
         itinerary: [],
       };
     } else {
@@ -190,6 +192,7 @@ export function clearLocaleContent(
         highlights: [],
         included: [],
         excluded: [],
+        notes: [],
         itinerary: (cloned.itinerary || []).map((day, idx) => ({
           day: idx + 1,
           title: localizeDayLabel(loc, idx + 1),
@@ -244,6 +247,7 @@ export async function autoTranslateFullTrip(
   const sourceHighlights = (sourceLang === 'ar' ? cloned.highlights : cloned.translations?.[sourceLang]?.highlights) || cloned.highlights || [];
   const sourceIncluded = (sourceLang === 'ar' ? cloned.included : cloned.translations?.[sourceLang]?.included) || cloned.included || [];
   const sourceExcluded = (sourceLang === 'ar' ? cloned.excluded : cloned.translations?.[sourceLang]?.excluded) || cloned.excluded || [];
+  const sourceNotes = (sourceLang === 'ar' ? cloned.notes : cloned.translations?.[sourceLang]?.notes) || cloned.notes || [];
   const sourceItinerary = cloned.itinerary || [];
 
   const targets = targetLocales.filter(c => c !== sourceLang);
@@ -269,19 +273,21 @@ export async function autoTranslateFullTrip(
     })
   );
 
-  // 2. Translate Highlights, Inclusions, Exclusions
-  onProgress?.('جاري ترجمة المشتملات والمميزات والخدمات المستثناة...', 55);
+  // 2. Translate Highlights, Inclusions, Exclusions, Notes
+  onProgress?.('جاري ترجمة المشتملات والمميزات والخدمات المستثناة والملاحظات...', 55);
   await Promise.all(
     targets.map(async (lang) => {
       const trans: TranslationDict = cloned.translations[lang] || {};
-      const [highlights, included, excluded] = await Promise.all([
+      const [highlights, included, excluded, notes] = await Promise.all([
         translateArrayToLocale(sourceHighlights, lang, sourceLang),
         translateArrayToLocale(sourceIncluded, lang, sourceLang),
         translateArrayToLocale(sourceExcluded, lang, sourceLang),
+        translateArrayToLocale(sourceNotes, lang, sourceLang),
       ]);
       trans.highlights = highlights;
       trans.included = included;
       trans.excluded = excluded;
+      trans.notes = notes;
       cloned.translations[lang] = trans;
     })
   );
@@ -366,6 +372,7 @@ export async function autoTranslateFullTrip(
       highlights: [...sourceHighlights],
       included: [...sourceIncluded],
       excluded: [...sourceExcluded],
+      notes: [...sourceNotes],
       itinerary: sourceItinerary.map(d => ({ ...d })),
       routeMap: sourceRouteMap ? {
         title: sourceRouteMap.title && !isRouteMapDefaultText(sourceRouteMap.title, 'title')

@@ -117,6 +117,8 @@ export interface Tour {
   exclusionJsonb?: Record<string, any> | null;
   includedServicesJsonb?: Record<string, any> | null;
   excludedServicesJsonb?: Record<string, any> | null;
+  notesJsonb?: Record<string, any> | null;
+  notes?: string[];
   hotelInfoJsonb?: Record<string, any> | null;
   transportationJsonb?: Record<string, any> | null;
   pickupLocationsJsonb?: Record<string, any> | null;
@@ -244,6 +246,8 @@ export interface CreateTourPayload {
   exclusionJsonb?: Record<string, any> | null;
   includedServicesJsonb?: Record<string, any> | null;
   excludedServicesJsonb?: Record<string, any> | null;
+  notesJsonb?: Record<string, any> | null;
+  notes?: string[];
   hotelInfoJsonb?: Record<string, any> | null;
   transportationJsonb?: Record<string, any> | null;
   pickupLocationsJsonb?: Record<string, any> | null;
