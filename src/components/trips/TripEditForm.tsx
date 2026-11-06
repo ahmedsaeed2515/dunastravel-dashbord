@@ -3163,8 +3163,11 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                       <label className="text-xs font-bold text-foreground">النسبة المئوية للزيادة (Percentage Increase)</label>
                       <Input
                         type="number"
-                        value={bookingRules.singleSupplementPercent || ''}
-                        onChange={e => updateBookingRules({ singleSupplementPercent: Math.max(0, Math.min(200, Number(e.target.value) || 70)) })}
+                        value={bookingRules.singleSupplementPercent ?? 70}
+                        onChange={e => {
+                          const val = e.target.value === '' ? '' : Math.max(0, Math.min(200, Number(e.target.value)));
+                          updateBookingRules({ singleSupplementPercent: val === '' ? 0 : Number(val) });
+                        }}
                         className="rounded-xl"
                       />
                       <p className="text-[11px] text-muted-foreground">
@@ -3175,14 +3178,12 @@ export const TripEditForm = forwardRef<TripEditFormRef, TripEditFormProps>(funct
                       <label className="text-xs font-bold text-foreground">الحد الأدنى للمسافرين (Min Travelers)</label>
                       <Input
                         type="number"
-                        value={''}
-                        onChange={e => {/* min travelers is derived from tour's minPaxJsonb; stored separately if needed */}
-                        }
-                        className="rounded-xl"
+                        value={2}
                         readOnly
+                        className="rounded-xl bg-muted/50 cursor-not-allowed"
                       />
                       <p className="text-[11px] text-muted-foreground">
-                        يُستخرج من إعدادات الرحلة (minPaxJsonb). إذا كان 2+, يتم تطبيق السياسة.
+                        الحد الأدنى الافتراضي للرحلات هو 2. تفعيل هذه السياسة يسمح لشخص واحد بالحجز مع إضافة النسبة.
                       </p>
                     </div>
                   </div>

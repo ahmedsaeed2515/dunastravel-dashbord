@@ -563,6 +563,27 @@ describe('buildTripEditorPayload', () => {
       pt: 'Explore seu trajeto dia a dia pelos principais pontos turísticos de luxo',
     });
   });
+
+  it('preserves singleSupplementEnabled and singleSupplementPercent in bookingRulesJsonb', () => {
+    const payload = buildTripEditorPayload({
+      slug: 'single-traveler-tour',
+      title: 'Single Traveler Tour',
+      destination: 'egypt',
+      price: 500,
+      bookingRules: {
+        enabled: false,
+        singleSupplementEnabled: true,
+        singleSupplementPercent: 75,
+      },
+    }, false);
+
+    expect(payload.bookingRulesJsonb).toEqual({
+      enabled: false,
+      cutoffTimezone: 'Africa/Cairo',
+      singleSupplementEnabled: true,
+      singleSupplementPercent: 75,
+    });
+  });
 });
 
 

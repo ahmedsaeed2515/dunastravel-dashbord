@@ -746,11 +746,20 @@ export function buildTripEditorPayload(
   const normalizedCutoffTime = text(bookingRulesInput?.dailyCutoffTime).trim();
   const normalizedCutoffTimezone = text(bookingRulesInput?.cutoffTimezone).trim() || 'Africa/Cairo';
   const bookingRulesEnabled = Boolean(bookingRulesInput?.enabled);
+  const singleSupplementEnabled = Boolean(bookingRulesInput?.singleSupplementEnabled);
+  const singleSupplementPercent =
+    bookingRulesInput?.singleSupplementPercent !== undefined &&
+    bookingRulesInput?.singleSupplementPercent !== null &&
+    !isNaN(Number(bookingRulesInput.singleSupplementPercent))
+      ? Math.max(0, Math.min(200, Number(bookingRulesInput.singleSupplementPercent)))
+      : 70;
   const hasBookingRules =
     bookingRulesEnabled ||
     Boolean(normalizedCutoffTime) ||
     normalizedBlockedWeekdays.length > 0 ||
-    normalizedBlockedRanges.length > 0;
+    normalizedBlockedRanges.length > 0 ||
+    singleSupplementEnabled ||
+    bookingRulesInput?.singleSupplementPercent !== undefined;
   const bookingRulesJsonb = hasBookingRules
     ? {
         enabled: bookingRulesEnabled,
@@ -758,6 +767,8 @@ export function buildTripEditorPayload(
         cutoffTimezone: normalizedCutoffTimezone,
         ...(normalizedBlockedWeekdays.length > 0 ? { blockedWeekdays: normalizedBlockedWeekdays } : {}),
         ...(normalizedBlockedRanges.length > 0 ? { blockedRanges: normalizedBlockedRanges } : {}),
+        singleSupplementEnabled,
+        singleSupplementPercent,
       }
     : null;
 
