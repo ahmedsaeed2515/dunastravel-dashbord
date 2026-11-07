@@ -580,7 +580,7 @@ export function BookingInvoiceDialog({
                       : "Electronically issued and registered with Egyptian Tax Authority (ETA) and Ministry of Tourism License #1882 Category A. Fully compliant with electronic invoicing standards."}
                   </p>
                   <p className="text-[10px] text-neutral-500 font-medium">
-                    24/7 VIP Concierge Support: concierge@dunastravel.com | +20 100 414 6843
+                    24/7 VIP Concierge Support: concierge@dunastravel.com | +20 114 940 1111
                   </p>
                 </div>
 

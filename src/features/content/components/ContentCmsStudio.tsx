@@ -298,7 +298,7 @@ export function ContentCmsStudio() {
   const [footerForm, setFooterForm] = useState({
     copyright: { en: "", ar: "", es: "", pt: "", it: "" },
     supportEmail: "concierge@dunastravel.com",
-    vipWhatsapp: "+20 100 000 0000",
+    vipWhatsapp: "+20 114 940 1111",
     phone: "+20 2 2700 0000",
     address: { en: "", ar: "", es: "", pt: "", it: "" },
     socialLinks: {
@@ -315,7 +315,7 @@ export function ContentCmsStudio() {
       setFooterForm({
         copyright: typeof c.copyright === "object" ? { ...c.copyright } : { en: c.copyright || "", ar: c.copyright || "" },
         supportEmail: c.supportEmail || "concierge@dunastravel.com",
-        vipWhatsapp: c.vipWhatsapp || "+20 100 000 0000",
+        vipWhatsapp: c.vipWhatsapp || "+20 114 940 1111",
         phone: c.phone || "+20 2 2700 0000",
         address: typeof c.address === "object" ? { ...c.address } : { en: c.address || "", ar: c.address || "" },
         socialLinks: c.socialLinks || { instagram: "", facebook: "", youtube: "", tripadvisor: "" },
@@ -1129,7 +1129,7 @@ export function ContentCmsStudio() {
                 <Input
                   value={footerForm.vipWhatsapp}
                   onChange={(e) => setFooterForm({ ...footerForm, vipWhatsapp: e.target.value })}
-                  placeholder="+20 100 000 0000"
+                  placeholder="+20 114 940 1111"
                   className="rounded-xl text-xs bg-background border-border font-mono"
                 />
               </div>

@@ -43,14 +43,14 @@ export const EMAIL_PRESETS: Record<PresetId, TemplatePresetItem> = {
       footer: {
         address: 'المقر الرئيسي — القاهرة • إسبانيا • إيطاليا • البرازيل • المكسيك • كولومبيا',
         contactEmail: 'concierge@dunastravel.com',
-        contactPhone: '+20 100 000 0000',
+        contactPhone: '+20 114 940 1111',
         websiteUrl: 'https://www.dunastravel.com',
         securityNotice:
           'لا تشارك رمز التحقق أو كلمة المرور مع أي شخص. موظفو DUNAS TRAVEL لن يطلبوا منك رمزك السري إطلاقاً.',
       },
       socialLinks: {
         instagram: 'https://instagram.com/dunastravel',
-        whatsapp: 'https://wa.me/201000000000',
+        whatsapp: 'https://wa.me/201149401111',
       },
     },
   },
