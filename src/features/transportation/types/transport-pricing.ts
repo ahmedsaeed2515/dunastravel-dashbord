@@ -1,33 +1,55 @@
+export interface TransportRouteI18n {
+  ar?: string;
+  en?: string;
+  es?: string;
+  pt?: string;
+  it?: string;
+  [key: string]: string | undefined;
+}
+
 export interface TransportPricing {
   id: string;
   tourId?: string;
   bookingId?: string;
-  category: string;
-  passengerRange: string; // e.g., "2-4", "5-7", "8-14"
-  priceUsd: number;
+  route: TransportRouteI18n | string;
+  routes?: TransportRouteI18n;
+  category?: string;
+  passengerRange?: string;
+  priceUsd?: number;
+  priceBase0204: number;
+  priceBase0507: number;
+  priceBase0814: number;
   currency: string;
+  displayOrder?: number;
   isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface CreateTransportPricingDto {
   tourId?: string;
   bookingId?: string;
-  category: string;
-  passengerRange: string;
-  priceUsd: number;
+  route: TransportRouteI18n | string;
+  priceBase0204: number;
+  priceBase0507: number;
+  priceBase0814: number;
   currency?: string;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface UpdateTransportPricingDto {
-  priceUsd?: number;
+  route?: TransportRouteI18n | string;
+  priceBase0204?: number;
+  priceBase0507?: number;
+  priceBase0814?: number;
+  currency?: string;
+  displayOrder?: number;
   isActive?: boolean;
 }
 
 export interface TransportPricingFilters {
   tourId?: string;
   bookingId?: string;
-  category?: string;
-  passengerRange?: string;
+  lang?: string;
 }

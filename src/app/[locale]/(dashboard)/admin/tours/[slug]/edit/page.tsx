@@ -9,14 +9,7 @@ import { tourToTripModel } from "@/features/tours/lib/tripEditorPayload";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowRight, Loader2, Pencil, Sparkles } from "lucide-react";
-
-export const TOUR_EDITOR_LOCALES = [
-  { code: "en", name: "English", dir: "ltr" },
-  { code: "ar", name: "العربية (Arabic)", dir: "rtl" },
-  { code: "es", name: "Español (Spanish)", dir: "ltr" },
-  { code: "pt", name: "Português (Portuguese)", dir: "ltr" },
-  { code: "it", name: "Italiano (Italian)", dir: "ltr" },
-];
+import { TOUR_EDITOR_LOCALES } from "./constants";
 
 export default function EditTourPage({ params }: { params: Promise<{ slug: string; locale: string }> }) {
   const { slug, locale } = use(params);

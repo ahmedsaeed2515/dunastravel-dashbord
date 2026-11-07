@@ -126,15 +126,30 @@ export interface BookingRulesModel {
  * Transport/vehicle pricing configuration for a tour.
  * Defines pricing based on number of passengers.
  */
+export interface TransportRouteI18n {
+  ar?: string;
+  en?: string;
+  es?: string;
+  pt?: string;
+  it?: string;
+  [key: string]: string | undefined;
+}
+
 export interface TransportPricingModel {
-  /** Type of transportation (e.g., "Bus", "Van", "Car", "Boat") */
-  transportType: string;
-  /** Number of passengers for this pricing tier (e.g., "2-4", "5-7", "8-14") */
-  passengerRange: string;
-  /** Price per person for this range */
-  pricePerPerson: number;
-  /** Currency code (USD, EUR, etc.) */
-  currency?: 'USD' | 'EUR' | string;
+  id?: string;
+  tourId?: string;
+  bookingId?: string;
+  route?: TransportRouteI18n | string;
+  routes?: TransportRouteI18n;
+  transportType?: string;
+  passengerRange?: string;
+  pricePerPerson?: number;
+  priceBase0204?: number;
+  priceBase0507?: number;
+  priceBase0814?: number;
+  currency?: string;
+  displayOrder?: number;
+  isActive?: boolean;
 }
 
 export interface TripModel {

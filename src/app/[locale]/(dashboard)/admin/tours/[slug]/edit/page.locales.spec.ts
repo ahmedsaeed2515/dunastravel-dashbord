@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TOUR_EDITOR_LOCALES } from "./page";
+import { TOUR_EDITOR_LOCALES } from "./constants";
 
 describe("tour editor locale contract", () => {
   it("keeps every supported locale explicit and Arabic content RTL", () => {

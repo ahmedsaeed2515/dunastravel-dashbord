@@ -18,7 +18,8 @@ vi.mock("@/features/tours/hooks/useTours", () => ({
   useTourAvailabilities: () => ({ data: state.departures, isLoading: state.departuresLoading, error: state.departuresError }),
 }));
 
-import VisitorTourPreviewPage, { TOUR_PREVIEW_LOCALES } from "./page";
+import VisitorTourPreviewPage from "./page";
+import { TOUR_PREVIEW_LOCALES } from "./constants";
 
 const canonicalPreview = {
   id: "tour-1",

@@ -8,14 +8,7 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, BedDouble, CalendarRange, Check, Clock, Edit, Globe, Hotel, Loader2, MapPin, Monitor, ShieldAlert, Smartphone, Star, Tablet, Tag, Users, X, ExternalLink } from "lucide-react";
 import { getFrontendTourUrl } from "@/lib/frontend-urls";
 import { isBareDayLabel, localizeDayLabel } from "@/lib/dayLabels";
-
-export const TOUR_PREVIEW_LOCALES = [
-  { code: "en", name: "English", dir: "ltr" },
-  { code: "ar", name: "Arabic", dir: "rtl" },
-  { code: "es", name: "Spanish", dir: "ltr" },
-  { code: "pt", name: "Portuguese", dir: "ltr" },
-  { code: "it", name: "Italiano (Italian)", dir: "ltr" },
-] as const;
+import { TOUR_PREVIEW_LOCALES } from "./constants";
 
 type PreviewLanguage = (typeof TOUR_PREVIEW_LOCALES)[number]["code"];
 const previewLanguageFor = (locale: string): PreviewLanguage => TOUR_PREVIEW_LOCALES.some((language) => language.code === locale) ? locale as PreviewLanguage : "en";

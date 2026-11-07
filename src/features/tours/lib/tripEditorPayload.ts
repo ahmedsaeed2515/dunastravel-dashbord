@@ -477,11 +477,13 @@ export function tourToTripModel(
     seasonPricing,
     itinerary,
     transportationJsonb: (tour as any).transportationJsonb || undefined,
-    transportPricing: Array.isArray((tour as any).transportationJsonb?.pricing)
-      ? (tour as any).transportationJsonb.pricing
-      : Array.isArray((tour as any).transportPricings)
-        ? (tour as any).transportPricings
-        : undefined,
+    transportPricing: Array.isArray((tour as any).transportation)
+      ? (tour as any).transportation
+      : Array.isArray((tour as any).transportationJsonb?.pricing)
+        ? (tour as any).transportationJsonb.pricing
+        : Array.isArray((tour as any).transportPricings)
+          ? (tour as any).transportPricings
+          : undefined,
     translations: Object.fromEntries(
       LOCALES.map((locale) => [
         locale,

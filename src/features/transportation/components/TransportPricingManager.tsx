@@ -50,6 +50,7 @@ import type { CreateTransportPricingDto } from "@/features/transportation/types"
 import { DEFAULT_FLEET } from "@/features/transportation/data/default-fleet";
 import { TransportPricing, TransportPricingFilters } from "@/features/transportation/types";
 import { resolveLocalizedFeature } from "@/features/transportation/data/default-fleet";
+import { CANONICAL_ROUTES } from "@/features/transportation/data/canonical-routes";
 
 interface CategoryMeta {
   labelAr: string;
@@ -103,20 +104,30 @@ function getFallbackImage(category: string): string {
   }
 }
 
-const passengerRanges = ["2-4", "5-7", "8-14"] as const;
-
 const emptyPricing: TransportPricing = {
   id: "",
   tourId: undefined,
   bookingId: undefined,
-  category: "transportation",
-  passengerRange: "2-4",
-  priceUsd: 0,
+  route: { ar: "", en: "", es: "", pt: "", it: "" },
+  routes: { ar: "", en: "", es: "", pt: "", it: "" },
+  priceBase0204: 0,
+  priceBase0507: 0,
+  priceBase0814: 0,
   currency: "USD",
+  displayOrder: 1,
   isActive: true,
   createdAt: new Date().toISOString(),
   updatedAt: new Date().toISOString(),
 };
+
+function getRouteDisplayName(item: TransportPricing, locale: string): string {
+  const routes = (item.routes && typeof item.routes === "object")
+    ? (item.routes as Record<string, string>)
+    : (item.route && typeof item.route === "object")
+      ? (item.route as Record<string, string>)
+      : { es: String(item.route || "") };
+  return routes[locale] || routes.es || routes.en || routes.ar || Object.values(routes).find(Boolean) || "—";
+}
 
 export function TransportPricingManager({
   tourId,
@@ -179,90 +190,66 @@ export function TransportPricingManager({
     return pricings.filter((item) => {
       if (search.trim()) {
         const q = search.toLowerCase().trim();
-        const matchRange =
-          item.passengerRange.toLowerCase().includes(q) ||
-          item.passengerRange.includes(q);
-        const matchCategory =
-          item.category.toLowerCase().includes(q) ||
-          (CATEGORY_MAP[item.category]?.labelEn?.toLowerCase()?.includes(q) ||
-            CATEGORY_MAP[item.category]?.labelAr?.toLowerCase()?.includes(q));
-        if (!matchRange && !matchCategory) return false;
+        const routes = (item.routes && typeof item.routes === "object")
+          ? (item.routes as Record<string, string>)
+          : (item.route && typeof item.route === "object")
+            ? (item.route as Record<string, string>)
+            : { es: String(item.route || "") };
+        const match = Object.values(routes).some(v => v?.toLowerCase().includes(q));
+        if (!match) return false;
       }
       return true;
     });
   }, [pricings, search]);
 
-  // Load default sample data if no pricings fetched
+  // Load default canonical sample data if no pricings fetched
   useEffect(() => {
     if (apiPricings.length === 0 && (tourId || bookingId)) {
-      // Set some sample pricings for demonstration
-      const samplePricings = [
-        {
-          id: `pricing-${tourId || bookingId}-2-4`,
-          tourId,
-          bookingId,
-          category,
-          passengerRange: "2-4",
-          priceUsd: 50,
-          currency: "USD",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: `pricing-${tourId || bookingId}-5-7`,
-          tourId,
-          bookingId,
-          category,
-          passengerRange: "5-7",
-          priceUsd: 80,
-          currency: "USD",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-        {
-          id: `pricing-${tourId || bookingId}-8-14`,
-          tourId,
-          bookingId,
-          category,
-          passengerRange: "8-14",
-          priceUsd: 120,
-          currency: "USD",
-          isActive: true,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString(),
-        },
-      ];
+      const samplePricings: TransportPricing[] = CANONICAL_ROUTES.map((c, idx) => ({
+        id: `pricing-${tourId || bookingId}-${idx + 1}`,
+        tourId,
+        bookingId,
+        route: { ...c.route },
+        routes: { ...c.route },
+        priceBase0204: c.priceBase0204,
+        priceBase0507: c.priceBase0507,
+        priceBase0814: c.priceBase0814,
+        currency: c.currency || "USD",
+        displayOrder: c.displayOrder || idx + 1,
+        isActive: true,
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
       setPricings(samplePricings);
     } else if (apiPricings.length > 0) {
       setPricings(apiPricings);
     }
-  }, [apiPricings, tourId, bookingId, category]);
+  }, [apiPricings, tourId, bookingId]);
 
   const saveMutation = useMutation({
     mutationFn: async (payload: TransportPricing) => {
-      const pricingData = {
-        ...payload,
-        priceUsd: Number(payload.priceUsd),
+      const routesObj = (payload.routes && typeof payload.routes === "object")
+        ? { ...payload.routes }
+        : (payload.route && typeof payload.route === "object")
+          ? { ...payload.route }
+          : { es: String(payload.route || "") };
+
+      const pricingData: CreateTransportPricingDto = {
+        tourId: payload.tourId,
+        bookingId: payload.bookingId,
+        route: routesObj,
+        priceBase0204: Number(payload.priceBase0204) || 0,
+        priceBase0507: Number(payload.priceBase0507) || 0,
+        priceBase0814: Number(payload.priceBase0814) || 0,
+        currency: payload.currency || "USD",
+        displayOrder: payload.displayOrder,
         isActive: Boolean(payload.isActive),
       };
 
-      if (editingItem?.id && editingItem.id !== payload.id) {
-        // Update existing
-        return await transportPricingApi.update(editingItem.id, {
-          priceUsd: payload.priceUsd,
-          isActive: payload.isActive,
-        });
-      } else if (editingItem?.id) {
-        // Update existing with same id
-        return await transportPricingApi.update(editingItem.id, {
-          priceUsd: payload.priceUsd,
-          isActive: payload.isActive,
-        });
+      if (editingItem?.id) {
+        return await transportPricingApi.update(editingItem.id, pricingData);
       } else {
-        // Create new
-        return await transportPricingApi.create(payload as CreateTransportPricingDto);
+        return await transportPricingApi.create(pricingData);
       }
     },
     onSuccess: () => {
@@ -344,10 +331,13 @@ export function TransportPricingManager({
       id: "",
       tourId,
       bookingId,
-      category,
-      passengerRange: "2-4",
-      priceUsd: 0,
+      route: { ar: "", en: "", es: "", pt: "", it: "" },
+      routes: { ar: "", en: "", es: "", pt: "", it: "" },
+      priceBase0204: 0,
+      priceBase0507: 0,
+      priceBase0814: 0,
       currency: "USD",
+      displayOrder: pricings.length + 1,
       isActive: true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
@@ -357,10 +347,20 @@ export function TransportPricingManager({
   };
 
   const openEditModal = (item: TransportPricing) => {
+    const routesObj = (item.routes && typeof item.routes === "object")
+      ? { ...item.routes }
+      : (item.route && typeof item.route === "object")
+        ? { ...item.route }
+        : { es: String(item.route || "") };
+
     setEditingItem(item);
     setDraft({
       ...item,
-      priceUsd: Number(item.priceUsd),
+      route: routesObj,
+      routes: routesObj,
+      priceBase0204: Number(item.priceBase0204 || 0),
+      priceBase0507: Number(item.priceBase0507 || 0),
+      priceBase0814: Number(item.priceBase0814 || 0),
       isActive: Boolean(item.isActive),
     });
     setActiveTab("pricings");
@@ -468,136 +468,123 @@ export function TransportPricingManager({
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full caption-bottom text-sm">
-              <caption className="p-3 text-left text-xs font-bold text-muted-foreground border-b border-border">
-                {isAr ? "أسعار النقل حسب نطاق الركاب" : "Transport Pricing by Passenger Range"}
+            <table className="w-full caption-bottom text-sm border-collapse">
+              <caption className="p-3 text-start text-xs font-bold text-muted-foreground border-b border-border">
+                {isAr
+                  ? "جدول أسعار النقل الإضافي بالدولار للفرد (PRECIOS NETOS DE TRASLADOS EXTRAS EN USD Y POR PERSONA)"
+                  : "Extra Transfers Net Pricing in USD per person (PRECIOS NETOS DE TRASLADOS EXTRAS EN USD Y POR PERSONA)"}
               </caption>
               <thead>
-                <tr>
-                  <th className="p-3 text-left text-xs font-bold font-black text-foreground border-b border-border">
-                    {isAr ? "النطاق" : "Passenger Range"}
+                <tr className="bg-amber-500/10 border-b border-amber-500/30">
+                  <th className="p-3 text-center text-xs font-black text-foreground w-12">#</th>
+                  <th className="p-3 text-start text-xs font-black text-foreground min-w-[260px]">
+                    {isAr ? "Traslados (خط السير)" : "Traslados (Route)"}
                   </th>
-                  <th className="p-3 text-left text-xs font-bold font-black text-foreground border-b border-border">
-                    {isAr ? "السعر (USD)" : "Price (USD)"}
+                  <th className="p-3 text-center text-xs font-black text-amber-600 dark:text-amber-400 w-28">
+                    Base 02 – 04
                   </th>
-                  <th className="p-3 text-left text-xs font-bold font-black text-foreground border-b border-border">
-                    {isAr ? "التصنيف" : "Category"}
+                  <th className="p-3 text-center text-xs font-black text-amber-600 dark:text-amber-400 w-28">
+                    Base 05 – 07
                   </th>
-                  <th className="p-3 text-left text-xs font-bold font-black text-foreground border-b border-border">
+                  <th className="p-3 text-center text-xs font-black text-amber-600 dark:text-amber-400 w-28">
+                    Base 08 – 14
+                  </th>
+                  <th className="p-3 text-center text-xs font-black text-foreground w-20">
                     {isAr ? "الحالة" : "Status"}
                   </th>
-                  <th className="p-3 text-left text-xs font-bold font-black text-foreground border-b border-border">
+                  <th className="p-3 text-center text-xs font-black text-foreground w-28">
                     {isAr ? "الإجراءات" : "Actions"}
                   </th>
                 </tr>
               </thead>
               <tbody>
-                {filteredPricings.map((item) => (
-                  <tr key={item.id} className="border-b border-border/50 hover:bg-muted/50 transition-colors">
-                    <td className="p-3 font-black">
-                      <span className="font-mono font-black text-foreground">
-                        {item.passengerRange}
-                      </span>
-                    </td>
-                    <td className="p-3">
-                      <input
-                        type="number"
-                        value={item.priceUsd}
-                        onChange={(e) => {
-                          setDraft((prev) => ({
-                            ...prev,
-                            priceUsd: Number(e.target.value) || 0,
-                          }));
-                        }}
-                        className="w-20 text-center text-sm font-medium"
-                        min="0"
-                        step="0.01"
-                      />
-                    </td>
-                    <td className="p-3">
-                      <Select
-                        onValueChange={() => {}}
-                        value={item.category}
-                      >
-                        <SelectTrigger className="w-40">
-                          <SelectValue className="text-sm">
-                            {item.category}
-                          </SelectValue>
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="transportation">
-                            {isAr ? "نقل عام" : "General Transportation"}
-                          </SelectItem>
-                          <SelectItem value="transfer">
-                            {isAr ? "توصيل واستقبال" : "Airport Transfer"}
-                          </SelectItem>
-                          <SelectItem value="private">
-                            {isAr ? "سيارة خاصة" : "Private Vehicle"}
-                          </SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </td>
-                    <td className="p-3">
-                      <Badge
-                        variant={item.isActive ? "default" : "secondary"}
-                        className={item.isActive
-                          ? "bg-emerald-500/80 text-slate-950 font-black text-[10px] gap-1"
-                          : "bg-slate-950/80 text-amber-400 border border-amber-400/20 font-black text-[10px] gap-1"}
-                      >
-                        {item.isActive
-                          ? isAr
-                            ? "نشط"
-                            : "Active"
-                          : isAr
-                            ? "مؤرشف"
-                            : "Archived"}
-                      </Badge>
-                    </td>
-                    <td className="p-3">
-                      <div className="flex gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={() => openEditModal(item)}
-                          className="rounded-xl cursor-pointer p-1.5 text-amber-500 hover:bg-amber-50/10"
-                          title={isAr ? "تعديل السعر" : "Edit pricing"}
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </Button>
+                {filteredPricings.map((item, idx) => {
+                  const routes = (item.routes && typeof item.routes === "object")
+                    ? (item.routes as Record<string, string>)
+                    : (item.route && typeof item.route === "object")
+                      ? (item.route as Record<string, string>)
+                      : { es: String(item.route || "") };
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon-sm"
-                          onClick={() => toggleMutation.mutate(item.id)}
-                          disabled={toggleMutation.isPending}
-                          className="rounded-xl cursor-pointer p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
-                          title={isAr ? "تغيير الحالة" : "Toggle status"}
-                        >
-                          {item.isActive ? (
-                            <ArrowDownAZ className="w-3.5 h-3.5" />
-                          ) : (
-                            <ArrowUpZA className="w-3.5 h-3.5" />
+                  const displayName = getRouteDisplayName(item, locale);
+
+                  return (
+                    <tr key={item.id} className="border-b border-border/50 hover:bg-amber-500/5 transition-colors">
+                      <td className="p-3 text-center font-bold text-muted-foreground">
+                        {item.displayOrder || idx + 1}
+                      </td>
+                      <td className="p-3 font-semibold text-foreground">
+                        <div className="space-y-0.5">
+                          <p className="font-bold">{displayName}</p>
+                          {routes.es && routes.es !== displayName && (
+                            <p className="text-[11px] text-muted-foreground truncate">🇪🇸 {routes.es}</p>
                           )}
-                        </Button>
+                        </div>
+                      </td>
+                      <td className="p-3 text-center font-black text-foreground font-mono">
+                        $ {item.priceBase0204 ?? 0}
+                      </td>
+                      <td className="p-3 text-center font-black text-foreground font-mono">
+                        $ {item.priceBase0507 ?? 0}
+                      </td>
+                      <td className="p-3 text-center font-black text-foreground font-mono">
+                        $ {item.priceBase0814 ?? 0}
+                      </td>
+                      <td className="p-3 text-center">
+                        <Badge
+                          variant={item.isActive ? "default" : "secondary"}
+                          className={item.isActive
+                            ? "bg-emerald-500/80 text-slate-950 font-black text-[10px] gap-1"
+                            : "bg-slate-950/80 text-amber-400 border border-amber-400/20 font-black text-[10px] gap-1"}
+                        >
+                          {item.isActive
+                            ? isAr ? "نشط" : "Active"
+                            : isAr ? "مؤرشف" : "Archived"}
+                        </Badge>
+                      </td>
+                      <td className="p-3 text-center">
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => openEditModal(item)}
+                            className="rounded-xl cursor-pointer p-1.5 text-amber-500 hover:bg-amber-500/10"
+                            title={isAr ? "تعديل خط السير" : "Edit route"}
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                          </Button>
 
-                        {item.isActive ? (
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon-sm"
+                            onClick={() => toggleMutation.mutate(item.id)}
+                            disabled={toggleMutation.isPending}
+                            className="rounded-xl cursor-pointer p-1.5 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/10"
+                            title={isAr ? "تغيير الحالة" : "Toggle status"}
+                          >
+                            {item.isActive ? (
+                              <ArrowDownAZ className="w-3.5 h-3.5" />
+                            ) : (
+                              <ArrowUpZA className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+
                           <Button
                             type="button"
                             variant="destructive"
                             size="icon-sm"
                             onClick={() => setDeleteConfirmItem(item)}
                             className="rounded-xl cursor-pointer p-1.5 text-destructive hover:bg-destructive/10"
-                            title={isAr ? "حذف السعر" : "Delete pricing"}
+                            title={isAr ? "حذف خط السير" : "Delete route"}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </Button>
-                        ) : null}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>
@@ -624,85 +611,132 @@ export function TransportPricingManager({
       {/* 3. Editor Modal */}
       {isEditorOpen && (
         <Dialog open={isEditorOpen} onOpenChange={(open) => { if (!open) setIsEditorOpen(false); }}>
-          <DialogContent className="p-6 space-y-4">
+          <DialogContent className="p-6 space-y-4 max-w-lg">
             <DialogHeader className="pb-2">
               <DialogTitle className="text-lg font-black">
                 {editingItem
-                  ? isAr
-                    ? "تعديل سعر النقل"
-                    : "Edit Transport Pricing"
-                  : isAr
-                    ? "إضافة سعر نقل جديد"
-                    : "Add New Transport Pricing"}
+                  ? isAr ? "تعديل خط السير وأسعار النقل" : "Edit Route & Transport Pricing"
+                  : isAr ? "إضافة خط سير جديد" : "Add New Route & Transport Pricing"}
               </DialogTitle>
+              <DialogDescription className="text-xs text-muted-foreground">
+                {isAr
+                  ? "أدخل اسم خط السير باللغات الـ 5 والأسعار المحددة للشرائح الثلاث (02-04 / 05-07 / 08-14)"
+                  : "Enter route names in all 5 languages and prices for the 3 passenger tiers"}
+              </DialogDescription>
             </DialogHeader>
             <form onSubmit={(e) => { e.preventDefault(); saveMutation.mutate(draft); }} className="space-y-4">
-              <Input
-                value={draft.category}
-                onChange={(e) => setDraft({ ...draft, category: e.target.value })}
-                placeholder={isAr ? "التصنيف" : "Category"}
-                readOnly
-                className="w-full"
-              />
-              <Select
-                onValueChange={(value) => setDraft({ ...draft, passengerRange: value as string })}
-                value={draft.passengerRange}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isAr ? "نطاق الركاب" : "Passenger range"} />
-                </SelectTrigger>
-                <SelectContent>
-                  {passengerRanges.map((range) => (
-                    <SelectItem key={range} value={range}>
-                      {isAr ? `${range} أفراد` : `${range} passengers`}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              <Input
-                type="number"
-                value={draft.priceUsd}
-                onChange={(e) =>
-                  setDraft({
-                    ...draft,
-                    priceUsd: Number(e.target.value) || 0,
-                  })
-                }
-                placeholder={isAr ? "السعر بالدولار" : "Price in USD"}
-                className="w-full"
-                min="0"
-                step="0.01"
-              />
-
-              <Select
-                onValueChange={(value) =>
-                  setDraft({ ...draft, currency: value as string })
-                }
-                value={draft.currency}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder={isAr ? "عملة" : "Currency"} />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="USD">{isAr ? "دولار أمريكي" : "USD"}</SelectItem>
-                  <SelectItem value="EUR">{isAr ? "يورو" : "EUR"}</SelectItem>
-                  <SelectItem value="SAR">{isAr ? "ريال سعودي" : "SAR"}</SelectItem>
-                </SelectContent>
-              </Select>
-
-              <div className="flex items-center gap-2">
-                <input
-                  type="checkbox"
-                  checked={draft.isActive}
-                  onChange={(e) =>
-                    setDraft({ ...draft, isActive: e.target.checked })
-                  }
-                  className="rounded-sm"
-                />
-                <span className="text-sm font-medium">
-                  {isAr ? "نشط" : "Active"}
+              {/* 5 Language Inputs for Route */}
+              <div className="space-y-2 rounded-xl bg-muted/40 p-3 border border-border/80">
+                <span className="text-xs font-black text-amber-500 uppercase block mb-1">
+                  🌐 {isAr ? "اسم خط السير (Traslados) بخمس لغات" : "Route Name (5 Languages)"}
                 </span>
+
+                {([
+                  { code: 'es', label: 'Spanish (es - الرئيسي)', dir: 'ltr' },
+                  { code: 'en', label: 'English (en)', dir: 'ltr' },
+                  { code: 'ar', label: 'Arabic (ar)', dir: 'rtl' },
+                  { code: 'pt', label: 'Portuguese (pt)', dir: 'ltr' },
+                  { code: 'it', label: 'Italian (it)', dir: 'ltr' },
+                ] as const).map(({ code, label, dir }) => {
+                  const routes = (draft.routes && typeof draft.routes === "object")
+                    ? (draft.routes as Record<string, string>)
+                    : (draft.route && typeof draft.route === "object")
+                      ? (draft.route as Record<string, string>)
+                      : { es: String(draft.route || "") };
+
+                  return (
+                    <div key={code} className="space-y-1">
+                      <label className="text-[10px] font-bold text-muted-foreground">{label}</label>
+                      <Input
+                        value={routes[code] || ""}
+                        onChange={(e) => {
+                          const updatedRoutes = { ...routes, [code]: e.target.value };
+                          setDraft({
+                            ...draft,
+                            route: updatedRoutes,
+                            routes: updatedRoutes,
+                          });
+                        }}
+                        dir={dir}
+                        placeholder={`مثال: Aeropuerto ...`}
+                        className="h-8 text-xs font-semibold"
+                      />
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* 3 Price Tiers (Base 02-04, Base 05-07, Base 08-14) */}
+              <div className="space-y-2">
+                <span className="text-xs font-black text-foreground block">
+                  💵 {isAr ? "الأسعار بالدولار للفرد حسب الشريحة" : "Prices in USD per person"}
+                </span>
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-muted-foreground">Base 02 – 04 ($)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={draft.priceBase0204 || ""}
+                      onChange={(e) => setDraft({ ...draft, priceBase0204: Number(e.target.value) || 0 })}
+                      placeholder="65"
+                      className="h-9 text-center font-black font-mono text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-muted-foreground">Base 05 – 07 ($)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={draft.priceBase0507 || ""}
+                      onChange={(e) => setDraft({ ...draft, priceBase0507: Number(e.target.value) || 0 })}
+                      placeholder="55"
+                      className="h-9 text-center font-black font-mono text-xs"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-[10px] font-black text-muted-foreground">Base 08 – 14 ($)</label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={draft.priceBase0814 || ""}
+                      onChange={(e) => setDraft({ ...draft, priceBase0814: Number(e.target.value) || 0 })}
+                      placeholder="40"
+                      className="h-9 text-center font-black font-mono text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-1">
+                <div className="flex items-center gap-2">
+                  <Select
+                    onValueChange={(value) => setDraft({ ...draft, currency: value as string })}
+                    value={draft.currency || "USD"}
+                  >
+                    <SelectTrigger className="w-28 h-8 text-xs font-bold">
+                      <SelectValue placeholder="USD" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="USD">USD ($)</SelectItem>
+                      <SelectItem value="EUR">EUR (€)</SelectItem>
+                      <SelectItem value="SAR">SAR</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="isActivePricing"
+                    checked={draft.isActive}
+                    onChange={(e) => setDraft({ ...draft, isActive: e.target.checked })}
+                    className="rounded-sm"
+                  />
+                  <label htmlFor="isActivePricing" className="text-xs font-bold cursor-pointer">
+                    {isAr ? "نشط" : "Active"}
+                  </label>
+                </div>
               </div>
 
               <DialogFooter className="p-0 pt-4 flex justify-end gap-3">
@@ -718,19 +752,15 @@ export function TransportPricingManager({
                 <Button
                   type="submit"
                   disabled={saveMutation.isPending}
-                  className="h-10 rounded-xl text-xs font-bold gap-2 flex-1 flex items-center justify-center bg-emerald-500 hover:bg-emerald-600 text-slate-950"
+                  className="h-10 rounded-xl text-xs font-bold gap-2 flex-1 flex items-center justify-center bg-amber-500 hover:bg-amber-600 text-slate-950"
                 >
-                  {saveMutation.isPending
-                    ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    )
-                    : editingItem
-                      ? isAr
-                        ? "تحديث"
-                        : "Update"
-                      : isAr
-                        ? "إضافة"
-                        : "Add"}
+                  {saveMutation.isPending ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : editingItem ? (
+                    isAr ? "تحديث" : "Update"
+                  ) : (
+                    isAr ? "إضافة" : "Add"
+                  )}
                 </Button>
               </DialogFooter>
             </form>
